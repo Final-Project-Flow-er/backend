@@ -1,0 +1,46 @@
+name: '🚀 이슈 생성'
+description: '새로운 기능, 버그 수정, 리팩토링 등을 위한 이슈를 생성합니다.'
+title: '[Label] 이슈 제목을 입력해주세요'
+labels: []
+body:
+  - type: input
+      id: parentKey
+      attributes:
+        label: '🎟️ 상위 작업 (Epic Number)'
+        description: '상위 작업의 Epic Number를 기입해주세요'
+        placeholder: 'FLOW-00'
+      validations:
+        required: true
+
+  - type: dropdown
+    id: label
+    attributes:
+      label: '🏷️ 이슈 종류 (Label)'
+      description: '이슈에 가장 적합한 라벨을 하나 선택해주세요.'
+      options:
+        - 'feat: 새로운 기능 추가'
+        - 'fix: 버그 수정'
+        - 'refactor: 코드 리팩토링'
+        - 'docs: 문서 작업'
+        - 'chore: 빌드, 설정 등 기타 작업'
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: '📝 상세 내용 (Description)'
+      description: '이슈에 대한 구체적인 설명을 작성해주세요. (배경, 목적 등)'
+      placeholder: '예: 현재 OO 기능은 사용자가 XX할 때 불편함이 있어, 이를 개선하고자 합니다.'
+    validations:
+      required: true
+
+  - type: textarea
+    id: tasks
+    attributes:
+      label: '✅ 체크리스트 (Tasks)'
+      description: '이 이슈를 완료하기 위해 필요한 작업 목록을 구체적으로 작성해주세요.'
+      value: |
+        - [ ] 
+    validations:
+      required: true

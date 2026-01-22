@@ -2,15 +2,16 @@ name: '🚀 이슈 생성'
 description: '새로운 기능, 버그 수정, 리팩토링 등을 위한 이슈를 생성합니다.'
 title: '[Label] 이슈 제목을 입력해주세요'
 labels: []
+
 body:
   - type: input
-      id: parentKey
-      attributes:
-        label: '🎟️ 상위 작업 (Epic Number)'
-        description: '상위 작업의 Epic Number를 기입해주세요'
-        placeholder: 'FLOW-00'
-      validations:
-        required: true
+    id: parentKey
+    attributes:
+      label: '🎟️ 상위 작업 (Epic Number)'
+      description: '상위 작업의 Epic Number를 기입해주세요'
+      placeholder: 'FLOW-00'
+    validations:
+      required: true
 
   - type: dropdown
     id: label
@@ -41,6 +42,7 @@ body:
       label: '✅ 체크리스트 (Tasks)'
       description: '이 이슈를 완료하기 위해 필요한 작업 목록을 구체적으로 작성해주세요.'
       value: |
-        - [ ] 
+        - [ ] 작업 1
+        - [ ] 작업 2
     validations:
       required: true

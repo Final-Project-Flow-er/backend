@@ -227,7 +227,13 @@ develop & main branch로 merge할 때에는 pull request가 필요합니다. pul
 <br/>
 [chore] #5 spring data JPA 의존성 추가
 
-<br/>
+
+</div>
+</details>
+
+<details>
+<summary style = " font-size:1.3em;">Test Code</summary>
+<div markdown="1">
 
 ### ☀️ Test Code Convention
 
@@ -276,6 +282,6 @@ src/test/java/com/example/order/OrderServiceTest.java
   - @DataJpaTest 사용
   - Mock 대상: 없음
   - 테스트 목적: 쿼리 메소드, 데이터 접근 검증
-
+ 
 </div>
 </details>

@@ -239,7 +239,7 @@ develop & main branch로 merge할 때에는 pull request가 필요합니다. pul
 ---
 
 ### 1. 테스트 네이밍 컨벤션
-// 메서드명 패턴: MethodName_Given상황_Should기대결과
+- 메서드명 패턴: MethodName_Given상황_Should기대결과
 ```
 @Test
 void createOrder_GivenValidProduct_ShouldReturnOrderId() {

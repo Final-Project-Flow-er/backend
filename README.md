@@ -227,5 +227,55 @@ develop & main branch로 merge할 때에는 pull request가 필요합니다. pul
 <br/>
 [chore] #5 spring data JPA 의존성 추가
 
+<br/>
+
+### ☀️ Test Code Convention
+
+### 1. 테스트 네이밍 컨벤션
+// 메서드명 패턴: MethodName_Given상황_Should기대결과
+```
+@Test
+void createOrder_GivenValidProduct_ShouldReturnOrderId() {
+    // given
+    Product product = new Product("떡볶이", 5000);
+    
+    // when
+    Long orderId = orderService.createOrder(product);
+    
+    // then
+    assertThat(orderId).isNotNull();
+}
+```
+
+### 2. 테스트 구조
+1. Arrange (given): 테스트 데이터와 Mock 설정
+2. Act (when): 테스트 대상 메소드 실행
+3. Assert (then): 결과 검증
+- 기존 사용하던 방식과 동일
+- 모든 테스트 메소드는 해당 구조를 따르도록 작성
+
+### 3. 패키지 구조
+테스트 구조는 원본 클래스와 동일한 패키지 구조를 유지
+```
+src/main/java/com/example/order/OrderService.java
+src/test/java/com/example/order/OrderServiceTest.java
+```
+- 서비스 코드가 분리되면 테스트 코드도 분리되어야 함
+
+
+### 4. 테스트 코드 작성 대상
+- Controller
+  - @WebMvcTest 사용
+  - Mock 대상: Service
+  - 테스트 목적: HTTP 통신, 유효성 검증
+- Service
+  - @SpringBootTest 사용
+  - Mock 대상: 없음. 실제 DB 사용
+  - 테스트 목적: 비즈니스 로직, 트랜잭션 검증
+- Repository
+  - @DataJpaTest 사용
+  - Mock 대상: 없음
+  - 테스트 목적: 쿼리 메소드, 데이터 접근 검증
+
 </div>
 </details>

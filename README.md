@@ -231,11 +231,12 @@ develop & main branch로 merge할 때에는 pull request가 필요합니다. pul
 </div>
 </details>
 
-<details>
-<summary style = " font-size:1.3em;">Test Code</summary>
-<div markdown="1">
+<br/>
+
 
 ### ☀️ Test Code Convention
+
+---
 
 ### 1. 테스트 네이밍 컨벤션
 // 메서드명 패턴: MethodName_Given상황_Should기대결과
@@ -283,5 +284,4 @@ src/test/java/com/example/order/OrderServiceTest.java
   - Mock 대상: 없음
   - 테스트 목적: 쿼리 메소드, 데이터 접근 검증
  
-</div>
-</details>
+

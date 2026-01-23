@@ -284,4 +284,6 @@ src/test/java/com/example/order/OrderServiceTest.java
   - Mock 대상: 없음
   - 테스트 목적: 쿼리 메소드, 데이터 접근 검증
  
-
+<br/>
+<br/>
+<br/>

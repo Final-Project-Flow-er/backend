@@ -22,25 +22,25 @@ import java.math.BigDecimal;
 @Builder
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class FranchiseOrderItems extends BaseEntity {
+public class HeadOrderItems extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long franchiseOrderItemId;  // pk 발주에 포함된 상품 식별 키
+    private Long head_order_item_id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "franchise_order_id")
-    private FranchiseOrders franchiseOrders;    // fk 가맹점 발주 식별 키
+    @JoinColumn(name = "head_order_id")
+    private HeadOrders headOrders;
 
     @Column(nullable = false)
-    private Long productId; // 제품 식별 번호
+    private Long product_id;
 
     @Column(nullable = false)
     private Integer quantity;
 
     @Column(nullable = false, precision = 19, scale = 2)
-    private BigDecimal unitPrice;
+    private BigDecimal unit_price;
 
     @Column(nullable = false, precision = 19, scale = 2)
-    private BigDecimal totalPrice;
+    private BigDecimal total_price;
 }

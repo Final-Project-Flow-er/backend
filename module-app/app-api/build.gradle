@@ -1,0 +1,28 @@
+dependencies {
+    // 도메인 모듈 조립
+    implementation project(':domain-orders')
+    // core는 도메인 모듈들이 들고 있으니 자동 포함
+
+    // 웹 서버 설정
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+    // DB 드라이버 (실행 시점에만 필요)
+    runtimeOnly 'org.mariadb.jdbc:mariadb-java-client'
+
+    // Swagger (SpringDoc)
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0'
+}
+
+// 이 모듈만 실행 가능한 Jar로 만듦
+bootJar {
+    enabled = true
+    mainClass='com.chaing.api.ChaingApiApplication'
+}
+jar {
+    enabled = false
+}
+
+bootRun {
+    mainClass='com.chaing.api.ChaingApiApplication'
+}

@@ -1,17 +1,64 @@
 package com.chaing.domain.orders.entity;
 
 import com.chaing.core.entity.BaseEntity;
+import com.chaing.domain.orders.enums.FranchiseOrderStatus;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
 
 @Entity
+@Getter
+@Builder
+@AllArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class FranchiseOrders extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long franchiseOrderId;
+    private Long franchiseOrderId;  // pk 가맹점 발주 코드
 
+    /*@ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "franchise_id")
+    private Franchise franchiseId;  // fk 가맹점 번호*/
 
+    @Column(nullable = false)
+    private String orderCode;
+
+    @Column(nullable = false)
+    private String username;
+
+    @Column(nullable = false)
+    private String phoneNumber;
+
+    @Column(nullable = false)
+    private String address;
+
+    @Column
+    private String requirement;
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    private FranchiseOrderStatus orderStatus = FranchiseOrderStatus.PENDING;
+
+    @Column(nullable = false)
+    private Integer totalQuantity;
+
+    @Column(nullable = false, precision = 19, scale = 2)
+    private BigDecimal totalAmount;
+
+    @Column(nullable = false)
+    private LocalDate deliveryDate;
 }

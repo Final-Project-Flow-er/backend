@@ -1,7 +1,6 @@
 package com.chaing.domain.orders.entity;
 
-import com.chaing.core.entity.BaseEntity;
-import com.chaing.domain.orders.enums.FranchiseOrderStatus;
+import com.chaing.domain.orders.enums.HeadOrderStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -23,18 +22,14 @@ import java.time.LocalDateTime;
 @Builder
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class FranchiseOrders extends BaseEntity {
+public class HeadOrder {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long franchiseOrderId;  // pk 가맹점 발주 코드
-
-    /*@ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "franchise_id")
-    private Franchise franchiseId;  // fk 가맹점 번호*/
+    private Long headOrderId;
 
     @Column(nullable = false)
-    private String orderCode;
+    private String orderNumber;
 
     @Column(nullable = false)
     private String username;
@@ -43,7 +38,7 @@ public class FranchiseOrders extends BaseEntity {
     private String phoneNumber;
 
     @Column(nullable = false)
-    private String address;
+    private LocalDateTime manufactureDate;
 
     @Column
     private String requirement;
@@ -51,7 +46,7 @@ public class FranchiseOrders extends BaseEntity {
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     @Builder.Default
-    private FranchiseOrderStatus orderStatus = FranchiseOrderStatus.PENDING;
+    private HeadOrderStatus orderStatus = HeadOrderStatus.PENDING;
 
     @Column(nullable = false)
     private Integer totalQuantity;
@@ -60,5 +55,6 @@ public class FranchiseOrders extends BaseEntity {
     private BigDecimal totalAmount;
 
     @Column(nullable = false)
-    private LocalDateTime deliveryDate;
+    @Builder.Default
+    private Boolean isRegular = true;
 }

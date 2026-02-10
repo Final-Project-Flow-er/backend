@@ -22,7 +22,7 @@ import java.math.BigDecimal;
 @Builder
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class FranchiseOrderItems extends BaseEntity {
+public class FranchiseOrderItem extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -30,7 +30,7 @@ public class FranchiseOrderItems extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "franchise_order_id")
-    private FranchiseOrders franchiseOrders;    // fk 가맹점 발주 식별 키
+    private FranchiseOrder franchiseOrder;    // fk 가맹점 발주 식별 키
 
     @Column(nullable = false)
     private Long productId; // 제품 식별 번호

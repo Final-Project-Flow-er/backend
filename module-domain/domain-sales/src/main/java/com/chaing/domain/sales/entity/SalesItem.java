@@ -19,7 +19,7 @@ import java.math.BigDecimal;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
-public class SalesItems {
+public class SalesItem {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

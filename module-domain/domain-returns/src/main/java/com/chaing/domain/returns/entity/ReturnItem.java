@@ -1,8 +1,10 @@
-package com.chaing.domain.orders.entity;
+package com.chaing.domain.returns.entity;
 
-import com.chaing.core.entity.BaseEntity;
+import com.chaing.domain.returns.enums.ReturnItemStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -20,27 +22,33 @@ import java.math.BigDecimal;
 @Entity
 @Getter
 @Builder
-@AllArgsConstructor(access = AccessLevel.PROTECTED)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class HeadOrderItems extends BaseEntity {
+@AllArgsConstructor(access = AccessLevel.PROTECTED)
+public class ReturnItem {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long headOrderItemId;
+    private Long returnItemId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "head_order_id")
-    private HeadOrders headOrders;
+    @JoinColumn(name = "return_id")
+    private Return aReturn;    // fk
 
     @Column(nullable = false)
-    private Long productId;
+    private Long franchiseOrderItemId;  // fk지만 도메인 다르니까 값만 가짐
 
     @Column(nullable = false)
     private Integer quantity;
 
     @Column(nullable = false, precision = 19, scale = 2)
-    private BigDecimal unitPrice;
+    private BigDecimal totalReturnPrice;
 
-    @Column(nullable = false, precision = 19, scale = 2)
-    private BigDecimal totalPrice;
+    @Column(nullable = false)
+    @Builder.Default
+    private Boolean isInspected = false;
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    private ReturnItemStatus returnItemStatus = ReturnItemStatus.BEFORE_INSPECTION;
 }

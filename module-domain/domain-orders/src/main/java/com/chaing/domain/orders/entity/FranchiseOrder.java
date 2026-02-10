@@ -33,7 +33,7 @@ public class FranchiseOrder extends BaseEntity {
     @JoinColumn(name = "franchise_id")
     private Franchise franchiseId;  // fk 가맹점 번호*/
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String orderCode;
 
     @Column(nullable = false)

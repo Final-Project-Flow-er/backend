@@ -32,7 +32,7 @@ public class ReturnItem {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "return_id")
-    private Return aReturn;    // fk
+    private Returns returns;    // fk
 
     @Column(nullable = false)
     private Long franchiseOrderItemId;  // fk지만 도메인 다르니까 값만 가짐

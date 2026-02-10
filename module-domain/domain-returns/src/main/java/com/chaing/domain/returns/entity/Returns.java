@@ -23,7 +23,7 @@ import java.math.BigDecimal;
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
-public class Return extends BaseEntity {
+public class Returns extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -32,7 +32,7 @@ public class Return extends BaseEntity {
     @Column(nullable = false)
     private Long franchiseOrderId;  // FranchiseOrderId
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String returnCode;
 
     @Column(nullable = false)

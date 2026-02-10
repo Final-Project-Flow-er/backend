@@ -38,7 +38,7 @@ public class SalesItem {
     @Column(nullable = false)
     private String productName;    // snapshot
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String lot;             // snapshot
 
     @Column(nullable = false, precision = 19, scale = 2)

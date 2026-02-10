@@ -29,7 +29,7 @@ public class Sales {
     @Column(nullable = false)
     private Long franchiseId;   // fk, 타 도메인이기 때문에 기본 키 값만 가짐
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String salesNumber;
 
     @Column(nullable = false)

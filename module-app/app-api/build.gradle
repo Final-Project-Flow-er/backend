@@ -1,6 +1,7 @@
 dependencies {
     // 도메인 모듈 조립
     implementation project(':domain-orders')
+    implementation project(':domain-returns')
     // core는 도메인 모듈들이 들고 있으니 자동 포함
 
     // 웹 서버 설정

@@ -26,21 +26,21 @@ public class HeadOrderItems extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long head_order_item_id;
+    private Long headOrderItemId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "head_order_id")
     private HeadOrders headOrders;
 
     @Column(nullable = false)
-    private Long product_id;
+    private Long productId;
 
     @Column(nullable = false)
     private Integer quantity;
 
     @Column(nullable = false, precision = 19, scale = 2)
-    private BigDecimal unit_price;
+    private BigDecimal unitPrice;
 
     @Column(nullable = false, precision = 19, scale = 2)
-    private BigDecimal total_price;
+    private BigDecimal totalPrice;
 }

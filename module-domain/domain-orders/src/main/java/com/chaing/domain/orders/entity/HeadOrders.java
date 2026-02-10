@@ -26,38 +26,39 @@ public class HeadOrders {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long head_order_id;
+    private Long headOrderId;
 
     @Column(nullable = false)
-    private String order_number;
+    private String orderNumber;
 
     @Column(nullable = false)
     private String username;
 
     @Column(nullable = false)
-    private String phone_number;
+    private String phoneNumber;
 
     @Column(nullable = false)
-    private LocalDateTime manufacture_date;
+    private LocalDateTime manufactureDate;
 
     @Column
     private String requirement;
 
     @Column(nullable = false)
-    private LocalDateTime ordered_at;
-
-    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     @Builder.Default
-    private HeadOrderStatus order_status = HeadOrderStatus.PENDING;
+    private HeadOrderStatus orderStatus = HeadOrderStatus.PENDING;
 
     @Column(nullable = false)
-    private Integer total_quantity;
+    private Integer totalQuantity;
 
     @Column(nullable = false, precision = 19, scale = 2)
-    private BigDecimal total_amount;
+    private BigDecimal totalAmount;
 
     @Column(nullable = false)
     @Builder.Default
     private Boolean isRegular = true;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private Boolean isCanceled = false;
 }

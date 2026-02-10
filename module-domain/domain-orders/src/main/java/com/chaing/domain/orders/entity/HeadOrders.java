@@ -57,8 +57,4 @@ public class HeadOrders {
     @Column(nullable = false)
     @Builder.Default
     private Boolean isRegular = true;
-
-    @Column(nullable = false)
-    @Builder.Default
-    private Boolean isCanceled = false;
 }

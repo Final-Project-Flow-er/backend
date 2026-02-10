@@ -61,8 +61,4 @@ public class FranchiseOrders extends BaseEntity {
 
     @Column(nullable = false)
     private LocalDateTime deliveryDate;
-
-    @Column(nullable = false)
-    @Builder.Default
-    private Boolean isCanceled = false;
 }

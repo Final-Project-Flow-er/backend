@@ -14,4 +14,20 @@ public class SwaggerConfig {
                 .pathsToMatch("/api/v1/orders/**")
                 .build();
     }
+
+    @Bean
+    public GroupedOpenApi returnApi() {
+        return GroupedOpenApi.builder()
+                .group("반품(Return)")
+                .pathsToMatch("/api/v1/returns/**")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi salesApi() {
+        return GroupedOpenApi.builder()
+                .group("판매(Sales)")
+                .pathsToMatch("/api/v1/sales/**")
+                .build();
+    }
 }

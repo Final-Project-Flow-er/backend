@@ -19,7 +19,7 @@ public class SwaggerConfig {
     public GroupedOpenApi returnApi() {
         return GroupedOpenApi.builder()
                 .group("반품(Return)")
-                .pathsToMatch("/api/v1/returns/**")
+                .pathsToMatch("/api/v1/franchise/returns/**")
                 .build();
     }
 
@@ -27,7 +27,7 @@ public class SwaggerConfig {
     public GroupedOpenApi salesApi() {
         return GroupedOpenApi.builder()
                 .group("판매(Sales)")
-                .pathsToMatch("/api/v1/sales/**")
+                .pathsToMatch("/api/v1/franchise/sales/**")
                 .build();
     }
 }

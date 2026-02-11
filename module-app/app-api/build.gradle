@@ -3,7 +3,9 @@ dependencies {
     implementation project(':domain-orders')
     implementation project(':domain-returns')
     implementation project(':domain-sales')
-    // core는 도메인 모듈들이 들고 있으니 자동 포함
+
+    // core에 implementation으로 갖고 있으니 여기는 따로 추가해 줘야함
+    implementation project(':module-core')
 
     // 웹 서버 설정
     implementation 'org.springframework.boot:spring-boot-starter-web'

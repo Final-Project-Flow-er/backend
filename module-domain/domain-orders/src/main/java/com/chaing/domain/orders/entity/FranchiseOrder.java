@@ -29,9 +29,8 @@ public class FranchiseOrder extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long franchiseOrderId;  // pk 가맹점 발주 코드
 
-    /*@ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "franchise_id")
-    private Franchise franchiseId;  // fk 가맹점 번호*/
+    @Column(nullable = false)
+    private Long franchiseId;  // fk 가맹점 번호
 
     @Column(nullable = false, unique = true)
     private String orderCode;

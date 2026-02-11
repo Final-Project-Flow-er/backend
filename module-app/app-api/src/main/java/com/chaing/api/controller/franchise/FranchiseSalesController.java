@@ -1,4 +1,45 @@
 package com.chaing.api.controller.franchise;
 
+import com.chaing.api.dto.franchise.sales.request.FranchiseSalesRequest;
+import com.chaing.api.dto.franchise.sales.response.FranchiseSalesResponse;
+import com.chaing.core.dto.ApiResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+
+@RestController
+@Tag(name = "Franchise Sales API", description = "가맹점 판매 관련 API")
+@RequestMapping("/api/v1/franchise/sales")
 public class FranchiseSalesController {
+
+    @Operation(summary = "판매 조회", description = "가맹점 id로 해당 가맹점의 판매 전체 조회")
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<FranchiseSalesResponse>>> getAllSales() {
+        return ResponseEntity.ok(ApiResponse.success(List.of(FranchiseSalesResponse.builder().build())));
+    }
+
+    @Operation(summary = "판매 취소", description = "가맹점 id와 판매 코드로 특정 판매 취소")
+    @PatchMapping("/{sales-number}")
+    public ResponseEntity<ApiResponse<FranchiseSalesResponse>> cancelSales(
+            @PathVariable("sales-number") String salesNumber
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(FranchiseSalesResponse.builder().build()));
+    }
+
+    @Operation(summary = "판매 생성", description = "가맹점 id로 판매 생성")
+    @PostMapping
+    public ResponseEntity<ApiResponse<FranchiseSalesResponse>> createSale(
+            @RequestBody FranchiseSalesRequest request
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(FranchiseSalesResponse.builder().build()));
+    }
 }

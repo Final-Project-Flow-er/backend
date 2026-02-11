@@ -8,10 +8,18 @@ import org.springframework.context.annotation.Configuration;
 public class SwaggerConfig {
 
     @Bean
-    public GroupedOpenApi orderApi() {
+    public GroupedOpenApi franchiseOrderApi() {
         return GroupedOpenApi.builder()
-                .group("발주(Order)")
-                .pathsToMatch("/api/v1/orders/**")
+                .group("가맹점 발주(Order)")
+                .pathsToMatch("/api/v1/franchise/orders/**")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi headOfficeOrderApi() {
+        return GroupedOpenApi.builder()
+                .group("본사 발주(Head Office Order)")
+                .pathsToMatch("/api/v1/head-office/orders/**")
                 .build();
     }
 

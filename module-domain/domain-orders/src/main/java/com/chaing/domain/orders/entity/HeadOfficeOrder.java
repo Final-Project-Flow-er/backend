@@ -22,11 +22,11 @@ import java.time.LocalDateTime;
 @Builder
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class HeadOrder {
+public class HeadOfficeOrder {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long headOrderId;
+    private Long headOfficeOrderId;
 
     @Column(nullable = false, unique = true)
     private String orderNumber;

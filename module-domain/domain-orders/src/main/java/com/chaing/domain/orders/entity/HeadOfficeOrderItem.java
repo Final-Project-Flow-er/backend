@@ -32,15 +32,15 @@ import java.math.BigDecimal;
                 )
         }
 )
-public class HeadOrderItem extends BaseEntity {
+public class HeadOfficeOrderItem extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long headOrderItemId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "head_order_id")
-    private HeadOrder headOrder;
+    @JoinColumn(name = "head_office_order_id")
+    private HeadOfficeOrder headOfficeOrder;
 
     @Column(nullable = false)
     private Long productId;

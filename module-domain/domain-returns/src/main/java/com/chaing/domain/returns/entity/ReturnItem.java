@@ -31,11 +31,11 @@ public class ReturnItem {
     private Long returnItemId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "return_id")
+    @JoinColumn(name = "return_id", unique = true)
     private Returns returns;    // fk
 
     @Column(nullable = false)
-    private Long franchiseOrderItemId;  // fk지만 도메인 다르니까 값만 가짐
+    private Long franchiseOrderItemId;  // fk
 
     @Column(nullable = false)
     private Integer quantity;

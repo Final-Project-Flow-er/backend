@@ -4,7 +4,7 @@ plugins {
     id 'jacoco'
 }
 
-def jacocoProjectNames = ["core", "api-server", "b"]
+def jacocoProjectNames = ["domain-orders", "domain-returns", "domain-sales"]
 
 // 모든 하위 프로젝트 공통 설정
 subprojects {
@@ -16,7 +16,7 @@ subprojects {
     apply plugin: 'java-library' // api, implementation 구분을 위해 필요
     apply plugin: 'org.springframework.boot'
     apply plugin: 'io.spring.dependency-management'
-    apply
+    apply plugin: 'jacoco'
 
     configurations {
         compileOnly {
@@ -44,11 +44,80 @@ subprojects {
         testImplementation 'org.springframework.boot:spring-boot-starter-test'
     }
 
+    test {
+        useJUnitPlatform()
+        finalizedBy 'jacocoTestReport'
+    }
+
+    jacocoTestReport {
+        dependsOn test
+        reports {
+            html.required = true
+            xml.required = true
+            csv.required = false
+        }
+
+        // 롬복(Lombok)이나 Q클래스 제외 설정 (필요 시)
+        def Qdomains = []
+        for (qPattern in '**/QA'..'**/QZ') {
+            Qdomains.add(qPattern + '*')
+        }
+
+        // 제외할 파일 패턴 리스트
+        def exclusions = [
+                "**/config/**",
+                "**/dto/**",
+                "**/*Application*",
+                "**/entity/Q*"
+        ] + Qdomains
+
+        // 클래스 디렉토리 필터링 (afterEvaluate 필요 없음)
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: exclusions)
+        }))
+    }
+
+    jacocoTestCoverageVerification {
+        violationRules {
+            rule {
+                enabled = true
+                element = 'CLASS'
+
+                // 라인 커버리지 80% 이상
+                limit {
+                    counter = 'LINE'
+                    value = 'COVEREDRATIO'
+                    minimum = 0.80
+                }
+            }
+        }
+    }
+
     // BootJar 설정: 실행 가능한 jar는 app-api만 만들고 나머지는 끔
     bootJar {
         enabled = false
     }
     jar {
         enabled = true
+    }
+}
+
+task jacocoRootReport(type: JacocoReport) {
+    description = 'Generates an aggregate report from all subprojects'
+    dependsOn subprojects.test
+
+    // 측정 대상 모듈만 필터링
+    def projects = subprojects.findAll { jacocoProjectNames.contains(it.name) }
+
+    // 소스 코드와 클래스 파일, 실행 데이터(exec)를 모두 합침
+    sourceDirectories.setFrom projects.sourceSets.main.allSource.srcDirs
+    classDirectories.setFrom projects.sourceSets.main.output
+    executionData.setFrom projects.jacocoTestReport.executionData
+
+    reports {
+        html.required = true
+        xml.required = true
+        csv.required = false
+        html.outputLocation = layout.buildDirectory.dir('jacoco/html')
     }
 }

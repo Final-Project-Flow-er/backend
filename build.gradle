@@ -2,6 +2,16 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '3.2.2'
     id 'jacoco'
+    id "org.sonarqube" version "4.4.1.3373"
+}
+
+sonarqube {
+    properties {
+        property "sonar.projectKey", "chaing-backend"
+        property "sonar.host.url", "http://beyond21.iptime.org:7011"
+        property "sonar.token", "sqp_af86ebfcb52046b70985dd61ed8987912936db86"
+        property "sonar.coverage.jacoco.xmlReportPaths", "build/jacoco/html/jacocoRootReport.xml"
+    }
 }
 
 def jacocoProjectNames = ["domain-orders", "domain-returns", "domain-sales"]
@@ -52,9 +62,12 @@ subprojects {
     jacocoTestReport {
         dependsOn test
         reports {
-            html.required = true
-            xml.required = true
-            csv.required = false
+            html.required.set(true)
+            xml.required.set(true)
+            csv.required.set(true)
+
+            html.outputLocation = layout.buildDirectory.dir('jacoco/html')
+            xml.outputLocation = layout.buildDirectory.file('jacoco/xml/jacocoRootReport.xml')
         }
 
         // 롬복(Lombok)이나 Q클래스 제외 설정 (필요 시)
@@ -115,9 +128,11 @@ task jacocoRootReport(type: JacocoReport) {
     executionData.setFrom projects.jacocoTestReport.executionData
 
     reports {
-        html.required = true
-        xml.required = true
-        csv.required = false
-        html.outputLocation = layout.buildDirectory.dir('jacoco/html')
+        html.required.set(true)
+        xml.required.set(true)
+        csv.required.set(true)
+
+        html.outputLocation.set(layout.buildDirectory.dir('jacoco/html'))
+        xml.outputLocation.set(layout.buildDirectory.file('jacoco/xml/jacocoRootReport.xml'))
     }
 }

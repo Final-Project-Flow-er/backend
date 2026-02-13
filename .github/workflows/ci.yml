@@ -1,0 +1,40 @@
+name: ci.yml
+
+on:
+  push:
+    branches: [ "dev", "main" ]  # dev나 main에 푸시될 때 실행
+  pull_request:
+    branches: [ "dev", "main" ]  # dev나 main으로 향하는 PR이 열릴 때 실행 (⭐중요)
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # 1. JDK 17 설정 (사용하시는 버전에 맞게 수정하세요. 보통 17이나 21)
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      # 2. 그레이들 캐싱 (빌드 속도 향상)
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      # 3. gradlew 실행 권한 부여
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      # 4. 빌드 및 소나큐브 분석 실행 (⭐ 핵심)
+      # build 태스크가 실행되면서 JaCoCo 검증(80% 체크)도 같이 수행됩니다.
+      # 실패 시 이 단계에서 에러가 나고, GitHub PR에서 Merge가 막히게 됩니다.
+      - name: Build and Analyze
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        run: ./gradlew clean build sonar

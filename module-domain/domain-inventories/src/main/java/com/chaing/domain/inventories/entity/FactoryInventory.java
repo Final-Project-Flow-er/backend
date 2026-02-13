@@ -41,9 +41,6 @@ public class FactoryInventory extends BaseEntity {
     @Column(nullable = false)
     private Long productId;
 
-    // 어느 공장인지 (지금은 하나지만 확장성)
-    private String factoryCode;
-
     // 제조일자
     @NotBlank
     @Column(nullable = false)

@@ -37,6 +37,7 @@ public class FactoryInventory extends BaseEntity {
     private String serialCode;
 
     // 제품ID
+    @NotNull
     @Column(nullable = false)
     private Long productId;
 

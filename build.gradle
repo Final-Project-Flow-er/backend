@@ -115,6 +115,13 @@ subprojects {
     }
 }
 
+bootJar {
+    enabled = false
+}
+jar {
+    enabled = true
+}
+
 task jacocoRootReport(type: JacocoReport) {
     description = 'Generates an aggregate report from all subprojects'
     dependsOn subprojects.test

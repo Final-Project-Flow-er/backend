@@ -11,6 +11,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -35,12 +36,12 @@ public class StoreInventory extends BaseEntity {
     private String serialCode;
 
     // 제품ID
-    @NotBlank
+    @NotNull
     @Column(nullable = false)
     private Long productId;
 
     // 제조일자
-    @NotBlank
+    @NotNull
     @Column(nullable = false)
     private LocalDate manufactureDate;
 

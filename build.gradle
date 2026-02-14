@@ -52,6 +52,7 @@ subprojects {
 
         // test
         testImplementation 'org.springframework.boot:spring-boot-starter-test'
+        testImplementation 'com.h2database:h2'
     }
 
     test {
@@ -81,7 +82,7 @@ subprojects {
                 "**/config/**",
                 "**/dto/**",
                 "**/*Application*",
-                "**/entity/Q*"
+                "**/entity/**"
         ] + Qdomains
 
         // 클래스 디렉토리 필터링 (afterEvaluate 필요 없음)
@@ -106,6 +107,8 @@ subprojects {
         }
     }
 
+    check.dependsOn jacocoTestCoverageVerification
+
     // BootJar 설정: 실행 가능한 jar는 app-api만 만들고 나머지는 끔
     bootJar {
         enabled = false
@@ -113,6 +116,13 @@ subprojects {
     jar {
         enabled = true
     }
+}
+
+bootJar {
+    enabled = false
+}
+jar {
+    enabled = true
 }
 
 task jacocoRootReport(type: JacocoReport) {

@@ -1,0 +1,60 @@
+package com.chaing.domain.franchises.entity;
+
+import com.chaing.core.entity.BaseEntity;
+import com.chaing.domain.franchises.enums.FranchiseStatus;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
+
+@Entity
+@Getter
+@Builder
+@AllArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class Franchise extends BaseEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long franchiseId;
+
+    @Column(nullable = false, unique = true)
+    private String franchiseCode;
+
+    @Column(nullable = false)
+    private String name;
+
+    @Column(nullable = false)
+    private String address;
+
+    @Column(nullable = false)
+    private String phone;
+
+    @Column(nullable = false)
+    private String operatingDays;
+
+    @Column(nullable = false)
+    private String operatingHours;
+
+    private String imageUrl;
+
+    @Builder.Default
+    private int warningCount = 0;
+
+    private LocalDateTime penaltyEndDate;
+
+    @Builder.Default
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private FranchiseStatus status = FranchiseStatus.ACTIVE;
+}

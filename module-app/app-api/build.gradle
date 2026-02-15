@@ -4,6 +4,7 @@ dependencies {
     implementation project(':domain-returns')
     implementation project(':domain-sales')
     implementation project(':domain-inventories')
+    implementation project(':domain-inventorylogs')
 
     // core에 implementation으로 갖고 있으니 여기는 따로 추가해 줘야함
     implementation project(':module-core')

@@ -8,6 +8,7 @@ include 'domain-orders'
 include 'domain-returns'
 include 'domain-sales'
 include 'domain-inventories'
+include 'domain-inventorylogs'
 
 // 애플리케이션 모듈
 include 'app-api'
@@ -18,3 +19,4 @@ project(':domain-orders').projectDir = file('module-domain/domain-orders')
 project(':domain-returns').projectDir = file('module-domain/domain-returns')
 project(':domain-sales').projectDir = file('module-domain/domain-sales')
 project(':domain-inventories').projectDir = file('module-domain/domain-inventories')
+project(':domain-inventorylogs').projectDir = file('module-domain/domain-inventorylogs')

@@ -9,6 +9,7 @@ include 'domain-returns'
 include 'domain-sales'
 include 'domain-inventories'
 include 'domain-users'
+include 'domain-notices'
 
 // 애플리케이션 모듈
 include 'app-api'
@@ -20,3 +21,4 @@ project(':domain-returns').projectDir = file('module-domain/domain-returns')
 project(':domain-sales').projectDir = file('module-domain/domain-sales')
 project(':domain-inventories').projectDir = file('module-domain/domain-inventories')
 project(':domain-users').projectDir = file('module-domain/domain-users')
+project(':domain-notices').projectDir = file('module-domain/domain-notices')

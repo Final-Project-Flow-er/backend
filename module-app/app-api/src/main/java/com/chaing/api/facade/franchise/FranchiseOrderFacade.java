@@ -26,4 +26,14 @@ public class FranchiseOrderFacade {
 
         return FranchiseOrderResponse.from(orders);
     }
+
+    // 가맹점의 발주 번호에 따른 특정 발주 조회
+    public FranchiseOrderResponse getOrder(String username, String orderCode) {
+        // franchiseId username으로 조회하는 로직 추가 필요
+        Long franchiseId = 1L;
+
+        FranchiseOrder order = franchiseOrderService.getOrder(franchiseId, username, orderCode);
+
+        return FranchiseOrderResponse.from(order);
+    }
 }

@@ -22,6 +22,14 @@ import java.math.BigDecimal;
 @Builder
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Table(
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_franchise_order_product_id",
+                        columnNames = {"franchise_order_id", "product_id"}
+                )
+        }
+)
 public class FranchiseOrderItem extends BaseEntity {
 
     @Id
@@ -32,7 +40,7 @@ public class FranchiseOrderItem extends BaseEntity {
     @JoinColumn(name = "franchise_order_id")
     private FranchiseOrder franchiseOrder;    // fk 가맹점 발주 식별 키
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private Long productId; // 제품 식별 번호
 
     @Column(nullable = false)
@@ -43,4 +51,8 @@ public class FranchiseOrderItem extends BaseEntity {
 
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal totalPrice;
+
+    public void setFranchiseOrder(FranchiseOrder franchiseOrder) {
+        this.franchiseOrder = franchiseOrder;
+    }
 }

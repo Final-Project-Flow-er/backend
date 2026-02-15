@@ -60,4 +60,12 @@ public class FranchiseOrder extends BaseEntity {
 
     @Column(nullable = false)
     private LocalDateTime deliveryDate;
+
+    @OneToMany(mappedBy = "franchiseOrder", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<FranchiseOrderItem> franchiseOrderItems = new ArrayList<>();
+
+    public void addOrderItem(FranchiseOrderItem item) {
+        this.franchiseOrderItems.add(item);
+        item.setFranchiseOrder(this);
+    }
 }

@@ -57,6 +57,8 @@ public class InventoryLog extends BaseEntity {
     private String referenceCode;
 
     // 로그 상태 -> 입고, 출고, 반품입고 ,,,
+    @NotNull
+    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private LogType logType;
 

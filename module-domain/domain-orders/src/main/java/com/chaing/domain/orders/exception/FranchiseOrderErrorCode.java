@@ -1,21 +1,15 @@
-package com.chaing.core.exception;
+package com.chaing.domain.orders.exception;
 
+import com.chaing.core.exception.ErrorCode;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor
-public enum CommonErrorCode implements ErrorCode {
-
-    // 400 Bad Request
-    INVALID_PARAMETER(400, "C001", "유효하지 않은 입력값입니다."),
-    MISSING_PARAMETER(400, "C002", "필수 입력값이 누락되었습니다."),
-
-    // 404 Not Found
-    RESOURCE_NOT_FOUND(404, "C003", "자원을 찾을 수 없습니다."),
+public enum FranchiseOrderErrorCode implements ErrorCode {
 
     // 500 Internal Server Error
-    INTERNAL_SERVER_ERROR(500, "C999", "서버 내부 오류가 발생했습니다.");
+    ORDER_NOT_FOUND(400, "FO001", "해당 발주를 찾을 수 없습니다.");
 
     private final Integer status;
     private final String code;

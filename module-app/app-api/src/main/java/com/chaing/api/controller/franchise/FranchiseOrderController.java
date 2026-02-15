@@ -20,12 +20,18 @@ import java.util.List;
 @RestController
 @Tag(name = "Franchise Order API", description = "가맹점 발주 관련 API")
 @RequestMapping("/api/v1/franchise/orders")
+@RequiredArgsConstructor
 public class FranchiseOrderController {
+
+    private final FranchiseOrderFacade franchiseOrderFacade;
 
     @Operation(summary = "발주 조회", description = "가맹점 id로 해당 가맹점의 발주 전체 조회")
     @GetMapping
     public ResponseEntity<ApiResponse<List<FranchiseOrderResponse>>> getAllOrders() {
-        return ResponseEntity.ok(ApiResponse.success(List.of(FranchiseOrderResponse.builder().build())));
+        //TODO: Spring Security Context에서 값 꺼내오는 걸로 수정해야 함
+        String username = "test";
+
+        return ResponseEntity.ok(ApiResponse.success(franchiseOrderFacade.getAllOrders(username)));
     }
 
     @Operation(summary = "특정 발주 조회", description = "가맹점 id와 발주 번호로 특정 발주 조회")

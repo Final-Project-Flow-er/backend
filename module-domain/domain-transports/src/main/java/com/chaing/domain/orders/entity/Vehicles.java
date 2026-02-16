@@ -4,6 +4,8 @@ package com.chaing.domain.orders.entity;
 import com.chaing.domain.orders.enums.Dispatchable;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -34,6 +36,7 @@ public class Vehicles {
     private String vehicleType;
 
     @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
     private Dispatchable dispatchable;
 
     @Column(nullable = false)

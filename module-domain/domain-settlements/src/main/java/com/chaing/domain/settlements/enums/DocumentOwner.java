@@ -6,6 +6,11 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public enum DocumentOwner {
-    HQ, // 본사
-    FRANCHISE // 가맹점
+
+    HQ("본사"),
+    FRANCHISE("가맹점");
+
+    private String description;
+
+
 }

@@ -6,6 +6,8 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public enum PeriodType {
-    DAILY,
-    MONTHLY
+    DAILY("월별"),
+    MONTHLY("일별");
+
+    private String description;
 }

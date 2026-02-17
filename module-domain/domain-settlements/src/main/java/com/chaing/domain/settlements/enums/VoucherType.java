@@ -1,5 +1,10 @@
 package com.chaing.domain.settlements.enums;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+
+@Getter
+@AllArgsConstructor
 public enum VoucherType {
     SALES, // 매출
     ORDER, // 발주대금

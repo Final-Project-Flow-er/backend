@@ -5,7 +5,7 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public enum PeriodType {
-    DAILY,
-    MONTHLY
+public enum DocumentOwner {
+    HQ, // 본사
+    FRANCHISE // 가맹점
 }

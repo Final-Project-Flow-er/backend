@@ -1,12 +1,13 @@
-package com.chaing.api.dto.franchise.orders.request;
+package com.chaing.domain.orders.support;
 
 import java.math.BigDecimal;
 
 public interface ProductReader {
-    ProductInfo getProduct(Long productId);
+    ProductInfo getProduct(String productCode);
 
     record ProductInfo(
             Long productId,
+            String productCode,
             BigDecimal unitPrice
     ) {}
 }

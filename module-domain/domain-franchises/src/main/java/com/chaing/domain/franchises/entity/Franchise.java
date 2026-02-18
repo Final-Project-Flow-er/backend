@@ -16,6 +16,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 @Entity
 @Getter
@@ -41,10 +42,16 @@ public class Franchise extends BaseEntity {
     private String phone;
 
     @Column(nullable = false)
+    private String representativeName;
+
+    @Column(nullable = false)
     private String operatingDays;
 
     @Column(nullable = false)
-    private String operatingHours;
+    private LocalTime openTime;
+
+    @Column(nullable = false)
+    private LocalTime closeTime;
 
     private String imageUrl;
 

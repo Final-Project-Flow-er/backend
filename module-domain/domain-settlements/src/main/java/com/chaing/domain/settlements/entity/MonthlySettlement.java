@@ -99,6 +99,6 @@ public class MonthlySettlement extends BaseEntity {
     public BigDecimal calculatedHq() {
         return orderAmount.add(commissionFee)
                 .add(deliveryFee)
-                .add(refundAmount);
+                .subtract(refundAmount);
     }
 }

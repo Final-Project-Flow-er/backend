@@ -49,4 +49,9 @@ public class FranchiseOrderService {
         // 발주 수정
         order.update(request);
     }
+
+    // 가맹점 발주 취소
+    public void cancelOrder(FranchiseOrder order) {
+        order.cancel();
+    }
 }

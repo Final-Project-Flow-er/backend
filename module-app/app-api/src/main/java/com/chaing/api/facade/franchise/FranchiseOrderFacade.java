@@ -52,4 +52,17 @@ public class FranchiseOrderFacade {
 
         return FranchiseOrderResponse.from(order);
     }
+
+    // 가맹점 발주 취소
+    @Transactional(rollbackFor = Exception.class)
+    public FranchiseOrderResponse cancelOrder(String username, String orderCode) {
+        // franchiseId username으로 조회하는 로직 추가 필요
+        Long franchiseId = 1L;
+
+        FranchiseOrder order = franchiseOrderService.getOrder(franchiseId, username, orderCode);
+
+        franchiseOrderService.cancelOrder(order);
+
+        return FranchiseOrderResponse.from(order);
+    }
 }

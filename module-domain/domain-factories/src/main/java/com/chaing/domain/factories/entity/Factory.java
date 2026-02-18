@@ -38,6 +38,16 @@ public class Factory extends BaseEntity {
     @Column(nullable = false)
     private String phone;
 
+    @Column(nullable = false)
+    private String representativeName;
+
+    @Column(nullable = false)
+    private String region;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private int productionLineCount = 0;
+
     @Builder.Default
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)

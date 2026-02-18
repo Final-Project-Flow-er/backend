@@ -1,6 +1,7 @@
 package com.chaing.domain.orders.entity;
 
 import com.chaing.core.entity.BaseEntity;
+import com.chaing.domain.orders.dto.info.FranchiseOrderItemInfo;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -18,6 +19,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Entity
 @Getter

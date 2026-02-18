@@ -1,5 +1,6 @@
 package com.chaing.api.facade.franchise;
 
+import com.chaing.api.dto.franchise.orders.request.FranchiseOrderUpdateRequest;
 import com.chaing.api.dto.franchise.orders.response.FranchiseOrderResponse;
 import com.chaing.domain.orders.entity.FranchiseOrder;
 import com.chaing.domain.orders.service.FranchiseOrderService;

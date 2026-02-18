@@ -1,8 +1,13 @@
 package com.chaing.domain.orders.service;
 
+import com.chaing.domain.orders.dto.command.FranchiseOrderUpdateCommand;
+import com.chaing.domain.orders.dto.info.FranchiseOrderItemInfo;
 import com.chaing.domain.orders.entity.FranchiseOrder;
+import com.chaing.domain.orders.entity.FranchiseOrderItem;
+import com.chaing.domain.orders.enums.FranchiseOrderStatus;
 import com.chaing.domain.orders.exception.FranchiseOrderErrorCode;
 import com.chaing.domain.orders.exception.FranchiseOrderException;
+import com.chaing.domain.orders.repository.FranchiseOrderItemRepository;
 import com.chaing.domain.orders.repository.FranchiseOrderRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

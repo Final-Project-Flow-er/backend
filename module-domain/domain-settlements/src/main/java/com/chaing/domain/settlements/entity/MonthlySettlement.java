@@ -19,8 +19,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.net.BindException;
 import java.time.LocalDateTime;
+import java.time.YearMonth;
 
 
 @Entity
@@ -51,7 +51,7 @@ public class MonthlySettlement extends BaseEntity {
     private Long franchiseId;
 
     @Column(name = "settlement_month", nullable = false)
-    private Integer settlementMonth;
+    private YearMonth settlementMonth;
 
     //가맹점 정산
     @Column(nullable = false, precision = 19, scale = 2)

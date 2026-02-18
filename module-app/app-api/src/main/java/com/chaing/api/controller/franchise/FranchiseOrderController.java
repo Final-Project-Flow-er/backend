@@ -48,12 +48,15 @@ public class FranchiseOrderController {
     }
 
     @Operation(summary = "발주 수정", description = "가맹점 id와 발주 번호로 특정 발주 수정")
-    @PatchMapping("/{order-number}")
+    @PatchMapping("/{order-code}")
     public ResponseEntity<ApiResponse<FranchiseOrderResponse>> updateOrder(
-            @PathVariable("order-number") String orderNumber,
+            @PathVariable("order-code") String orderCode,
             @RequestBody FranchiseOrderUpdateRequest request
     ) {
-        return ResponseEntity.ok(ApiResponse.success(FranchiseOrderResponse.builder().build()));
+        //TODO: Spring Security Context에서 값 꺼내오는 걸로 수정해야 함
+        String username = "test";
+
+        return ResponseEntity.ok(ApiResponse.success(franchiseOrderFacade.updateOrder(username, orderCode, request)));
     }
 
     @Operation(summary = "발주 취소", description = "가맹점 id와 발주 번호로 특정 발주 취소")

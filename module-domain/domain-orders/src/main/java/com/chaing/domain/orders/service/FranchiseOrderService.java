@@ -14,6 +14,7 @@ import java.util.List;
 public class FranchiseOrderService {
 
     private final FranchiseOrderRepository franchiseOrderRepository;
+    private final FranchiseOrderItemRepository franchiseOrderItemRepository;
 
     // 가맹점 발주 목록 조회
     public List<FranchiseOrder> getAllOrders(Long franchiseId, String username) {
@@ -24,5 +25,23 @@ public class FranchiseOrderService {
     public FranchiseOrder getOrder(Long franchiseId, String username, String orderCode) {
         return franchiseOrderRepository.findByFranchiseIdAndUsernameAndOrderCode(franchiseId, username, orderCode)
                 .orElseThrow(() -> new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_NOT_FOUND));
+    }
+
+    // 가맹점의 발주 수정
+    public void updateOrder(FranchiseOrder order, FranchiseOrderUpdateCommand request) {
+        // 발주 상태가 PENDING 아니면 예외 발생
+        if (order.getOrderStatus() != FranchiseOrderStatus.PENDING) {
+            throw new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_INVALID_STATUS);
+        }
+
+        // request.items를 뽑아내서 따로 수정
+        for (FranchiseOrderItemInfo item : request.items()) {
+            FranchiseOrderItem orderItem = franchiseOrderItemRepository.findByFranchiseOrder_FranchiseOrderIdAndProductId(order.getFranchiseOrderId(), item.productId())
+                    .orElseThrow(() -> new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_NOT_FOUND));
+            orderItem.update(item);
+        }
+
+        // 발주 수정
+        order.update(request);
     }
 }

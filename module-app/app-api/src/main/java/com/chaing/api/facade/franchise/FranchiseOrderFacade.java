@@ -36,4 +36,19 @@ public class FranchiseOrderFacade {
 
         return FranchiseOrderResponse.from(order);
     }
+
+    // 가맹점의 발주 수정
+    @Transactional(rollbackFor = Exception.class)
+    public FranchiseOrderResponse updateOrder(String username, String orderCode, FranchiseOrderUpdateRequest request) {
+        // franchiseId username으로 조회하는 로직 추가 필요
+        Long franchiseId = 1L;
+
+        // 수령인이 user 목록에 없으면 예외 발생
+
+        FranchiseOrder order = franchiseOrderService.getOrder(franchiseId, username, orderCode);
+
+        franchiseOrderService.updateOrder(order, request.toFranchiseOrderUpdateCommand());
+
+        return FranchiseOrderResponse.from(order);
+    }
 }

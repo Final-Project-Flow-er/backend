@@ -60,11 +60,14 @@ public class FranchiseOrderController {
     }
 
     @Operation(summary = "발주 취소", description = "가맹점 id와 발주 번호로 특정 발주 취소")
-    @PatchMapping("/{order-number}/cancellation")
+    @PatchMapping("/{order-code}/cancellation")
     public ResponseEntity<ApiResponse<FranchiseOrderResponse>> cancelOrder(
-            @PathVariable("order-number") String orderNumber
+            @PathVariable("order-code") String orderCode
     ) {
-        return ResponseEntity.ok(ApiResponse.success(FranchiseOrderResponse.builder().build()));
+        //TODO: Spring Security Context에서 값 꺼내오는 걸로 수정해야 함
+        String username = "test";
+
+        return ResponseEntity.ok(ApiResponse.success(franchiseOrderFacade.cancelOrder(username, orderCode)));
     }
 
     @Operation(summary = "발주 생성", description = "가맹점 id로 발주 생성")

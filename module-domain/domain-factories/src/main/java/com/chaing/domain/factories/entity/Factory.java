@@ -1,6 +1,7 @@
 package com.chaing.domain.factories.entity;
 
 import com.chaing.core.entity.BaseEntity;
+import com.chaing.domain.factories.enums.FactoryRegion;
 import com.chaing.domain.factories.enums.FactoryStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -42,7 +43,8 @@ public class Factory extends BaseEntity {
     private String representativeName;
 
     @Column(nullable = false)
-    private String region;
+    @Enumerated(EnumType.STRING)
+    private FactoryRegion region;
 
     @Builder.Default
     @Column(nullable = false)

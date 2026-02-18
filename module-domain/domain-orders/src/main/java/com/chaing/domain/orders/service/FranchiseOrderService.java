@@ -1,5 +1,6 @@
 package com.chaing.domain.orders.service;
 
+import com.chaing.domain.orders.dto.command.FranchiseOrderCreateCommand;
 import com.chaing.domain.orders.dto.command.FranchiseOrderUpdateCommand;
 import com.chaing.domain.orders.dto.info.FranchiseOrderItemInfo;
 import com.chaing.domain.orders.entity.FranchiseOrder;
@@ -9,10 +10,13 @@ import com.chaing.domain.orders.exception.FranchiseOrderErrorCode;
 import com.chaing.domain.orders.exception.FranchiseOrderException;
 import com.chaing.domain.orders.repository.FranchiseOrderItemRepository;
 import com.chaing.domain.orders.repository.FranchiseOrderRepository;
+import com.chaing.domain.orders.support.ProductReader;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor

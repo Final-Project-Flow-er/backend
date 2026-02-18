@@ -72,11 +72,29 @@ public class FranchiseOrder extends BaseEntity {
     private String deliveryTime;
 
     @OneToMany(mappedBy = "franchiseOrder", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<FranchiseOrderItem> franchiseOrderItems = new ArrayList<>();
+
+    public static FranchiseOrder create(Long franchiseId, String username, FranchiseOrderCreateCommand request, String orderCode) {
+        return FranchiseOrder.builder()
+                .franchiseId(franchiseId)
+                .orderCode(orderCode)
+                .username(username)
+                .phoneNumber(request.phoneNumber())
+                .address(request.address())
+                .requirement(request.requirement())
+                .deliveryDate(request.deliveryDate())
+                .deliveryTime(request.deliveryTime())
+                .build();
+    }
 
     public void addOrderItem(FranchiseOrderItem item) {
         this.franchiseOrderItems.add(item);
         item.allocateFranchiseOrder(this);
+    }
+
+    public void addOrderItem(List<FranchiseOrderItem> items) {
+        items.forEach(this::addOrderItem);
     }
 
     public void update(FranchiseOrderUpdateCommand request) {
@@ -101,5 +119,13 @@ public class FranchiseOrder extends BaseEntity {
         }
 
         this.orderStatus = FranchiseOrderStatus.CANCELED;
+    }
+
+    public void countItems(List<FranchiseOrderItem> orderItems) {
+        this.totalQuantity = orderItems.stream()
+                .mapToInt(FranchiseOrderItem::getQuantity).sum();
+        this.totalAmount = orderItems.stream()
+                .map(FranchiseOrderItem::getTotalPrice)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 }

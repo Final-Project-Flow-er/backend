@@ -54,4 +54,39 @@ public class FranchiseOrderService {
     public void cancelOrder(FranchiseOrder order) {
         order.cancel();
     }
+
+    // 가맹점 발주 생성
+    public FranchiseOrder createOrder(Long franchiseId, String username, FranchiseOrderCreateCommand request, List<ProductReader.ProductInfo> productInfos) {
+        // FranchiseOrder 생성
+        FranchiseOrder order = FranchiseOrder.create(franchiseId, username, request, generateOrderCode(franchiseId));
+
+        // FranchiseOrderItem 생성
+        List<FranchiseOrderItem> orderItems = request.items().stream()
+                .map(item -> {
+                    ProductReader.ProductInfo productInfo = productInfos.stream()
+                            .filter(info -> info.productCode().equals(item.productCode()))
+                            .findFirst()
+                            .orElseThrow(() -> new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_NOT_FOUND));
+
+                    return FranchiseOrderItem.builder()
+                            .franchiseOrder(order)
+                            .productId(productInfo.productId())
+                            .quantity(item.quantity())
+                            .unitPrice(productInfo.unitPrice())
+                            .totalPrice(productInfo.unitPrice().multiply(BigDecimal.valueOf(item.quantity())))
+                            .build();
+                })
+                .toList();
+
+        order.addOrderItem(orderItems);
+
+        order.countItems(orderItems);
+
+        return order;
+    }
+
+    private String generateOrderCode(Long franchiseId) {
+        // 나중에 redis 도입으로 일련번호 초기화 실시해야 함
+        return UUID.randomUUID().toString();
+    }
 }

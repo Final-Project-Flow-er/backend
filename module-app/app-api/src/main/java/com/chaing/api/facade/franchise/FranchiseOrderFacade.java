@@ -16,7 +16,7 @@ import java.util.List;
 public class FranchiseOrderFacade {
 
     private final FranchiseOrderService franchiseOrderService;
-//    private final FranchiseService franchiseService;
+    private final ProductReader productReader;
 
     // 가맹점 발주 조회
     public List<FranchiseOrderResponse> getAllOrders(String username) {
@@ -62,6 +62,21 @@ public class FranchiseOrderFacade {
         FranchiseOrder order = franchiseOrderService.getOrder(franchiseId, username, orderCode);
 
         franchiseOrderService.cancelOrder(order);
+
+        return FranchiseOrderResponse.from(order);
+    }
+
+    // 가맹점 발주 생성
+    public FranchiseOrderResponse createOrder(String username, FranchiseOrderCreateRequest request) {
+        // franchiseId username으로 조회하는 로직 추가 필요
+        Long franchiseId = 1L;
+
+        // 받아온 ProductCode에 따라 제품 정보 가져와서 넘겨줘야 함
+        List<ProductReader.ProductInfo> productInfos = request.items().stream()
+                .map(item -> productReader.getProduct(item.productCode()))
+                .toList();
+
+        FranchiseOrder order = franchiseOrderService.createOrder(franchiseId, username, request.toFranchiseOrderCreateCommand(), productInfos);
 
         return FranchiseOrderResponse.from(order);
     }

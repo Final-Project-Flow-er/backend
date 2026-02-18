@@ -3,6 +3,8 @@ package com.chaing.domain.orders.entity;
 import com.chaing.core.entity.BaseEntity;
 import com.chaing.domain.orders.dto.command.FranchiseOrderUpdateCommand;
 import com.chaing.domain.orders.enums.FranchiseOrderStatus;
+import com.chaing.domain.orders.exception.FranchiseOrderErrorCode;
+import com.chaing.domain.orders.exception.FranchiseOrderException;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

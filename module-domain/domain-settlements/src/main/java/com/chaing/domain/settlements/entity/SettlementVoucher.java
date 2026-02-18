@@ -28,7 +28,7 @@ import java.time.LocalDateTime;
 @Table(
         name = "settlement_voucher",
         indexes = {
-                @Index(name = "idx_voucher_monthly", columnList = "monthly_settlmeent_id"),
+                @Index(name = "idx_voucher_monthly", columnList = "monthly_settlment_id"),
                 @Index(name = "idx_voucher_type", columnList = "voucher_type"),
                 @Index(name = "idx_voucher_occurred_at", columnList = "occurred_at")
         }
@@ -43,7 +43,7 @@ public class SettlementVoucher extends BaseEntity {
     private Long monthlySettlementId;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "vocher_type", nullable = false, length = 30)
+    @Column(name = "voucher_type", nullable = false, length = 30)
     private VoucherType voucherType;
 
     @Column(nullable = false, precision = 19, scale = 2)

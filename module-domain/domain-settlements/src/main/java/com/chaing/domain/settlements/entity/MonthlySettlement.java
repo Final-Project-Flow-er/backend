@@ -36,7 +36,7 @@ import java.time.LocalDateTime;
         ),
         indexes = {
                 @Index(name = "idx_monthly_settlement_month", columnList = "settlement_month"),
-                @Index(name = "idx_monthly_settlement_franchise", columnList = "settlement_franchise"),
+                @Index(name = "idx_monthly_settlement_franchise", columnList = "franchise_id"),
                 @Index(name = "idx_monthly_settlement_status", columnList = "status")
         }
 )
@@ -82,7 +82,7 @@ public class MonthlySettlement extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
-    private SettlementStatus Status;
+    private SettlementStatus status;
 
     private LocalDateTime calculatedAt;
     private LocalDateTime confirmedAt;

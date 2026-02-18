@@ -36,14 +36,14 @@ public class DailyReceiptLine extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long dailyReceiptLineId;
+    private Long dailyReceiptLineId; // 영수증 상세
 
     @Column(name = "daily_receipt_id", nullable = false)
-    private Long dailyReceiptId;
+    private Long dailyReceiptId; // 일별 영수증 구분
 
     @Enumerated(EnumType.STRING)
     @Column(name = "line_type", nullable = false, length = 30)
-    private VoucherType lineType;
+    private VoucherType lineType; // 필터
 
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal amount;
@@ -52,7 +52,7 @@ public class DailyReceiptLine extends BaseEntity {
     private String description;
 
     @Column(length = 255)
-    private String referenceCode;
+    private String referenceCode; // 주문번호, 반품번호 등
 
     @Column(nullable = false)
     private LocalDateTime occurredAt;

@@ -31,7 +31,7 @@ import java.time.LocalDateTime;
         name = "settlement_document",
         indexes = {
                 @Index(name = "idex_doc_monthly", columnList = "monthly_settlement_id"),
-                @Index(name = "idex_doc_daily", columnList = "daily_receit_id"),
+                @Index(name = "idex_doc_daily", columnList = "daily_receipt_id"),
                 @Index(name = "idex_doc_type", columnList = "document_type")
         }
 )
@@ -56,7 +56,7 @@ public class SettlementDocument extends BaseEntity {
     @Column(name = "monthly_settlement_id")
     private Long monthlySettlementId; // 월별 문서 연결
 
-    @Column(name = "daily_receip_id")
+    @Column(name = "daily_receipt_id")
     private Long dailyReceiptId; // 일별 문서 연결
 
     @Column(nullable = false, length =50)

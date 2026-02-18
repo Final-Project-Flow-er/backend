@@ -65,11 +65,30 @@ public class FranchiseOrder extends BaseEntity {
     @Column(nullable = false)
     private LocalDateTime deliveryDate;
 
+    @Column(nullable = false)
+    private String deliveryTime;
+
     @OneToMany(mappedBy = "franchiseOrder", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<FranchiseOrderItem> franchiseOrderItems = new ArrayList<>();
 
     public void addOrderItem(FranchiseOrderItem item) {
         this.franchiseOrderItems.add(item);
-        item.setFranchiseOrder(this);
+        item.allocateFranchiseOrder(this);
+    }
+
+    public void update(FranchiseOrderUpdateCommand request) {
+        this.username = request.username();
+        this.phoneNumber = request.phoneNumber();
+        this.address = request.address();
+        this.requirement = request.requirement();
+        this.deliveryTime = request.deliveryTime();
+
+        this.totalQuantity = franchiseOrderItems.stream()
+                .mapToInt(FranchiseOrderItem::getQuantity)
+                .sum();
+
+        this.totalAmount = franchiseOrderItems.stream()
+                .map(FranchiseOrderItem::getTotalPrice)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 }

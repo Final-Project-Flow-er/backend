@@ -1,4 +1,7 @@
-package com.chaing.domain.orders.dto.command;
+package com.chaing.domain.orders.dto.info;
 
-public record FranchiseOrderCreateCommandItems() {
+public record FranchiseOrderCreateInfo(
+        String productCode,
+        Integer quantity
+) {
 }

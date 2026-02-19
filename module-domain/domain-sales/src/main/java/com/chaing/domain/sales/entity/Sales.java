@@ -12,15 +12,13 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 @Entity
 @Getter
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
-public class Sales {
+public class Sales extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -30,7 +28,7 @@ public class Sales {
     private Long franchiseId;   // fk, 타 도메인이기 때문에 기본 키 값만 가짐
 
     @Column(nullable = false, unique = true)
-    private String salesNumber;
+    private String salesCode;
 
     @Column(nullable = false)
     private Integer quantity;

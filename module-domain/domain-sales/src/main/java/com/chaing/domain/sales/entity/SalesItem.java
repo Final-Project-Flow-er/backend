@@ -19,7 +19,7 @@ import java.math.BigDecimal;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
-public class SalesItem {
+public class SalesItem extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -31,6 +31,9 @@ public class SalesItem {
 
     @Column(nullable = false)
     private Long productId; // fk, 타 도메인이기 때문에 기본키만 가짐
+
+    @Column(nullable = false)
+    private Integer quantity;
 
     @Column(nullable = false)
     private String productCode;    // snapshot

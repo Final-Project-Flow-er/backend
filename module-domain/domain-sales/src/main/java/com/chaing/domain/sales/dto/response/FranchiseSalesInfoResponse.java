@@ -7,18 +7,20 @@ import java.time.LocalDateTime;
 
 @Builder
 public record FranchiseSalesInfoResponse(
-        String salesCode, //
+        String salesCode,
 
-        LocalDateTime salesDate, //
+        LocalDateTime salesDate,
 
-        String productCode,//
+        String productCode,
 
-        String productName,//
+        String productName,
 
-        Integer quantity,//
+        Integer quantity,
 
-        BigDecimal unitPrice,//
+        BigDecimal unitPrice,
 
-        BigDecimal totalPrice //
+        BigDecimal totalPrice
 ) {
+    @QueryProjection
+    public FranchiseSalesInfoResponse {}
 }

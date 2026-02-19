@@ -33,7 +33,7 @@ public class Notification extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private NotificationType type;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String message;
 
     private Long targetId;

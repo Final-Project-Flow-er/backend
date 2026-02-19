@@ -35,6 +35,8 @@ public class FranchiseSalesController {
         return ResponseEntity.ok(ApiResponse.success(franchiseSalesFacade.getAllSales(username)));
     }
 
+    // 세부사항 조회 만들어야 함
+
     @Operation(summary = "판매 취소", description = "가맹점 id와 판매 코드로 특정 판매 취소")
     @PatchMapping("/{sales-number}")
     public ResponseEntity<ApiResponse<FranchiseSalesResponse>> cancelSales(

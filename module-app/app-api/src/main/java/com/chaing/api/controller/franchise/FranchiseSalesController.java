@@ -2,9 +2,11 @@ package com.chaing.api.controller.franchise;
 
 import com.chaing.api.dto.franchise.sales.request.FranchiseSalesRequest;
 import com.chaing.api.dto.franchise.sales.response.FranchiseSalesResponse;
+import com.chaing.api.facade.franchise.FranchiseSalesFacade;
 import com.chaing.core.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -19,12 +21,18 @@ import java.util.List;
 @RestController
 @Tag(name = "Franchise Sales API", description = "가맹점 판매 관련 API")
 @RequestMapping("/api/v1/franchise/sales")
+@RequiredArgsConstructor
 public class FranchiseSalesController {
+
+    private final FranchiseSalesFacade franchiseSalesFacade;
 
     @Operation(summary = "판매 조회", description = "가맹점 id로 해당 가맹점의 판매 전체 조회")
     @GetMapping
     public ResponseEntity<ApiResponse<List<FranchiseSalesResponse>>> getAllSales() {
-        return ResponseEntity.ok(ApiResponse.success(List.of(FranchiseSalesResponse.builder().build())));
+        //TODO: Spring Security Context에서 값 꺼내오는 걸로 수정해야 함
+        String username = "test";
+
+        return ResponseEntity.ok(ApiResponse.success(franchiseSalesFacade.getAllSales(username)));
     }
 
     @Operation(summary = "판매 취소", description = "가맹점 id와 판매 코드로 특정 판매 취소")

@@ -38,3 +38,12 @@ logs/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+### Q Class ###
+**/src/main/generated/
+
+### GEMINI.md ###
+GEMINI.md
+
+### SQL ###
+src/

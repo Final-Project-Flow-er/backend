@@ -56,6 +56,7 @@ public class Franchise extends BaseEntity {
     private String imageUrl;
 
     @Builder.Default
+    @Column(nullable = false, columnDefinition = "INT DEFAULT 0")
     private int warningCount = 0;
 
     private LocalDateTime penaltyEndDate;

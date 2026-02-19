@@ -1,5 +1,6 @@
-package com.chaing.domain.sales.dto.info;
+package com.chaing.domain.sales.dto.response;
 
+import com.querydsl.core.annotations.QueryProjection;
 import lombok.Builder;
 
 import java.math.BigDecimal;

@@ -1,5 +1,6 @@
 package com.chaing.domain.sales.entity;
 
+import com.chaing.core.entity.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;

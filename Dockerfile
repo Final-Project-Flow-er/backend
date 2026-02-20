@@ -1,6 +1,6 @@
 ## 1. 빌드 스테이지 시작
 # Gradle 자바 17 버전을 사용하여 빌드 환경 구축
-FROM gradle:8.5-jdk17-corretto AS build
+FROM gradle:8.14-jdk17-corretto AS build
 
 # 컨테이너 내부의 작업 디렉토리를 /app으로 설정
 WORKDIR /app

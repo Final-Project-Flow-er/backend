@@ -45,7 +45,7 @@ public class FranchiseSalesController {
         //TODO: Spring Security Context에서 값 꺼내오는 걸로 수정해야 함
         String username = "test";
 
-        return ResponseEntity.ok(ApiResponse.success(franchiseSalesFacade.getSalesDetail(username)));
+        return ResponseEntity.ok(ApiResponse.success(franchiseSalesFacade.getSalesDetail(username, salesCode)));
     }
 
     @Operation(summary = "판매 취소", description = "가맹점 id와 판매 코드로 특정 판매 취소")

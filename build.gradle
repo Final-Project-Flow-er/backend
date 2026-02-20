@@ -1,6 +1,7 @@
 plugins {
     id 'java'
     id 'org.springframework.boot' version '3.2.2'
+    id 'io.spring.dependency-management' version '1.1.4'
     id 'jacoco'
     id "org.sonarqube" version "4.4.1.3373"
 }
@@ -10,11 +11,16 @@ sonarqube {
         property "sonar.projectKey", "chaing-backend"
         property "sonar.host.url", "http://beyond21.iptime.org:7011"
         property "sonar.token", "sqp_af86ebfcb52046b70985dd61ed8987912936db86"
-        property "sonar.coverage.jacoco.xmlReportPaths", "build/jacoco/html/jacocoRootReport.xml"
+        property "sonar.coverage.jacoco.xmlReportPaths", "build/jacoco/xml/jacocoRootReport.xml"
     }
 }
 
-def jacocoProjectNames = ["domain-orders", "domain-returns", "domain-sales", "domain-inventories", "domain-users", "domain-factories"]
+// 루트 프로젝트 repositories (sonar 태스크 의존성 해석용)
+repositories {
+    mavenCentral()
+}
+
+def jacocoProjectNames = ["domain-orders", "domain-returns", "domain-sales", "domain-inventories", "domain-users", "domain-franchises", "domain-factories"]
 
 // 모든 하위 프로젝트 공통 설정
 subprojects {
@@ -23,7 +29,7 @@ subprojects {
     sourceCompatibility = '17'
 
     apply plugin: 'java'
-    apply plugin: 'java-library' // api, implementation 구분을 위해 필요
+    apply plugin: 'java-library'
     apply plugin: 'org.springframework.boot'
     apply plugin: 'io.spring.dependency-management'
     apply plugin: 'jacoco'
@@ -38,19 +44,11 @@ subprojects {
         mavenCentral()
     }
 
-    // 공통 의존성
     dependencies {
-        // Spring Boot Starter
         implementation 'org.springframework.boot:spring-boot-starter'
-
-        // JPA
         implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-
-        // lombok
         compileOnly 'org.projectlombok:lombok'
         annotationProcessor 'org.projectlombok:lombok'
-
-        // test
         testImplementation 'org.springframework.boot:spring-boot-starter-test'
         testImplementation 'com.h2database:h2'
     }
@@ -60,48 +58,98 @@ subprojects {
         finalizedBy 'jacocoTestReport'
     }
 
-    jacocoTestReport {
-        dependsOn test
-        reports {
-            html.required.set(true)
-            xml.required.set(true)
-            csv.required.set(true)
-
-            html.outputLocation = layout.buildDirectory.dir('jacoco/html')
-            xml.outputLocation = layout.buildDirectory.file('jacoco/xml/jacocoRootReport.xml')
-        }
-
-        // 롬복(Lombok)이나 Q클래스 제외 설정 (필요 시)
-        def Qdomains = []
-        for (qPattern in '**/QA'..'**/QZ') {
-            Qdomains.add(qPattern + '*')
-        }
-
-        // 제외할 파일 패턴 리스트
-        def exclusions = [
-                "**/config/**",
-                "**/dto/**",
-                "**/*Application*",
-                "**/entity/**"
-        ] + Qdomains
-
-        // 클래스 디렉토리 필터링 (afterEvaluate 필요 없음)
-        classDirectories.setFrom(files(classDirectories.files.collect {
-            fileTree(dir: it, exclude: exclusions)
-        }))
+    // ★ [핵심] 제외할 패턴 정의 (여기에 다 모으세요)
+    def Qdomains = []
+    for (qPattern in '**/QA'..'**/QZ') {
+        Qdomains.add(qPattern + '*')
     }
 
-    jacocoTestCoverageVerification {
-        violationRules {
-            rule {
-                enabled = true
-                element = 'CLASS'
+    def jacocoExcludes = [
+            "**/config/**",
+            "**/config/**/*",
 
-                // 라인 커버리지 80% 이상
-                limit {
-                    counter = 'LINE'
-                    value = 'COVEREDRATIO'
-                    minimum = 0.80
+            "**/dto/**",
+            "**/dto/**/*",
+
+            "**/*Application*",
+
+            "**/command/**",
+            "**/command/**/*",
+
+            "**/info/**",
+            "**/info/**/*",
+
+            "**/exception/**",
+            "**/exception/**/*",
+
+            "**/infrastructure/**",
+            "**/infrastructure/**/*",
+
+            "**/*Builder*",
+            "**/Q*",
+
+            "**/enums/**",
+            "**/enums/**/*",
+
+            "**/HeadOffice*",
+            "**/HeadOffice*/**/*"
+    ] + Qdomains
+
+    // ★ jacocoTestCoverageVerification용 (정규화된 클래스 이름 패턴)
+    def QdomainsVerification = []
+    for (qPattern in 'QA'..'QZ') {
+        QdomainsVerification.add('*.' + qPattern + '*')
+    }
+
+    def jacocoVerificationExcludes = [
+            "*.config.*",
+            "*.dto.*",
+            "*.*Application*",
+            "*.command.*",
+            "*.info.*",
+            "*.exception.*",
+            "*.infrastructure.*",
+            "*.*Builder*",
+            "*.Q*",
+            "*.enums.*",
+            "*.HeadOffice*",
+    ] + QdomainsVerification
+
+    afterEvaluate {
+
+        // 1. 리포트 생성 시 제외 (classDirectories 필터링)
+        jacocoTestReport {
+            reports {
+                html.required.set(true)
+                xml.required.set(true)
+                csv.required.set(true)
+            }
+
+            classDirectories.setFrom(files(classDirectories.files.collect {
+                fileTree(dir: it, exclude: jacocoExcludes)
+            }))
+        }
+
+        // 2. 커버리지 검증 시 제외
+        jacocoTestCoverageVerification {
+            // classDirectories에서도 제외 (파일 경로 패턴)
+            classDirectories.setFrom(files(classDirectories.files.collect {
+                fileTree(dir: it, exclude: jacocoExcludes)
+            }))
+
+            violationRules {
+                rule {
+                    enabled = true
+                    element = 'CLASS'
+
+                    // ★ JaCoCo 클래스 이름 패턴으로 제외
+                    excludes = jacocoVerificationExcludes
+
+                    limit {
+                        counter = 'LINE'
+                        value = 'COVEREDRATIO'
+                        minimum = 0.80
+                    }
                 }
             }
         }
@@ -109,7 +157,6 @@ subprojects {
 
     check.dependsOn jacocoTestCoverageVerification
 
-    // BootJar 설정: 실행 가능한 jar는 app-api만 만들고 나머지는 끔
     bootJar {
         enabled = false
     }
@@ -118,6 +165,7 @@ subprojects {
     }
 }
 
+// 루트 프로젝트 설정
 bootJar {
     enabled = false
 }
@@ -127,12 +175,10 @@ jar {
 
 task jacocoRootReport(type: JacocoReport) {
     description = 'Generates an aggregate report from all subprojects'
-    dependsOn subprojects.test
+    dependsOn subprojects.jacocoTestReport
 
-    // 측정 대상 모듈만 필터링
     def projects = subprojects.findAll { jacocoProjectNames.contains(it.name) }
 
-    // 소스 코드와 클래스 파일, 실행 데이터(exec)를 모두 합침
     sourceDirectories.setFrom projects.sourceSets.main.allSource.srcDirs
     classDirectories.setFrom projects.sourceSets.main.output
     executionData.setFrom projects.jacocoTestReport.executionData
@@ -144,5 +190,30 @@ task jacocoRootReport(type: JacocoReport) {
 
         html.outputLocation.set(layout.buildDirectory.dir('jacoco/html'))
         xml.outputLocation.set(layout.buildDirectory.file('jacoco/xml/jacocoRootReport.xml'))
+    }
+
+    // 루트 리포트에서도 제외 처리 (선택사항)
+    def Qdomains = []
+    for (qPattern in '**/QA'..'**/QZ') {
+        Qdomains.add(qPattern + '*')
+    }
+    def rootExcludes = [
+            "**/config/**", "**/config/**/*",
+            "**/dto/**", "**/dto/**/*",
+            "**/*Application*",
+            "**/command/**", "**/command/**/*",
+            "**/info/**", "**/info/**/*",
+            "**/exception/**", "**/exception/**/*",
+            "**/infrastructure/**", "**/infrastructure/**/*",
+            "**/*Builder*",
+            "**/Q*",
+            "**/enums/**", "**/enums/**/*",
+            "**/HeadOffice*", "**/HeadOffice*/**/*"
+    ] + Qdomains
+
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: rootExcludes)
+        }))
     }
 }

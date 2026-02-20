@@ -9,6 +9,7 @@ include 'domain-returns'
 include 'domain-sales'
 include 'domain-inventories'
 include 'domain-users'
+include 'domain-franchises'
 include 'domain-factories'
 
 // 애플리케이션 모듈
@@ -21,4 +22,5 @@ project(':domain-returns').projectDir = file('module-domain/domain-returns')
 project(':domain-sales').projectDir = file('module-domain/domain-sales')
 project(':domain-inventories').projectDir = file('module-domain/domain-inventories')
 project(':domain-users').projectDir = file('module-domain/domain-users')
+project(':domain-franchises').projectDir = file('module-domain/domain-franchises')
 project(':domain-factories').projectDir = file('module-domain/domain-factories')

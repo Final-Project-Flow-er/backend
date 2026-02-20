@@ -36,6 +36,16 @@ public class FranchiseSalesController {
     }
 
     // 세부사항 조회 만들어야 함
+    @Operation(summary = "판매 세부정보 조회", description = "가맹점 id와 판매 코드로 판매 세부사항 조회")
+    @GetMapping("/{sales-code}")
+    public ResponseEntity<ApiResponse<FranchiseSalesDetailResponse>> getSalesDetail(
+            @PathVariable("sales-code") String salesCode
+    ) {
+        //TODO: Spring Security Context에서 값 꺼내오는 걸로 수정해야 함
+        String username = "test";
+
+        return ResponseEntity.ok(ApiResponse.success(franchiseSalesFacade.getSalesDetail(username)));
+    }
 
     @Operation(summary = "판매 취소", description = "가맹점 id와 판매 코드로 특정 판매 취소")
     @PatchMapping("/{sales-number}")

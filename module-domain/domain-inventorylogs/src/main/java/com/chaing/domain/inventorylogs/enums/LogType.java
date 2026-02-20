@@ -6,5 +6,10 @@ public enum LogType {
     RETURN_OUTBOUND,  // 반품출고
     RETURN_INBOUND,   // 반품입고
     SALE,             // 판매
-    REFUND            // 환불
+    REFUND,            // 환불
+
+    PICKING,            // 피킹
+    PICKING_WAIT,       // 피킹대기
+    INBOUND_WAIT,       // 입고대기
+    OUTBOUND_COMPLETE   // 출고완료
 }

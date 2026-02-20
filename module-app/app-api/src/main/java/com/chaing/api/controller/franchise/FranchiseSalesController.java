@@ -1,6 +1,7 @@
 package com.chaing.api.controller.franchise;
 
 import com.chaing.api.dto.franchise.sales.request.FranchiseSalesRequest;
+import com.chaing.api.dto.franchise.sales.response.FranchiseSalesDetailResponse;
 import com.chaing.api.dto.franchise.sales.response.FranchiseSalesResponse;
 import com.chaing.api.facade.franchise.FranchiseSalesFacade;
 import com.chaing.core.dto.ApiResponse;

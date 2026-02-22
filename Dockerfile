@@ -1,14 +1,13 @@
-# 1. 자바 버전
-FROM amazoncorretto:17
+# OpenJDK 17 버전의 이미지를 가져와 JVM 환경 구축
+FROM openjdk:17-alpine
 
-# 2. 컨테이너 내부 작업 디렉토리 생성
+# 작업 디렉토리 설정
 WORKDIR /app
 
-# 3. 빌드된 결과물을 컨테이너로 복사
 COPY module-app/app-api/build/libs/*.jar app.jar
 
-# 4. 컨테이너가 사용할 포트 명시
-EXPOSE 8080
+# 시간대 설정
+RUN apk add --no-known-hosts tzdata && ln -snf /usr/share/zoneinfo/Asia/Seoul /etc/localtime
 
-# 5. 실행 환경 설정
-ENTRYPOINT ["java", "-jar", "-Duser.timezone=Asia/Seoul", "app.jar"]
+# app.jar를 리눅스 환경에서 실행하여 스프링 부트 서버 시작
+ENTRYPOINT ["java", "-jar", "app.jar"]

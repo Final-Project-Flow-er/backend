@@ -4,10 +4,8 @@ FROM eclipse-temurin:17-jdk-alpine
 # 작업 디렉토리 설정
 WORKDIR /app
 
+# 빌드된 jar 파일을 컨테이너로 복사
 COPY module-app/app-api/build/libs/*.jar app.jar
 
-# 시간대 설정
-RUN apk add --no-known-hosts tzdata && ln -snf /usr/share/zoneinfo/Asia/Seoul /etc/localtime
-
-# app.jar를 리눅스 환경에서 실행하여 스프링 부트 서버 시작
+# 서버 실행
 ENTRYPOINT ["java", "-jar", "app.jar"]

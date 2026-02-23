@@ -1,8 +1,8 @@
 package com.chaing.domain.inventorylogs.entity;
 
 import com.chaing.core.entity.BaseEntity;
+import com.chaing.core.enums.LogType;
 import com.chaing.domain.inventorylogs.enums.LocationType;
-import com.chaing.domain.inventorylogs.enums.LogType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -10,7 +10,6 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -19,7 +18,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 @Entity
 @Getter
@@ -32,7 +30,7 @@ public class InventoryLog extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long logId;
 
-    // 상품 ID
+    // 제품ID
     @NotNull
     @Column(nullable = false)
     private Long productId;
@@ -48,8 +46,6 @@ public class InventoryLog extends BaseEntity {
     private String boxCode;
 
     // 코드 -> 발주 코드, 판매코드, 반품 코드,,
-    @NotBlank
-    @Column(nullable = false)
     private String serialCode;
 
     // 로그 상태 -> 입고, 출고, 반품입고 ,,,
@@ -80,10 +76,4 @@ public class InventoryLog extends BaseEntity {
 
     // HEAD, SE01, CUSTOMER(판매), WASTE(폐기장)
     private String toLocationCode;
-
-    // 실제 처리/도착 시간
-    @NotNull
-    @Column(nullable = false)
-    private LocalDateTime processedAt;
-
 }

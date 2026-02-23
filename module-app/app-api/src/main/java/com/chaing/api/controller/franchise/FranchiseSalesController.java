@@ -39,7 +39,6 @@ public class FranchiseSalesController {
         return ResponseEntity.ok(ApiResponse.success(franchiseSalesFacade.getAllSales(username)));
     }
 
-    // 세부사항 조회 만들어야 함
     @Operation(summary = "판매 세부정보 조회", description = "가맹점 id와 판매 코드로 판매 세부사항 조회")
     @GetMapping("/{sales-code}")
     public ResponseEntity<ApiResponse<FranchiseSalesDetailResponse>> getSalesDetail(
@@ -61,12 +60,14 @@ public class FranchiseSalesController {
 
     @Operation(summary = "판매 생성", description = "가맹점 id로 판매 생성")
     @PostMapping
-    public ResponseEntity<ApiResponse<List<FranchiseSellResponse>>> createSale(
+    public ResponseEntity<ApiResponse<FranchiseSellResponse>> createSale(
             @RequestBody FranchiseSellRequest request
     ) {
         //TODO: Spring Security Context에서 값 꺼내오는 걸로 수정해야 함
         String username = "test";
 
-        return ResponseEntity.ok(ApiResponse.success(franchiseSalesService.sell(username, request)));
+        //TODO: request의 product 검증 -> 해야하나? 잘 모르겠네 아직은
+
+        return ResponseEntity.ok(ApiResponse.success(franchiseSalesFacade.sell(username, request)));
     }
 }

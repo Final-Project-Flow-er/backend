@@ -52,6 +52,7 @@ public class FranchiseInventory extends BaseEntity {
 
     // 제품 상태
     @NotNull
+    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private LogType status;
 

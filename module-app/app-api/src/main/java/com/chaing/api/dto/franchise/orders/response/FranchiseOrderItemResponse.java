@@ -13,7 +13,7 @@ import java.util.List;
 
 @Builder
 public record FranchiseOrderItemResponse(
-        @NotBlank
+        @NotNull
         Long productId,
 
         @NotNull

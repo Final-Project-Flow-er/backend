@@ -37,6 +37,14 @@ public class FranchiseSalesFacade {
         return franchiseSalesService.getSalesDetail(franchiseId, salesCode);
     }
 
+    // 판매 취소
+    public FranchiseSalesCancellationResponse cancel(String username, String salesCode) {
+        // franchiseId username으로 조회하는 로직 추가 필요
+        Long franchiseId = 1L;
+
+        return franchiseSalesService.cancel(franchiseId, salesCode);
+    }
+
     // 판매 생성
     public FranchiseSellResponse sell(String username, FranchiseSellRequest request) {
         // franchiseId username으로 조회하는 로직 추가 필요

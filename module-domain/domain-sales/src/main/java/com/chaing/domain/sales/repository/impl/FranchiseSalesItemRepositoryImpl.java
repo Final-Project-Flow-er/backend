@@ -29,7 +29,8 @@ public class FranchiseSalesItemRepositoryImpl implements FranchiseSalesItemRepos
                         salesItem.productName,
                         salesItem.quantity,
                         salesItem.unitPrice,
-                        sales.totalAmount
+                        sales.totalAmount,
+                        sales.isCanceled
                 ))
                 .from(salesItem)
                 .join(salesItem.sales, sales)

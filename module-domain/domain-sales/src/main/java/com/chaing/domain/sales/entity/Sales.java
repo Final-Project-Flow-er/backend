@@ -40,4 +40,11 @@ public class Sales extends BaseEntity {
     @Column(nullable = false)
     @Builder.Default
     private Boolean isCanceled = false;
+
+    public void cancel() {
+        if (this.isCanceled) {
+            throw new FranchiseSalesException(FranchiseSalesErrorCode.ALREADY_CANCELLED);
+        }
+        this.isCanceled = true;
+    }
 }

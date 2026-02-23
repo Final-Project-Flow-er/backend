@@ -20,7 +20,9 @@ public record FranchiseSalesInfoResponse(
 
         BigDecimal unitPrice,
 
-        BigDecimal totalPrice
+        BigDecimal totalPrice,
+
+        Boolean isCanceled
 ) {
     @QueryProjection
     public FranchiseSalesInfoResponse {}

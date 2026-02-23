@@ -97,4 +97,15 @@ public class FranchiseSalesService {
 
         return FranchiseSellResponse.from(sales, salesItems);
     }
+
+    // 판매 취소
+    @Transactional(readOnly = false)
+    public FranchiseSalesCancellationResponse cancel(Long franchiseId, String salesCode) {
+        Sales sales = franchiseSalesRepository.findByFranchiseIdAndSalesCode(franchiseId, salesCode)
+                .orElseThrow(() -> new FranchiseSalesException(FranchiseSalesErrorCode.SALES_NOT_FOUND));
+
+        sales.cancel();
+
+        return FranchiseSalesCancellationResponse.from(sales);
+    }
 }

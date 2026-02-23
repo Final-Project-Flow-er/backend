@@ -14,11 +14,9 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.cglib.core.Local;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 @Entity
 @Getter
@@ -69,12 +67,5 @@ public class DailySettlementReceipt extends BaseEntity {
 
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal finalAmount;
-
-    private LocalDateTime calculatedAt;
-
-    private LocalDateTime deletedAt;
-
-
-
 
 }

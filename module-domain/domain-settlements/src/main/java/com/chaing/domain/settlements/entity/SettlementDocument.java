@@ -60,7 +60,7 @@ public class SettlementDocument extends BaseEntity {
     private Long dailyReceiptId; // 일별 문서 연결
 
     @Column(nullable = false, length =50)
-    private String storageProvider; // MINIO or S3
+    private String storageProvider; // MINIO or S3 //
 
     @Column(nullable = false, length = 100)
     private String bucket;
@@ -83,8 +83,4 @@ public class SettlementDocument extends BaseEntity {
     @Column(length = 100)
     private String checksum;
 
-    @Column(nullable = false)
-    private LocalDateTime generatedAt;
-
-    private LocalDateTime deletedAt;
 }

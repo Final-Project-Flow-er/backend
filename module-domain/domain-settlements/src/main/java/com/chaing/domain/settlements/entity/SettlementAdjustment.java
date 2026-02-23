@@ -47,9 +47,4 @@ public class SettlementAdjustment extends BaseEntity {
     @Column(name = "created_by", nullable = false)
     private Long createdBy; // 조정을 수행한 사용자
 
-    @Column(name = "adjustment_created_at", nullable = false)
-    private LocalDateTime adjustmentCreatedAt; // 조정 시기
-
-    private LocalDateTime deletedAt;
-
 }

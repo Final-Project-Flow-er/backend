@@ -1,0 +1,77 @@
+package com.chaing.domain.sales.repository.impl;
+
+import com.chaing.domain.sales.dto.response.FranchiseSalesInfoResponse;
+import com.chaing.domain.sales.dto.response.QFranchiseSalesInfoResponse;
+import com.chaing.domain.sales.entity.SalesItem;
+import com.chaing.domain.sales.repository.interfaces.FranchiseSalesItemRepositoryCustom;
+import com.querydsl.jpa.impl.JPAQueryFactory;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+
+import static com.chaing.domain.sales.entity.QSales.sales;
+import static com.chaing.domain.sales.entity.QSalesItem.salesItem;
+
+@Repository
+@RequiredArgsConstructor
+public class FranchiseSalesItemRepositoryImpl implements FranchiseSalesItemRepositoryCustom {
+
+    private final JPAQueryFactory queryFactory;
+
+    @Override
+    public List<FranchiseSalesInfoResponse> searchAllSalesItems(Long franchiseId) {
+        return queryFactory
+                .select(new QFranchiseSalesInfoResponse(
+                        sales.salesCode,
+                        salesItem.createdAt,
+                        salesItem.productCode,
+                        salesItem.productName,
+                        salesItem.quantity,
+                        salesItem.unitPrice,
+                        salesItem.unitPrice.multiply(salesItem.quantity),
+                        sales.isCanceled
+                ))
+                .from(salesItem)
+                .join(salesItem.sales, sales)
+                .where(
+                        sales.franchiseId.eq(franchiseId),
+                        sales.isCanceled.eq(false)
+                )
+                .fetch();
+    }
+
+    @Override
+    public List<FranchiseSalesInfoResponse> searchAllCanceledSalesItems(Long franchiseId) {
+        return queryFactory
+                .select(new QFranchiseSalesInfoResponse(
+                        sales.salesCode,
+                        salesItem.createdAt,
+                        salesItem.productCode,
+                        salesItem.productName,
+                        salesItem.quantity,
+                        salesItem.unitPrice,
+                        sales.totalAmount,
+                        sales.isCanceled
+                ))
+                .from(salesItem)
+                .join(salesItem.sales, sales)
+                .where(
+                        sales.franchiseId.eq(franchiseId),
+                        sales.isCanceled.eq(true)
+                )
+                .fetch();
+    }
+
+    @Override
+    public List<SalesItem> searchAllSalesItemsBySalesCode(Long franchiseId, String salesCode) {
+        return queryFactory
+                .selectFrom(salesItem)
+                .join(salesItem.sales, sales)
+                .where(
+                        sales.franchiseId.eq(franchiseId),
+                        sales.salesCode.eq(salesCode)
+                )
+                .fetch();
+    }
+}

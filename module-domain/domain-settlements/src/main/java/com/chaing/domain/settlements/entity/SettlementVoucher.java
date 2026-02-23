@@ -53,19 +53,17 @@ public class SettlementVoucher extends BaseEntity {
     private String description;
 
     @Column(length = 255)
-    private String referenceCode; // 외부 연동 코드(주문번호, 발주번호)
+    private String referenceCode; // 외부 연동 코드(주문번호, 발주번호) //
 
-    @Column(name = "occurred_at", nullable = false)
-    private LocalDateTime occurredAt; // 거래 발생 시점
+
 
     @Column(length = 255)
     private String productName;
 
-    private Integer quantity;
+    private Integer quantity; // 수정
 
     @Column(precision = 19, scale = 2)
     private BigDecimal unitPrice; // 단가
 
-    private LocalDateTime deletedAt; // 기록용 삭제
 
 }

@@ -65,6 +65,7 @@ public class User extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private UserStatus status = UserStatus.ACTIVE;
 
+    private Long hqId; // role == HQ 시 필수
     private Long franchiseId; // role == FRANCHISE 시 필수
     private Long factoryId;   // role == FACTORY 시 필수
 }

@@ -65,5 +65,4 @@ public class DailyReceiptLine extends BaseEntity {
     @Column(precision = 19, scale = 2)
     private BigDecimal unitPrice;
 
-    private LocalDateTime deletedAt;
 }

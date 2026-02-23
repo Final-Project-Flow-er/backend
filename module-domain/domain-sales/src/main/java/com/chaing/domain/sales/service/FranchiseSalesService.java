@@ -28,7 +28,8 @@ public class FranchiseSalesService {
     // 판매 목록 세부 조회
     public FranchiseSalesDetailResponse getSalesDetail(Long franchiseId, String salesCode) {
         // salesCode로 판매 기록 가져옴
-        Sales sales = franchiseSalesRepository.findByFranchiseIdAndSalesCode(franchiseId, salesCode);
+        Sales sales = franchiseSalesRepository.findByFranchiseIdAndSalesCode(franchiseId, salesCode)
+                .orElseThrow(() -> new FranchiseSalesException(FranchiseSalesErrorCode.SALES_NOT_FOUND));
 
         List<SalesItem> salesItems = franchiseSalesItemRepositoryCustom.searchAllSalesItemsBySalesCode(franchiseId, salesCode);
 

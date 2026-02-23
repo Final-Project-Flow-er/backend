@@ -4,7 +4,9 @@ import com.chaing.domain.sales.entity.Sales;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Repository
 public interface FranchiseSalesRepository extends JpaRepository<Sales, Long> {
-    Sales findByFranchiseIdAndSalesCode(Long franchiseId, String salesCode);
+    Optional<Sales> findByFranchiseIdAndSalesCode(Long franchiseId, String salesCode);
 }

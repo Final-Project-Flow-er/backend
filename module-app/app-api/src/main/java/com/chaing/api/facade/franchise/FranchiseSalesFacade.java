@@ -59,6 +59,7 @@ public class FranchiseSalesFacade {
     }
 
     // 판매 생성
+    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public FranchiseSellResponse sell(String username, FranchiseSellRequest request) {
         // franchiseId username으로 조회하는 로직 추가 필요
         Long franchiseId = 1L;

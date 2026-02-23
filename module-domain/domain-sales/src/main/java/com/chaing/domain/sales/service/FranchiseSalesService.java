@@ -17,8 +17,6 @@ import com.chaing.domain.sales.repository.interfaces.FranchiseSalesItemRepositor
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -63,7 +61,6 @@ public class FranchiseSalesService {
     }
 
     // 판매 생성
-    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public FranchiseSellResponse sell(Long franchiseId, FranchiseSellRequest request) {
         Sales sales = null;
         SalesItem salesItem = null;

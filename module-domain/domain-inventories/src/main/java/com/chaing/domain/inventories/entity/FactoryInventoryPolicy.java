@@ -1,15 +1,13 @@
 package com.chaing.domain.inventories.entity;
 
 import com.chaing.core.entity.BaseEntity;
-import com.chaing.core.enums.LogType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.validation.constraints.NotBlank;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import jakarta.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -17,40 +15,33 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
-
 @Entity
 @Getter
 @Builder
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class FactoryInventory extends BaseEntity {
+@Table(
+        uniqueConstraints = @UniqueConstraint(
+                name = "uq_factory_inventory_policy_franchise_product",
+                columnNames = {"franchise_id", "product_id"}
+        )
+)
+public class FactoryInventoryPolicy extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long inventoryId;
+    private Long id;
 
-    // 제품식별코드
-    @NotBlank
-    @Column(nullable = false)
-    private String serialCode;
-
-    // 제품ID
+    //가맹점ID
     @NotNull
-    @Column(nullable = false)
+    @Column(name = "franchise_id", nullable = false)
+    private Long franchiseId;
+
+    //제품ID
+    @NotNull
+    @Column(name = "product_id", nullable = false)
     private Long productId;
 
-    // 제조일자
-    @NotBlank
-    @Column(nullable = false)
-    private LocalDate manufactureDate;
-
-    // 상태
-    @NotNull
-    @Enumerated(EnumType.STRING)
-    private LogType status;
-
-    // 박스코드
-    private String boxCode;
-
+    // 점주가 설정한 안전재고 (없으면 default 사용)
+    private Integer safetyStock;
 }

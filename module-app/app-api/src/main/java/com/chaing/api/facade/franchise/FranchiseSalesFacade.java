@@ -34,4 +34,16 @@ public class FranchiseSalesFacade {
 
         return franchiseSalesService.getSalesDetail(franchiseId, salesCode);
     }
+
+    // 판매 생성
+    public FranchiseSellResponse sell(String username, FranchiseSellRequest request) {
+        // franchiseId username으로 조회하는 로직 추가 필요
+        Long franchiseId = 1L;
+
+        FranchiseSellResponse response = franchiseSalesService.sell(franchiseId, request);
+
+        //TODO: 재고 차감 로직 추가
+
+        return response;
+    }
 }

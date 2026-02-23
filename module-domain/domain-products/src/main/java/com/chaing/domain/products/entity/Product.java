@@ -48,7 +48,9 @@ public class Product extends BaseEntity {
     private String description;
 
     // OR, RO, MA
+    @NotNull
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private ProductType type;
 
     // 이미지 URL
@@ -77,7 +79,9 @@ public class Product extends BaseEntity {
     private Integer SafetyStock;
 
     // 판매 중, 판매예정, 임시 품절, 단종
+    @NotNull
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private ProductStatus status;
 
     // kcal

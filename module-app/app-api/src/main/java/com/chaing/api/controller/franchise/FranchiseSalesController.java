@@ -51,11 +51,14 @@ public class FranchiseSalesController {
     }
 
     @Operation(summary = "판매 취소", description = "가맹점 id와 판매 코드로 특정 판매 취소")
-    @PatchMapping("/{sales-number}")
-    public ResponseEntity<ApiResponse<FranchiseSalesResponse>> cancelSales(
-            @PathVariable("sales-number") String salesNumber
+    @PatchMapping("/{sales-code}")
+    public ResponseEntity<ApiResponse<FranchiseSalesCancellationResponse>> cancelSales(
+            @PathVariable("sales-code") String salesCode
     ) {
-        return ResponseEntity.ok(ApiResponse.success(FranchiseSalesResponse.builder().build()));
+        //TODO: Spring Security Context에서 값 꺼내오는 걸로 수정해야 함
+        String username = "test";
+
+        return ResponseEntity.ok(ApiResponse.success(franchiseSalesFacade.cancel(username, salesCode)));
     }
 
     @Operation(summary = "판매 생성", description = "가맹점 id로 판매 생성")

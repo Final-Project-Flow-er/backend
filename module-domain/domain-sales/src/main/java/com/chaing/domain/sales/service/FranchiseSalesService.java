@@ -19,7 +19,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,6 +29,8 @@ public class FranchiseSalesService {
     private final FranchiseSalesItemRepositoryCustom franchiseSalesItemRepositoryCustom;
     private final FranchiseSalesItemRepository franchiseSalesItemRepository;
     private final FranchiseSalesRepository franchiseSalesRepository;
+
+    private final SalesCodeGenerator salesCodeGenerator;
 
     // 판매 목록 조회
     public List<FranchiseSalesInfoResponse> getAllSales(Long franchiseId) {
@@ -66,7 +67,7 @@ public class FranchiseSalesService {
             // 판매 생성
             sales = Sales.builder()
                     .franchiseId(franchiseId)
-                    .salesCode(salesCodeGenerator())
+                    .salesCode(salesCodeGenerator.generate())
                     .quantity(request.totalQuantity())
                     .totalAmount(request.totalAmount())
                     .build();
@@ -95,10 +96,5 @@ public class FranchiseSalesService {
         }
 
         return FranchiseSellResponse.from(sales, salesItems);
-    }
-
-    private String salesCodeGenerator() {
-        // TODO: 매일 초기화하도록
-        return LocalDateTime.now() + String.valueOf(Math.random()*100 + 1);
     }
 }

@@ -25,4 +25,12 @@ public class FranchiseSalesFacade {
 
         return FranchiseSalesResponse.from(sales);
     }
+
+    // 판매 기록 세부 조회
+    public FranchiseSalesDetailResponse getSalesDetail(String username, String salesCode) {
+        // franchiseId username으로 조회하는 로직 추가 필요
+        Long franchiseId = 1L;
+
+        return franchiseSalesService.getSalesDetail(franchiseId, salesCode);
+    }
 }

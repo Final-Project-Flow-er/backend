@@ -6,4 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface FranchiseSalesRepository extends JpaRepository<Sales, Long> {
+    Sales findByFranchiseIdAndSalesCode(Long franchiseId, String salesCode);
 }

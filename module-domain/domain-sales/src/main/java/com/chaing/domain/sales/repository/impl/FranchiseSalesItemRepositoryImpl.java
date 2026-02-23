@@ -37,4 +37,16 @@ public class FranchiseSalesItemRepositoryImpl implements FranchiseSalesItemRepos
                 )
                 .fetch();
     }
+
+    @Override
+    public List<SalesItem> searchAllSalesItemsBySalesCode(Long franchiseId, String salesCode) {
+        return queryFactory
+                .selectFrom(salesItem)
+                .join(salesItem.sales, sales)
+                .where(
+                        sales.franchiseId.eq(franchiseId),
+                        sales.salesCode.eq(salesCode)
+                )
+                .fetch();
+    }
 }

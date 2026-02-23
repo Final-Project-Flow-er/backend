@@ -1,10 +1,12 @@
 package com.chaing.api.controller.franchise;
 
-import com.chaing.api.dto.franchise.sales.request.FranchiseSalesRequest;
+import com.chaing.api.dto.franchise.sales.request.FranchiseSellRequest;
 import com.chaing.api.dto.franchise.sales.response.FranchiseSalesResponse;
 import com.chaing.api.facade.franchise.FranchiseSalesFacade;
 import com.chaing.core.dto.ApiResponse;
 import com.chaing.domain.sales.dto.response.FranchiseSalesDetailResponse;
+import com.chaing.domain.sales.dto.response.FranchiseSellResponse;
+import com.chaing.domain.sales.service.FranchiseSalesService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +28,7 @@ import java.util.List;
 public class FranchiseSalesController {
 
     private final FranchiseSalesFacade franchiseSalesFacade;
+    private final FranchiseSalesService franchiseSalesService;
 
     @Operation(summary = "판매 조회", description = "가맹점 id로 해당 가맹점의 판매 전체 조회")
     @GetMapping
@@ -58,9 +61,12 @@ public class FranchiseSalesController {
 
     @Operation(summary = "판매 생성", description = "가맹점 id로 판매 생성")
     @PostMapping
-    public ResponseEntity<ApiResponse<FranchiseSalesResponse>> createSale(
-            @RequestBody FranchiseSalesRequest request
+    public ResponseEntity<ApiResponse<List<FranchiseSellResponse>>> createSale(
+            @RequestBody FranchiseSellRequest request
     ) {
-        return ResponseEntity.ok(ApiResponse.success(FranchiseSalesResponse.builder().build()));
+        //TODO: Spring Security Context에서 값 꺼내오는 걸로 수정해야 함
+        String username = "test";
+
+        return ResponseEntity.ok(ApiResponse.success(franchiseSalesService.sell(username, request)));
     }
 }

@@ -16,14 +16,12 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.RequiredArgsConstructor;
 
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder
-@RequiredArgsConstructor
 public class Transits extends BaseEntity {
 
     @Id
@@ -38,6 +36,7 @@ public class Transits extends BaseEntity {
     // 운송 상태
     @NotNull
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private DeliverStatus status;
 
     // 박스코드

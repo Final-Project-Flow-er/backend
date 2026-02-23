@@ -1,5 +1,6 @@
 package com.chaing.domain.transports.entity;
 
+import com.chaing.core.entity.BaseEntity;
 import com.chaing.domain.transports.enums.DeliverStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -19,14 +20,14 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
-public class TransportLogs {
+public class TransportLogs extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long transportLogId;
 
     @Column(nullable = false)
-    private Long orderCode;
+    private String orderCode;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)

@@ -5,6 +5,8 @@ import com.chaing.domain.sales.dto.response.FranchiseSalesInfoResponse;
 import com.chaing.domain.sales.dto.response.FranchiseSalesProductResponse;
 import com.chaing.domain.sales.entity.Sales;
 import com.chaing.domain.sales.entity.SalesItem;
+import com.chaing.domain.sales.exception.FranchiseSalesErrorCode;
+import com.chaing.domain.sales.exception.FranchiseSalesException;
 import com.chaing.domain.sales.repository.FranchiseSalesRepository;
 import com.chaing.domain.sales.repository.interfaces.FranchiseSalesItemRepositoryCustom;
 import lombok.RequiredArgsConstructor;

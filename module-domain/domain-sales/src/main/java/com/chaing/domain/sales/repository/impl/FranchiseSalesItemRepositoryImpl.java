@@ -29,7 +29,7 @@ public class FranchiseSalesItemRepositoryImpl implements FranchiseSalesItemRepos
                         salesItem.productName,
                         salesItem.quantity,
                         salesItem.unitPrice,
-                        sales.totalAmount,
+                        salesItem.unitPrice.multiply(salesItem.quantity),
                         sales.isCanceled
                 ))
                 .from(salesItem)

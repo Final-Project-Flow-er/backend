@@ -34,7 +34,10 @@ public record FranchiseSalesResponse(
 
         @NotNull
         @Min(5000)
-        BigDecimal totalPrice
+        BigDecimal totalPrice,
+
+        @NotNull
+        Boolean isCanceled
 ) {
     public static FranchiseSalesResponse from(FranchiseSalesInfoResponse salesInfo) {
         return new FranchiseSalesResponse(
@@ -44,7 +47,8 @@ public record FranchiseSalesResponse(
                 salesInfo.productName(),
                 salesInfo.quantity(),
                 salesInfo.unitPrice(),
-                salesInfo.totalPrice()
+                salesInfo.totalPrice(),
+                salesInfo.isCanceled()
         );
     }
 

@@ -76,6 +76,9 @@ subprojects {
             "**/command/**",
             "**/command/**/*",
 
+            "**/repository/**",
+            "**/repository/**/*",
+
             "**/info/**",
             "**/info/**/*",
 
@@ -90,6 +93,9 @@ subprojects {
 
             "**/enums/**",
             "**/enums/**/*",
+
+            "**/entity/**",
+            "**/entity/**/*",
 
             "**/HeadOffice*",
             "**/HeadOffice*/**/*"
@@ -107,9 +113,11 @@ subprojects {
             "*.*Application*",
             "*.command.*",
             "*.info.*",
+            "*.entity.*",
             "*.exception.*",
             "*.infrastructure.*",
             "*.*Builder*",
+            "*.repository.*",
             "*.Q*",
             "*.enums.*",
             "*.HeadOffice*",

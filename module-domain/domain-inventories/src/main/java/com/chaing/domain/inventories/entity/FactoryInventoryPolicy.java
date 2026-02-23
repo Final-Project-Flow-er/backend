@@ -21,7 +21,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(
-        uniqueConstraints = @UniqueConstraint(columnNames = {"franchiseId", "productId"})
+        uniqueConstraints = @UniqueConstraint(
+                name = "uq_factory_inventory_policy_franchise_product",
+                columnNames = {"franchise_id", "product_id"}
+        )
 )
 public class FactoryInventoryPolicy extends BaseEntity {
 
@@ -31,12 +34,12 @@ public class FactoryInventoryPolicy extends BaseEntity {
 
     //가맹점ID
     @NotNull
-    @Column(nullable = false)
+    @Column(name = "franchise_id", nullable = false)
     private Long franchiseId;
 
     //제품ID
     @NotNull
-    @Column(nullable = false)
+    @Column(name = "product_id", nullable = false)
     private Long productId;
 
     // 점주가 설정한 안전재고 (없으면 default 사용)

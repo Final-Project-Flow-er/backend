@@ -1,4 +1,4 @@
-package com.chaing.domain.orders.enums;
+package com.chaing.domain.transports.enums;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

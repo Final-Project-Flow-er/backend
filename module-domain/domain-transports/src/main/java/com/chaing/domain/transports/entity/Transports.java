@@ -1,4 +1,4 @@
-package com.chaing.domain.orders.entity;
+package com.chaing.domain.transports.entity;
 
 import com.chaing.core.entity.BaseEntity;
 import jakarta.persistence.Column;

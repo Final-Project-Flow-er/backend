@@ -1,4 +1,4 @@
-package com.chaing.domain.orders.entity;
+package com.chaing.domain.transports.entity;
 
 import com.chaing.domain.orders.enums.DeliverStatus;
 import jakarta.persistence.Column;

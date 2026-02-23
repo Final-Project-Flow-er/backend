@@ -9,6 +9,7 @@ import com.chaing.domain.sales.dto.response.FranchiseSellResponse;
 import com.chaing.domain.sales.service.FranchiseSalesService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -49,6 +50,7 @@ public class FranchiseSalesFacade {
     }
 
     // 판매 취소
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public FranchiseSalesCancellationResponse cancel(String username, String salesCode) {
         // franchiseId username으로 조회하는 로직 추가 필요
         Long franchiseId = 1L;

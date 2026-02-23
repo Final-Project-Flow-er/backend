@@ -1,4 +1,4 @@
-package com.chaing.domain.headquarter.entity;
+package com.chaing.domain.businesses.entity;
 
 import com.chaing.core.entity.BaseEntity;
 import jakarta.persistence.Column;
@@ -37,4 +37,7 @@ public class Headquarter extends BaseEntity {
 
     @Column(nullable = false)
     private String representativeName;
+
+    @Column(nullable = false, unique = true)
+    private String businessNumber;
 }

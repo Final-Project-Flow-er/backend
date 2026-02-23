@@ -9,9 +9,7 @@ include 'domain-returns'
 include 'domain-sales'
 include 'domain-inventories'
 include 'domain-users'
-include 'domain-headquarter'
-include 'domain-franchises'
-include 'domain-factories'
+include 'domain-businesses'
 include 'domain-notices'
 include 'domain-notifications'
 include 'domain-transports'
@@ -27,9 +25,7 @@ project(':domain-returns').projectDir = file('module-domain/domain-returns')
 project(':domain-sales').projectDir = file('module-domain/domain-sales')
 project(':domain-inventories').projectDir = file('module-domain/domain-inventories')
 project(':domain-users').projectDir = file('module-domain/domain-users')
-project(':domain-headquarter').projectDir = file('module-domain/domain-headquarter')
-project(':domain-franchises').projectDir = file('module-domain/domain-franchises')
-project(':domain-factories').projectDir = file('module-domain/domain-factories')
+project(':domain-businesses').projectDir = file('module-domain/domain-businesses')
 project(':domain-notifications').projectDir = file('module-domain/domain-notifications')
 project(':domain-transports').projectDir = file('module-domain/domain-transports')
 project(':domain-notices').projectDir = file('module-domain/domain-notices')

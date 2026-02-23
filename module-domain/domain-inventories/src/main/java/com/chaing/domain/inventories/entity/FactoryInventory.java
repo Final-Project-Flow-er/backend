@@ -1,7 +1,7 @@
 package com.chaing.domain.inventories.entity;
 
 import com.chaing.core.entity.BaseEntity;
-import com.chaing.domain.inventories.enums.InventoryStatus;
+import com.chaing.core.enums.LogType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -16,7 +16,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
 
 import java.time.LocalDate;
 
@@ -49,10 +48,9 @@ public class FactoryInventory extends BaseEntity {
     // 상태
     @NotNull
     @Enumerated(EnumType.STRING)
-    private InventoryStatus status;
+    private LogType status;
 
     // 박스코드
-    @Column
     private String boxCode;
 
 }

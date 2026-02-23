@@ -14,6 +14,7 @@ include 'domain-factories'
 include 'domain-notices'
 include 'domain-notifications'
 include 'domain-transports'
+include 'domain-inventorylogs'
 
 // 애플리케이션 모듈
 include 'app-api'
@@ -30,3 +31,4 @@ project(':domain-franchises').projectDir = file('module-domain/domain-franchises
 project(':domain-factories').projectDir = file('module-domain/domain-factories')
 project(':domain-notices').projectDir = file('module-domain/domain-notices')
 project(':domain-notifications').projectDir = file('module-domain/domain-notifications')
+project(':domain-inventorylogs').projectDir = file('module-domain/domain-inventorylogs')

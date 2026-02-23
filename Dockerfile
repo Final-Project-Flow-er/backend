@@ -7,5 +7,5 @@ WORKDIR /app
 # 빌드된 jar 파일을 컨테이너로 복사
 COPY module-app/app-api/build/libs/*.jar app.jar
 
-# 서버 실행
+# JVM을 구동하여 스프링 부트 서버 애플리케이션 시작
 ENTRYPOINT ["java", "-jar", "app.jar"]

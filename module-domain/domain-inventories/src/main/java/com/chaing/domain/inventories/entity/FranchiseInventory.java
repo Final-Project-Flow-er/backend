@@ -46,7 +46,7 @@ public class FranchiseInventory extends BaseEntity {
     private LocalDate manufactureDate;
 
     // 가맹점Id
-    @NotBlank
+    @NotNull
     @Column(nullable = false)
     private Long franchiseId;
 

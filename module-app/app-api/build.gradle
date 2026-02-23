@@ -5,6 +5,7 @@ dependencies {
     implementation project(':domain-sales')
     implementation project(':domain-inventories')
     implementation project(':domain-users')
+    implementation project(':domain-headquarter')
     implementation project(':domain-franchises')
     implementation project(':domain-factories')
     implementation project(':domain-notices')

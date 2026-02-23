@@ -33,8 +33,9 @@ public class TransportLogs {
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
+    @Builder.Default
     private DeliverStatus deliverStatus = DeliverStatus.PENDING;
 
     @Column(nullable = false)
-    private Long trackingNumber;
+    private String trackingNumber;
 }

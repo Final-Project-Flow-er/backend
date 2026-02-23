@@ -2,6 +2,7 @@ package com.chaing.domain.sales.repository.impl;
 
 import com.chaing.domain.sales.dto.response.FranchiseSalesInfoResponse;
 import com.chaing.domain.sales.dto.response.QFranchiseSalesInfoResponse;
+import com.chaing.domain.sales.entity.SalesItem;
 import com.chaing.domain.sales.repository.interfaces.FranchiseSalesItemRepositoryCustom;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;

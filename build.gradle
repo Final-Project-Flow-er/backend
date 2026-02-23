@@ -97,6 +97,8 @@ subprojects {
             "**/entity/**",
             "**/entity/**/*",
 
+            "**/*Generator*",
+
             "**/HeadOffice*",
             "**/HeadOffice*/**/*"
     ] + Qdomains
@@ -119,6 +121,7 @@ subprojects {
             "*.*Builder*",
             "*.repository.*",
             "*.Q*",
+            "*.Generator*",
             "*.enums.*",
             "*.HeadOffice*",
     ] + QdomainsVerification

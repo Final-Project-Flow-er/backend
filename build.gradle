@@ -20,7 +20,7 @@ repositories {
     mavenCentral()
 }
 
-def jacocoProjectNames = ["domain-orders", "domain-returns", "domain-sales", "domain-inventories", "domain-users", "domain-franchises", "domain-factories", "domain-notices", "domain-notifications"]
+def jacocoProjectNames = ["domain-orders", "domain-returns", "domain-sales", "domain-inventories", "domain-users", "domain-franchises", "domain-factories", "domain-notices", "domain-notifications","domain-inventorylogs"]
 
 // 모든 하위 프로젝트 공통 설정
 subprojects {

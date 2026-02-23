@@ -1,13 +1,12 @@
 package com.chaing.api.controller.franchise;
 
-import com.chaing.domain.sales.dto.request.FranchiseSellRequest;
 import com.chaing.api.dto.franchise.sales.response.FranchiseSalesResponse;
 import com.chaing.api.facade.franchise.FranchiseSalesFacade;
 import com.chaing.core.dto.ApiResponse;
+import com.chaing.domain.sales.dto.request.FranchiseSellRequest;
 import com.chaing.domain.sales.dto.response.FranchiseSalesCancellationResponse;
 import com.chaing.domain.sales.dto.response.FranchiseSalesDetailResponse;
 import com.chaing.domain.sales.dto.response.FranchiseSellResponse;
-import com.chaing.domain.sales.service.FranchiseSalesService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +28,6 @@ import java.util.List;
 public class FranchiseSalesController {
 
     private final FranchiseSalesFacade franchiseSalesFacade;
-    private final FranchiseSalesService franchiseSalesService;
 
     @Operation(summary = "미취소 판매 조회", description = "가맹점 id로 해당 가맹점의 판매 전체 조회")
     @GetMapping

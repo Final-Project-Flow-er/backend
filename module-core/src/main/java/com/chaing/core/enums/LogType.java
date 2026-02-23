@@ -1,4 +1,4 @@
-package com.chaing.domain.inventorylogs.enums;
+package com.chaing.core.enums;
 
 public enum LogType {
     INBOUND,          // 입고
@@ -11,5 +11,9 @@ public enum LogType {
     PICKING,            // 피킹
     PICKING_WAIT,       // 피킹대기
     INBOUND_WAIT,       // 입고대기
-    OUTBOUND_PENDING    // 출고대기
+    OUTBOUND_PENDING,   // 출고대기
+
+    AVAILABLE,      // 가용
+    RETURN_WAIT,    // 반품대기
+    EXPIRED         // 유통기한 만료
 }

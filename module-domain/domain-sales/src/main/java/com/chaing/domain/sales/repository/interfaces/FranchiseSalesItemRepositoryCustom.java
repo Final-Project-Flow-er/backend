@@ -9,5 +9,7 @@ public interface FranchiseSalesItemRepositoryCustom {
     // 판매 목록 조회
     List<FranchiseSalesInfoResponse> searchAllSalesItems(Long franchiseId);
 
+    List<FranchiseSalesInfoResponse> searchAllCanceledSalesItems(Long franchiseId);
+
     List<SalesItem> searchAllSalesItemsBySalesCode(Long franchiseId, String salesCode);
 }

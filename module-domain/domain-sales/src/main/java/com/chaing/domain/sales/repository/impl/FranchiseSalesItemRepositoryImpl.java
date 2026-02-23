@@ -35,7 +35,30 @@ public class FranchiseSalesItemRepositoryImpl implements FranchiseSalesItemRepos
                 .from(salesItem)
                 .join(salesItem.sales, sales)
                 .where(
-                        sales.franchiseId.eq(franchiseId)
+                        sales.franchiseId.eq(franchiseId),
+                        sales.isCanceled.eq(false)
+                )
+                .fetch();
+    }
+
+    @Override
+    public List<FranchiseSalesInfoResponse> searchAllCanceledSalesItems(Long franchiseId) {
+        return queryFactory
+                .select(new QFranchiseSalesInfoResponse(
+                        sales.salesCode,
+                        salesItem.createdAt,
+                        salesItem.productCode,
+                        salesItem.productName,
+                        salesItem.quantity,
+                        salesItem.unitPrice,
+                        sales.totalAmount,
+                        sales.isCanceled
+                ))
+                .from(salesItem)
+                .join(salesItem.sales, sales)
+                .where(
+                        sales.franchiseId.eq(franchiseId),
+                        sales.isCanceled.eq(true)
                 )
                 .fetch();
     }

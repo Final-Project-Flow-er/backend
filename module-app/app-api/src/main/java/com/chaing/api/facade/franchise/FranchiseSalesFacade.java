@@ -20,7 +20,7 @@ public class FranchiseSalesFacade {
 
     private final FranchiseSalesService franchiseSalesService;
 
-    // 판매 기록 조회
+    // 미취소 판매 기록 조회
     public List<FranchiseSalesResponse> getAllSales(String username) {
         // franchiseId username으로 조회하는 로직 추가 필요
         Long franchiseId = 1L;
@@ -28,6 +28,16 @@ public class FranchiseSalesFacade {
         List<FranchiseSalesInfoResponse> sales = franchiseSalesService.getAllSales(franchiseId);
 
         return FranchiseSalesResponse.from(sales);
+    }
+
+    // 취소 판매 기록 조회
+    public List<FranchiseSalesResponse> getAllCanceledSales(String username) {
+        // franchiseId username으로 조회하는 로직 추가 필요
+        Long franchiseId = 1L;
+
+        List<FranchiseSalesInfoResponse> canceledSales = franchiseSalesService.getAllCanceledSales(franchiseId);
+
+        return FranchiseSalesResponse.from(canceledSales);
     }
 
     // 판매 기록 세부 조회

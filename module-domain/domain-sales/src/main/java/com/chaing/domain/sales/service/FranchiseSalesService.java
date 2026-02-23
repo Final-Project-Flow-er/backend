@@ -33,10 +33,15 @@ public class FranchiseSalesService {
 
     private final SalesCodeGenerator salesCodeGenerator;
 
-    // 판매 목록 조회
+    // 미취소 판매 목록 조회
     public List<FranchiseSalesInfoResponse> getAllSales(Long franchiseId) {
-        // 판매 기록 조회
+        // 미취소 판매 기록 조회
         return franchiseSalesItemRepositoryCustom.searchAllSalesItems(franchiseId);
+    }
+
+    public List<FranchiseSalesInfoResponse> getAllCanceledSales(Long franchiseId) {
+        // 취소 판매 기록 조회
+        return franchiseSalesItemRepositoryCustom.searchAllCanceledSalesItems(franchiseId);
     }
 
     // 판매 목록 세부 조회

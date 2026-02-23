@@ -31,13 +31,22 @@ public class FranchiseSalesController {
     private final FranchiseSalesFacade franchiseSalesFacade;
     private final FranchiseSalesService franchiseSalesService;
 
-    @Operation(summary = "판매 조회", description = "가맹점 id로 해당 가맹점의 판매 전체 조회")
+    @Operation(summary = "미취소 판매 조회", description = "가맹점 id로 해당 가맹점의 판매 전체 조회")
     @GetMapping
     public ResponseEntity<ApiResponse<List<FranchiseSalesResponse>>> getAllSales() {
         //TODO: Spring Security Context에서 값 꺼내오는 걸로 수정해야 함
         String username = "test";
 
         return ResponseEntity.ok(ApiResponse.success(franchiseSalesFacade.getAllSales(username)));
+    }
+
+    @Operation(summary = "취소 판매 조회", description = "가맹점 id로 해당 가맹점의 취소된 판매 전체 조회")
+    @GetMapping("/canceled")
+    public ResponseEntity<ApiResponse<List<FranchiseSalesResponse>>> getAllCanceledSales() {
+        //TODO: Spring Security Context에서 값 꺼내오는 걸로 수정해야 함
+        String username = "test";
+
+        return ResponseEntity.ok(ApiResponse.success(franchiseSalesFacade.getAllCanceledSales(username)));
     }
 
     @Operation(summary = "판매 세부정보 조회", description = "가맹점 id와 판매 코드로 판매 세부사항 조회")

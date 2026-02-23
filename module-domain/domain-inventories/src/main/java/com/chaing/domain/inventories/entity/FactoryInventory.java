@@ -46,6 +46,7 @@ public class FactoryInventory extends BaseEntity {
     private LocalDate manufactureDate;
 
     // 상태
+    @NotNull
     @Enumerated(EnumType.STRING)
     private LogType status;
 

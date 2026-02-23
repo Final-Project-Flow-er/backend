@@ -2,6 +2,7 @@ package com.chaing.domain.sales.service;
 
 import com.chaing.domain.sales.dto.request.FranchiseSellItemRequest;
 import com.chaing.domain.sales.dto.request.FranchiseSellRequest;
+import com.chaing.domain.sales.dto.response.FranchiseSalesCancellationResponse;
 import com.chaing.domain.sales.dto.response.FranchiseSalesDetailResponse;
 import com.chaing.domain.sales.dto.response.FranchiseSalesInfoResponse;
 import com.chaing.domain.sales.dto.response.FranchiseSalesProductResponse;

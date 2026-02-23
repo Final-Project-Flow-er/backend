@@ -4,6 +4,7 @@ import com.chaing.domain.sales.dto.request.FranchiseSellRequest;
 import com.chaing.api.dto.franchise.sales.response.FranchiseSalesResponse;
 import com.chaing.api.facade.franchise.FranchiseSalesFacade;
 import com.chaing.core.dto.ApiResponse;
+import com.chaing.domain.sales.dto.response.FranchiseSalesCancellationResponse;
 import com.chaing.domain.sales.dto.response.FranchiseSalesDetailResponse;
 import com.chaing.domain.sales.dto.response.FranchiseSellResponse;
 import com.chaing.domain.sales.service.FranchiseSalesService;

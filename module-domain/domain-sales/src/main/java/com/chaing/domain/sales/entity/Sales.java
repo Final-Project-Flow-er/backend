@@ -1,6 +1,8 @@
 package com.chaing.domain.sales.entity;
 
 import com.chaing.core.entity.BaseEntity;
+import com.chaing.domain.sales.exception.FranchiseSalesErrorCode;
+import com.chaing.domain.sales.exception.FranchiseSalesException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;

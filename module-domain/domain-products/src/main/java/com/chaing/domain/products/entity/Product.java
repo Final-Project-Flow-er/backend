@@ -71,12 +71,12 @@ public class Product extends BaseEntity {
     //공급가
     @NotNull
     @Column(nullable = false)
-    private BigDecimal SupplyPrice;
+    private BigDecimal supplyPrice;
 
     // 안전재고
     @NotNull
     @Column(nullable = false)
-    private Integer SafetyStock;
+    private Integer safetyStock;
 
     // 판매 중, 판매예정, 임시 품절, 단종
     @NotNull

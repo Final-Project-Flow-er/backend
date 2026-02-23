@@ -1,10 +1,8 @@
 package com.chaing.api.dto.franchise.orders.response;
 
-import com.chaing.domain.orders.entity.FranchiseOrder;
 import com.chaing.domain.orders.entity.FranchiseOrderItem;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 
@@ -13,7 +11,7 @@ import java.util.List;
 
 @Builder
 public record FranchiseOrderItemResponse(
-        @NotBlank
+        @NotNull
         Long productId,
 
         @NotNull

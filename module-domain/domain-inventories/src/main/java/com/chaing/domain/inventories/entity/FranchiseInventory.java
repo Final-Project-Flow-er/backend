@@ -2,7 +2,7 @@ package com.chaing.domain.inventories.entity;
 
 
 import com.chaing.core.entity.BaseEntity;
-import com.chaing.domain.inventories.enums.InventoryStatus;
+import com.chaing.core.enums.LogType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -25,7 +25,7 @@ import java.time.LocalDate;
 @Builder
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class StoreInventory extends BaseEntity {
+public class FranchiseInventory extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long inventoryId;
@@ -45,18 +45,18 @@ public class StoreInventory extends BaseEntity {
     @Column(nullable = false)
     private LocalDate manufactureDate;
 
-    // 가맹점 코드
+    // 가맹점Id
     @NotBlank
     @Column(nullable = false)
-    private String storeCode;
+    private Long franchiseId;
 
     // 제품 상태
+    @NotNull
     @Enumerated(EnumType.STRING)
-    private InventoryStatus status;
+    private LogType status;
 
     // 박스코드
     @NotBlank
     @Column(nullable = false)
     private String boxCode;
-
 }

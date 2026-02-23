@@ -1,7 +1,7 @@
 package com.chaing.domain.transports.entity;
 
-
-import com.chaing.domain.orders.enums.Dispatchable;
+import com.chaing.core.enums.UsableStatus;
+import com.chaing.domain.transports.enums.Dispatchable;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -24,7 +24,7 @@ public class Vehicles {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long vehicleId;
 
     @Column(nullable = false)
     private Long transportId;
@@ -47,4 +47,8 @@ public class Vehicles {
 
     @Column(nullable = false)
     private Double maxLoad;
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private UsableStatus status;
 }

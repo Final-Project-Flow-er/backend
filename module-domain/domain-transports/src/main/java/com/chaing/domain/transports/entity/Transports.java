@@ -1,8 +1,12 @@
 package com.chaing.domain.transports.entity;
 
 import com.chaing.core.entity.BaseEntity;
+import com.chaing.core.enums.Region;
+import com.chaing.core.enums.UsableStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -38,14 +42,22 @@ public class Transports extends BaseEntity {
     private String address;
 
     @Column(nullable = false)
-    private Integer owned_vehicles;         // 보유 차량 대수
+    private Integer ownedVehicles;         // 보유 차량 대수
 
     @Column(nullable = false)
-    private Integer unit_price;             // 운송 단가(박스 + km 당)
+    private Integer unitPrice;             // 운송 단가(박스 + km 당)
 
     @Column(nullable = false)
-    private LocalDate contract_start_date;  // 계약 시작일
+    private LocalDate contractStartDate;  // 계약 시작일
 
     @Column(nullable = false)
-    private LocalDate contract_end_date;    // 계약 종료일
+    private LocalDate contractEndDate;    // 계약 종료일
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private Region usableRegion;           // 주력 운송 지역
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private UsableStatus status;
 }

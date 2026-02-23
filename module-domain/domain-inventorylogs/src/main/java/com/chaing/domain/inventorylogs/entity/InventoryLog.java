@@ -47,14 +47,10 @@ public class InventoryLog extends BaseEntity {
     @Column(nullable = false)
     private String boxCode;
 
-    // 혹시 모를 데이터
-    @Column
-    private String serialNumber;
-
     // 코드 -> 발주 코드, 판매코드, 반품 코드,,
     @NotBlank
     @Column(nullable = false)
-    private String referenceCode;
+    private String serialCode;
 
     // 로그 상태 -> 입고, 출고, 반품입고 ,,,
     @NotNull

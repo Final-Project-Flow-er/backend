@@ -11,5 +11,5 @@ public enum LogType {
     PICKING,            // 피킹
     PICKING_WAIT,       // 피킹대기
     INBOUND_WAIT,       // 입고대기
-    OUTBOUND_COMPLETE   // 출고완료
+    OUTBOUND_PENDING    // 출고대기
 }

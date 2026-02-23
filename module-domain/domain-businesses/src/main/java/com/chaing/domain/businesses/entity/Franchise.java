@@ -1,7 +1,8 @@
-package com.chaing.domain.franchises.entity;
+package com.chaing.domain.businesses.entity;
 
 import com.chaing.core.entity.BaseEntity;
-import com.chaing.domain.franchises.enums.FranchiseStatus;
+import com.chaing.core.enums.Region;
+import com.chaing.core.enums.UsableStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -44,6 +45,13 @@ public class Franchise extends BaseEntity {
     @Column(nullable = false)
     private String representativeName;
 
+    @Column(nullable = false, unique = true)
+    private String businessNumber;
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private Region region;
+
     @Column(nullable = false)
     private String operatingDays;
 
@@ -61,8 +69,11 @@ public class Franchise extends BaseEntity {
 
     private LocalDateTime penaltyEndDate;
 
+    @Column(nullable = false)
+    private Double distanceToFactory;
+
     @Builder.Default
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    private FranchiseStatus status = FranchiseStatus.ACTIVE;
+    private UsableStatus status = UsableStatus.ACTIVE;
 }

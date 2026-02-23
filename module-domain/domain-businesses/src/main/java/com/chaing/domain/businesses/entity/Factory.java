@@ -1,8 +1,8 @@
-package com.chaing.domain.factories.entity;
+package com.chaing.domain.businesses.entity;
 
 import com.chaing.core.entity.BaseEntity;
-import com.chaing.domain.factories.enums.FactoryRegion;
-import com.chaing.domain.factories.enums.FactoryStatus;
+import com.chaing.core.enums.Region;
+import com.chaing.core.enums.UsableStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -42,9 +42,12 @@ public class Factory extends BaseEntity {
     @Column(nullable = false)
     private String representativeName;
 
+    @Column(nullable = false, unique = true)
+    private String businessNumber;
+
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    private FactoryRegion region;
+    private Region region;
 
     @Builder.Default
     @Column(nullable = false)
@@ -53,5 +56,5 @@ public class Factory extends BaseEntity {
     @Builder.Default
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    private FactoryStatus status = FactoryStatus.ACTIVE;
+    private UsableStatus status = UsableStatus.ACTIVE;
 }

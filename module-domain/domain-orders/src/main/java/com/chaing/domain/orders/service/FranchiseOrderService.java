@@ -88,6 +88,8 @@ public class FranchiseOrderService {
 
         order.countItems(orderItems);
 
+        order.allocateTotalAmount(orderItems);
+
         franchiseOrderItemRepository.saveAll(orderItems);
 
         return order;

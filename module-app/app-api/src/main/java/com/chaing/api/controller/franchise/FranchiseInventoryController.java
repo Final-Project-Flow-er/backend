@@ -1,8 +1,8 @@
 package com.chaing.api.controller.franchise;
 
 
-import com.chaing.api.dto.hq.inventories.request.HQInventoryBatchRequest;
-import com.chaing.api.dto.hq.inventories.request.HQStockSearchRequest;
+import com.chaing.api.dto.franchise.inventories.request.FranchiseInventoryBatchRequest;
+import com.chaing.api.dto.franchise.inventories.request.FranchiseStockSearchRequest;
 import com.chaing.core.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -20,26 +20,26 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.LocalDate;
 
 @RestController
-@Tag(name = "FranchiseInventory API", description = "가맹점 재고 관련 관련 API")
+@Tag(name = "FranchiseInventory API", description = "가맹점 재고 관련 API")
 @RequestMapping("/api/v1/franchise/inventory")
 @RequiredArgsConstructor
 public class FranchiseInventoryController {
 
     @Operation(summary = "현재 재고 조회", description = "현재 재고 전체 조회")
     @GetMapping
-    public ResponseEntity<ApiResponse<?>> getStock(@ModelAttribute HQStockSearchRequest hqStockSearchRequest) {
+    public ResponseEntity<ApiResponse<?>> getStock(@ModelAttribute FranchiseStockSearchRequest franchiseStockSearchRequest) {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "재고 증가", description = "재고 증가와 동시에 로그 기록한다.")
     @PostMapping("/increase")
-    public ResponseEntity<ApiResponse<?>> increaseInventory(@RequestBody HQInventoryBatchRequest hqInventoryBatchRequest){
+    public ResponseEntity<ApiResponse<?>> increaseInventory(@RequestBody FranchiseInventoryBatchRequest franchiseInventoryBatchRequest){
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "재고 감소", description = "재고 감소와 동시에 로그 기록한다.")
     @PostMapping("/decrease")
-    public ResponseEntity<ApiResponse<?>> decreaseInventory(@RequestBody HQInventoryBatchRequest hqInventoryBatchRequest){
+    public ResponseEntity<ApiResponse<?>> decreaseInventory(@RequestBody FranchiseInventoryBatchRequest franchiseInventoryBatchRequest){
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

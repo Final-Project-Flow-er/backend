@@ -68,4 +68,11 @@ public class DailySettlementReceipt extends BaseEntity {
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal finalAmount;
 
+    public BigDecimal calculatedFianl() {
+        return totalSaleAmount
+                .subtract(orderAmount.add(deliveryFee.add(commissionFee)
+                        .add(lossAmount))
+                        .add(refundAmount));
+    }
+
 }

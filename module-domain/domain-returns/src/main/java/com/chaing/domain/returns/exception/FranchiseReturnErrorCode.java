@@ -1,4 +1,4 @@
-package com.chaing.domain.orders.exception;
+package com.chaing.domain.returns.exception;
 
 import com.chaing.core.exception.ErrorCode;
 import lombok.Getter;

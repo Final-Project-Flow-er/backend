@@ -5,6 +5,7 @@ import com.chaing.api.dto.franchise.returns.request.FranchiseReturnUpdateRequest
 import com.chaing.domain.returns.dto.response.FranchiseReturnAndReturnItemResponse;
 import com.chaing.api.facade.franchise.FranchiseReturnFacade;
 import com.chaing.core.dto.ApiResponse;
+import com.chaing.domain.returns.dto.response.FranchiseReturnDetailResponse;
 import com.chaing.domain.returns.dto.response.FranchiseReturnResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

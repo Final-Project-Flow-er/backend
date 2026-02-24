@@ -1,6 +1,7 @@
 package com.chaing.domain.returns.service;
 
 import com.chaing.core.dto.returns.request.ReturnToProductRequest;
+import com.chaing.domain.returns.dto.response.FranchiseReturnProductInfo;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;

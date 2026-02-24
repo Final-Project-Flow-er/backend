@@ -1,6 +1,12 @@
 package com.chaing.domain.returns.service;
 
 import com.chaing.domain.returns.dto.response.FranchiseReturnAndReturnItemResponse;
+import com.chaing.domain.returns.dto.response.FranchiseReturnInfo;
+import com.chaing.domain.returns.entity.ReturnItem;
+import com.chaing.domain.returns.entity.Returns;
+import com.chaing.domain.returns.exception.FranchiseReturnErrorCode;
+import com.chaing.domain.returns.exception.FranchiseReturnException;
+import com.chaing.domain.returns.repository.FranchiseReturnItemRepository;
 import com.chaing.domain.returns.repository.FranchiseReturnRepository;
 import com.chaing.domain.returns.repository.interfaces.FranchiseReturnRepositoryCustom;
 import lombok.RequiredArgsConstructor;

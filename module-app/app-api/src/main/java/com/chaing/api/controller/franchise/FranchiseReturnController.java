@@ -50,12 +50,15 @@ public class FranchiseReturnController {
     }
 
     @Operation(summary = "반품 수정", description = "가맹점 id와 반품 번호로 특정 반품 수정")
-    @PatchMapping("/{return-number}")
+    @PatchMapping("/{return-code}")
     public ResponseEntity<ApiResponse<FranchiseReturnAndReturnItemResponse>> updateReturn(
-            @PathVariable("return-number") String returnNumber,
+            @PathVariable("return-code") String returnCode,
             @RequestBody FranchiseReturnUpdateRequest request
     ) {
-        return ResponseEntity.ok(ApiResponse.success(FranchiseReturnAndReturnItemResponse.builder().build()));
+        //TODO: Spring Security Context에서 값 꺼내오는 걸로 수정해야 함
+        String username = "test";
+
+        return ResponseEntity.ok(ApiResponse.success(franchiseReturnFacade.updateReturn(username, request, returnCode)));
     }
 
     @Operation(summary = "반품 취소", description = "가맹점 id와 반품 번호로 특정 반품 취소")

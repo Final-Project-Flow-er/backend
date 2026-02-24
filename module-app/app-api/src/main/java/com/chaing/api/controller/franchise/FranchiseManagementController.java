@@ -23,7 +23,7 @@ import java.util.List;
 
 @RestController
 @Tag(name = "Franchise Management API", description = "가맹점 관리 API")
-@RequestMapping("/api/v1/franchises")
+@RequestMapping("/api/v1/franchise/management")
 public class FranchiseManagementController {
 
     @Operation(summary = "신규 가맹점 등록", description = "본사 관리자가 새로운 가맹점 등록")

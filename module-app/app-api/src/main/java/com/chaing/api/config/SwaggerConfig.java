@@ -67,7 +67,7 @@ public class SwaggerConfig {
     public GroupedOpenApi hqManagementApi() {
         return GroupedOpenApi.builder()
                 .group("본사 관리(HQ Management)")
-                .pathsToMatch("/api/v1/hq/**")
+                .pathsToMatch("/api/v1/hq/management/**")
                 .build();
     }
 
@@ -75,7 +75,7 @@ public class SwaggerConfig {
     public GroupedOpenApi franchiseManagementApi() {
         return GroupedOpenApi.builder()
                 .group("가맹점 관리(Franchise Management)")
-                .pathsToMatch("/api/v1/franchises/**")
+                .pathsToMatch("/api/v1/franchise/management/**")
                 .build();
     }
 
@@ -83,7 +83,7 @@ public class SwaggerConfig {
     public GroupedOpenApi factoryManagementApi() {
         return GroupedOpenApi.builder()
                 .group("공장 관리(Factory Management)")
-                .pathsToMatch("/api/v1/factories/**")
+                .pathsToMatch("/api/v1/factory/management/**")
                 .build();
     }
 

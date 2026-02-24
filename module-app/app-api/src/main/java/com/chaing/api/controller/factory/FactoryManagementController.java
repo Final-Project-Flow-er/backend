@@ -22,7 +22,7 @@ import java.util.List;
 
 @RestController
 @Tag(name = "Factory Management API", description = "공장 관리 API")
-@RequestMapping("/api/v1/factories")
+@RequestMapping("/api/v1/factory/management")
 public class FactoryManagementController {
 
     @Operation(summary = "신규 공장 등록", description = "본사 관리자가 새로운 공장 등록")

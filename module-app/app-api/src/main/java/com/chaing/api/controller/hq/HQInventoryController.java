@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.LocalDate;
 
 @RestController
-@Tag(name = "HqInventory API", description = "본사 재고 관련 관련 API")
+@Tag(name = "HqInventory API", description = "본사 재고 관련 API")
 @RequestMapping("/api/v1/hq/inventory")
 public class HQInventoryController {
 

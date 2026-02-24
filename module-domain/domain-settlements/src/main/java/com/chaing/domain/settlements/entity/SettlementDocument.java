@@ -30,9 +30,9 @@ import java.time.LocalDateTime;
 @Table(
         name = "settlement_document",
         indexes = {
-                @Index(name = "idex_doc_monthly", columnList = "monthly_settlement_id"),
-                @Index(name = "idex_doc_daily", columnList = "daily_receipt_id"),
-                @Index(name = "idex_doc_type", columnList = "document_type")
+                @Index(name = "idx_doc_monthly", columnList = "monthly_settlement_id"),
+                @Index(name = "idx_doc_daily", columnList = "daily_receipt_id"),
+                @Index(name = "idx_doc_type", columnList = "document_type")
         }
 )
 public class SettlementDocument extends BaseEntity {

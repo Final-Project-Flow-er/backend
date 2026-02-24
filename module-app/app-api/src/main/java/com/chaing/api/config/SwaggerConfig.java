@@ -118,4 +118,20 @@ public class SwaggerConfig {
                 .pathsToMatch("/api/v1/franchise/product/**")
                 .build();
     }
+
+    @Bean
+    public GroupedOpenApi transportVendorApi() {
+        return GroupedOpenApi.builder()
+                .group("운송 업체(Transport Vendor)")
+                .pathsToMatch("/api/v1/transport/vendors/**")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi transportVehicleApi() {
+        return GroupedOpenApi.builder()
+                .group("운송 차량(Transport Vehicle)")
+                .pathsToMatch("/api/v1/transport/vehicles/**")
+                .build();
+    }
 }

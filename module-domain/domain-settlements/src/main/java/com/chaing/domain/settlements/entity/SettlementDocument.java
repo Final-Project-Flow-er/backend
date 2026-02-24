@@ -57,7 +57,7 @@ public class SettlementDocument extends BaseEntity {
     @Column(name = "daily_receipt_id")
     private Long dailyReceiptId; // 일별 문서 연결
 
-    @Column(nullable = false, length =50)
+    @Column(nullable = false, length = 50)
     private String storageProvider; // MINIO or S3 //
 
     @Column(nullable = false, length = 100)
@@ -93,6 +93,7 @@ public class SettlementDocument extends BaseEntity {
             throw new IllegalStateException("DAILY 문서는 dailyReceiptId가 필수입니다");
 
 
-    }
+        }
 
+    }
 }

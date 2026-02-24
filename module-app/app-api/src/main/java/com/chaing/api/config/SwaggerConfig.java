@@ -118,4 +118,12 @@ public class SwaggerConfig {
                 .pathsToMatch("/api/v1/franchise/product/**")
                 .build();
     }
+
+    @Bean
+    public GroupedOpenApi notificationApi() {
+        return GroupedOpenApi.builder()
+                .group("알림(Notification)")
+                .pathsToMatch("/api/v1/notifications/**")
+                .build();
+    }
 }

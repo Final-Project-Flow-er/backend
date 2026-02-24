@@ -39,6 +39,12 @@ public class Returns extends BaseEntity {
     private String returnCode;
 
     @Column(nullable = false)
+    private String username;
+
+    @Column(nullable = false)
+    private String phoneNumber;
+
+    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     @Builder.Default
     private ReturnType returnType = ReturnType.PRODUCT_DEFECT;

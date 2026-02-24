@@ -53,12 +53,12 @@ public class FranchiseReturnController {
     @PatchMapping("/{return-code}")
     public ResponseEntity<ApiResponse<FranchiseReturnAndReturnItemResponse>> updateReturn(
             @PathVariable("return-code") String returnCode,
-            @RequestBody FranchiseReturnUpdateRequest request
+            @RequestBody List<FranchiseReturnUpdateRequest> requests
     ) {
         //TODO: Spring Security Context에서 값 꺼내오는 걸로 수정해야 함
         String username = "test";
 
-        return ResponseEntity.ok(ApiResponse.success(franchiseReturnFacade.updateReturn(username, request, returnCode)));
+        return ResponseEntity.ok(ApiResponse.success(franchiseReturnFacade.updateReturn(username, requests, returnCode)));
     }
 
     @Operation(summary = "반품 취소", description = "가맹점 id와 반품 번호로 특정 반품 취소")

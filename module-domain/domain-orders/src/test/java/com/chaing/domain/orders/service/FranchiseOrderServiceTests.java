@@ -191,13 +191,13 @@ class FranchiseOrderServiceTests {
                 List.of(info)
         );
 
-        given(franchiseOrderItemRepository.findByFranchiseOrder_FranchiseOrderIdAndProductId(franchiseOrderId, productId)).willReturn(Optional.of(franchiseOrderItem));
+        given(franchiseOrderItemRepository.findByFranchiseOrder_FranchiseOrderIdAndSerialCode(franchiseOrderId, productId)).willReturn(Optional.of(franchiseOrderItem));
 
         // when
         franchiseOrderService.updateOrder(franchiseOrder, command);
 
         // then
-        verify(franchiseOrderItemRepository, times(command.items().size())).findByFranchiseOrder_FranchiseOrderIdAndProductId(franchiseOrderId, productId);
+        verify(franchiseOrderItemRepository, times(command.items().size())).findByFranchiseOrder_FranchiseOrderIdAndSerialCode(franchiseOrderId, productId);
         assertEquals(20, franchiseOrderItem.getQuantity());
         assertEquals(BigDecimal.valueOf(2000), franchiseOrderItem.getUnitPrice());
         assertEquals("phoneNumber", franchiseOrder.getPhoneNumber());

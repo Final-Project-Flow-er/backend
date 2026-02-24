@@ -2,10 +2,13 @@ package com.chaing.api.controller.franchise;
 
 import com.chaing.api.dto.franchise.returns.request.FranchiseReturnCreateRequest;
 import com.chaing.api.dto.franchise.returns.request.FranchiseReturnUpdateRequest;
-import com.chaing.api.dto.franchise.returns.response.FranchiseReturnResponse;
+import com.chaing.domain.returns.dto.response.FranchiseReturnAndReturnItemResponse;
+import com.chaing.api.facade.franchise.FranchiseReturnFacade;
 import com.chaing.core.dto.ApiResponse;
+import com.chaing.domain.returns.dto.response.FranchiseReturnResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;

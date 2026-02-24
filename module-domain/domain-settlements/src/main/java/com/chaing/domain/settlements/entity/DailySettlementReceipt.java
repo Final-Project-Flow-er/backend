@@ -86,8 +86,12 @@ public class DailySettlementReceipt extends BaseEntity {
     @PrePersist
     @PreUpdate
     private void validateFinalAmount() {
+        if (totalSaleAmount == null || orderAmount == null || deliveryFee == null || commissionFee == null
+        || lossAmount == null || refundAmount == null || adjustmentAmount == null) {
+            throw new IllegalStateException("정산 금액 구성 필드에 null갑이 포함되어 있습니다.");
+        }
         BigDecimal expected = calculatedFinal();
-        if (finalAmount == null || expected == null || finalAmount.compareTo(expected) != 0) {
+        if (finalAmount == null || finalAmount.compareTo(expected) != 0) {
             throw new IllegalStateException(
                     "finalAmount(" + finalAmount + ")가 계산값(" + expected + ")과 일치하지 않습니다."
             );

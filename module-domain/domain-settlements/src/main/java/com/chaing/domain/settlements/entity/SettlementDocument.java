@@ -86,9 +86,12 @@ public class SettlementDocument extends BaseEntity {
         if (periodType == null) {
             throw new IllegalStateException("periodType은 필수입니다");
         }
-        if (periodType == PeriodType.MONTHLY) {
+        if (periodType == PeriodType.MONTHLY && monthlySettlementId == null) {
             throw new IllegalStateException("MONTHLY 문서는 monthlySettlementId가 필수입니다");
         }
+        if (periodType == PeriodType.DAILY && dailyReceiptId == null) {
+            throw new IllegalStateException("DAILY 문서는 dailyReceiptId가 필수입니다");
+
 
     }
 

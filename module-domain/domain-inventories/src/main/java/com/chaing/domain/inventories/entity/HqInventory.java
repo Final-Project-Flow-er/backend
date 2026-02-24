@@ -1,5 +1,6 @@
 package com.chaing.domain.inventories.entity;
 
+import com.chaing.core.entity.BaseEntity;
 import com.chaing.core.enums.LogType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -23,7 +24,7 @@ import java.time.LocalDate;
 @Builder
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class HqInventory {
+public class HqInventory extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long inventoryId;
@@ -39,7 +40,7 @@ public class HqInventory {
     private Long productId;
 
     // 제조일자
-    @NotBlank
+    @NotNull
     @Column(nullable = false)
     private LocalDate manufactureDate;
 

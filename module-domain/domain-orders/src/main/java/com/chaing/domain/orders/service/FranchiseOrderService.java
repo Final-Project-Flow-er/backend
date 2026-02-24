@@ -1,5 +1,6 @@
 package com.chaing.domain.orders.service;
 
+import com.chaing.core.dto.returns.request.OrderItemIdAndSerialCode;
 import com.chaing.domain.orders.dto.command.FranchiseOrderCreateCommand;
 import com.chaing.domain.orders.dto.command.FranchiseOrderUpdateCommand;
 import com.chaing.domain.orders.dto.info.FranchiseOrderItemInfo;
@@ -45,7 +46,7 @@ public class FranchiseOrderService {
 
         // request.items를 뽑아내서 따로 수정
         for (FranchiseOrderItemInfo item : request.items()) {
-            FranchiseOrderItem orderItem = franchiseOrderItemRepository.findByFranchiseOrder_FranchiseOrderIdAndProductId(order.getFranchiseOrderId(), item.productId())
+            FranchiseOrderItem orderItem = franchiseOrderItemRepository.findByFranchiseOrder_FranchiseOrderIdAndSerialCode(order.getFranchiseOrderId(), item.serialCode())
                     .orElseThrow(() -> new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_NOT_FOUND));
             orderItem.update(item);
         }
@@ -73,7 +74,7 @@ public class FranchiseOrderService {
                                     .map(info -> {
                                         return FranchiseOrderItem.builder()
                                                 .franchiseOrder(order)
-                                                .productId(info.productId())
+                                                .serialCode(info.serialCode())
                                                 .quantity(item.quantity())
                                                 .unitPrice(info.unitPrice())
                                                 .totalPrice(info.unitPrice().multiply(BigDecimal.valueOf(item.quantity())))
@@ -98,5 +99,33 @@ public class FranchiseOrderService {
     private String generateOrderCode(Long franchiseId) {
         // 나중에 redis 도입으로 일련번호 초기화 실시해야 함
         return UUID.randomUUID().toString();
+    }
+
+    // orderId에 대한 발주 코드 반환
+    public Map<Long, String> getAllOrderCode(List<Long> orderIds) {
+        // orderId에 해당하는 발주 조회
+        List<FranchiseOrder> orders = franchiseOrderRepository.findAllByFranchiseOrderIdIn(orderIds);
+
+        return orders.stream()
+                .collect(Collectors.toMap(
+                        FranchiseOrder::getFranchiseOrderId,
+                        FranchiseOrder::getOrderCode
+                ));
+    }
+
+    // orderItemId에 대한 serialCode 반환
+    public List<OrderItemIdAndSerialCode> getSerialCodes(List<Long> orderItemIds) {
+        // orderItemId에 해당하는 serialCode 조회
+        List<FranchiseOrderItem> items = franchiseOrderItemRepository.findAllByFranchiseOrderItemIdIn(orderItemIds);
+        System.out.println("serialCode 포함한 items: " + items.get(0).getSerialCode());
+
+        return items.stream()
+                .map(item -> {
+                    return OrderItemIdAndSerialCode.builder()
+                            .orderItemId(item.getFranchiseOrderItemId())
+                            .serialCode(item.getSerialCode())
+                            .build();
+                })
+                .toList();
     }
 }

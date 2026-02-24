@@ -88,7 +88,7 @@ public class DailySettlementReceipt extends BaseEntity {
     private void validateFinalAmount() {
         if (totalSaleAmount == null || orderAmount == null || deliveryFee == null || commissionFee == null
         || lossAmount == null || refundAmount == null || adjustmentAmount == null) {
-            throw new IllegalStateException("정산 금액 구성 필드에 null갑이 포함되어 있습니다.");
+            throw new IllegalStateException("정산 금액 구성 필드에 null값이 포함되어 있습니다.");
         }
         BigDecimal expected = calculatedFinal();
         if (finalAmount == null || finalAmount.compareTo(expected) != 0) {

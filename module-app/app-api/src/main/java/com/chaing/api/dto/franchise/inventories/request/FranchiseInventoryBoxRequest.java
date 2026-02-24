@@ -1,6 +1,8 @@
 package com.chaing.api.dto.franchise.inventories.request;
 
 import com.chaing.core.enums.LogType;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -14,6 +16,8 @@ public record FranchiseInventoryBoxRequest(
         BigDecimal supplyPrice, // 공급가
         LocalDateTime processedAt,    // 배송 완료 일자
         LocalDateTime receivedAt,    // 입고 완료 일자
+        @NotEmpty
+        @Valid
         List<FranchiseInventoryRequest> productList
 ) {
 }

@@ -38,4 +38,28 @@ public class SwaggerConfig {
                 .pathsToMatch("/api/v1/franchise/sales/**")
                 .build();
     }
+
+    @Bean
+    public GroupedOpenApi authApi() {
+        return GroupedOpenApi.builder()
+                .group("인증(Auth)")
+                .pathsToMatch("/api/v1/auth/**")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi myPageApi() {
+        return GroupedOpenApi.builder()
+                .group("마이페이지(MyPage)")
+                .pathsToMatch("/api/v1/users/me/**")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi userManagementApi() {
+        return GroupedOpenApi.builder()
+                .group("회원 관리(User Management)")
+                .pathsToMatch("/api/v1/hq/users/**")
+                .build();
+    }
 }

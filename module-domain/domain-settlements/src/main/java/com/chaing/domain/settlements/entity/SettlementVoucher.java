@@ -28,7 +28,7 @@ import java.time.LocalDateTime;
 @Table(
         name = "settlement_voucher",
         indexes = {
-                @Index(name = "idx_voucher_monthly", columnList = "monthly_settlment_id"),
+                @Index(name = "idx_voucher_monthly", columnList = "monthly_settlement_id"),
                 @Index(name = "idx_voucher_type", columnList = "voucher_type"),
                 @Index(name = "idx_voucher_occurred_at", columnList = "occurred_at")
         }
@@ -55,8 +55,6 @@ public class SettlementVoucher extends BaseEntity {
     @Column(length = 255)
     private String referenceCode; // 외부 연동 코드(주문번호, 발주번호) //
 
-
-
     @Column(length = 255)
     private String productName;
 
@@ -65,5 +63,7 @@ public class SettlementVoucher extends BaseEntity {
     @Column(precision = 19, scale = 2)
     private BigDecimal unitPrice; // 단가
 
+    @Column(name = "occurred_at", nullable = false)
+    private LocalDateTime occurredAt; // 전표 발생 일시
 
 }

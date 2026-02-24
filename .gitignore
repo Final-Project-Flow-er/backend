@@ -46,4 +46,4 @@ yarn-error.log*
 GEMINI.md
 
 ### SQL ###
-src/
+src/main/resources/data-sales.sql

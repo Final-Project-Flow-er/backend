@@ -20,44 +20,50 @@ import java.util.List;
 @RestController
 @Tag(name = "Franchise Return API", description = "가맹점 반품 관련 API")
 @RequestMapping("/api/v1/franchise/returns")
+@RequiredArgsConstructor
 public class FranchiseReturnController {
+
+    private final FranchiseReturnFacade franchiseReturnFacade;
 
     @Operation(summary = "반품 조회", description = "가맹점 id로 해당 가맹점의 반품 요청 전체 조회")
     @GetMapping
     public ResponseEntity<ApiResponse<List<FranchiseReturnResponse>>> getAllReturns() {
-        return ResponseEntity.ok(ApiResponse.success(List.of(FranchiseReturnResponse.builder().build())));
+        //TODO: Spring Security Context에서 값 꺼내오는 걸로 수정해야 함
+        String username = "test";
+
+        return ResponseEntity.ok(ApiResponse.success(franchiseReturnFacade.getAllReturns(username)));
     }
 
     @Operation(summary = "특정 반품 조회", description = "가맹점 id와 반품 번호로 특정 반품 조회")
     @GetMapping("/{return-number}")
-    public ResponseEntity<ApiResponse<FranchiseReturnResponse>> getReturn(
+    public ResponseEntity<ApiResponse<FranchiseReturnAndReturnItemResponse>> getReturn(
             @PathVariable("return-number") String returnNumber
     ) {
-        return ResponseEntity.ok(ApiResponse.success(FranchiseReturnResponse.builder().build()));
+        return ResponseEntity.ok(ApiResponse.success(FranchiseReturnAndReturnItemResponse.builder().build()));
     }
 
     @Operation(summary = "반품 수정", description = "가맹점 id와 반품 번호로 특정 반품 수정")
     @PatchMapping("/{return-number}")
-    public ResponseEntity<ApiResponse<FranchiseReturnResponse>> updateReturn(
+    public ResponseEntity<ApiResponse<FranchiseReturnAndReturnItemResponse>> updateReturn(
             @PathVariable("return-number") String returnNumber,
             @RequestBody FranchiseReturnUpdateRequest request
     ) {
-        return ResponseEntity.ok(ApiResponse.success(FranchiseReturnResponse.builder().build()));
+        return ResponseEntity.ok(ApiResponse.success(FranchiseReturnAndReturnItemResponse.builder().build()));
     }
 
     @Operation(summary = "반품 취소", description = "가맹점 id와 반품 번호로 특정 반품 취소")
     @PatchMapping("/{return-number}/cancellation")
-    public ResponseEntity<ApiResponse<FranchiseReturnResponse>> cancelReturn(
+    public ResponseEntity<ApiResponse<FranchiseReturnAndReturnItemResponse>> cancelReturn(
             @PathVariable("return-number") String returnNumber
     ) {
-        return ResponseEntity.ok(ApiResponse.success(FranchiseReturnResponse.builder().build()));
+        return ResponseEntity.ok(ApiResponse.success(FranchiseReturnAndReturnItemResponse.builder().build()));
     }
 
     @Operation(summary = "반품 생성", description = "가맹점 id로 반품 생성")
     @PostMapping
-    public ResponseEntity<ApiResponse<FranchiseReturnResponse>> createReturn(
+    public ResponseEntity<ApiResponse<FranchiseReturnAndReturnItemResponse>> createReturn(
             @RequestBody FranchiseReturnCreateRequest request
     ) {
-        return ResponseEntity.ok(ApiResponse.success(FranchiseReturnResponse.builder().build()));
+        return ResponseEntity.ok(ApiResponse.success(FranchiseReturnAndReturnItemResponse.builder().build()));
     }
 }

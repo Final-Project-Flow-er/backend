@@ -64,6 +64,30 @@ public class SwaggerConfig {
     }
 
     @Bean
+    public GroupedOpenApi hqManagementApi() {
+        return GroupedOpenApi.builder()
+                .group("본사 관리(HQ Management)")
+                .pathsToMatch("/api/v1/hq/management/**")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi franchiseManagementApi() {
+        return GroupedOpenApi.builder()
+                .group("가맹점 관리(Franchise Management)")
+                .pathsToMatch("/api/v1/franchise/management/**")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi factoryManagementApi() {
+        return GroupedOpenApi.builder()
+                .group("공장 관리(Factory Management)")
+                .pathsToMatch("/api/v1/factory/management/**")
+                .build();
+    }
+
+    @Bean
     public GroupedOpenApi hqInventoryApi() {
         return GroupedOpenApi.builder()
                 .group("본사 재고(HqInventory)")

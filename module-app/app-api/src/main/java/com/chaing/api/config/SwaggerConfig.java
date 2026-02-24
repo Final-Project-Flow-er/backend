@@ -54,4 +54,36 @@ public class SwaggerConfig {
                 .pathsToMatch("/api/v1/franchise/inventory/**")
                 .build();
     }
+
+    @Bean
+    public GroupedOpenApi InternalTransportApi() {
+        return GroupedOpenApi.builder()
+                .group("내부 운송(Internal Transport")
+                .pathsToMatch("/api/v1/transport/internal/**")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi ExternalTransportApi() {
+        return GroupedOpenApi.builder()
+                .group("외부 운송(External Transport")
+                .pathsToMatch("/api/v1/transport/external/**")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi InternalTransportApi() {
+        return GroupedOpenApi.builder()
+                .group("내부 운송(Internal Transport")
+                .pathsToMatch("/api/v1/transport/internal/**")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi ExternalTransportApi() {
+        return GroupedOpenApi.builder()
+                .group("외부 운송(External Transport")
+                .pathsToMatch("/api/v1/transport/external/**")
+                .build();
+    }
 }

@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class FranchiseReturnFacade {
 
     private final FranchiseReturnService franchiseReturnService;
@@ -28,6 +29,7 @@ public class FranchiseReturnFacade {
     // 가짜
     private final InventoryService inventoryService;
     private final ProductService productService;
+    private final FranchiseService franchiseService;
 
     public List<FranchiseReturnResponse> getAllReturns(String username) {
         // franchiseId username으로 조회하는 로직 추가 필요
@@ -86,24 +88,15 @@ public class FranchiseReturnFacade {
                     Long orderItemId = info.franchiseOrderItemId();
 
                     String orderCode = orderIdAndCode.get(orderId);
-                    System.out.println("orderItemIdAndSerialCodesMap: " + orderItemIdAndSerialCodesMap.get(orderItemId));
                     String serialCode = orderItemIdAndSerialCodesMap.get(orderItemId);
-                    System.out.println("serialCode: " + serialCode);
 
-                    System.out.println(serialCodeAndInventoryMap);
                     ReturnToInventoryRequest inventory = serialCodeAndInventoryMap.get(serialCode);
-                    if (inventory == null) {
-                        throw new IllegalStateException("Inventory not found for serialCode=" + serialCode
-                                + ", orderItemId=" + orderItemId);
-                    }
+
                     Long productId = inventory.productId();
                     String boxCode = inventory.boxCode();
 
                     ReturnToProductRequest product = productIdAndProductMap.get(productId);
-                    if (product == null) {
-                        throw new IllegalStateException("Product not found for productId=" + productId
-                                + ", serialCode=" + serialCode);
-                    }
+
                     String productName = product.productName();
                     String productCode = product.productCode();
                     BigDecimal unitPrice = product.unitPrice();
@@ -127,5 +120,67 @@ public class FranchiseReturnFacade {
                             .build();
                 })
                 .toList();
+    }
+
+    public FranchiseReturnDetailResponse getReturn(String username, String returnCode) {
+        // franchiseId username으로 조회하는 로직 추가 필요
+        Long franchiseId = 1L;
+
+        // 반품 정보
+        FranchiseReturnInfo returnInfo = franchiseReturnService.getReturn(username, franchiseId, returnCode);
+
+        // 발주 정보
+        String orderCode = franchiseOrderService.getOrderCode(franchiseId, returnInfo.orderId());
+
+        // 반품 제품 정보
+        List<Long> orderItemIds = franchiseReturnService.getAllReturnItemOrderItemId(returnCode);
+
+        // SerialCode
+        List<String> serialCodes = franchiseOrderService.getSerialCodeList(orderItemIds);
+
+        // 제품 정보
+        List<ReturnToInventoryRequest> inventoryRequests = inventoryService.getProducts(serialCodes);
+        List<FranchiseReturnProductInfo> productInfos = productService.getProduct(returnCode);
+
+        // 가맹점 코드
+        String franchiseCode = franchiseService.getFranchise(franchiseId);
+
+        return FranchiseReturnDetailResponse.builder()
+                .returnCode(returnCode)
+                .orderCode(orderCode)
+                .franchiseCode(franchiseCode)
+                .requestedDate(returnInfo.requestedDate())
+                .status(returnInfo.status())
+                .username(username)
+                .phoneNumber(returnInfo.phoneNumber())
+                .returnType(returnInfo.type())
+                .description(returnInfo.description())
+                .items(
+                        inventoryRequests.stream()
+                                .map(request -> {
+                                    String serialCode = request.serialCode();
+                                    Long productId = request.productId();
+                                    String boxCode = request.boxCode();
+
+                                    FranchiseReturnProductInfo product = productInfos.stream()
+                                            .filter(productInfo -> productInfo.serialCode().equals(serialCode))
+                                            .findFirst()
+                                            .orElseThrow(() -> new FranchiseReturnException(FranchiseReturnErrorCode.PRODUCT_NOT_FOUND));
+
+                                    String productCode = product.productCode();
+                                    String productName = product.productName();
+                                    BigDecimal unitPrice = product.unitPrice();
+
+                                    return FranchiseReturnItemResponse.builder()
+                                            .boxCode(boxCode)
+                                            .serialCode(serialCode)
+                                            .productCode(productCode)
+                                            .productName(productName)
+                                            .unitPrice(unitPrice)
+                                            .build();
+                                })
+                                .toList()
+                )
+                .build();
     }
 }

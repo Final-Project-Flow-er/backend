@@ -115,7 +115,7 @@ public class FranchiseOrderService {
                 ));
     }
 
-    // orderItemId에 대한 serialCode 반환
+    // orderItemId에 대한 serialCode 반환 - Map
     public List<OrderItemIdAndSerialCode> getSerialCodes(List<Long> orderItemIds) {
         // orderItemId에 해당하는 serialCode 조회
         List<FranchiseOrderItem> items = franchiseOrderItemRepository.findAllByFranchiseOrderItemIdIn(orderItemIds);
@@ -129,5 +129,22 @@ public class FranchiseOrderService {
                             .build();
                 })
                 .toList();
+    }
+
+    // orderItemId에 대한 serialCode 반환 - List
+    public List<String> getSerialCodeList(List<Long> orderItemIds) {
+        // orderItemId에 해당하는 serialCode 조회
+        List<FranchiseOrderItem> items = franchiseOrderItemRepository.findAllByFranchiseOrderItemIdIn(orderItemIds);
+
+        return items.stream()
+                .map(FranchiseOrderItem::getSerialCode)
+                .toList();
+    }
+
+    // orderId, franchiseId에 대한 orderCode 반환
+    public String getOrderCode(Long franchiseId, Long orderId) {
+        return franchiseOrderRepository.findByFranchiseIdAndFranchiseOrderId(franchiseId, orderId)
+                .orElseThrow(() -> new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_NOT_FOUND))
+                .getOrderCode();
     }
 }

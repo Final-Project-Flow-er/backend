@@ -1,4 +1,12 @@
 package com.chaing.api.dto.franchise.returns.request;
 
-public record FranchiseReturnUpdateRequest() {
+import jakarta.validation.constraints.NotBlank;
+
+public record FranchiseReturnUpdateRequest(
+        @NotBlank
+        String boxCode,
+
+        @NotBlank
+        String serialCode
+) {
 }

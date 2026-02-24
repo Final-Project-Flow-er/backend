@@ -44,8 +44,8 @@ public class HQProductController {
 
     @Operation(summary = "제품타입 추가", description = "제품 타입을 추가한다.")
     @PostMapping("/product-types")
-    public ResponseEntity<ApiResponse<?>> getProductTypes(
-            @RequestBody HQProductTypeCreateRequest  hqProductTypeCreateRequest
+    public ResponseEntity<ApiResponse<?>> createProductTypes(
+            @RequestBody HQProductTypeCreateRequest hqProductTypeCreateRequest
             ){
         return ResponseEntity.ok(ApiResponse.success(null));
     }

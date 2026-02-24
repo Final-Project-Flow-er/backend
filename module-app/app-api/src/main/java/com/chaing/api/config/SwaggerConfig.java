@@ -50,7 +50,7 @@ public class SwaggerConfig {
     @Bean
     public GroupedOpenApi franchiseInventoryApi() {
         return GroupedOpenApi.builder()
-                .group("가맹점 재고(franchiseInventory)")
+                .group("가맹점 재고(FranchiseInventory)")
                 .pathsToMatch("/api/v1/franchise/inventory/**")
                 .build();
     }

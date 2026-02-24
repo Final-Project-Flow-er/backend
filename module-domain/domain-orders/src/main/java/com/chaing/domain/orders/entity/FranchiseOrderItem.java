@@ -44,7 +44,7 @@ public class FranchiseOrderItem extends BaseEntity {
     private FranchiseOrder franchiseOrder;    // fk 가맹점 발주 식별 키
 
     @Column(nullable = false)
-    private Long productId; // 제품 식별 번호
+    private String serialCode; // fk 제품 식별 번호
 
     @Column(nullable = false)
     private Integer quantity;

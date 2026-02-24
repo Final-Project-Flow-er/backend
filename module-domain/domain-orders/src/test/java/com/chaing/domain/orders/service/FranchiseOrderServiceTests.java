@@ -11,7 +11,7 @@ import com.chaing.domain.orders.exception.FranchiseOrderErrorCode;
 import com.chaing.domain.orders.exception.FranchiseOrderException;
 import com.chaing.domain.orders.repository.FranchiseOrderItemRepository;
 import com.chaing.domain.orders.repository.FranchiseOrderRepository;
-import com.chaing.domain.orders.support.ProductReader;
+import com.chaing.domain.orders.support.ProductInfo;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -26,9 +26,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -291,18 +291,18 @@ class FranchiseOrderServiceTests {
                 List.of(info)
         );
 
-        ProductReader.ProductInfo productInfo = new ProductReader.ProductInfo(
-                1L,
-                "ProductCode",
-                BigDecimal.valueOf(200)
-        );
+        ProductInfo productInfo = ProductInfo.builder()
+                .productCode("ProductCode")
+                .productId(1L)
+                .unitPrice(BigDecimal.valueOf(5000))
+                .build();
 
         // when
         FranchiseOrder order = franchiseOrderService.createOrder(franchiseId, username, command, List.of(productInfo));
 
         // then
         assertEquals(20, order.getTotalQuantity());
-        assertEquals(BigDecimal.valueOf(4000), order.getTotalAmount());
+        assertEquals(BigDecimal.valueOf(100000), order.getTotalAmount());
         assertEquals("phoneNumber", order.getPhoneNumber());
     }
 
@@ -325,17 +325,17 @@ class FranchiseOrderServiceTests {
                 List.of(info)
         );
 
-        ProductReader.ProductInfo productInfo = new ProductReader.ProductInfo(
-                1L,
-                "ProductCode",
-                BigDecimal.valueOf(200)
-        );
+        ProductInfo productInfo = ProductInfo.builder()
+                .productCode("ProductCode")
+                .productId(1L)
+                .unitPrice(BigDecimal.valueOf(5000))
+                .build();
 
         // when & then
         FranchiseOrderException exception = assertThrows(FranchiseOrderException.class, () -> {
             franchiseOrderService.createOrder(franchiseId, username, command, List.of(productInfo));
         });
-        assertEquals(FranchiseOrderErrorCode.ORDER_NOT_FOUND, exception.getErrorCode());
+        assertEquals(FranchiseOrderErrorCode.PRODUCT_NOT_FOUND, exception.getErrorCode());
     }
 
 

@@ -6,7 +6,9 @@ import com.chaing.api.dto.franchise.inventories.request.FranchiseStockSearchRequ
 import com.chaing.core.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -27,19 +29,19 @@ public class FranchiseInventoryController {
 
     @Operation(summary = "현재 재고 조회", description = "현재 재고 전체 조회")
     @GetMapping
-    public ResponseEntity<ApiResponse<?>> getStock(@ModelAttribute FranchiseStockSearchRequest franchiseStockSearchRequest) {
+    public ResponseEntity<ApiResponse<?>> getStock(@Valid @ModelAttribute FranchiseStockSearchRequest franchiseStockSearchRequest) {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "재고 증가", description = "재고 증가와 동시에 로그 기록한다.")
     @PostMapping("/increase")
-    public ResponseEntity<ApiResponse<?>> increaseInventory(@RequestBody FranchiseInventoryBatchRequest franchiseInventoryBatchRequest){
+    public ResponseEntity<ApiResponse<?>> increaseInventory(@Valid @RequestBody FranchiseInventoryBatchRequest franchiseInventoryBatchRequest){
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "재고 감소", description = "재고 감소와 동시에 로그 기록한다.")
     @PostMapping("/decrease")
-    public ResponseEntity<ApiResponse<?>> decreaseInventory(@RequestBody FranchiseInventoryBatchRequest franchiseInventoryBatchRequest){
+    public ResponseEntity<ApiResponse<?>> decreaseInventory(@Valid @RequestBody FranchiseInventoryBatchRequest franchiseInventoryBatchRequest){
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
@@ -59,7 +61,7 @@ public class FranchiseInventoryController {
     @GetMapping("/items")
     public ResponseEntity<ApiResponse<?>> getItems(
             @RequestParam Long productId,
-            @RequestParam LocalDate productDate
+            @RequestParam @DateTimeFormat (iso = DateTimeFormat.ISO.DATE) LocalDate productDate
     ) {
         return ResponseEntity.ok(ApiResponse.success(null));
     }

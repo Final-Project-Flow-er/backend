@@ -7,6 +7,7 @@ import com.chaing.api.dto.hq.inventories.request.HQStockSearchRequest;
 import com.chaing.core.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -26,19 +27,19 @@ public class HQInventoryController {
 
     @Operation(summary = "현재 재고 조회", description = "현재 재고 전체 조회")
     @GetMapping
-    public ResponseEntity<ApiResponse<?>> getStock(@ModelAttribute HQStockSearchRequest hqStockSearchRequest) {
+    public ResponseEntity<ApiResponse<?>> getStock(@Valid @ModelAttribute HQStockSearchRequest hqStockSearchRequest) {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "재고 증가", description = "재고 증가와 동시에 로그 기록한다.")
     @PostMapping("/increase")
-    public ResponseEntity<ApiResponse<?>> increaseInventory(@RequestBody HQInventoryBatchRequest hqInventoryBatchRequest){
+    public ResponseEntity<ApiResponse<?>> increaseInventory(@Valid @RequestBody HQInventoryBatchRequest hqInventoryBatchRequest){
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "재고 감소", description = "재고 감소와 동시에 로그 기록한다.")
     @PostMapping("/decrease")
-    public ResponseEntity<ApiResponse<?>> decreaseInventory(@RequestBody HQInventoryBatchRequest hqInventoryBatchRequest){
+    public ResponseEntity<ApiResponse<?>> decreaseInventory(@Valid @RequestBody HQInventoryBatchRequest hqInventoryBatchRequest){
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

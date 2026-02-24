@@ -88,4 +88,9 @@ public class Product extends BaseEntity {
     @NotNull
     @Column(nullable = false)
     private Integer kcal;
+
+    // 무게
+    @NotNull
+    @Column(nullable = false)
+    private Integer weight;
 }

@@ -102,4 +102,20 @@ public class SwaggerConfig {
                 .pathsToMatch("/api/v1/franchise/inventory/**")
                 .build();
     }
+
+    @Bean
+    public GroupedOpenApi hqProductApi() {
+        return GroupedOpenApi.builder()
+                .group("본사 상품(HqProduct)")
+                .pathsToMatch("/api/v1/hq/product/**")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi franchiseProductApi() {
+        return GroupedOpenApi.builder()
+                .group("가맹점 상품(FranchiseProduct)")
+                .pathsToMatch("/api/v1/franchise/product/**")
+                .build();
+    }
 }

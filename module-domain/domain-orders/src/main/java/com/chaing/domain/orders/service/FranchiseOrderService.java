@@ -10,7 +10,7 @@ import com.chaing.domain.orders.exception.FranchiseOrderErrorCode;
 import com.chaing.domain.orders.exception.FranchiseOrderException;
 import com.chaing.domain.orders.repository.FranchiseOrderItemRepository;
 import com.chaing.domain.orders.repository.FranchiseOrderRepository;
-import com.chaing.domain.orders.support.ProductReader;
+import com.chaing.domain.orders.support.ProductInfo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -60,31 +60,35 @@ public class FranchiseOrderService {
     }
 
     // 가맹점 발주 생성
-    public FranchiseOrder createOrder(Long franchiseId, String username, FranchiseOrderCreateCommand request, List<ProductReader.ProductInfo> productInfos) {
+    public FranchiseOrder createOrder(Long franchiseId, String username, FranchiseOrderCreateCommand request, List<ProductInfo> productInfos) {
         // FranchiseOrder 생성
         FranchiseOrder order = FranchiseOrder.create(franchiseId, username, request, generateOrderCode(franchiseId));
+        franchiseOrderRepository.save(order);
 
         // FranchiseOrderItem 생성
         List<FranchiseOrderItem> orderItems = request.items().stream()
-                .map(item -> {
-                    ProductReader.ProductInfo productInfo = productInfos.stream()
-                            .filter(info -> info.productCode().equals(item.productCode()))
-                            .findFirst()
-                            .orElseThrow(() -> new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_NOT_FOUND));
-
-                    return FranchiseOrderItem.builder()
-                            .franchiseOrder(order)
-                            .productId(productInfo.productId())
-                            .quantity(item.quantity())
-                            .unitPrice(productInfo.unitPrice())
-                            .totalPrice(productInfo.unitPrice().multiply(BigDecimal.valueOf(item.quantity())))
-                            .build();
-                })
-                .toList();
+                        .map(item -> {
+                            FranchiseOrderItem requestOrderItem = productInfos.stream()
+                                    .filter(info -> item.productCode().equals(info.productCode()))
+                                    .map(info -> {
+                                        return FranchiseOrderItem.builder()
+                                                .franchiseOrder(order)
+                                                .productId(info.productId())
+                                                .quantity(item.quantity())
+                                                .unitPrice(info.unitPrice())
+                                                .totalPrice(info.unitPrice().multiply(BigDecimal.valueOf(item.quantity())))
+                                                .build();
+                                    })
+                                    .findAny()
+                                    .orElseThrow(() -> new FranchiseOrderException(FranchiseOrderErrorCode.PRODUCT_NOT_FOUND));
+                            return requestOrderItem;
+                        }).toList();
 
         order.addOrderItem(orderItems);
 
         order.countItems(orderItems);
+
+        franchiseOrderItemRepository.saveAll(orderItems);
 
         return order;
     }

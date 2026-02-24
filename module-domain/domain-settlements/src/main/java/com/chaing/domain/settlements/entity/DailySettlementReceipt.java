@@ -7,6 +7,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
@@ -79,6 +81,17 @@ public class DailySettlementReceipt extends BaseEntity {
                         .add(lossAmount))
                 .add(refundAmount)
                 .add(adjustmentAmount);
+    }
+
+    @PrePersist
+    @PreUpdate
+    private void validateFinalAmount() {
+        BigDecimal expected = calculatedFinal();
+        if (finalAmount == null || expected == null || finalAmount.compareTo(expected) != 0) {
+            throw new IllegalStateException(
+                    "finalAmount(" + finalAmount + ")가 계산값(" + expected + ")과 일치하지 않습니다."
+            );
+        }
     }
 
 }

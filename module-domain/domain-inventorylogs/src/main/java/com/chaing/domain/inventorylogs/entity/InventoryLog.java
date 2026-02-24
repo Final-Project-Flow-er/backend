@@ -2,6 +2,7 @@ package com.chaing.domain.inventorylogs.entity;
 
 import com.chaing.core.entity.BaseEntity;
 import com.chaing.core.enums.LogType;
+import com.chaing.domain.inventorylogs.enums.ActorType;
 import com.chaing.domain.inventorylogs.enums.LocationType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -76,4 +77,12 @@ public class InventoryLog extends BaseEntity {
 
     // HEAD, SE01, CUSTOMER(판매), WASTE(폐기장)
     private String toLocationCode;
+
+    @Enumerated(EnumType.STRING)
+    @NotNull
+    @Column(nullable = false)
+    // HQ, FACTORY, FRANCHISE
+    private ActorType actorType;
+
+    private Long actorId;
 }

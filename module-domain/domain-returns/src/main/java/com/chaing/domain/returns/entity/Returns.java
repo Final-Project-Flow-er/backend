@@ -30,6 +30,9 @@ public class Returns extends BaseEntity {
     private Long returnId;
 
     @Column(nullable = false)
+    private Long franchiseId;
+
+    @Column(nullable = false)
     private Long franchiseOrderId;  // fk, FranchiseOrderId
 
     @Column(nullable = false, unique = true)

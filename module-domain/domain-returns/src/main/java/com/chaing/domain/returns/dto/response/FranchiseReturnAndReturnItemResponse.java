@@ -5,35 +5,24 @@ import com.chaing.domain.returns.enums.ReturnType;
 import com.querydsl.core.annotations.QueryProjection;
 import lombok.Builder;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Builder
-public record FranchiseReturnResponse(
+public record FranchiseReturnAndReturnItemResponse(
         String returnCode,
 
         ReturnStatus status,
 
-        String orderCode,
-
-        String productCode,
-
-        String productName,
-
-        BigDecimal unitPrice,
+        Long franchiseOrderId,
 
         Integer quantity,
-
-        BigDecimal totalPrice,
 
         ReturnType type,
 
         LocalDateTime requestedDate,
 
-        String boxCode,
-
-        String serialCode
+        Long franchiseOrderItemId
 ) {
     @QueryProjection
-    public FranchiseReturnResponse {}
+    public FranchiseReturnAndReturnItemResponse {}
 }

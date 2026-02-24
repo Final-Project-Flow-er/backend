@@ -17,8 +17,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
-
 @Entity
 @Getter
 @Builder
@@ -39,9 +37,6 @@ public class ReturnItem {
 
     @Column(nullable = false)
     private Integer quantity;
-
-    @Column(nullable = false, precision = 19, scale = 2)
-    private BigDecimal totalReturnPrice;
 
     @Column(nullable = false)
     @Builder.Default

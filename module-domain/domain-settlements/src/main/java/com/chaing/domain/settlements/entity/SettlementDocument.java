@@ -12,15 +12,13 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 @Entity
 @Getter
@@ -82,5 +80,16 @@ public class SettlementDocument extends BaseEntity {
 
     @Column(length = 100)
     private String checksum;
+
+    @PrePersist
+    private void validatePeriodFk() {
+        if (periodType == null) {
+            throw new IllegalStateException("periodType은 필수입니다");
+        }
+        if (periodType == PeriodType.MONTHLY) {
+            throw new IllegalStateException("MONTHLY 문서는 monthlySettlementId가 필수입니다");
+        }
+
+    }
 
 }

@@ -7,7 +7,7 @@ import java.math.BigDecimal;
 
 public record FranchiseOrderItemRequest(
         @NotNull
-        Long productId,
+        String serialCode,
 
         @NotNull
         @Min(1)

@@ -12,7 +12,7 @@ import java.util.List;
 @Builder
 public record FranchiseOrderItemResponse(
         @NotNull
-        Long productId,
+        String serialCode,
 
         @NotNull
         @Min(0)
@@ -28,7 +28,7 @@ public record FranchiseOrderItemResponse(
 ) {
     public static FranchiseOrderItemResponse from(FranchiseOrderItem franchiseOrderItem) {
         return FranchiseOrderItemResponse.builder()
-                .productId(franchiseOrderItem.getProductId())
+                .serialCode(franchiseOrderItem.getSerialCode())
                 .unitPrice(franchiseOrderItem.getUnitPrice())
                 .quantity(franchiseOrderItem.getQuantity())
                 .totalUnitPrice(franchiseOrderItem.getUnitPrice().multiply(BigDecimal.valueOf(franchiseOrderItem.getQuantity())))

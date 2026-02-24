@@ -3,7 +3,7 @@ package com.chaing.domain.orders.dto.info;
 import java.math.BigDecimal;
 
 public record FranchiseOrderItemInfo(
-        Long productId,
+        String serialCode,
         Integer quantity,
         BigDecimal unitPrice
 ) {

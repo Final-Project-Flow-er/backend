@@ -84,6 +84,5 @@ public class InventoryLog extends BaseEntity {
     // HQ, FACTORY, FRANCHISE
     private ActorType actorType;
 
-    // HQ01, SE01
     private Long actorId;
 }

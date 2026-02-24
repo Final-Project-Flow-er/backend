@@ -1,12 +1,12 @@
 package com.chaing.api.controller.hq;
 
-import com.chaing.api.dto.hq.request.CreateUserRequest;
-import com.chaing.api.dto.hq.request.UpdateUserRequest;
-import com.chaing.api.dto.hq.request.UpdateUserStatusRequest;
-import com.chaing.api.dto.hq.response.CreateUserResponse;
-import com.chaing.api.dto.hq.response.UserDetailResponse;
-import com.chaing.api.dto.hq.response.UserLogResponse;
-import com.chaing.api.dto.hq.response.UserSummaryResponse;
+import com.chaing.api.dto.hq.user.request.CreateUserRequest;
+import com.chaing.api.dto.hq.user.request.UpdateUserRequest;
+import com.chaing.api.dto.hq.user.request.UpdateUserStatusRequest;
+import com.chaing.api.dto.hq.user.response.CreateUserResponse;
+import com.chaing.api.dto.hq.user.response.UserDetailResponse;
+import com.chaing.api.dto.hq.user.response.UserLogResponse;
+import com.chaing.api.dto.hq.user.response.UserSummaryResponse;
 import com.chaing.core.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

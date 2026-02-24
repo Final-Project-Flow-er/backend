@@ -1,4 +1,4 @@
-package com.chaing.api.dto.hq.response;
+package com.chaing.api.dto.hq.user.response;
 
 import lombok.Builder;
 

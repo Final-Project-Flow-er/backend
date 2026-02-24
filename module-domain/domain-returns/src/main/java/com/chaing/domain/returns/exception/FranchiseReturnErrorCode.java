@@ -6,15 +6,13 @@ import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor
-public enum FranchiseOrderErrorCode implements ErrorCode {
+public enum FranchiseReturnErrorCode implements ErrorCode {
 
     // 404 NOT FOUND
-    ORDER_NOT_FOUND(404, "FO001", "해당 발주를 찾을 수 없습니다."),
-
-    PRODUCT_NOT_FOUND(404, "PR001", "해당 제품을 찾을 수 없습니다."),
+    RETURN_NOT_FOUND(404, "RE001", "해당 반품을 찾을 수 없습니다."),
+    PRODUCT_NOT_FOUND(404, "RE002", "해당 제품을 찾을 수 없습니다.");
 
     // 400 BAD REQUEST
-    ORDER_INVALID_STATUS(400, "FO002" ,"발주 상태가 대기일 때만 수정 가능합니다.");
 
     private final Integer status;
     private final String code;

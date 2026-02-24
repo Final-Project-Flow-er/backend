@@ -14,8 +14,17 @@ public class ProductService {
                         1L,
                         "ProductName",
                         "ProductCode",
-                        BigDecimal.valueOf(5000)
-                )
-        );
+                        BigDecimal.valueOf(5000)));
+    }
+
+    public List<FranchiseReturnProductInfo> getProduct(String returnCode) {
+        return List.of(
+                FranchiseReturnProductInfo.builder()
+                        .boxCode("BoxCode")
+                        .serialCode("OR0101")
+                        .productCode("ProductCode")
+                        .productName("ProductName")
+                        .unitPrice(BigDecimal.valueOf(5000))
+                        .build());
     }
 }

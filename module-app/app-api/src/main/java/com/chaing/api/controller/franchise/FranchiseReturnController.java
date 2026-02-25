@@ -63,11 +63,14 @@ public class FranchiseReturnController {
     }
 
     @Operation(summary = "반품 취소", description = "가맹점 id와 반품 번호로 특정 반품 취소")
-    @PatchMapping("/{return-number}/cancellation")
-    public ResponseEntity<ApiResponse<FranchiseReturnAndReturnItemResponse>> cancelReturn(
-            @PathVariable("return-number") String returnNumber
+    @PatchMapping("/{return-code}/cancellation")
+    public ResponseEntity<ApiResponse<String>> cancelReturn(
+            @PathVariable("return-code") String returnCode
     ) {
-        return ResponseEntity.ok(ApiResponse.success(FranchiseReturnAndReturnItemResponse.builder().build()));
+        //TODO: Spring Security Context에서 값 꺼내오는 걸로 수정해야 함
+        String username = "test";
+
+        return ResponseEntity.ok(ApiResponse.success(franchiseReturnFacade.cancel(username, returnCode)));
     }
 
     @Operation(summary = "반품 생성", description = "가맹점 id로 반품 생성")

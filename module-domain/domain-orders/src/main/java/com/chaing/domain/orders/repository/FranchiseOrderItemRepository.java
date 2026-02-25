@@ -13,5 +13,5 @@ public interface FranchiseOrderItemRepository extends JpaRepository<FranchiseOrd
 
     List<FranchiseOrderItem> findAllByFranchiseOrderItemIdIn(List<Long> orderItemIds);
 
-    Optional<Long> findBySerialCode(String serialCode);
+    Optional<FranchiseOrderItem> findBySerialCode(String serialCode);
 }

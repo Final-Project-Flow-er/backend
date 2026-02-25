@@ -165,6 +165,7 @@ public class FranchiseOrderService {
     // serialCode에 대한 orderItemId 반환
     public Long getOrderItemId(String serialCode) {
         return franchiseOrderItemRepository.findBySerialCode(serialCode)
-                .orElseThrow(() -> new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_ITEM_NOT_FOUND));
+                .orElseThrow(() -> new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_ITEM_NOT_FOUND))
+                .getFranchiseOrderItemId();
     }
 }

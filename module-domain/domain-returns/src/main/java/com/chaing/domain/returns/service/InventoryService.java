@@ -12,7 +12,7 @@ public class InventoryService {
     public List<ReturnToInventoryRequest> getProducts(List<String> serialCodes) {
         return List.of(
                 new ReturnToInventoryRequest(
-                        "OR0101",
+                        "SerialCode",
                         1L,
                         "BoxCode"
                 )

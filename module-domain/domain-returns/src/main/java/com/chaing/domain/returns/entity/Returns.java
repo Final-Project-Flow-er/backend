@@ -3,6 +3,8 @@ package com.chaing.domain.returns.entity;
 import com.chaing.core.entity.BaseEntity;
 import com.chaing.domain.returns.enums.ReturnStatus;
 import com.chaing.domain.returns.enums.ReturnType;
+import com.chaing.domain.returns.exception.FranchiseReturnErrorCode;
+import com.chaing.domain.returns.exception.FranchiseReturnException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

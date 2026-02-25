@@ -10,6 +10,6 @@ import java.time.format.DateTimeFormatter;
 public class ReturnCodeGenerator implements CodeGenerator {
     @Override
     public String generate() {
-        return "RESE01" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")) + String.valueOf(Math.random()*100 + 1);
+        return "RESE01" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")) + (int)(Math.random()*100 + 1);
     }
 }

@@ -62,4 +62,13 @@ public class Returns extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Builder.Default
     private ReturnStatus returnStatus = ReturnStatus.PENDING;
+
+    public void cancel() {
+        // 반품의 상태가 대기가 아닐 시 예외 발생
+        if (!this.returnStatus.equals(ReturnStatus.PENDING)) {
+            throw new FranchiseReturnException(FranchiseReturnErrorCode.CANCEL_NOT_ALLOWED);
+        }
+
+        this.returnStatus = ReturnStatus.CANCELED;
+    }
 }

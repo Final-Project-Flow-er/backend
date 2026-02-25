@@ -123,4 +123,15 @@ public class FranchiseReturnService {
                         .orElseThrow(() -> new FranchiseReturnException(FranchiseReturnErrorCode.RETURN_NOT_FOUND))
         );
     }
+
+    // 반품 취소
+    public String cancel(Long franchiseId, String username, String returnCode) {
+        // 반품 조회
+        Returns returns = franchiseReturnRepository.findByFranchiseIdAndUsernameAndReturnCode(franchiseId, username, returnCode)
+                .orElseThrow(() -> new FranchiseReturnException(FranchiseReturnErrorCode.RETURN_NOT_FOUND));
+
+        returns.cancel();
+
+        return returns.getReturnCode();
+    }
 }

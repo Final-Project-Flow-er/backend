@@ -225,4 +225,13 @@ public class FranchiseReturnFacade {
                 .items(updateInfos)
                 .build();
     }
+
+    // 반품 취소
+    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
+    public String cancel(String username, String returnCode) {
+        // franchiseId username으로 조회하는 로직 추가 필요
+        Long franchiseId = 1L;
+
+        return franchiseReturnService.cancel(franchiseId, username, returnCode);
+    }
 }

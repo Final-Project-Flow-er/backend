@@ -5,6 +5,7 @@ import com.chaing.domain.returns.enums.ReturnType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public record FranchiseReturnCreateRequest(

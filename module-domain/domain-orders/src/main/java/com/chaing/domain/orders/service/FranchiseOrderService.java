@@ -1,5 +1,6 @@
 package com.chaing.domain.orders.service;
 
+import com.chaing.core.dto.returns.FranchiseOrderInfo;
 import com.chaing.core.dto.returns.request.OrderItemIdAndSerialCode;
 import com.chaing.domain.orders.dto.command.FranchiseOrderCreateCommand;
 import com.chaing.domain.orders.dto.command.FranchiseOrderUpdateCommand;

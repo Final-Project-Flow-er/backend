@@ -1,9 +1,13 @@
 package com.chaing.api.facade.franchise;
 
+import com.chaing.api.dto.franchise.returns.request.FranchiseReturnCreateRequest;
+import com.chaing.core.dto.returns.FranchiseOrderInfo;
 import com.chaing.core.dto.returns.request.OrderItemIdAndSerialCode;
 import com.chaing.core.dto.returns.request.ReturnToInventoryRequest;
 import com.chaing.core.dto.returns.request.ReturnToProductRequest;
 import com.chaing.domain.orders.service.FranchiseOrderService;
+import com.chaing.domain.returns.dto.command.ReturnItemCreateCommand;
+import com.chaing.domain.returns.dto.request.FranchiseReturnItemCreateRequest;
 import com.chaing.domain.returns.dto.request.FranchiseReturnUpdateRequest;
 import com.chaing.domain.returns.dto.response.FranchiseReturnAndReturnItemResponse;
 import com.chaing.domain.returns.dto.response.FranchiseReturnDetailResponse;
@@ -25,8 +29,10 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 

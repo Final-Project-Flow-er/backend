@@ -22,7 +22,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder
-public class Transits extends BaseEntity {
+public class Transit extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -32,6 +32,11 @@ public class Transits extends BaseEntity {
     @NotBlank
     @Column(nullable = false)
     private String orderCode;
+
+    // 차량 정보
+    @NotBlank
+    @Column(nullable = false)
+    private Long vehicleId;
 
     // 운송 상태
     @NotNull

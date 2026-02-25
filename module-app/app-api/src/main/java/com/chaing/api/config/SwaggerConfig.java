@@ -40,6 +40,54 @@ public class SwaggerConfig {
     }
 
     @Bean
+    public GroupedOpenApi authApi() {
+        return GroupedOpenApi.builder()
+                .group("인증(Auth)")
+                .pathsToMatch("/api/v1/auth/**")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi myPageApi() {
+        return GroupedOpenApi.builder()
+                .group("마이페이지(MyPage)")
+                .pathsToMatch("/api/v1/users/me/**")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi userManagementApi() {
+        return GroupedOpenApi.builder()
+                .group("회원 관리(User Management)")
+                .pathsToMatch("/api/v1/hq/users/**")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi hqManagementApi() {
+        return GroupedOpenApi.builder()
+                .group("본사 관리(HQ Management)")
+                .pathsToMatch("/api/v1/hq/management/**")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi franchiseManagementApi() {
+        return GroupedOpenApi.builder()
+                .group("가맹점 관리(Franchise Management)")
+                .pathsToMatch("/api/v1/franchise/management/**")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi factoryManagementApi() {
+        return GroupedOpenApi.builder()
+                .group("공장 관리(Factory Management)")
+                .pathsToMatch("/api/v1/factory/management/**")
+                .build();
+    }
+
+    @Bean
     public GroupedOpenApi hqInventoryApi() {
         return GroupedOpenApi.builder()
                 .group("본사 재고(HqInventory)")
@@ -72,6 +120,22 @@ public class SwaggerConfig {
     }
 
     @Bean
+    public GroupedOpenApi hqInventoryApi() {
+        return GroupedOpenApi.builder()
+                .group("본사 재고(HqInventory)")
+                .pathsToMatch("/api/v1/hq/inventory/**")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi franchiseInventoryApi() {
+        return GroupedOpenApi.builder()
+                .group("가맹점 재고(FranchiseInventory)")
+                .pathsToMatch("/api/v1/franchise/inventory/**")
+                .build();
+    }
+
+    @Bean
     public GroupedOpenApi InternalTransportApi() {
         return GroupedOpenApi.builder()
                 .group("내부 운송(Internal Transport")
@@ -84,6 +148,78 @@ public class SwaggerConfig {
         return GroupedOpenApi.builder()
                 .group("외부 운송(External Transport")
                 .pathsToMatch("/api/v1/transport/external/**")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi hqProductApi() {
+        return GroupedOpenApi.builder()
+                .group("본사 상품(HqProduct)")
+                .pathsToMatch("/api/v1/hq/product/**")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi franchiseProductApi() {
+        return GroupedOpenApi.builder()
+                .group("가맹점 상품(FranchiseProduct)")
+                .pathsToMatch("/api/v1/franchise/product/**")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi transportVendorApi() {
+        return GroupedOpenApi.builder()
+                .group("운송 업체(Transport Vendor)")
+                .pathsToMatch("/api/v1/transport/vendors/**")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi transportVehicleApi() {
+        return GroupedOpenApi.builder()
+                .group("운송 차량(Transport Vehicle)")
+                .pathsToMatch("/api/v1/transport/vehicles/**")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi noticeApi() {
+        return GroupedOpenApi.builder()
+                .group("공지사항(Notice)")
+                .pathsToMatch("/api/v1/notices/**")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi notificationApi() {
+        return GroupedOpenApi.builder()
+                .group("알림(Notification)")
+                .pathsToMatch("/api/v1/notifications/**")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi hqInventoryLogApi() {
+        return GroupedOpenApi.builder()
+                .group("본사 로그(HqInventoryLog)")
+                .pathsToMatch("/api/v1/hq/log/**")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi franchiseInventoryLogApi() {
+        return GroupedOpenApi.builder()
+                .group("가맹점 로그(FranchiseInventoryLog)")
+                .pathsToMatch("/api/v1/franchise/log/**")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi factoryInventoryLogApi() {
+        return GroupedOpenApi.builder()
+                .group("공장 로그(FactoryInventoryLog)")
+                .pathsToMatch("/api/v1/factory/log/**")
                 .build();
     }
 }

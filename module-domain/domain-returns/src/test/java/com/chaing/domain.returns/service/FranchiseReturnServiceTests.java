@@ -2,6 +2,7 @@ package com.chaing.domain.returns.service;
 
 import com.chaing.domain.returns.dto.response.FranchiseReturnAndReturnItemResponse;
 import com.chaing.domain.returns.dto.response.FranchiseReturnInfo;
+import com.chaing.domain.returns.dto.response.ReturnInfo;
 import com.chaing.domain.returns.entity.ReturnItem;
 import com.chaing.domain.returns.entity.Returns;
 import com.chaing.domain.returns.enums.ReturnItemStatus;
@@ -87,7 +88,6 @@ class FranchiseReturnServiceTests {
                 .returnCode(returnCode)
                 .status(ReturnStatus.PENDING)
                 .franchiseOrderId(orderId)
-                .quantity(quantity)
                 .type(ReturnType.MISORDER)
                 .requestedDate(requestedDate)
                 .franchiseOrderItemId(orderItemId)
@@ -110,7 +110,6 @@ class FranchiseReturnServiceTests {
         returnItem = ReturnItem.builder()
                 .returns(returns)
                 .franchiseOrderItemId(orderItemId)
-                .quantity(quantity)
                 .isInspected(false)
                 .returnItemStatus(ReturnItemStatus.BEFORE_INSPECTION)
                 .build();
@@ -173,5 +172,33 @@ class FranchiseReturnServiceTests {
         // then
         verify(franchiseReturnItemRepository, times(1)).findAllByReturns_ReturnCode(returnCode);
         assertEquals(orderItemId, response.get(0));
+    }
+
+    @Test
+    @DisplayName("반품 조회 - 성공")
+    void getReturnInfo_Success() {
+        // given
+        given(franchiseReturnRepository.findByFranchiseIdAndUsernameAndReturnCode(franchiseId, username, returnCode)).willReturn(Optional.of(returns));
+
+        // when
+        ReturnInfo response = franchiseReturnService.getReturnInfo(username, franchiseId, returnCode);
+
+        // then
+        verify(franchiseReturnRepository, times(1)).findByFranchiseIdAndUsernameAndReturnCode(franchiseId, username, returnCode);
+        assertEquals(returnCode, response.returnCode());
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 returnCode로 조회 시 예외 발생")
+    void getReturnInfo_Failure_RETURN_NOT_FOUND() {
+        // given
+        given(franchiseReturnRepository.findByFranchiseIdAndUsernameAndReturnCode(franchiseId, username, returnCode)).willReturn(Optional.empty());
+
+        // when & then
+        FranchiseReturnException exception = assertThrows(FranchiseReturnException.class, () -> {
+            franchiseReturnService.getReturnInfo(username, franchiseId, returnCode);
+        });
+        verify(franchiseReturnRepository, times(1)).findByFranchiseIdAndUsernameAndReturnCode(franchiseId, username, returnCode);
+        assertEquals(FranchiseReturnErrorCode.RETURN_NOT_FOUND, exception.getErrorCode());
     }
 }

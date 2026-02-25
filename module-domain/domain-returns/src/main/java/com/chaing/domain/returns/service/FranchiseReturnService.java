@@ -28,10 +28,12 @@ public class FranchiseReturnService {
     private final FranchiseReturnItemRepository franchiseReturnItemRepository;
     private final FranchiseReturnRepositoryCustom franchiseReturnRepositoryCustom;
 
+    // 반품 전체 조회
     public List<FranchiseReturnAndReturnItemResponse> getAllReturns(Long franchiseId) {
         return franchiseReturnRepositoryCustom.searchAllReturns(franchiseId);
     }
 
+    // 반품 세부정보 조회
     public FranchiseReturnInfo getReturn(String username, Long franchiseId, String returnCode) {
         Returns returns = franchiseReturnRepository.findByFranchiseIdAndUsernameAndReturnCode(franchiseId, username, returnCode)
                 .orElseThrow(() -> new FranchiseReturnException(FranchiseReturnErrorCode.RETURN_NOT_FOUND));
@@ -114,6 +116,7 @@ public class FranchiseReturnService {
                 .toList();
     }
 
+    // 반품 조회
     public ReturnInfo getReturnInfo(String username, Long franchiseId, String returnCode) {
         return ReturnInfo.from(
                 franchiseReturnRepository.findByFranchiseIdAndUsernameAndReturnCode(franchiseId, username, returnCode)

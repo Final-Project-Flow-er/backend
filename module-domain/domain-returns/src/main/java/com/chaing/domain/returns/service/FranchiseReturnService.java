@@ -1,6 +1,6 @@
 package com.chaing.domain.returns.service;
 
-import com.chaing.core.dto.returns.FranchiseOrderInfo;
+import com.chaing.core.dto.returns.response.FranchiseOrderInfo;
 import com.chaing.domain.returns.dto.command.ReturnItemCreateCommand;
 import com.chaing.domain.returns.dto.request.FranchiseReturnCreateRequest;
 import com.chaing.domain.returns.dto.response.FranchiseReturnAndReturnItemResponse;

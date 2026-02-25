@@ -1,6 +1,6 @@
 package com.chaing.api.facade.franchise;
 
-import com.chaing.core.dto.returns.FranchiseOrderInfo;
+import com.chaing.core.dto.returns.response.FranchiseOrderInfo;
 import com.chaing.core.dto.returns.request.OrderItemIdAndSerialCode;
 import com.chaing.core.dto.returns.request.ReturnToInventoryRequest;
 import com.chaing.core.dto.returns.request.ReturnToProductRequest;
@@ -324,5 +324,17 @@ public class FranchiseReturnFacade {
                 returnInfo,
                 returnItemInfos
         );
+    }
+
+    // 반품 가능 대상 발주 조회
+    public List<FranchiseReturnTargetResponse> getAllTargets(String username) {
+        // franchiseId username으로 조회하는 로직 추가 필요
+        Long franchiseId = 1L;
+
+        // 발주 조회
+        List<FranchiseReturnTargetResponse> infos = franchiseOrderService.getAllTargetOrders(franchiseId);
+
+        // 결과 반환
+        return infos;
     }
 }

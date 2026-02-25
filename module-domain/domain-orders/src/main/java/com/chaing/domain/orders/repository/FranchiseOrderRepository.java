@@ -1,6 +1,7 @@
 package com.chaing.domain.orders.repository;
 
 import com.chaing.domain.orders.entity.FranchiseOrder;
+import com.chaing.domain.orders.enums.FranchiseOrderStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -16,4 +17,6 @@ public interface FranchiseOrderRepository extends JpaRepository<FranchiseOrder, 
     List<FranchiseOrder> findAllByFranchiseOrderIdIn(List<Long> orderIds);
 
     Optional<FranchiseOrder> findByFranchiseIdAndFranchiseOrderId(Long franchiseId, Long orderId);
+
+    List<FranchiseOrder> findAllByFranchiseIdAndOrderStatus(Long franchiseId, FranchiseOrderStatus orderStatus);
 }

@@ -1,7 +1,8 @@
 package com.chaing.domain.orders.service;
 
-import com.chaing.core.dto.returns.FranchiseOrderInfo;
 import com.chaing.core.dto.returns.request.OrderItemIdAndSerialCode;
+import com.chaing.core.dto.returns.response.FranchiseOrderInfo;
+import com.chaing.core.dto.returns.response.FranchiseReturnTargetResponse;
 import com.chaing.domain.orders.dto.command.FranchiseOrderCreateCommand;
 import com.chaing.domain.orders.dto.command.FranchiseOrderUpdateCommand;
 import com.chaing.domain.orders.dto.info.FranchiseOrderItemInfo;
@@ -167,5 +168,25 @@ public class FranchiseOrderService {
         return franchiseOrderItemRepository.findBySerialCode(serialCode)
                 .orElseThrow(() -> new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_ITEM_NOT_FOUND))
                 .getFranchiseOrderItemId();
+    }
+
+    // 반환 대상이 되는 발주 반환
+    public List<FranchiseReturnTargetResponse> getAllTargetOrders(Long franchiseId) {
+        // 발주 조회
+        List<FranchiseOrder> orders = franchiseOrderRepository.findAllByFranchiseIdAndOrderStatus(franchiseId, FranchiseOrderStatus.PENDING);
+
+        List<String> orderCodes = orders.stream()
+                .map(FranchiseOrder::getOrderCode)
+                .toList();
+
+        String username = orders.stream()
+                .findFirst()
+                .orElseThrow(() -> new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_NOT_FOUND))
+                .getUsername();
+
+        return orderCodes.stream()
+                .map(orderCode -> { return new FranchiseReturnTargetResponse(orderCode, username); }
+                )
+                .toList();
     }
 }

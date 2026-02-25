@@ -1,5 +1,8 @@
 package com.chaing.domain.returns.service;
 
+import com.chaing.core.dto.returns.response.FranchiseOrderInfo;
+import com.chaing.domain.returns.dto.request.FranchiseReturnCreateRequest;
+import com.chaing.domain.returns.dto.request.FranchiseReturnItemCreateRequest;
 import com.chaing.domain.returns.dto.response.FranchiseReturnAndReturnItemResponse;
 import com.chaing.domain.returns.dto.response.FranchiseReturnInfo;
 import com.chaing.domain.returns.dto.response.ReturnInfo;
@@ -32,6 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class FranchiseReturnServiceTests {
@@ -47,7 +51,11 @@ class FranchiseReturnServiceTests {
     @Mock
     private FranchiseReturnRepositoryCustom franchiseReturnRepositoryCustom;
 
+    @Mock
+    private ReturnCodeGenerator generator;
+
     Long franchiseId;
+    String franchiseCode;
     String username;
     String phoneNumber;
 
@@ -56,11 +64,19 @@ class FranchiseReturnServiceTests {
     Integer quantity;
     LocalDateTime requestedDate;
     Long orderItemId;
+    String orderCode;
     String description;
 
     BigDecimal unitPrice;
 
+    String boxCode;
+    String productCode;
+    String productName;
+
     FranchiseReturnAndReturnItemResponse franchiseReturnAndReturnItemResponse;
+    FranchiseReturnCreateRequest franchiseReturnCreateRequest;
+    FranchiseReturnItemCreateRequest franchiseReturnItemCreateRequest;
+    FranchiseOrderInfo franchiseOrderInfo;
 
     Returns returns;
     Long returnId;
@@ -70,6 +86,7 @@ class FranchiseReturnServiceTests {
     @BeforeEach
     void setUp() {
         franchiseId = 1L;
+        franchiseCode = "FranchiseCode";
 
         username = "username";
         phoneNumber = "phoneNumber";
@@ -80,9 +97,14 @@ class FranchiseReturnServiceTests {
         unitPrice = BigDecimal.TEN;
 
         orderId = 10L;
+        orderCode = "orderCode";
         quantity = 10;
         requestedDate = LocalDateTime.now();
         orderItemId = 100L;
+
+        boxCode = "BoxCode";
+        productCode = "ProductCode";
+        productName = "ProductName";
 
         franchiseReturnAndReturnItemResponse = FranchiseReturnAndReturnItemResponse.builder()
                 .returnCode(returnCode)
@@ -114,6 +136,28 @@ class FranchiseReturnServiceTests {
                 .returnItemStatus(ReturnItemStatus.BEFORE_INSPECTION)
                 .build();
         ReflectionTestUtils.setField(returnItem, "returnItemId", orderId);
+
+        franchiseReturnItemCreateRequest = new FranchiseReturnItemCreateRequest(
+                boxCode,
+                productCode,
+                productName,
+                unitPrice
+        );
+
+        franchiseReturnCreateRequest = new FranchiseReturnCreateRequest(
+                orderCode,
+                ReturnType.MISORDER,
+                description,
+                unitPrice.multiply(BigDecimal.valueOf(quantity)),
+                List.of(franchiseReturnItemCreateRequest)
+        );
+
+        franchiseOrderInfo = FranchiseOrderInfo.builder()
+                .orderId(orderId)
+                .username(username)
+                .phoneNumber(phoneNumber)
+                .franchiseCode(franchiseCode)
+                .build();
     }
 
     @Test
@@ -228,5 +272,21 @@ class FranchiseReturnServiceTests {
         });
         verify(franchiseReturnRepository, times(1)).findByFranchiseIdAndUsernameAndReturnCode(franchiseId, username, returnCode);
         assertEquals(FranchiseReturnErrorCode.RETURN_NOT_FOUND, exception.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("요청사항에 대한 반품 생성 - 성공")
+    void createReturn_Success() {
+        // given
+        when(generator.generate()).thenReturn("RET-0001");
+
+        // when
+        ReturnInfo response = franchiseReturnService.createReturn(franchiseId, franchiseReturnCreateRequest, franchiseOrderInfo);
+
+        // then
+        assertEquals("RET-0001", response.returnCode());
+        assertEquals(ReturnStatus.PENDING, response.status());
+        assertEquals(orderId, response.franchiseOrderId());
+        assertEquals(ReturnType.PRODUCT_DEFECT, response.type());
     }
 }

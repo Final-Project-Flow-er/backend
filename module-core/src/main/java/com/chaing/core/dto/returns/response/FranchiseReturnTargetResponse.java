@@ -1,4 +1,4 @@
-package com.chaing.domain.returns.dto.response;
+package com.chaing.core.dto.returns.response;
 
 public record FranchiseReturnTargetResponse(
         String orderCode,

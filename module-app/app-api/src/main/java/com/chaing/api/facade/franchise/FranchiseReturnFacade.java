@@ -16,6 +16,7 @@ import com.chaing.domain.returns.dto.response.FranchiseReturnInfo;
 import com.chaing.domain.returns.dto.response.FranchiseReturnItemResponse;
 import com.chaing.domain.returns.dto.response.FranchiseReturnProductInfo;
 import com.chaing.domain.returns.dto.response.FranchiseReturnResponse;
+import com.chaing.core.dto.returns.response.FranchiseReturnTargetResponse;
 import com.chaing.domain.returns.dto.response.FranchiseReturnUpdateResponse;
 import com.chaing.domain.returns.dto.response.ReturnInfo;
 import com.chaing.domain.returns.dto.response.ReturnItemInfo;

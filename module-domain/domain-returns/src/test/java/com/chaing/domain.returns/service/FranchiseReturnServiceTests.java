@@ -201,4 +201,32 @@ class FranchiseReturnServiceTests {
         verify(franchiseReturnRepository, times(1)).findByFranchiseIdAndUsernameAndReturnCode(franchiseId, username, returnCode);
         assertEquals(FranchiseReturnErrorCode.RETURN_NOT_FOUND, exception.getErrorCode());
     }
+
+    @Test
+    @DisplayName("returnCode로 반품 취소 - 성공")
+    void cancelReturn_Success() {
+        // given
+        given(franchiseReturnRepository.findByFranchiseIdAndUsernameAndReturnCode(franchiseId, username, returnCode)).willReturn(Optional.of(returns));
+
+        // when
+        String response = franchiseReturnService.cancel(franchiseId, username, returnCode);
+
+        // then
+        verify(franchiseReturnRepository, times(1)).findByFranchiseIdAndUsernameAndReturnCode(franchiseId, username, returnCode);
+        assertEquals(returnCode, response);
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 returnCode로 반품 조회 시 예외 발생")
+    void cancelReturn_Failure_RETURN_NOT_FOUND() {
+        // given
+        given(franchiseReturnRepository.findByFranchiseIdAndUsernameAndReturnCode(franchiseId, username, returnCode)).willReturn(Optional.empty());
+
+        // when & then
+        FranchiseReturnException exception = assertThrows(FranchiseReturnException.class, () -> {
+            franchiseReturnService.cancel(franchiseId, username, returnCode);
+        });
+        verify(franchiseReturnRepository, times(1)).findByFranchiseIdAndUsernameAndReturnCode(franchiseId, username, returnCode);
+        assertEquals(FranchiseReturnErrorCode.RETURN_NOT_FOUND, exception.getErrorCode());
+    }
 }

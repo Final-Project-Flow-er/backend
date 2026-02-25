@@ -15,8 +15,6 @@ public record FranchiseReturnAndReturnItemResponse(
 
         Long franchiseOrderId,
 
-        Integer quantity,
-
         ReturnType type,
 
         LocalDateTime requestedDate,

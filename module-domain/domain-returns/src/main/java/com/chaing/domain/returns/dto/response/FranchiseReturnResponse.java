@@ -33,8 +33,6 @@ public record FranchiseReturnResponse(
 
         String productCode,
 
-        String productName,
-
-        BigDecimal totalPrice
+        String productName
 ) {
 }

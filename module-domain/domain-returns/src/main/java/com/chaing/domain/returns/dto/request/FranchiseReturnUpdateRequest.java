@@ -10,6 +10,9 @@ public record FranchiseReturnUpdateRequest(
         String serialCode,
 
         @NotBlank
-        String returnCode
+        String returnCode,
+
+        @NotBlank
+        Long orderItemId
 ) {
 }

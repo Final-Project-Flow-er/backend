@@ -39,6 +39,18 @@ public class FranchiseOrderService {
                 .orElseThrow(() -> new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_NOT_FOUND));
     }
 
+    // 발주 번호에 따른 발주 정보 반환
+    public FranchiseOrderInfo getOrderInfo(Long franchiseId, String username, String orderCode, String franchiseCode) {
+        FranchiseOrder order = franchiseOrderRepository.findByFranchiseIdAndUsernameAndOrderCode(franchiseId, username, orderCode)
+                .orElseThrow(() -> new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_NOT_FOUND));
+
+        return FranchiseOrderInfo.builder()
+                .username(order.getUsername())
+                .phoneNumber(order.getPhoneNumber())
+                .franchiseCode(franchiseCode)
+                .build();
+    }
+
     // 가맹점의 발주 수정
     public void updateOrder(FranchiseOrder order, FranchiseOrderUpdateCommand request) {
         // 발주 상태가 PENDING 아니면 예외 발생

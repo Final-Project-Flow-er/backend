@@ -234,4 +234,85 @@ public class FranchiseReturnFacade {
 
         return franchiseReturnService.cancel(franchiseId, username, returnCode);
     }
+
+    // 반품 생성
+    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
+    public FranchiseReturnAndReturnItemResponse create(String username, FranchiseReturnCreateRequest request) {
+        // franchiseId username으로 조회하는 로직 추가 필요
+        Long franchiseId = 1L;
+
+        // request의 product에 대한 내용 검증
+        // 1. productInfo 중 productCode에 해당하는 데이터 조회
+        Set<String> productCodes = request.items().stream()
+                .map(FranchiseReturnItemCreateRequest::productCode)
+                .collect(Collectors.toSet());
+        // 2. 실제 제품 정보
+        List<FranchiseReturnProductInfo> productInfos = productService.getProducts(productCodes);
+        // 3. 실제 제품 정보와 productCode Map으로
+        Map<String, FranchiseReturnProductInfo> productInfoByProductCode = productInfos.stream()
+                        .collect(Collectors.toMap(
+                                FranchiseReturnProductInfo::productCode,
+                                Function.identity()
+                        ));
+        // 4. 검증
+        request.items().forEach(item -> {
+                    FranchiseReturnProductInfo productInfo = productInfoByProductCode.get(item.productCode());
+                    if (productInfo == null) {
+                        throw new FranchiseReturnException(FranchiseReturnErrorCode.INVALID_PRODUCT_INFO);
+                    }
+
+                    if (!productInfo.productName().equals(item.productName()) || !productInfo.unitPrice().equals(item.unitPrice())) {
+                        throw new FranchiseReturnException(FranchiseReturnErrorCode.INVALID_PRODUCT_INFO);
+                    }
+                });
+
+        // 반품 생성
+        // 1.1. 발주 정보 조회
+        String franchiseCode = franchiseService.getFranchise(franchiseId);
+        FranchiseOrderInfo orderInfo = franchiseOrderService.getOrderInfo(franchiseId, username, request.orderCode(), franchiseCode);
+        // 1.2. 반품 생성
+        ReturnInfo returnInfo = franchiseReturnService.createReturn(franchiseId, request, orderInfo);
+
+        // 반품 제품 생성
+        // 1. franchiseInventory에서 boxCode에 해당되는 serialCode 조회
+        // 1.1. Map<boxCode, List<serialCode>>
+        Map<String, List<String>> serialCodeListByBoxCode = request.items().stream()
+                .map(FranchiseReturnItemCreateRequest::boxCode)
+                .collect(Collectors.toMap(
+                        Function.identity(),
+                        boxCode -> {
+                            List<String> serialCodes = inventoryService.getSerialCodes(franchiseId, boxCode);
+
+                            if (serialCodes == null || serialCodes.isEmpty()) {
+                                throw new FranchiseReturnException(FranchiseReturnErrorCode.INVALID_BOX_CODE);
+                            }
+
+                            return serialCodes;
+                        }
+                ));
+        // 2. franchiseOrderItem에서 serialCode에 해당되는 orderItemId 조회
+        // Map<serialCode, orderItemId>
+        Map<String, Long> orderItemIdBySerialCode = serialCodeListByBoxCode.values().stream()
+                .flatMap(List::stream)
+                .collect(Collectors.toMap(
+                        Function.identity(),
+                        serialCode -> {
+                            Long orderItemId = franchiseOrderService.getOrderItemId(serialCode);
+
+                            if (orderItemId == null) {
+                                throw new FranchiseReturnException(FranchiseReturnErrorCode.ORDER_ITEM_NOT_FOUND);
+                            }
+
+                            return orderItemId;
+                        }
+                ));
+        // 3. 필요 값 전달해 반품 제품 생성
+        List<ReturnItemCreateCommand> orderItemIds = orderItemIdBySerialCode.entrySet().stream()
+                .map(entry -> new ReturnItemCreateCommand(entry.getKey(), entry.getValue()))
+                .toList();
+        ReturnItemInfo returnItemInfo = franchiseReturnService.createReturnItems(returnInfo.returnCode(), orderItemIds);
+
+        // 결과 반환
+        return FranchiseReturnAndReturnItemResponse.builder().build();
+    }
 }

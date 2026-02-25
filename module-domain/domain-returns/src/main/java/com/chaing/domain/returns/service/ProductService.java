@@ -18,6 +18,15 @@ public class ProductService {
                         BigDecimal.valueOf(5000)));
     }
 
+    public List<FranchiseReturnProductInfo> getProducts(Set<String> productCodes) {
+        return List.of(
+                FranchiseReturnProductInfo.builder()
+                        .productCode("ProductCode")
+                        .productName("ProductName")
+                        .unitPrice(BigDecimal.valueOf(5000))
+                        .build());
+    }
+
     public List<FranchiseReturnProductInfo> getProduct(String returnCode) {
         return List.of(
                 FranchiseReturnProductInfo.builder()

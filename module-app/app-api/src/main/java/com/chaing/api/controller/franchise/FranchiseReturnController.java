@@ -7,7 +7,7 @@ import com.chaing.domain.returns.dto.request.FranchiseReturnUpdateRequest;
 import com.chaing.domain.returns.dto.response.FranchiseReturnAndReturnItemCreateResponse;
 import com.chaing.domain.returns.dto.response.FranchiseReturnDetailResponse;
 import com.chaing.domain.returns.dto.response.FranchiseReturnResponse;
-import com.chaing.domain.returns.dto.response.FranchiseReturnTargetResponse;
+import com.chaing.core.dto.returns.response.FranchiseReturnTargetResponse;
 import com.chaing.domain.returns.dto.response.FranchiseReturnUpdateResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -76,7 +76,7 @@ public class FranchiseReturnController {
 
     @Operation(summary = "반품 대상 조회", description = "가맹점 id로 반품 생성의 대상이 되는 발주 조회")
     @GetMapping("/target")
-    public ResponseEntity<ApiResponse<FranchiseReturnTargetResponse>> getTargets() {
+    public ResponseEntity<ApiResponse<List<FranchiseReturnTargetResponse>>> getTargets() {
         //TODO: Spring Security Context에서 값 꺼내오는 걸로 수정해야 함
         String username = "test";
 

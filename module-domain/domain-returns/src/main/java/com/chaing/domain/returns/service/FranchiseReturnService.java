@@ -1,5 +1,7 @@
 package com.chaing.domain.returns.service;
 
+import com.chaing.core.dto.returns.FranchiseOrderInfo;
+import com.chaing.domain.returns.dto.request.FranchiseReturnCreateRequest;
 import com.chaing.domain.returns.dto.response.FranchiseReturnAndReturnItemResponse;
 import com.chaing.domain.returns.dto.response.FranchiseReturnInfo;
 import com.chaing.domain.returns.dto.response.FranchiseReturnProductInfo;
@@ -27,6 +29,8 @@ public class FranchiseReturnService {
     private final FranchiseReturnRepository franchiseReturnRepository;
     private final FranchiseReturnItemRepository franchiseReturnItemRepository;
     private final FranchiseReturnRepositoryCustom franchiseReturnRepositoryCustom;
+
+    private final ReturnCodeGenerator generator;
 
     // 반품 전체 조회
     public List<FranchiseReturnAndReturnItemResponse> getAllReturns(Long franchiseId) {
@@ -133,5 +137,29 @@ public class FranchiseReturnService {
         returns.cancel();
 
         return returns.getReturnCode();
+    }
+
+    // 반품 생성
+    public ReturnInfo createReturn(Long franchiseId, FranchiseReturnCreateRequest request, FranchiseOrderInfo orderInfo) {
+        // 반품 코드
+        String returnCode = generator.generate();
+
+        // 반품 생성
+        Returns returns = Returns.builder()
+                .franchiseId(franchiseId)
+                .franchiseOrderId(orderInfo.orderId())
+                .returnCode(returnCode)
+                .username(orderInfo.username())
+                .phoneNumber(orderInfo.phoneNumber())
+                .description(request.description())
+                .totalReturnQuantity(request.items().size())
+                .totalReturnAmount(request.totalPrice())
+                .build();
+
+        // 반품 저장
+        franchiseReturnRepository.save(returns);
+
+        // 결과 반환
+        return ReturnInfo.from(returns);
     }
 }

@@ -1,5 +1,6 @@
 package com.chaing.domain.sales.service;
 
+import com.chaing.core.util.CodeGenerator;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;

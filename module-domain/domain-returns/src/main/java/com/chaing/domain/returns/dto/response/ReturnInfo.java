@@ -24,6 +24,7 @@ public record ReturnInfo(
                 .returnCode(returns.getReturnCode())
                 .status(returns.getReturnStatus())
                 .franchiseOrderId(returns.getFranchiseOrderId())
+                .type(returns.getReturnType())
                 .requestedDate(returns.getCreatedAt())
                 .build();
     }

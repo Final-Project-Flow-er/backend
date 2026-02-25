@@ -1,4 +1,4 @@
-package com.chaing.domain.sales.service;
+package com.chaing.core.util;
 
 public interface CodeGenerator {
     public String generate();

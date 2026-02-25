@@ -1,6 +1,5 @@
-package com.chaing.api.dto.franchise.returns.request;
+package com.chaing.domain.returns.dto.request;
 
-import com.chaing.domain.returns.dto.request.FranchiseReturnItemCreateRequest;
 import com.chaing.domain.returns.enums.ReturnType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

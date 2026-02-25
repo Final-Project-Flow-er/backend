@@ -1,6 +1,6 @@
 package com.chaing.api.controller.franchise;
 
-import com.chaing.api.dto.franchise.returns.request.FranchiseReturnCreateRequest;
+import com.chaing.domain.returns.dto.request.FranchiseReturnCreateRequest;
 import com.chaing.domain.returns.dto.request.FranchiseReturnUpdateRequest;
 import com.chaing.domain.returns.dto.response.FranchiseReturnAndReturnItemResponse;
 import com.chaing.api.facade.franchise.FranchiseReturnFacade;

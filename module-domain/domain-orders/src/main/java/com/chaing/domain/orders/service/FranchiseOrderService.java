@@ -46,6 +46,7 @@ public class FranchiseOrderService {
                 .orElseThrow(() -> new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_NOT_FOUND));
 
         return FranchiseOrderInfo.builder()
+                .orderId(order.getFranchiseOrderId())
                 .username(order.getUsername())
                 .phoneNumber(order.getPhoneNumber())
                 .franchiseCode(franchiseCode)

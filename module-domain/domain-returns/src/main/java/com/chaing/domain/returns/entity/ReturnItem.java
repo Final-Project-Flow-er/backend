@@ -29,14 +29,11 @@ public class ReturnItem {
     private Long returnItemId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "return_id", unique = true)
+    @JoinColumn(name = "return_id")
     private Returns returns;    // fk
 
     @Column(nullable = false)
     private Long franchiseOrderItemId;  // fk
-
-    @Column(nullable = false)
-    private Integer quantity;
 
     @Column(nullable = false)
     @Builder.Default

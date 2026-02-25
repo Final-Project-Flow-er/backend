@@ -1,14 +1,15 @@
 package com.chaing.api.facade.franchise;
 
-import com.chaing.domain.returns.dto.request.FranchiseReturnCreateRequest;
 import com.chaing.core.dto.returns.FranchiseOrderInfo;
 import com.chaing.core.dto.returns.request.OrderItemIdAndSerialCode;
 import com.chaing.core.dto.returns.request.ReturnToInventoryRequest;
 import com.chaing.core.dto.returns.request.ReturnToProductRequest;
 import com.chaing.domain.orders.service.FranchiseOrderService;
 import com.chaing.domain.returns.dto.command.ReturnItemCreateCommand;
+import com.chaing.domain.returns.dto.request.FranchiseReturnCreateRequest;
 import com.chaing.domain.returns.dto.request.FranchiseReturnItemCreateRequest;
 import com.chaing.domain.returns.dto.request.FranchiseReturnUpdateRequest;
+import com.chaing.domain.returns.dto.response.FranchiseReturnAndReturnItemCreateResponse;
 import com.chaing.domain.returns.dto.response.FranchiseReturnAndReturnItemResponse;
 import com.chaing.domain.returns.dto.response.FranchiseReturnDetailResponse;
 import com.chaing.domain.returns.dto.response.FranchiseReturnInfo;
@@ -243,7 +244,7 @@ public class FranchiseReturnFacade {
 
     // 반품 생성
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
-    public FranchiseReturnAndReturnItemResponse create(String username, FranchiseReturnCreateRequest request) {
+    public FranchiseReturnAndReturnItemCreateResponse create(String username, FranchiseReturnCreateRequest request) {
         // franchiseId username으로 조회하는 로직 추가 필요
         Long franchiseId = 1L;
 
@@ -319,6 +320,9 @@ public class FranchiseReturnFacade {
         List<ReturnItemInfo> returnItemInfos = franchiseReturnService.createReturnItems(returnInfo.returnCode(), orderItemIds);
 
         // 결과 반환
-        return FranchiseReturnAndReturnItemResponse.builder().build();
+        return new FranchiseReturnAndReturnItemCreateResponse(
+                returnInfo,
+                returnItemInfos
+        );
     }
 }

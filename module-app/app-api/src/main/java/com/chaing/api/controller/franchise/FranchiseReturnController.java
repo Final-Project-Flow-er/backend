@@ -1,10 +1,10 @@
 package com.chaing.api.controller.franchise;
 
-import com.chaing.domain.returns.dto.request.FranchiseReturnCreateRequest;
-import com.chaing.domain.returns.dto.request.FranchiseReturnUpdateRequest;
-import com.chaing.domain.returns.dto.response.FranchiseReturnAndReturnItemResponse;
 import com.chaing.api.facade.franchise.FranchiseReturnFacade;
 import com.chaing.core.dto.ApiResponse;
+import com.chaing.domain.returns.dto.request.FranchiseReturnCreateRequest;
+import com.chaing.domain.returns.dto.request.FranchiseReturnUpdateRequest;
+import com.chaing.domain.returns.dto.response.FranchiseReturnAndReturnItemCreateResponse;
 import com.chaing.domain.returns.dto.response.FranchiseReturnDetailResponse;
 import com.chaing.domain.returns.dto.response.FranchiseReturnResponse;
 import com.chaing.domain.returns.dto.response.FranchiseReturnUpdateResponse;
@@ -84,7 +84,7 @@ public class FranchiseReturnController {
 
     @Operation(summary = "반품 생성", description = "가맹점 id로 반품 생성")
     @PostMapping
-    public ResponseEntity<ApiResponse<FranchiseReturnAndReturnItemResponse>> createReturn(
+    public ResponseEntity<ApiResponse<FranchiseReturnAndReturnItemCreateResponse>> createReturn(
             @RequestBody FranchiseReturnCreateRequest request
     ) {
         //TODO: Spring Security Context에서 값 꺼내오는 걸로 수정해야 함

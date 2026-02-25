@@ -83,6 +83,8 @@ public class FranchiseReturnController {
         return ResponseEntity.ok(ApiResponse.success(franchiseReturnFacade.getAllTargets(username)));
     }
 
+    // 반품 생성 화면에 띄우는 데이터 보내주는 api 필요
+
     @Operation(summary = "반품 생성", description = "가맹점 id로 반품 생성")
     @PostMapping
     public ResponseEntity<ApiResponse<FranchiseReturnAndReturnItemCreateResponse>> createReturn(

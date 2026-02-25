@@ -17,6 +17,7 @@ import com.chaing.domain.returns.dto.response.FranchiseReturnProductInfo;
 import com.chaing.domain.returns.dto.response.FranchiseReturnResponse;
 import com.chaing.domain.returns.dto.response.FranchiseReturnUpdateResponse;
 import com.chaing.domain.returns.dto.response.ReturnInfo;
+import com.chaing.domain.returns.dto.response.ReturnItemInfo;
 import com.chaing.domain.returns.exception.FranchiseReturnErrorCode;
 import com.chaing.domain.returns.exception.FranchiseReturnException;
 import com.chaing.domain.returns.service.FranchiseReturnService;
@@ -315,7 +316,7 @@ public class FranchiseReturnFacade {
         List<ReturnItemCreateCommand> orderItemIds = orderItemIdBySerialCode.entrySet().stream()
                 .map(entry -> new ReturnItemCreateCommand(entry.getKey(), entry.getValue()))
                 .toList();
-        ReturnItemInfo returnItemInfo = franchiseReturnService.createReturnItems(returnInfo.returnCode(), orderItemIds);
+        List<ReturnItemInfo> returnItemInfos = franchiseReturnService.createReturnItems(returnInfo.returnCode(), orderItemIds);
 
         // 결과 반환
         return FranchiseReturnAndReturnItemResponse.builder().build();

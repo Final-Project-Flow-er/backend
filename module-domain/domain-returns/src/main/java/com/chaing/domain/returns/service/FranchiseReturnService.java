@@ -1,11 +1,13 @@
 package com.chaing.domain.returns.service;
 
 import com.chaing.core.dto.returns.FranchiseOrderInfo;
+import com.chaing.domain.returns.dto.command.ReturnItemCreateCommand;
 import com.chaing.domain.returns.dto.request.FranchiseReturnCreateRequest;
 import com.chaing.domain.returns.dto.response.FranchiseReturnAndReturnItemResponse;
 import com.chaing.domain.returns.dto.response.FranchiseReturnInfo;
 import com.chaing.domain.returns.dto.response.FranchiseReturnProductInfo;
 import com.chaing.domain.returns.dto.response.ReturnInfo;
+import com.chaing.domain.returns.dto.response.ReturnItemInfo;
 import com.chaing.domain.returns.entity.ReturnItem;
 import com.chaing.domain.returns.entity.Returns;
 import com.chaing.domain.returns.exception.FranchiseReturnErrorCode;
@@ -161,5 +163,27 @@ public class FranchiseReturnService {
 
         // 결과 반환
         return ReturnInfo.from(returns);
+    }
+
+    public List<ReturnItemInfo> createReturnItems(String returnCode, List<ReturnItemCreateCommand> orderItemIds) {
+        // 반품 조회
+        Returns returns = franchiseReturnRepository.findByReturnCode(returnCode)
+                .orElseThrow(() -> new FranchiseReturnException(FranchiseReturnErrorCode.RETURN_NOT_FOUND));
+
+        // 반품 제품 생성
+        List<ReturnItem> returnItems = orderItemIds.stream()
+                .map(id -> {
+                    return ReturnItem.builder()
+                            .returns(returns)
+                            .franchiseOrderItemId(id.orderItemId())
+                            .build();
+                })
+                .toList();
+
+        // 반품 제품 저장
+        franchiseReturnItemRepository.saveAll(returnItems);
+
+        // 결과 반환
+        return ReturnItemInfo.from(returnItems);
     }
 }

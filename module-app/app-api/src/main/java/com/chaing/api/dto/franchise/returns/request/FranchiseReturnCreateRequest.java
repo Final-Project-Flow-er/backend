@@ -16,6 +16,8 @@ public record FranchiseReturnCreateRequest(
 
         String description,
 
+        BigDecimal totalPrice,
+
         List<FranchiseReturnItemCreateRequest> items
 ) {
 }

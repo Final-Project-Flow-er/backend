@@ -15,7 +15,6 @@ public record FranchiseReturnItemCreateRequest(
         String productName,
 
         @NotNull
-        @Min(1)
-        Integer quantity
+        BigDecimal unitPrice
 ) {
 }

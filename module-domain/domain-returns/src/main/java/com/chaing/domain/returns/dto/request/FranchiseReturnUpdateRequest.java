@@ -7,6 +7,9 @@ public record FranchiseReturnUpdateRequest(
         String boxCode,
 
         @NotBlank
-        String serialCode
+        String serialCode,
+
+        @NotBlank
+        String returnCode
 ) {
 }

@@ -51,7 +51,7 @@ public class FranchiseReturnController {
 
     @Operation(summary = "반품 수정", description = "가맹점 id와 반품 번호로 특정 반품 수정")
     @PatchMapping("/{return-code}")
-    public ResponseEntity<ApiResponse<FranchiseReturnAndReturnItemResponse>> updateReturn(
+    public ResponseEntity<ApiResponse<FranchiseReturnUpdateResponse>> updateReturn(
             @PathVariable("return-code") String returnCode,
             @RequestBody List<FranchiseReturnUpdateRequest> requests
     ) {

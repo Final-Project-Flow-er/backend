@@ -39,6 +39,7 @@ public class FranchiseReturnFacade {
     private final ProductService productService;
     private final FranchiseService franchiseService;
 
+    // 반품 전체 조회
     public List<FranchiseReturnResponse> getAllReturns(String username) {
         // franchiseId username으로 조회하는 로직 추가 필요
         Long franchiseId = 1L;
@@ -109,14 +110,11 @@ public class FranchiseReturnFacade {
                     String productCode = product.productCode();
                     BigDecimal unitPrice = product.unitPrice();
 
-                    BigDecimal totalPrice = unitPrice.multiply(BigDecimal.valueOf(info.quantity()));
-
                     return FranchiseReturnResponse.builder()
                             .returnCode(info.returnCode())
                             .status(info.status())
                             .unitPrice(unitPrice)
                             .franchiseOrderId(info.franchiseOrderId())
-                            .quantity(info.quantity())
                             .type(info.type())
                             .requestedDate(info.requestedDate())
                             .boxCode(boxCode)
@@ -124,12 +122,12 @@ public class FranchiseReturnFacade {
                             .orderCode(orderCode)
                             .productCode(productCode)
                             .productName(productName)
-                            .totalPrice(totalPrice)
                             .build();
                 })
                 .toList();
     }
 
+    // 반품 상세조회
     public FranchiseReturnDetailResponse getReturn(String username, String returnCode) {
         // franchiseId username으로 조회하는 로직 추가 필요
         Long franchiseId = 1L;
@@ -189,6 +187,38 @@ public class FranchiseReturnFacade {
                                 })
                                 .toList()
                 )
+                .build();
+    }
+
+    // 반품 수정
+    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
+    public FranchiseReturnUpdateResponse updateReturn(String username, List<FranchiseReturnUpdateRequest> requests, String returnCode) {
+        // franchiseId username으로 조회하는 로직 추가 필요
+        Long franchiseId = 1L;
+
+        // 1. 제품 식별코드, 박스코드로 FranchiseInventory에서 productId 조회
+        List<Long> productIds = inventoryService.getProductsBySerialCodeAndBoxCode(requests);
+        // 2. productId로 Product에서 productCode, productName, unitPrice 조회
+        List<FranchiseReturnProductInfo> productInfos = productService.getProduct(returnCode);
+        // 3. 조회한 값들로 ReturnItem 수정
+        Map<String, Long> orderItemIds = requests.stream()
+                .collect(Collectors.toMap(
+                        FranchiseReturnUpdateRequest::serialCode,
+                        FranchiseReturnUpdateRequest::orderItemId
+                ));
+        List<FranchiseReturnProductInfo> updateInfos = franchiseReturnService.updateReturnItems(productInfos, returnCode, orderItemIds);
+
+        // 4. 반품 정보
+        ReturnInfo returnInfo = franchiseReturnService.getReturnInfo(username, franchiseId, returnCode);
+
+        // 5. 필요한 값들 반환
+        return FranchiseReturnUpdateResponse.builder()
+                .returnCode(returnInfo.returnCode())
+                .status(returnInfo.status())
+                .franchiseOrderId(returnInfo.franchiseOrderId())
+                .type(returnInfo.type())
+                .requestedDate(returnInfo.requestedDate())
+                .items(updateInfos)
                 .build();
     }
 }

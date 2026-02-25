@@ -16,4 +16,8 @@ public class InventoryService {
                 )
         );
     }
+
+    public List<Long> getProductsBySerialCodeAndBoxCode(List<FranchiseReturnUpdateRequest> requests) {
+        return List.of(1L, 2L);
+    }
 }

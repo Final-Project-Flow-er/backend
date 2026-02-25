@@ -25,7 +25,6 @@ public class FranchiseReturnRepositoryImpl implements FranchiseReturnRepositoryC
                         returns.returnCode,
                         returns.returnStatus,
                         returns.franchiseOrderId,
-                        returnItem.quantity,
                         returns.returnType,
                         returns.createdAt,
                         returnItem.franchiseOrderItemId

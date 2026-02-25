@@ -73,11 +73,23 @@ public class FranchiseReturnController {
         return ResponseEntity.ok(ApiResponse.success(franchiseReturnFacade.cancel(username, returnCode)));
     }
 
+    @Operation(summary = "반품 대상 조회", description = "가맹점 id로 반품 생성의 대상이 되는 발주 조회")
+    @GetMapping("/target")
+    public ResponseEntity<ApiResponse<FranchiseReturnDetailResponse>> getTargets() {
+        //TODO: Spring Security Context에서 값 꺼내오는 걸로 수정해야 함
+        String username = "test";
+
+        return ResponseEntity.ok(ApiResponse.success(FranchiseReturnDetailResponse.builder().build()));
+    }
+
     @Operation(summary = "반품 생성", description = "가맹점 id로 반품 생성")
     @PostMapping
     public ResponseEntity<ApiResponse<FranchiseReturnAndReturnItemResponse>> createReturn(
             @RequestBody FranchiseReturnCreateRequest request
     ) {
-        return ResponseEntity.ok(ApiResponse.success(FranchiseReturnAndReturnItemResponse.builder().build()));
+        //TODO: Spring Security Context에서 값 꺼내오는 걸로 수정해야 함
+        String username = "test";
+
+        return ResponseEntity.ok(ApiResponse.success(franchiseReturnFacade.create(username, request)));
     }
 }

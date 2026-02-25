@@ -1,4 +1,4 @@
-package com.chaing.api.dto.franchise.returns.request;
+package com.chaing.domain.returns.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 

@@ -1,6 +1,7 @@
 package com.chaing.domain.returns.service;
 
 import com.chaing.core.dto.returns.request.ReturnToInventoryRequest;
+import com.chaing.domain.returns.dto.request.FranchiseReturnUpdateRequest;
 import org.springframework.stereotype.Service;
 
 import java.util.List;

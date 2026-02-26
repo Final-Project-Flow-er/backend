@@ -18,7 +18,10 @@ public enum FranchiseReturnErrorCode implements ErrorCode {
 
     // 400 BAD REQUEST
     INVALID_PRODUCT_INFO(400, "RE005", "제품에 대한 정보가 옳지 않습니다."),
-    INVALID_BOX_CODE(400, "RE006", "재고에 존재하지 않는 박스 코드입니다.");
+    INVALID_BOX_CODE(400, "RE006", "재고에 존재하지 않는 박스 코드입니다."),
+
+    // 401 FORBIDDEN
+    USER_FORBIDDEN(401, "RE007", "사용자 권한이 없습니다.");
 
     // 400 BAD REQUEST
 

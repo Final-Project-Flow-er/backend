@@ -1,13 +1,15 @@
 package com.chaing.api.dto.hq.products.request;
 
-import com.chaing.domain.products.enums.ProductStatus;
-import com.chaing.domain.products.enums.ProductType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import lombok.Builder;
 
 import java.math.BigDecimal;
+import java.util.List;
 
-public record HqProductCreateRequest(
+@Builder
+public record HQProductCreateRequest(
+
         // 제품 코드 (OR, RO, MA 등 구분 가능)
         @NotBlank
         String productCode,
@@ -19,10 +21,6 @@ public record HqProductCreateRequest(
         // 설명
         @NotBlank
         String description,
-
-        // OR, RO, MA 등 제품 타입
-        @NotNull
-        ProductType type,
 
         // 이미지 URL
         @NotBlank
@@ -46,7 +44,7 @@ public record HqProductCreateRequest(
 
         // 판매 상태
         @NotNull
-        ProductStatus status,
+        String status,
 
         // 칼로리
         @NotNull
@@ -54,6 +52,10 @@ public record HqProductCreateRequest(
 
         // 무게(g)
         @NotNull
-        Integer weight
+        Integer weight,
+
+        // 구성품 목록
+        @NotNull
+        List<Long> componentIds
 ) {
 }

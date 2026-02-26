@@ -25,7 +25,7 @@ import com.chaing.domain.returns.dto.response.ReturnItemInfo;
 import com.chaing.domain.returns.exception.FranchiseReturnErrorCode;
 import com.chaing.domain.returns.exception.FranchiseReturnException;
 import com.chaing.domain.returns.service.FranchiseReturnService;
-import com.chaing.domain.returns.service.FakeFranchiseService;
+import com.chaing.domain.returns.service.FakeReturnFranchiseService;
 import com.chaing.domain.returns.service.FakeInventoryService;
 import com.chaing.domain.returns.service.FakeReturnProductService;
 import lombok.RequiredArgsConstructor;
@@ -51,7 +51,7 @@ public class FranchiseReturnFacade {
     // 가짜
     private final FakeInventoryService fakeInventoryService;
     private final FakeReturnProductService fakeReturnProductService;
-    private final FakeFranchiseService fakeFranchiseService;
+    private final FakeReturnFranchiseService fakeReturnFranchiseService;
 
     // 반품 전체 조회
     public List<FranchiseReturnResponse> getAllReturns(String username) {
@@ -163,7 +163,7 @@ public class FranchiseReturnFacade {
         List<FranchiseReturnProductInfo> productInfos = fakeReturnProductService.getProduct(returnCode);
 
         // 가맹점 코드
-        String franchiseCode = fakeFranchiseService.getFranchise(franchiseId);
+        String franchiseCode = fakeReturnFranchiseService.getFranchise(franchiseId);
 
         return FranchiseReturnDetailResponse.builder()
                 .returnCode(returnCode)
@@ -278,7 +278,7 @@ public class FranchiseReturnFacade {
 
         // 반품 생성
         // 1.1. 발주 정보 조회
-        String franchiseCode = fakeFranchiseService.getFranchise(franchiseId);
+        String franchiseCode = fakeReturnFranchiseService.getFranchise(franchiseId);
         FranchiseOrderInfo orderInfo = franchiseOrderService.getOrderInfo(franchiseId, username, request.orderCode(), franchiseCode);
         // 1.2. 반품 생성
         ReturnInfo returnInfo = franchiseReturnService.createReturn(franchiseId, request, orderInfo);
@@ -351,7 +351,7 @@ public class FranchiseReturnFacade {
         Long franchiseId = 1L;
 
         // 발주 정보 조회
-        String franchiseCode = fakeFranchiseService.getFranchise(franchiseId);
+        String franchiseCode = fakeReturnFranchiseService.getFranchise(franchiseId);
         FranchiseOrderInfo orderInfo = franchiseOrderService.getOrderInfo(franchiseId, username, orderCode, franchiseCode);
 
         // 발주 제품 정보 조회

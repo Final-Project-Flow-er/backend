@@ -1,9 +1,9 @@
 package com.chaing.api.controller.hq;
 
-import com.chaing.api.dto.hq.request.HQOrderCreateRequest;
-import com.chaing.api.dto.hq.request.HQOrderUpdateRequest;
-import com.chaing.api.dto.hq.request.HQOrderUpdateStatusRequest;
-import com.chaing.api.dto.hq.response.HQOrderResponse;
+import com.chaing.api.dto.hq.orders.request.HQOrderCreateRequest;
+import com.chaing.api.dto.hq.orders.request.HQOrderUpdateRequest;
+import com.chaing.api.dto.hq.orders.request.HQOrderUpdateStatusRequest;
+import com.chaing.domain.orders.dto.response.HQOrderResponse;
 import com.chaing.api.facade.factory.HQOrderFacade;
 import com.chaing.core.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;

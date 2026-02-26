@@ -1,6 +1,6 @@
 package com.chaing.domain.orders.entity;
 
-import com.chaing.domain.orders.enums.HeadOrderStatus;
+import com.chaing.domain.orders.enums.HQOrderStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -29,7 +29,10 @@ public class HeadOfficeOrder {
     private Long headOfficeOrderId;
 
     @Column(nullable = false, unique = true)
-    private String orderNumber;
+    private String orderCode;
+
+    @Column(nullable = false)
+    private Long hqId;
 
     @Column(nullable = false)
     private String username;
@@ -41,12 +44,16 @@ public class HeadOfficeOrder {
     private LocalDateTime manufactureDate;
 
     @Column
-    private String requirement;
+    private String description;
+
+    @Column
+    @Builder.Default
+    private String storedDate = "-";
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     @Builder.Default
-    private HeadOrderStatus orderStatus = HeadOrderStatus.PENDING;
+    private HQOrderStatus orderStatus = HQOrderStatus.PENDING;
 
     @Column(nullable = false)
     private Integer totalQuantity;

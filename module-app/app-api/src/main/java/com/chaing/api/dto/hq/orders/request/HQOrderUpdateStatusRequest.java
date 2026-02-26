@@ -1,4 +1,4 @@
-package com.chaing.api.dto.hq.request;
+package com.chaing.api.dto.hq.orders.request;
 
 public record HQOrderUpdateStatusRequest() {
 }

@@ -91,6 +91,7 @@ public class FranchiseReturnService {
                             );
                         }))
                 .forEach(items::add);
+        franchiseReturnItemRepository.saveAll(items);
 
         // DTO용 orderItemId -> serialCode 매핑
         Map<Long, String> serialCodeByOrderItemId = orderItemIds.entrySet().stream()

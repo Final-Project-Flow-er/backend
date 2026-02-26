@@ -1,8 +1,8 @@
 package com.chaing.domain.products.entity;
 
 import com.chaing.core.entity.BaseEntity;
+import com.chaing.domain.products.dto.request.ProductUpdateRequest;
 import com.chaing.domain.products.enums.ProductStatus;
-import com.chaing.domain.products.enums.ProductType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -47,11 +47,9 @@ public class Product extends BaseEntity {
     @Column(nullable = false)
     private String description;
 
-    // OR, RO, MA
     @NotNull
-    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private ProductType type;
+    private Long productTypeId;
 
     // 이미지 URL
     @NotBlank
@@ -93,4 +91,21 @@ public class Product extends BaseEntity {
     @NotNull
     @Column(nullable = false)
     private Integer weight;
+
+    public void update(ProductUpdateRequest req) {
+
+        if (req.name() != null) this.name = req.name();
+        if (req.description() != null) this.description = req.description();
+        if (req.imageUrl() != null) this.imageUrl = req.imageUrl();
+
+        if (req.price() != null) this.price = BigDecimal.valueOf(req.price());
+        if (req.originalPrice() != null) this.costPrice = BigDecimal.valueOf(req.originalPrice());
+        if (req.supplyPrice() != null) this.supplyPrice = BigDecimal.valueOf(req.supplyPrice());
+
+        if (req.baseSafeStock() != null) this.safetyStock = req.baseSafeStock();
+        if (req.kcal() != null) this.kcal = req.kcal();
+
+        if (req.status() != null)
+            this.status = ProductStatus.valueOf(req.status());
+    }
 }

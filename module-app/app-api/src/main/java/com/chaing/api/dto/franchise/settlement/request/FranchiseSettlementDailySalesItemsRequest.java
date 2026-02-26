@@ -6,10 +6,9 @@ import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDate;
 
-public record FranchiseSettlementDailySummaryRequest(
+public record FranchiseSettlementDailySalesItemsRequest(
         @Schema(description = "조회 날짜", example = "2026-02-26", requiredMode = Schema.RequiredMode.REQUIRED)
         @NotNull
         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
         LocalDate date
-)
-{}
+) {}

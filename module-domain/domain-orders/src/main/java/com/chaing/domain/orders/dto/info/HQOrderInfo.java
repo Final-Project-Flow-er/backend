@@ -22,7 +22,9 @@ public record HQOrderInfo(
 
         LocalDateTime manufacturedDate,
 
-        String storedDate
+        String storedDate,
+
+        String description
 ) {
     public static HQOrderInfo from(HeadOfficeOrder order) {
         return HQOrderInfo.builder()
@@ -31,9 +33,10 @@ public record HQOrderInfo(
                 .status(order.getOrderStatus())
                 .username(order.getUsername())
                 .phoneNumber(order.getPhoneNumber())
-//                .requestedDate(order.get)
+                .requestedDate(order.getCreatedAt())
                 .manufacturedDate(order.getManufactureDate())
                 .storedDate(order.getStoredDate())
+                .description(order.getDescription())
                 .build();
     }
 }

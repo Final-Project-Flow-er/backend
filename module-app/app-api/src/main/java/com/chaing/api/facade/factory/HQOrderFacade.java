@@ -1,17 +1,19 @@
 package com.chaing.api.facade.factory;
 
-import com.chaing.domain.orders.dto.info.HQOrderInfo;
 import com.chaing.core.dto.info.ProductInfo;
+import com.chaing.core.fake.FakeProductService;
+import com.chaing.domain.orders.dto.info.HQOrderInfo;
 import com.chaing.domain.orders.dto.info.HQOrderItemInfo;
 import com.chaing.domain.orders.dto.response.HQOrderDetailResponse;
 import com.chaing.domain.orders.dto.response.HQOrderResponse;
-import com.chaing.core.fake.FakeProductService;
 import com.chaing.domain.orders.service.HQOrderService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -40,9 +42,9 @@ public class HQOrderFacade {
                 .flatMap(List::stream)
                 .distinct()
                 .toList();
-        Map<Long, List<ProductInfo>> productInfoByProductId = productService.getProducts(productIds);
+        Map<Long, ProductInfo> productInfoByProductId = productService.getProducts(productIds);
         // 3. Map<orderId, quantity> orderId 별 수량 계산
-        Map<Long, Integer> quantityByOrderId = productInfoByProductId.entrySet().stream()
+        Map<Long, Integer> quantityByOrderId = productIdByOrderId.entrySet().stream()
                 .collect(Collectors.toMap(
                         Map.Entry::getKey,
                         entry -> entry.getValue().size()
@@ -59,7 +61,7 @@ public class HQOrderFacade {
                         .requestedDate(orderInfos.get(orderId).requestedDate())
                         .manufacturedDate(orderInfos.get(orderId).manufacturedDate())
                         .storedDate(orderInfos.get(orderId).storedDate())
-                        .productCode(productInfoByProductId.get(orderId).getFirst().productCode())
+                        .productCode(productInfoByProductId.get(productIdByOrderId.get(orderId).getFirst()).productCode())
                         .build())
                 .toList();
     }
@@ -72,15 +74,38 @@ public class HQOrderFacade {
         // 발주 정보 조회
         HQOrderInfo orderInfo = hqOrderService.getOrder(hqId, orderCode);
 
-        // 발주 제품 조회
-        List<HQOrderItemInfo> orderItemInfos = hqOrderService.getOrderItems(hqId, orderInfo.orderId());
+        // 발주 제품 정보 조회
+        // 1. List<productId> productId 조회
+        List<Long> productIds = hqOrderService.getOrderItems(hqId, orderInfo.orderId());
+        // 2. Map<productId, List<ProductInfo>> 제품 정보 조회
+        Map<Long, ProductInfo> productInfoByProductId = productService.getProducts(productIds);
+        // 3. Map<productId, quantity> 제품 별 개수 조회
+        Map<Long, Integer> quantityByProductId = productIds.stream()
+                .collect(Collectors.groupingBy(
+                        Function.identity(),
+                        Collectors.collectingAndThen(
+                                Collectors.counting(),
+                                Math::toIntExact
+                        )
+                ));
+        // 4. List<HQOrderItemInfo>
+        List<HQOrderItemInfo> orderItemInfos = productInfoByProductId.keySet().stream()
+                .map(productId -> {
+                    ProductInfo productInfo = productInfoByProductId.get(productId);
+                    Integer quantity = quantityByProductId.get(productId);
+                    BigDecimal unitPrice = productInfo.costPrice();
+                    BigDecimal totalPrice = unitPrice.multiply(BigDecimal.valueOf(quantity));
 
-        // 제품 정보 조회
-        // 1. Map<productId, List<ProductInfo>>
-        List<Long> productIds = orderItemInfos.stream()
-                .map(HQOrderItemInfo::productId)
-                .toList();
-        Map<Long, List<ProductInfo>> productInfoByProductId = productService.getProducts(productIds);
+                    return HQOrderItemInfo.builder()
+                            .productId(productId)
+                            .productCode(productInfo.productCode())
+                            .productName(productInfo.productName())
+                            .quantity(quantity)
+                            .unitPrice(unitPrice)
+                            .totalPrice(totalPrice)
+                            .build();
+                        }
+                ).toList();
 
         // 반환
         return HQOrderDetailResponse.builder()

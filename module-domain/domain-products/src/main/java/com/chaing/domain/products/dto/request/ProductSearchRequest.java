@@ -1,6 +1,5 @@
 package com.chaing.domain.products.dto.request;
 
-import com.chaing.core.enums.LogType;
 import lombok.Builder;
 
 @Builder

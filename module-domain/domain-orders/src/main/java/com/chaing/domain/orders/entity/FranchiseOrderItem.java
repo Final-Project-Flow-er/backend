@@ -43,7 +43,7 @@ public class FranchiseOrderItem extends BaseEntity {
     @JoinColumn(name = "franchise_order_id")
     private FranchiseOrder franchiseOrder;    // fk 가맹점 발주 식별 키
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String serialCode;
 
     @Column(nullable = false)

@@ -179,7 +179,7 @@ public class SwaggerConfig {
     public GroupedOpenApi hqSettlementApi() {
         return GroupedOpenApi.builder()
                 .group("본사 정산(HqSettlement)")
-                .pathsToMatch("/api/v1/hq/settlement/**")
+                .pathsToMatch("/api/v1/hq/settlements/**")
                 .build();
     }
 
@@ -187,7 +187,7 @@ public class SwaggerConfig {
     public GroupedOpenApi franchiseSettlementApi() {
         return GroupedOpenApi.builder()
                 .group("가맹점 정산(FranchiseSettlement)")
-                .pathsToMatch("/api/v1/franchise/settlement/**")
+                .pathsToMatch("/api/v1/franchise/settlements/**")
                 .build();
     }
 }

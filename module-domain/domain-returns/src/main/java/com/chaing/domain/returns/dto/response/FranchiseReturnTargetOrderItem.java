@@ -9,8 +9,6 @@ public record FranchiseReturnTargetOrderItem(
 
         String productName,
 
-        BigDecimal unitPrice,
-
-        Integer quantity
+        BigDecimal unitPrice
 ) {
 }

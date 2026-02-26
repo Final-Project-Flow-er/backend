@@ -104,6 +104,7 @@ class FranchiseReturnServiceTests {
         returnId = 2L;
         description = "description";
         unitPrice = BigDecimal.TEN;
+        returnItemId = 3L;
 
         orderId = 10L;
         orderCode = "orderCode";

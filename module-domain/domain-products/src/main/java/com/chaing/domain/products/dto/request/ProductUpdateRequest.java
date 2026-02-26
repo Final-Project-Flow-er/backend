@@ -1,10 +1,13 @@
-package com.chaing.api.dto.hq.products.request;
+package com.chaing.domain.products.dto.request;
+
+import lombok.Builder;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
-public record HQProductUpdateRequest(
+@Builder
+public record ProductUpdateRequest(
         String name,                // 상품명
         BigDecimal price,              // 판매가
         BigDecimal originalPrice,      // 원가

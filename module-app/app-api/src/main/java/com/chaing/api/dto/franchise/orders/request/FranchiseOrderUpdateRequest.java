@@ -37,7 +37,7 @@ public record FranchiseOrderUpdateRequest(
         return items.stream()
                 .map(item -> {
                     return new FranchiseOrderItemInfo(
-                            item.productId(),
+                            item.serialCode(),
                             item.quantity(),
                             item.unitPrice()
                     );

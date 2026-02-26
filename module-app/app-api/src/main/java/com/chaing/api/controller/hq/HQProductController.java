@@ -9,6 +9,7 @@ import com.chaing.api.facade.hq.HQProductFacade;
 import com.chaing.core.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -41,7 +42,7 @@ public class HQProductController {
     @Operation(summary = "상품 추가", description = "입력한 정보로 상품을 추가합니다.")
     @PostMapping("/create")
     public ResponseEntity<Void> createProduct(
-            @RequestBody HQProductCreateRequest request
+            @Valid @RequestBody HQProductCreateRequest request
     ) {
         hqProductFacade.createProduct(request);
         return ResponseEntity.status(HttpStatus.CREATED).build();
@@ -54,7 +55,7 @@ public class HQProductController {
             @RequestBody HQProductUpdateRequest request) {
         {
             hqProductFacade.updateProduct(productId,request);
-            return ResponseEntity.status(HttpStatus.CREATED).build();
+            return ResponseEntity.ok(ApiResponse.success(null));
         }
     }
 
@@ -65,6 +66,6 @@ public class HQProductController {
             @RequestParam String productName
     ) {
         hqProductFacade.createProductTypes(type, productName);
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(null));
     }
 }

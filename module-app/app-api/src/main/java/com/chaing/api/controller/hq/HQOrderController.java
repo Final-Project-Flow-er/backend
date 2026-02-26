@@ -3,6 +3,7 @@ package com.chaing.api.controller.hq;
 import com.chaing.api.dto.hq.orders.request.HQOrderCreateRequest;
 import com.chaing.api.dto.hq.orders.request.HQOrderUpdateRequest;
 import com.chaing.api.dto.hq.orders.request.HQOrderUpdateStatusRequest;
+import com.chaing.domain.orders.dto.response.HQOrderDetailResponse;
 import com.chaing.domain.orders.dto.response.HQOrderResponse;
 import com.chaing.api.facade.factory.HQOrderFacade;
 import com.chaing.core.dto.ApiResponse;
@@ -28,6 +29,7 @@ public class HQOrderController {
 
     private final HQOrderFacade hqOrderFacade;
 
+    // 목 데이터 넣어서 통합 테스트 해봐야함
     @Operation(summary = "발주 조회", description = "본사의 발주 전체 조회")
     @GetMapping
     public ResponseEntity<ApiResponse<List<HQOrderResponse>>> getAllOrders() {
@@ -38,11 +40,14 @@ public class HQOrderController {
     }
 
     @Operation(summary = "특정 발주 조회", description = "발주 번호로 특정 발주 조회")
-    @GetMapping("/{order-number}")
-    public ResponseEntity<ApiResponse<HQOrderResponse>> getOrder(
-            @PathVariable("order-number") String orderNumber
+    @GetMapping("/{order-code}")
+    public ResponseEntity<ApiResponse<HQOrderDetailResponse>> getOrder(
+            @PathVariable("order-code") String orderCode
     ) {
-        return ResponseEntity.ok(ApiResponse.success(HQOrderResponse.builder().build()));
+        //TODO: Spring Security Context에서 값 꺼내오는 걸로 수정해야 함
+        String username = "test";
+
+        return ResponseEntity.ok(ApiResponse.success(hqOrderFacade.getOrderDetail(username, orderCode)));
     }
 
     @Operation(summary = "발주 수정", description = "발주 번호로 특정 발주 수정")

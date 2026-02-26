@@ -2,6 +2,8 @@ package com.chaing.api.facade.factory;
 
 import com.chaing.domain.orders.dto.info.HQOrderInfo;
 import com.chaing.core.dto.info.ProductInfo;
+import com.chaing.domain.orders.dto.info.HQOrderItemInfo;
+import com.chaing.domain.orders.dto.response.HQOrderDetailResponse;
 import com.chaing.domain.orders.dto.response.HQOrderResponse;
 import com.chaing.core.fake.FakeProductService;
 import com.chaing.domain.orders.service.HQOrderService;
@@ -18,8 +20,9 @@ public class HQOrderFacade {
 
     private final HQOrderService hqOrderService;
 
-    private final FakeProductService fakeProductService;
+    private final FakeProductService productService;
 
+    // 발주 조회
     public List<HQOrderResponse> getAllOrders(String username) {
         // hqId username으로 꺼내오는 로직 추가
         Long hqId = 10L;
@@ -37,7 +40,7 @@ public class HQOrderFacade {
                 .flatMap(List::stream)
                 .distinct()
                 .toList();
-        Map<Long, List<ProductInfo>> productInfoByProductId = fakeProductService.getProducts(productIds);
+        Map<Long, List<ProductInfo>> productInfoByProductId = productService.getProducts(productIds);
         // 3. Map<orderId, quantity> orderId 별 수량 계산
         Map<Long, Integer> quantityByOrderId = productInfoByProductId.entrySet().stream()
                 .collect(Collectors.toMap(
@@ -59,5 +62,30 @@ public class HQOrderFacade {
                         .productCode(productInfoByProductId.get(orderId).getFirst().productCode())
                         .build())
                 .toList();
+    }
+
+    // 특정 발주 조회
+    public HQOrderDetailResponse getOrderDetail(String username, String orderCode) {
+        // hqId username으로 꺼내오는 로직 추가
+        Long hqId = 10L;
+
+        // 발주 정보 조회
+        HQOrderInfo orderInfo = hqOrderService.getOrder(hqId, orderCode);
+
+        // 발주 제품 조회
+        List<HQOrderItemInfo> orderItemInfos = hqOrderService.getOrderItems(hqId, orderInfo.orderId());
+
+        // 제품 정보 조회
+        // 1. Map<productId, List<ProductInfo>>
+        List<Long> productIds = orderItemInfos.stream()
+                .map(HQOrderItemInfo::productId)
+                .toList();
+        Map<Long, List<ProductInfo>> productInfoByProductId = productService.getProducts(productIds);
+
+        // 반환
+        return HQOrderDetailResponse.builder()
+                .orderInfo(orderInfo)
+                .items(orderItemInfos)
+                .build();
     }
 }

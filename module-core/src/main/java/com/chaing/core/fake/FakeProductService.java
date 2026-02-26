@@ -1,6 +1,6 @@
-package com.chaing.domain.orders.service;
+package com.chaing.core.fake;
 
-import com.chaing.domain.orders.dto.info.ProductInfo;
+import com.chaing.core.dto.info.ProductInfo;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;

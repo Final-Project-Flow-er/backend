@@ -1,4 +1,4 @@
-package com.chaing.domain.orders.dto.info;
+package com.chaing.core.dto.info;
 
 import lombok.Builder;
 

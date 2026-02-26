@@ -115,6 +115,9 @@ public class Product extends BaseEntity {
         if (req.baseSafeStock() != null) this.safetyStock = req.baseSafeStock();
         if (req.kcal() != null) this.kcal = req.kcal();
 
+        if (req.startDate() != null) this.supplyPriceStartDate = req.startDate();
+        if (req.endDate() != null) this.supplyPriceEndDate = req.endDate();
+
         if (req.status() != null) {
             try {
                 this.status = ProductStatus.valueOf(

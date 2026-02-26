@@ -19,7 +19,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.util.List;
 
 @Entity
 @Getter
@@ -44,8 +43,8 @@ public class FranchiseOrderItem extends BaseEntity {
     @JoinColumn(name = "franchise_order_id")
     private FranchiseOrder franchiseOrder;    // fk 가맹점 발주 식별 키
 
-    @Column(nullable = false)
-    private Long productId; // 제품 식별 번호
+    @Column(nullable = false, unique = true)
+    private String serialCode;
 
     @Column(nullable = false)
     private Integer quantity;

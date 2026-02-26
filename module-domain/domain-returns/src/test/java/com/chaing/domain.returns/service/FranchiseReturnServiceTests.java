@@ -320,4 +320,18 @@ class FranchiseReturnServiceTests {
         assertEquals(orderItemId, responses.get(0).orderItemId());
         assertEquals(returnItemId, responses.get(0).returnItemId());
     }
+
+    @Test
+    @DisplayName("존재하지 않는 반품 코드로 반품 조회 시 예외 발생")
+    void createReturnItem_Failure_RETURN_NOT_FOUND() {
+        // given
+        given(franchiseReturnRepository.findByReturnCode(returnCode)).willReturn(Optional.empty());
+
+        // when & then
+        FranchiseReturnException exception = assertThrows(FranchiseReturnException.class, () -> {
+            franchiseReturnService.createReturnItems(returnCode, List.of(returnItemCreateCommand));
+        });
+        verify(franchiseReturnRepository, times(1)).findByReturnCode(returnCode);
+        assertEquals(FranchiseReturnErrorCode.RETURN_NOT_FOUND, exception.getErrorCode());
+    }
 }

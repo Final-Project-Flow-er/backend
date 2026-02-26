@@ -1,7 +1,10 @@
 package com.chaing.domain.orders.dto.info;
 
+import lombok.Builder;
+
 import java.math.BigDecimal;
 
+@Builder
 public record HQOrderItemInfo(
         Long productId,
 

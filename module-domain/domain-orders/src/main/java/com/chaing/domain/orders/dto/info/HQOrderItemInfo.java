@@ -3,6 +3,8 @@ package com.chaing.domain.orders.dto.info;
 import java.math.BigDecimal;
 
 public record HQOrderItemInfo(
+        Long productId,
+
         String productCode,
 
         String productName,

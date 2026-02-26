@@ -174,4 +174,20 @@ public class SwaggerConfig {
                 .pathsToMatch("/api/v1/factory/log/**")
                 .build();
     }
+
+    @Bean
+    public GroupedOpenApi hqSettlementApi() {
+        return GroupedOpenApi.builder()
+                .group("본사 정산(HqSettlement)")
+                .pathsToMatch("/api/v1/hq/settlement/**")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi franchiseSettlementApi() {
+        return GroupedOpenApi.builder()
+                .group("가맹점 정산(FranchiseSettlement)")
+                .pathsToMatch("/api/v1/franchise/settlement/**")
+                .build();
+    }
 }

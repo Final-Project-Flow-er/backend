@@ -37,7 +37,8 @@ public class ProductService {
     public void createProduct(ProductRequest request) {
 
         // 1. 상태 파싱
-        ProductStatus status = ProductStatus.valueOf(request.status());
+        ProductStatus status = parseStatus(request.status());
+
 
         // 2. 상품코드 → 타입 해석
         Long productTypeId = existType(request.productCode());
@@ -140,5 +141,19 @@ public class ProductService {
                 .toList();
 
         productComponentRepository.saveAll(toAdd);
+    }
+
+    private ProductStatus parseStatus(String rawStatus) {
+        if (rawStatus == null || rawStatus.isBlank()) {
+            throw new ProductException(ProductErrorCode.INVALID_PRODUCT_STATUS);
+        }
+
+        try {
+            return ProductStatus.valueOf(
+                    rawStatus.trim().toUpperCase(java.util.Locale.ROOT)
+            );
+        } catch (IllegalArgumentException e) {
+            throw new ProductException(ProductErrorCode.INVALID_PRODUCT_STATUS);
+        }
     }
 }

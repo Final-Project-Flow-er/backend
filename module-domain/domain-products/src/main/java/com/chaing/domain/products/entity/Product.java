@@ -3,6 +3,8 @@ package com.chaing.domain.products.entity;
 import com.chaing.core.entity.BaseEntity;
 import com.chaing.domain.products.dto.request.ProductUpdateRequest;
 import com.chaing.domain.products.enums.ProductStatus;
+import com.chaing.domain.products.exception.ProductErrorCode;
+import com.chaing.domain.products.exception.ProductException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -20,6 +22,7 @@ import lombok.NoArgsConstructor;
 
 
 import java.math.BigDecimal;
+import java.util.Locale;
 
 @Entity
 @Getter
@@ -98,14 +101,21 @@ public class Product extends BaseEntity {
         if (req.description() != null) this.description = req.description();
         if (req.imageUrl() != null) this.imageUrl = req.imageUrl();
 
-        if (req.price() != null) this.price = BigDecimal.valueOf(req.price());
-        if (req.originalPrice() != null) this.costPrice = BigDecimal.valueOf(req.originalPrice());
-        if (req.supplyPrice() != null) this.supplyPrice = BigDecimal.valueOf(req.supplyPrice());
+        if (req.price() != null) this.price = req.price();
+        if (req.originalPrice() != null) this.costPrice = req.originalPrice();
+        if (req.supplyPrice() != null) this.supplyPrice = req.supplyPrice();
 
         if (req.baseSafeStock() != null) this.safetyStock = req.baseSafeStock();
         if (req.kcal() != null) this.kcal = req.kcal();
 
-        if (req.status() != null)
-            this.status = ProductStatus.valueOf(req.status());
+        if (req.status() != null) {
+            try {
+                this.status = ProductStatus.valueOf(
+                        req.status().trim().toUpperCase(Locale.ROOT)
+                );
+            } catch (IllegalArgumentException e) {
+                throw new ProductException(ProductErrorCode.INVALID_PRODUCT_CODE_FORMAT);
+            }
+        }
     }
 }

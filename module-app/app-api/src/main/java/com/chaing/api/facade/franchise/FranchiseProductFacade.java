@@ -5,6 +5,8 @@ import com.chaing.api.dto.franchise.products.response.FranchiseProductListRespon
 import com.chaing.api.dto.franchise.products.response.FranchiseProductResponse;
 import com.chaing.domain.products.dto.request.ProductSearchRequest;
 import com.chaing.domain.products.dto.response.ProductListResponse;
+import com.chaing.domain.products.exception.ProductErrorCode;
+import com.chaing.domain.products.exception.ProductException;
 import com.chaing.domain.products.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -61,7 +63,7 @@ public class FranchiseProductFacade {
             case "02" -> "기본맛";
             case "03" -> "매운맛";
             case "04" -> "아주 매운맛";
-            default -> null;
+            default -> throw new ProductException(ProductErrorCode.INVALID_PRODUCT_CODE_FORMAT);
         };
     }
 
@@ -71,7 +73,7 @@ public class FranchiseProductFacade {
         return switch (size) {
             case "01" -> "1~2인분";
             case "03" -> "3~4인분";
-            default -> null;
+            default -> throw new ProductException(ProductErrorCode.INVALID_PRODUCT_CODE_FORMAT);
         };
     }
 }

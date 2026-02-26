@@ -10,6 +10,8 @@ import com.chaing.domain.products.entity.QComponent;
 import com.chaing.domain.products.entity.QProduct;
 import com.chaing.domain.products.entity.QProductComponent;
 import com.chaing.domain.products.enums.ProductStatus;
+import com.chaing.domain.products.exception.ProductErrorCode;
+import com.chaing.domain.products.exception.ProductException;
 import com.chaing.domain.products.repository.interfaces.ProductRepositoryCustom;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -79,7 +81,7 @@ public class ProductRepositoryImpl implements ProductRepositoryCustom {
             ProductStatus productStatus = ProductStatus.valueOf(status.toUpperCase());
             return QProduct.product.status.eq(productStatus);
         } catch (IllegalArgumentException e){
-            return null;
+            throw new ProductException(ProductErrorCode.INVALID_PRODUCT_CODE_FORMAT);
         }
     }
 

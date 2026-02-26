@@ -10,6 +10,8 @@ public record ProductInfo(
 
     Long productId,
 
-    BigDecimal unitPrice
+    BigDecimal unitPrice,
+
+    String serialCode
 ) {
 }

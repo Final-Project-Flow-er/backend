@@ -18,6 +18,9 @@ public record FranchiseOrderCreateRequest(
         @NotNull
         LocalDateTime deliveryDate,
 
+        @NotNull
+        String deliveryTime,
+
         @NotBlank
         String address,
 
@@ -30,6 +33,7 @@ public record FranchiseOrderCreateRequest(
                 .username(this.username)
                 .phoneNumber(this.phoneNumber)
                 .deliveryDate(this.deliveryDate)
+                .deliveryTime(this.deliveryTime)
                 .address(this.address)
                 .requirement(this.requirement)
                 .items(FranchiseOrderCreateRequest.from(this.items))

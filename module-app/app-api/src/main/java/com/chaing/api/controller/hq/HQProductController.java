@@ -4,6 +4,7 @@ package com.chaing.api.controller.hq;
 import com.chaing.api.dto.hq.products.request.HQProductSearchRequest;
 import com.chaing.api.dto.hq.products.request.HQProductTypeCreateRequest;
 import com.chaing.api.dto.hq.products.request.HQProductUpdateRequest;
+import com.chaing.api.dto.hq.products.request.HqProductCreateRequest;
 import com.chaing.core.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -22,19 +23,21 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/hq/product")
 public class HQProductController {
 
-    @Operation(summary = "현재 모든 상품 조회", description = "등록되어 있는 상품을 조회한다.")
+    @Operation(summary = "현재 모든 상품 조회", description = "등록되어 있는 상품을 조회합니다.")
     @GetMapping
     public ResponseEntity<ApiResponse<?>> getProducts(@ModelAttribute HQProductSearchRequest hqProductSearchRequest){
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "상품 추가", description = "입력한 정보로 상품을 추가한다.")
-    @PostMapping
-    public ResponseEntity<ApiResponse<?>> createProduct(){
+    @Operation(summary = "상품 추가", description = "입력한 정보로 상품을 추가합니다.")
+    @PostMapping("/create")
+    public ResponseEntity<ApiResponse<?>> createProduct(
+            @RequestBody HqProductCreateRequest hqProductCreateRequest
+            ){
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "상품 수정", description = "입력한 정보로 상품을 수정한다.")
+    @Operation(summary = "상품 수정", description = "입력한 정보로 상품을 수정합니다.")
     @PatchMapping("/{productId}")
     public ResponseEntity<ApiResponse<?>> updateProduct(
             @PathVariable Long productId,
@@ -42,7 +45,7 @@ public class HQProductController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "제품타입 추가", description = "제품 타입을 추가한다.")
+    @Operation(summary = "제품타입 추가", description = "제품 타입을 추가합니다.")
     @PostMapping("/product-types")
     public ResponseEntity<ApiResponse<?>> createProductTypes(
             @RequestBody HQProductTypeCreateRequest hqProductTypeCreateRequest

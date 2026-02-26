@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Service
@@ -77,6 +78,11 @@ public class FranchiseOrderFacade {
         // 받아온 ProductCode에 따라 제품 정보 가져와서 넘겨줘야 함
         // 이건 임시임. 나중에 Product 엔티티에서 정보 가져오는 걸로 바꿔줘야 함
         List<ProductInfo> productInfos = request.items().stream()
+                .map(item -> { return ProductInfo.builder()
+                        .productCode(item.productCode())
+                        .productId(1L)
+                        .unitPrice(BigDecimal.valueOf(5000))
+                        .build(); })
                 .map(item -> { return ProductInfo.builder().productCode(item.productCode()).build(); })
                 .toList();
 

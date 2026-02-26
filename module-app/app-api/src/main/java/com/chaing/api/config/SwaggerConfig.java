@@ -142,4 +142,36 @@ public class SwaggerConfig {
                 .pathsToMatch("/api/v1/notices/**")
                 .build();
     }
+
+    @Bean
+    public GroupedOpenApi notificationApi() {
+        return GroupedOpenApi.builder()
+                .group("알림(Notification)")
+                .pathsToMatch("/api/v1/notifications/**")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi hqInventoryLogApi() {
+        return GroupedOpenApi.builder()
+                .group("본사 로그(HqInventoryLog)")
+                .pathsToMatch("/api/v1/hq/log/**")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi franchiseInventoryLogApi() {
+        return GroupedOpenApi.builder()
+                .group("가맹점 로그(FranchiseInventoryLog)")
+                .pathsToMatch("/api/v1/franchise/log/**")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi factoryInventoryLogApi() {
+        return GroupedOpenApi.builder()
+                .group("공장 로그(FactoryInventoryLog)")
+                .pathsToMatch("/api/v1/factory/log/**")
+                .build();
+    }
 }

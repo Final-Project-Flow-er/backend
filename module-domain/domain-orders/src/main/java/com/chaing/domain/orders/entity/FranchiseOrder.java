@@ -87,6 +87,8 @@ public class FranchiseOrder extends BaseEntity {
                 .requirement(request.requirement())
                 .deliveryDate(request.deliveryDate())
                 .deliveryTime(request.deliveryTime())
+                .totalAmount(BigDecimal.ZERO)
+                .totalQuantity(request.items().stream().map(FranchiseOrderCreateInfo::quantity).reduce(0, Integer::sum))
                 .build();
     }
 
@@ -126,6 +128,12 @@ public class FranchiseOrder extends BaseEntity {
     public void countItems(List<FranchiseOrderItem> orderItems) {
         this.totalQuantity = orderItems.stream()
                 .mapToInt(FranchiseOrderItem::getQuantity).sum();
+        this.totalAmount = orderItems.stream()
+                .map(FranchiseOrderItem::getTotalPrice)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    public void allocateTotalAmount(List<FranchiseOrderItem> orderItems) {
         this.totalAmount = orderItems.stream()
                 .map(FranchiseOrderItem::getTotalPrice)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);

@@ -18,6 +18,7 @@ import com.chaing.domain.returns.repository.interfaces.FranchiseReturnRepository
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -62,7 +63,9 @@ public class FranchiseReturnService {
                 .orElseThrow(() -> new FranchiseReturnException(FranchiseReturnErrorCode.RETURN_NOT_FOUND));
 
         // 저장되어 있던 반품 제품
-        List<ReturnItem> items = franchiseReturnItemRepository.findAllByReturns_ReturnCode(returnCode);
+        List<ReturnItem> items = new ArrayList<>(
+                franchiseReturnItemRepository.findAllByReturns_ReturnCode(returnCode)
+        );
 
         // 요청받은 반품 제품
         List<ReturnItem> requestedItems = productInfos.stream()
@@ -108,14 +111,8 @@ public class FranchiseReturnService {
                     Long orderItemId = item.getFranchiseOrderItemId();
 
                     String serialCode = serialCodeByOrderItemId.get(orderItemId);
-                    if (serialCode == null) {
-                        throw new FranchiseReturnException(FranchiseReturnErrorCode.PRODUCT_NOT_FOUND);
-                    }
 
                     FranchiseReturnProductInfo productInfo = productInfoBySerialCode.get(serialCode);
-                    if (productInfo == null) {
-                        throw new FranchiseReturnException(FranchiseReturnErrorCode.PRODUCT_NOT_FOUND);
-                    }
 
                     return productInfo;
                 })

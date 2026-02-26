@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 @Service
-public class InventoryService {
+public class FakeInventoryService {
     public List<ReturnToInventoryRequest> getProducts(List<String> serialCodes) {
         return List.of(
                 new ReturnToInventoryRequest(

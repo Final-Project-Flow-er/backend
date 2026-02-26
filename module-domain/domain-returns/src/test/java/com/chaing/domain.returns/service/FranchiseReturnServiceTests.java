@@ -6,6 +6,7 @@ import com.chaing.domain.returns.dto.request.FranchiseReturnCreateRequest;
 import com.chaing.domain.returns.dto.request.FranchiseReturnItemCreateRequest;
 import com.chaing.domain.returns.dto.response.FranchiseReturnAndReturnItemResponse;
 import com.chaing.domain.returns.dto.response.FranchiseReturnInfo;
+import com.chaing.domain.returns.dto.response.FranchiseReturnProductInfo;
 import com.chaing.domain.returns.dto.response.ReturnInfo;
 import com.chaing.domain.returns.dto.response.ReturnItemInfo;
 import com.chaing.domain.returns.entity.ReturnItem;
@@ -29,7 +30,9 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -82,6 +85,7 @@ class FranchiseReturnServiceTests {
     FranchiseOrderInfo franchiseOrderInfo;
     ReturnItemInfo returnItemInfo;
     ReturnItemCreateCommand returnItemCreateCommand;
+    FranchiseReturnProductInfo franchiseReturnProductInfo;
 
     Returns returns;
     Long returnId;
@@ -174,6 +178,14 @@ class FranchiseReturnServiceTests {
                 serialCode,
                 orderItemId
         );
+
+        franchiseReturnProductInfo = new FranchiseReturnProductInfo(
+                boxCode,
+                serialCode,
+                productCode,
+                productName,
+                unitPrice
+        );
     }
 
     @Test
@@ -232,6 +244,44 @@ class FranchiseReturnServiceTests {
         // then
         verify(franchiseReturnItemRepository, times(1)).findAllByReturns_ReturnCode(returnCode);
         assertEquals(orderItemId, response.get(0));
+    }
+
+    @Test
+    @DisplayName("반품 제품 수정 - 성공")
+    void updateReturnItems_Success() {
+        // given
+        given(franchiseReturnRepository.findByReturnCode(returnCode)).willReturn(Optional.of(returns));
+        given(franchiseReturnItemRepository.findAllByReturns_ReturnCode(returnCode)).willReturn(List.of(returnItem));
+        Map<String, Long> orderItemIds = new HashMap<>();
+        orderItemIds.put(serialCode, orderItemId);
+
+        // when
+        List<FranchiseReturnProductInfo> responses = franchiseReturnService.updateReturnItems(List.of(franchiseReturnProductInfo), returnCode, orderItemIds);
+
+        // then
+        verify(franchiseReturnItemRepository, times(1)).findAllByReturns_ReturnCode(returnCode);
+        verify(franchiseReturnRepository, times(1)).findByReturnCode(returnCode);
+        assertEquals(boxCode, responses.get(0).boxCode());
+        assertEquals(serialCode, responses.get(0).serialCode());
+        assertEquals(productCode, responses.get(0).productCode());
+        assertEquals(productName, responses.get(0).productName());
+        assertEquals(unitPrice, responses.get(0).unitPrice());
+    }
+
+    @Test
+    @DisplayName("잘못된 반품 코드로 반품 조회 시 예외 발생")
+    void updateReturnItems_Failure_RETURN_NOT_FOUND() {
+        // given
+        given(franchiseReturnRepository.findByReturnCode(returnCode)).willReturn(Optional.empty());
+        Map<String, Long> orderItemIds = new HashMap<>();
+        orderItemIds.put(serialCode, orderItemId);
+
+        // when & then
+        FranchiseReturnException exception = assertThrows(FranchiseReturnException.class, () -> {
+            franchiseReturnService.updateReturnItems(List.of(franchiseReturnProductInfo), returnCode, orderItemIds);
+        });
+        verify(franchiseReturnRepository, times(1)).findByReturnCode(returnCode);
+        assertEquals(FranchiseReturnErrorCode.RETURN_NOT_FOUND, exception.getErrorCode());
     }
 
     @Test

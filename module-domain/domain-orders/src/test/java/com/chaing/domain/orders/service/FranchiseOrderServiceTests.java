@@ -1,5 +1,7 @@
 package com.chaing.domain.orders.service;
 
+import com.chaing.core.dto.returns.request.OrderItemIdAndSerialCode;
+import com.chaing.core.dto.returns.response.FranchiseReturnTargetResponse;
 import com.chaing.domain.orders.dto.command.FranchiseOrderCreateCommand;
 import com.chaing.domain.orders.dto.command.FranchiseOrderUpdateCommand;
 import com.chaing.domain.orders.dto.info.FranchiseOrderCreateInfo;
@@ -24,6 +26,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -56,6 +59,7 @@ class FranchiseOrderServiceTests {
     BigDecimal totalAmount;
     LocalDateTime deliveryDate;
     String deliveryTime;
+    String serialCode;
 
     Long franchiseOrderItemId;
     Long productId;
@@ -70,6 +74,7 @@ class FranchiseOrderServiceTests {
     void setUp() {
         franchiseId = 1L;
         username = "test";
+        serialCode = "SerialCode";
 
         franchiseOrderId = 1L;
         orderCode = "test";
@@ -105,7 +110,7 @@ class FranchiseOrderServiceTests {
         ReflectionTestUtils.setField(franchiseOrder, "franchiseOrderId", franchiseOrderId);
 
         franchiseOrderItem = FranchiseOrderItem.builder()
-                .productId(productId)
+                .serialCode(serialCode)
                 .quantity(quantity)
                 .unitPrice(unitPrice)
                 .totalPrice(totalPrice)
@@ -119,15 +124,16 @@ class FranchiseOrderServiceTests {
     @DisplayName("FranchiseOrderItem getter 및 기본 생성자 테스트")
     void testGettersAndNoArgsConstructor() {
         // NoArgsConstructor 커버
-        FranchiseOrderItem item = FranchiseOrderItem.builder().build();
+        FranchiseOrderItem item = FranchiseOrderItem.builder()
+                .serialCode(serialCode)
+                .build();
         // 필드 값 설정 (Reflection으로 protected 접근)
         ReflectionTestUtils.setField(item, "franchiseOrderItemId", 1L);
-        ReflectionTestUtils.setField(item, "productId", 100L);
         FranchiseOrder order = FranchiseOrder.builder().build();
         ReflectionTestUtils.setField(item, "franchiseOrder", order);
         // 미커버 getter 호출
         assertEquals(1L, item.getFranchiseOrderItemId());
-        assertEquals(100L, item.getProductId());
+        assertEquals(serialCode, item.getSerialCode());
         assertEquals(order, item.getFranchiseOrder());
     }
 
@@ -172,12 +178,14 @@ class FranchiseOrderServiceTests {
         assertEquals(FranchiseOrderErrorCode.ORDER_NOT_FOUND, exception.getErrorCode());
     }
 
+    // 발주 번호에 따른 발주 정보 반환
+
     @Test
     @DisplayName("가맹점 발주 수정 - 성공")
     void updateOrder_Success() {
         // given
         FranchiseOrderItemInfo info = new FranchiseOrderItemInfo(
-                10L,
+                serialCode,
                 20,
                 BigDecimal.valueOf(2000)
         );
@@ -191,13 +199,13 @@ class FranchiseOrderServiceTests {
                 List.of(info)
         );
 
-        given(franchiseOrderItemRepository.findByFranchiseOrder_FranchiseOrderIdAndSerialCode(franchiseOrderId, productId)).willReturn(Optional.of(franchiseOrderItem));
+        given(franchiseOrderItemRepository.findByFranchiseOrder_FranchiseOrderIdAndSerialCode(franchiseOrderId, serialCode)).willReturn(Optional.of(franchiseOrderItem));
 
         // when
         franchiseOrderService.updateOrder(franchiseOrder, command);
 
         // then
-        verify(franchiseOrderItemRepository, times(command.items().size())).findByFranchiseOrder_FranchiseOrderIdAndSerialCode(franchiseOrderId, productId);
+        verify(franchiseOrderItemRepository, times(command.items().size())).findByFranchiseOrder_FranchiseOrderIdAndSerialCode(franchiseOrderId, serialCode);
         assertEquals(20, franchiseOrderItem.getQuantity());
         assertEquals(BigDecimal.valueOf(2000), franchiseOrderItem.getUnitPrice());
         assertEquals("phoneNumber", franchiseOrder.getPhoneNumber());
@@ -213,7 +221,7 @@ class FranchiseOrderServiceTests {
         ReflectionTestUtils.setField(order, "franchiseOrderId", 200L);
 
         FranchiseOrderItemInfo info = new FranchiseOrderItemInfo(
-                10L,
+                serialCode,
                 20,
                 BigDecimal.valueOf(2000)
         );
@@ -239,7 +247,7 @@ class FranchiseOrderServiceTests {
     void updateOrder_Failure_ORDER_NOT_FOUND () {
         // given
         FranchiseOrderItemInfo info = new FranchiseOrderItemInfo(
-                1000L,
+                serialCode,
                 20,
                 BigDecimal.valueOf(2000)
         );
@@ -338,5 +346,131 @@ class FranchiseOrderServiceTests {
         assertEquals(FranchiseOrderErrorCode.PRODUCT_NOT_FOUND, exception.getErrorCode());
     }
 
+    @Test
+    @DisplayName("franchiseOrderId에 대한 returnCode 반환 - 성공")
+    void getAllOrderCode_Success() {
+        // given
+        given(franchiseOrderRepository.findAllByFranchiseOrderIdIn(List.of(franchiseOrderId))).willReturn(List.of(franchiseOrder));
 
+        // when
+        Map<Long, String> response = franchiseOrderService.getAllOrderCode(List.of(franchiseOrderId));
+
+        // then
+        verify(franchiseOrderRepository, times(1)).findAllByFranchiseOrderIdIn(List.of(franchiseOrderId));
+        assertEquals(orderCode, response.get(franchiseOrderId));
+    }
+
+    @Test
+    @DisplayName("franchiseOrderItemId에 대한 serialCode Map 반환 - 성공")
+    void getSerialCodes_Success() {
+        // given
+        given(franchiseOrderItemRepository.findAllByFranchiseOrderItemIdIn(List.of(franchiseOrderItemId))).willReturn(List.of(franchiseOrderItem));
+
+        // when
+        List<OrderItemIdAndSerialCode> responses = franchiseOrderService.getSerialCodes(List.of(franchiseOrderItemId));
+
+        // then
+        verify(franchiseOrderItemRepository, times(1)).findAllByFranchiseOrderItemIdIn(List.of(franchiseOrderItemId));
+        assertEquals(serialCode, responses.get(0).serialCode());
+    }
+
+    @Test
+    @DisplayName("orderItemId에 대한 serialCode List 반환 - 성공")
+    void getSerialCodeList_Success() {
+        // given
+        given(franchiseOrderItemRepository.findAllByFranchiseOrderItemIdIn(List.of(franchiseOrderItemId))).willReturn(List.of(franchiseOrderItem));
+
+        // when
+        List<String> responses = franchiseOrderService.getSerialCodeList(List.of(franchiseOrderItemId));
+
+        // then
+        verify(franchiseOrderItemRepository, times(1)).findAllByFranchiseOrderItemIdIn(List.of(franchiseOrderItemId));
+        assertEquals(serialCode, responses.get(0));
+    }
+
+    @Test
+    @DisplayName("orderId, franchiseId에 대한 orderCode 반환 - 성공")
+    void getOrderCode_Success() {
+        // given
+        given(franchiseOrderRepository.findByFranchiseIdAndFranchiseOrderId(1L, 10L)).willReturn(Optional.of(franchiseOrder));
+
+        // when
+        String response = franchiseOrderService.getOrderCode(1L, 10L);
+
+        // then
+        verify(franchiseOrderRepository, times(1)).findByFranchiseIdAndFranchiseOrderId(franchiseId, franchiseOrderItemId);
+        assertEquals(orderCode, response);
+    }
+
+    @Test
+    @DisplayName("잘못된 orderId, franchiseId로 발주 조회 시 예외 발생")
+    void getOrderCode_Failure_ORDER_NOT_FOUND() {
+        // given
+        given(franchiseOrderRepository.findByFranchiseIdAndFranchiseOrderId(1L, 10L)).willReturn(Optional.empty());
+
+        // when & then
+        FranchiseOrderException exception = assertThrows(FranchiseOrderException.class, () -> {
+            franchiseOrderService.getOrderCode(1L, 10L);
+        });
+        verify(franchiseOrderRepository, times(1)).findByFranchiseIdAndFranchiseOrderId(1L, 10L);
+        assertEquals(FranchiseOrderErrorCode.ORDER_NOT_FOUND, exception.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("serialCode에 대한 orderItemId 반환 - 성공")
+    void getOrderItemId_Success() {
+        // given
+        given(franchiseOrderItemRepository.findBySerialCode(serialCode)).willReturn(Optional.of(franchiseOrderItem));
+
+        // when
+        Long response = franchiseOrderService.getOrderItemId(serialCode);
+
+        // then
+        verify(franchiseOrderItemRepository, times(1)).findBySerialCode(serialCode);
+        assertEquals(franchiseOrderItemId, response);
+    }
+
+    @Test
+    @DisplayName("잘못된 serialCode로 발주 제품 조회 시 예외 발생")
+    void getOrderItemId_Failure_ORDER_ITEM_NOT_FOUND() {
+        // given
+        given(franchiseOrderItemRepository.findBySerialCode(serialCode)).willReturn(Optional.empty());
+
+        // when & then
+        FranchiseOrderException exception = assertThrows(FranchiseOrderException.class, () -> {
+            franchiseOrderService.getOrderItemId(serialCode);
+        });
+        verify(franchiseOrderItemRepository, times(1)).findBySerialCode(serialCode);
+        assertEquals(FranchiseOrderErrorCode.ORDER_ITEM_NOT_FOUND, exception.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("반품 대상이 되는 발주 반환 - 성공")
+    void getAllTargetOrders_Success() {
+        // given
+        given(franchiseOrderRepository.findAllByFranchiseIdAndOrderStatus(franchiseId, FranchiseOrderStatus.PENDING)).willReturn(List.of(franchiseOrder));
+
+        // when
+        List<FranchiseReturnTargetResponse> responses = franchiseOrderService.getAllTargetOrders(franchiseId, username);
+
+        // then
+        verify(franchiseOrderRepository, times(1)).findAllByFranchiseIdAndOrderStatus(franchiseId, FranchiseOrderStatus.PENDING);
+        assertEquals(orderCode, responses.get(0).orderCode());
+        assertEquals(username, responses.get(0).username());
+    }
+
+    // orderCode로 해당 orderItem serialCode 반환 - List
+    @Test
+    @DisplayName("orderCode로 해당 orderItem serialCode List 반환 - 성공")
+    void getSerialCodesByOrderCode_Success() {
+        // given
+        given(franchiseOrderItemRepository.findAllByFranchiseOrder_FranchiseIdAndFranchiseOrder_OrderCode(franchiseId, orderCode)).willReturn(List.of(franchiseOrderItem));
+
+        // when
+        List<String> responses = franchiseOrderService.getSerialCodesByOrderCode(franchiseId, orderCode);
+
+        // then
+        verify(franchiseOrderItemRepository, times(1)).findAllByFranchiseOrder_FranchiseIdAndFranchiseOrder_OrderCode(franchiseId, orderCode);
+        assertEquals(serialCode, responses.get(0));
+    }
 }

@@ -170,8 +170,8 @@ public class FranchiseOrderService {
                 .getFranchiseOrderItemId();
     }
 
-    // 반환 대상이 되는 발주 반환
-    public List<FranchiseReturnTargetResponse> getAllTargetOrders(Long franchiseId) {
+    // 반품 대상이 되는 발주 반환
+    public List<FranchiseReturnTargetResponse> getAllTargetOrders(Long franchiseId, String username) {
         // 발주 조회
         List<FranchiseOrder> orders = franchiseOrderRepository.findAllByFranchiseIdAndOrderStatus(franchiseId, FranchiseOrderStatus.PENDING);
 
@@ -179,17 +179,13 @@ public class FranchiseOrderService {
                 .map(FranchiseOrder::getOrderCode)
                 .toList();
 
-        String username = orders.stream()
-                .findFirst()
-                .orElseThrow(() -> new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_NOT_FOUND))
-                .getUsername();
-
         return orderCodes.stream()
                 .map(orderCode -> { return new FranchiseReturnTargetResponse(orderCode, username); }
                 )
                 .toList();
     }
 
+    // orderCode로 해당 orderItem serialCode 반환 - List
     public List<String> getSerialCodesByOrderCode(Long franchiseId, String orderCode) {
         // 발주 제품 조회
         return franchiseOrderItemRepository.findAllByFranchiseOrder_FranchiseIdAndFranchiseOrder_OrderCode(franchiseId, orderCode)

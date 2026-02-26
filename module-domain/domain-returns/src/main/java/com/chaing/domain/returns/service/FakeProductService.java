@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Set;
 
 @Service
-public class ProductService {
+public class FakeProductService {
     public List<ReturnToProductRequest> getProducts(List<Long> productIds) {
         return List.of(
                 new ReturnToProductRequest(

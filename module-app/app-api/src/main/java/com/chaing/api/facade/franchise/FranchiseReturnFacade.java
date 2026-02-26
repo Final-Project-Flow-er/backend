@@ -1,9 +1,10 @@
 package com.chaing.api.facade.franchise;
 
-import com.chaing.core.dto.returns.response.FranchiseOrderInfo;
 import com.chaing.core.dto.returns.request.OrderItemIdAndSerialCode;
 import com.chaing.core.dto.returns.request.ReturnToInventoryRequest;
 import com.chaing.core.dto.returns.request.ReturnToProductRequest;
+import com.chaing.core.dto.returns.response.FranchiseOrderInfo;
+import com.chaing.core.dto.returns.response.FranchiseReturnTargetResponse;
 import com.chaing.domain.orders.service.FranchiseOrderService;
 import com.chaing.domain.returns.dto.command.ReturnItemCreateCommand;
 import com.chaing.domain.returns.dto.request.FranchiseReturnCreateRequest;
@@ -11,12 +12,13 @@ import com.chaing.domain.returns.dto.request.FranchiseReturnItemCreateRequest;
 import com.chaing.domain.returns.dto.request.FranchiseReturnUpdateRequest;
 import com.chaing.domain.returns.dto.response.FranchiseReturnAndReturnItemCreateResponse;
 import com.chaing.domain.returns.dto.response.FranchiseReturnAndReturnItemResponse;
+import com.chaing.domain.returns.dto.response.FranchiseReturnCreateResponse;
 import com.chaing.domain.returns.dto.response.FranchiseReturnDetailResponse;
 import com.chaing.domain.returns.dto.response.FranchiseReturnInfo;
 import com.chaing.domain.returns.dto.response.FranchiseReturnItemResponse;
 import com.chaing.domain.returns.dto.response.FranchiseReturnProductInfo;
 import com.chaing.domain.returns.dto.response.FranchiseReturnResponse;
-import com.chaing.core.dto.returns.response.FranchiseReturnTargetResponse;
+import com.chaing.domain.returns.dto.response.FranchiseReturnTargetOrderItem;
 import com.chaing.domain.returns.dto.response.FranchiseReturnUpdateResponse;
 import com.chaing.domain.returns.dto.response.ReturnInfo;
 import com.chaing.domain.returns.dto.response.ReturnItemInfo;
@@ -337,5 +339,63 @@ public class FranchiseReturnFacade {
 
         // 결과 반환
         return infos;
+    }
+
+    // 발주 정보 조회
+    public FranchiseReturnCreateResponse getReturnCreateInfo(String username, String requestedUsername, String orderCode) {
+        if (!username.equals(requestedUsername)) {
+            throw new FranchiseReturnException(FranchiseReturnErrorCode.USER_FORBIDDEN);
+        }
+
+        // franchiseId username으로 조회하는 로직 추가 필요
+        Long franchiseId = 1L;
+
+        // 발주 정보 조회
+        String franchiseCode = franchiseService.getFranchise(franchiseId);
+        FranchiseOrderInfo orderInfo = franchiseOrderService.getOrderInfo(franchiseId, username, orderCode, franchiseCode);
+
+        // 발주 제품 정보 조회
+        // 1. orderCode로 orderItem serialCode 조회
+        List<String> serialCodes = franchiseOrderService.getSerialCodesByOrderCode(franchiseId, orderCode);
+        // 2. orderItem serialCode로 franchiseInventory boxCode, productId 조회
+        List<ReturnToInventoryRequest> inventoryInfo = inventoryService.getProducts(serialCodes);
+        // 3. productId로 product 조회
+        List<Long> productIds = inventoryInfo.stream()
+                .map(ReturnToInventoryRequest::productId)
+                .toList();
+        List<ReturnToProductRequest> productInfos = productService.getProducts(productIds);
+        // 3.1. Map<productId, productCode>
+        Map<Long, String> productCodeByproductId = productInfos.stream()
+                .collect(Collectors.toMap(
+                        ReturnToProductRequest::productId,
+                        ReturnToProductRequest::productCode
+                ));
+        // 3.2. Map<productId, productName>
+        Map<Long, String> productNameByproductId = productInfos.stream()
+                .collect(Collectors.toMap(
+                        ReturnToProductRequest::productId,
+                        ReturnToProductRequest::productName
+                ));
+        // 3.3. Map<productId, unitPrice>
+        Map<Long, BigDecimal> unitPriceByproductId = productInfos.stream()
+                .collect(Collectors.toMap(
+                        ReturnToProductRequest::productId,
+                        ReturnToProductRequest::unitPrice
+                ));
+
+        // 결과 반환
+        return new FranchiseReturnCreateResponse(
+                orderInfo,
+                inventoryInfo.stream()
+                        .map(info -> {
+                            return new FranchiseReturnTargetOrderItem(
+                                    info.boxCode(),
+                                    productCodeByproductId.get(info.productId()),
+                                    productNameByproductId.get(info.productId()),
+                                    unitPriceByproductId.get(info.productId())
+                            );
+                        })
+                        .toList()
+        );
     }
 }

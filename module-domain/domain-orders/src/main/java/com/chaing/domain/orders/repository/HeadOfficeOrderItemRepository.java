@@ -9,4 +9,6 @@ import java.util.List;
 @Repository
 public interface HeadOfficeOrderItemRepository extends JpaRepository<HeadOfficeOrderItem, Long> {
     List<HeadOfficeOrderItem> findAllByHeadOfficeOrder_HqIdAndHeadOfficeOrder_HeadOfficeOrderIdIn(Long hqId, List<Long> orderIds);
+
+    List<HeadOfficeOrderItem> findAllByHeadOfficeOrder_HeadOfficeOrderId(Long hqId, Long orderId);
 }

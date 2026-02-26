@@ -40,7 +40,7 @@ public class HQOrderService {
         List<HeadOfficeOrderItem> orderItems = orderItemRepository.findAllByHeadOfficeOrder_HqIdAndHeadOfficeOrder_HeadOfficeOrderIdIn(hqId, orderIds);
 
         if (orderItems == null || orderItems.isEmpty()) {
-            throw new HQOrderException(HQOrderErrorCode.ORDER_NOT_FOUND);
+            throw new HQOrderException(HQOrderErrorCode.ORDER_ITEM_NOT_FOUND);
         }
 
         return orderItems.stream()
@@ -51,5 +51,27 @@ public class HQOrderService {
                                 Collectors.toList()
                         )
                 ));
+    }
+
+    // 발주 정보 조회
+    public HQOrderInfo getOrder(Long hqId, String orderCode) {
+        HeadOfficeOrder order = orderRepository.findByHqIdAndOrderCode(hqId, orderCode)
+                .orElseThrow(() -> new HQOrderException(HQOrderErrorCode.ORDER_NOT_FOUND));
+
+        return HQOrderInfo.from(order);
+    }
+
+    // 발주 제품 productId 조회
+    // List<productId>
+    public List<Long> getOrderItems(Long hqId, Long orderId) {
+        List<HeadOfficeOrderItem> orderItems = orderItemRepository.findAllByHeadOfficeOrder_HeadOfficeOrderId(hqId, orderId);
+
+        if (orderItems == null || orderItems.isEmpty()) {
+            throw new HQOrderException(HQOrderErrorCode.ORDER_ITEM_NOT_FOUND);
+        }
+
+        return orderItems.stream()
+                .map(HeadOfficeOrderItem::getProductId)
+                .toList();
     }
 }

@@ -4,9 +4,11 @@ import com.chaing.api.dto.hq.request.HQOrderCreateRequest;
 import com.chaing.api.dto.hq.request.HQOrderUpdateRequest;
 import com.chaing.api.dto.hq.request.HQOrderUpdateStatusRequest;
 import com.chaing.api.dto.hq.response.HQOrderResponse;
+import com.chaing.api.facade.factory.HQOrderFacade;
 import com.chaing.core.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -21,12 +23,18 @@ import java.util.List;
 @RestController
 @Tag(name = "HQ Order API", description = "본사 발주 관련 API")
 @RequestMapping("/api/v1/hq/orders")
+@RequiredArgsConstructor
 public class HQOrderController {
+
+    private final HQOrderFacade hqOrderFacade;
 
     @Operation(summary = "발주 조회", description = "본사의 발주 전체 조회")
     @GetMapping
     public ResponseEntity<ApiResponse<List<HQOrderResponse>>> getAllOrders() {
-        return ResponseEntity.ok(ApiResponse.success(List.of(HQOrderResponse.builder().build())));
+        //TODO: Spring Security Context에서 값 꺼내오는 걸로 수정해야 함
+        String username = "test";
+
+        return ResponseEntity.ok(ApiResponse.success(hqOrderFacade.getAllOrders(username)));
     }
 
     @Operation(summary = "특정 발주 조회", description = "발주 번호로 특정 발주 조회")

@@ -39,7 +39,6 @@ public class ProductService {
         // 1. 상태 파싱
         ProductStatus status = parseStatus(request.status());
 
-
         // 2. 상품코드 → 타입 해석
         Long productTypeId = existType(request.productCode());
 
@@ -57,6 +56,8 @@ public class ProductService {
                 .status(status)
                 .kcal(request.kcal())
                 .weight(request.weight())
+                .supplyPriceStartDate(request.startDate())
+                .supplyPriceEndDate(request.endDate())
                 .build();
 
         productRepository.save(product);

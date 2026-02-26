@@ -36,6 +36,8 @@ public class FranchiseProductFacade {
                         .safetyStock(p.product().getSafetyStock())
                         .price(p.product().getPrice())
                         .supplyPrice(p.product().getSupplyPrice())
+                        .startDate(p.product().getSupplyPriceStartDate())
+                        .endDate(p.product().getSupplyPriceEndDate())
                         .components(p.component().stream()
                                 .map(c -> c.getName())
                                 .toList())

@@ -1,10 +1,9 @@
 package com.chaing.api.dto.franchise.products.response;
 
-import com.chaing.domain.products.entity.Component;
-import io.swagger.v3.oas.models.Components;
 import lombok.Builder;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 @Builder
@@ -19,6 +18,8 @@ public record FranchiseProductResponse(
     Integer safetyStock,    // 안전 재고
     BigDecimal price,       // 판매가
     BigDecimal supplyPrice, // 공급가
+    LocalDate startDate,
+    LocalDate endDate,
     List<String> components // 구성품
 ) {
 }

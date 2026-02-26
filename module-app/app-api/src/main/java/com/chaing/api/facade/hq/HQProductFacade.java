@@ -1,8 +1,8 @@
 package com.chaing.api.facade.hq;
 
+import com.chaing.api.dto.hq.products.request.HQProductCreateRequest;
 import com.chaing.api.dto.hq.products.request.HQProductSearchRequest;
 import com.chaing.api.dto.hq.products.request.HQProductUpdateRequest;
-import com.chaing.api.dto.hq.products.request.HQProductCreateRequest;
 import com.chaing.api.dto.hq.products.response.HQProductListResponse;
 import com.chaing.api.dto.hq.products.response.HQProductResponse;
 import com.chaing.domain.products.dto.request.ProductRequest;
@@ -43,6 +43,8 @@ public class HQProductFacade {
                                 .price(p.product().getPrice())
                                 .supplyPrice(p.product().getSupplyPrice())
                                 .costPrice(p.product().getCostPrice())
+                                .startDate(p.product().getSupplyPriceStartDate())
+                                .endDate(p.product().getSupplyPriceEndDate())
                                 .components(p.component().stream()
                                         .map(c -> c.getName())
                                         .toList())
@@ -116,6 +118,8 @@ public class HQProductFacade {
                 .status(request.status())
                 .kcal(request.kcal())
                 .weight(request.weight())
+                .startDate(request.startDate())
+                .endDate(request.endDate())
                 .componentIds(request.componentIds())
                 .build();
     }

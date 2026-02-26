@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 @Builder
@@ -53,6 +54,11 @@ public record HQProductCreateRequest(
         // 무게(g)
         @NotNull
         Integer weight,
+
+        // 공급가 적용일
+        LocalDate startDate,
+
+        LocalDate endDate,
 
         // 구성품 목록
         @NotNull

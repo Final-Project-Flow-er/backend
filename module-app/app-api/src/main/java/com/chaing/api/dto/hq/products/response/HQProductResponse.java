@@ -3,6 +3,7 @@ package com.chaing.api.dto.hq.products.response;
 import lombok.Builder;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 @Builder
@@ -18,6 +19,8 @@ public record HQProductResponse(
         BigDecimal price,       // 판매가
         BigDecimal supplyPrice, // 공급가
         BigDecimal costPrice,   // 원가
+        LocalDate startDate,
+        LocalDate endDate,
         List<String> components // 구성품
 ) {
 }

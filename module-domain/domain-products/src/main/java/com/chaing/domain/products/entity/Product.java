@@ -20,8 +20,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Locale;
 
 @Entity
@@ -94,6 +94,13 @@ public class Product extends BaseEntity {
     @NotNull
     @Column(nullable = false)
     private Integer weight;
+
+    // 공급가 적용일
+    @Column
+    private LocalDate supplyPriceStartDate;
+
+    @Column
+    private LocalDate supplyPriceEndDate;
 
     public void update(ProductUpdateRequest req) {
 

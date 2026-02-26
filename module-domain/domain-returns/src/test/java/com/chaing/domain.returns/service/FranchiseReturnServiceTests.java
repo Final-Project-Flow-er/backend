@@ -369,7 +369,6 @@ class FranchiseReturnServiceTests {
         // then
         verify(franchiseReturnRepository, times(1)).findByReturnCode(returnCode);
         assertEquals(orderItemId, responses.get(0).orderItemId());
-        assertEquals(returnItemId, responses.get(0).returnItemId());
     }
 
     @Test

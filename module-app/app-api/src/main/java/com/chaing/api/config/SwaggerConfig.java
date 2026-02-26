@@ -19,7 +19,15 @@ public class SwaggerConfig {
     public GroupedOpenApi headOfficeOrderApi() {
         return GroupedOpenApi.builder()
                 .group("본사 발주(Head Office Order)")
-                .pathsToMatch("/api/v1/head-office/orders/**")
+                .pathsToMatch("/api/v1/hq/orders/**")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi factoryOrderApi() {
+        return GroupedOpenApi.builder()
+                .group("공장 발주(Factory Order)")
+                .pathsToMatch("/api/v1/factory/orders/**")
                 .build();
     }
 

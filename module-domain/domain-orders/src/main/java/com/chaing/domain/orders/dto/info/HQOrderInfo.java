@@ -1,17 +1,18 @@
 package com.chaing.domain.orders.dto.info;
 
+import com.chaing.domain.orders.entity.HeadOfficeOrder;
 import com.chaing.domain.orders.enums.HQOrderStatus;
+import lombok.Builder;
 
 import java.time.LocalDateTime;
 
+@Builder
 public record HQOrderInfo(
         Long orderId,
 
         String orderCode,
 
         HQOrderStatus status,
-
-        Integer quantity,
 
         String username,
 
@@ -23,4 +24,16 @@ public record HQOrderInfo(
 
         String storedDate
 ) {
+    public static HQOrderInfo from(HeadOfficeOrder order) {
+        return HQOrderInfo.builder()
+                .orderId(order.getHeadOfficeOrderId())
+                .orderCode(order.getOrderCode())
+                .status(order.getOrderStatus())
+                .username(order.getUsername())
+                .phoneNumber(order.getPhoneNumber())
+//                .requestedDate(order.get)
+                .manufacturedDate(order.getManufactureDate())
+                .storedDate(order.getStoredDate())
+                .build();
+    }
 }

@@ -1,11 +1,13 @@
 package com.chaing.domain.returns.service;
 
 import com.chaing.core.dto.returns.response.FranchiseOrderInfo;
+import com.chaing.domain.returns.dto.command.ReturnItemCreateCommand;
 import com.chaing.domain.returns.dto.request.FranchiseReturnCreateRequest;
 import com.chaing.domain.returns.dto.request.FranchiseReturnItemCreateRequest;
 import com.chaing.domain.returns.dto.response.FranchiseReturnAndReturnItemResponse;
 import com.chaing.domain.returns.dto.response.FranchiseReturnInfo;
 import com.chaing.domain.returns.dto.response.ReturnInfo;
+import com.chaing.domain.returns.dto.response.ReturnItemInfo;
 import com.chaing.domain.returns.entity.ReturnItem;
 import com.chaing.domain.returns.entity.Returns;
 import com.chaing.domain.returns.enums.ReturnItemStatus;
@@ -70,6 +72,7 @@ class FranchiseReturnServiceTests {
     BigDecimal unitPrice;
 
     String boxCode;
+    String serialCode;
     String productCode;
     String productName;
 
@@ -77,6 +80,8 @@ class FranchiseReturnServiceTests {
     FranchiseReturnCreateRequest franchiseReturnCreateRequest;
     FranchiseReturnItemCreateRequest franchiseReturnItemCreateRequest;
     FranchiseOrderInfo franchiseOrderInfo;
+    ReturnItemInfo returnItemInfo;
+    ReturnItemCreateCommand returnItemCreateCommand;
 
     Returns returns;
     Long returnId;
@@ -103,6 +108,7 @@ class FranchiseReturnServiceTests {
         orderItemId = 100L;
 
         boxCode = "BoxCode";
+        serialCode = "serialCode";
         productCode = "ProductCode";
         productName = "ProductName";
 
@@ -158,6 +164,16 @@ class FranchiseReturnServiceTests {
                 .phoneNumber(phoneNumber)
                 .franchiseCode(franchiseCode)
                 .build();
+
+        returnItemInfo = new ReturnItemInfo(
+                orderItemId,
+                returnItemId
+        );
+
+        returnItemCreateCommand = new ReturnItemCreateCommand(
+                serialCode,
+                orderItemId
+        );
     }
 
     @Test
@@ -288,5 +304,20 @@ class FranchiseReturnServiceTests {
         assertEquals(ReturnStatus.PENDING, response.status());
         assertEquals(orderId, response.franchiseOrderId());
         assertEquals(ReturnType.PRODUCT_DEFECT, response.type());
+    }
+
+    @Test
+    @DisplayName("요청사항에 대한 반품 제품 생성 - 성공")
+    void createReturnItem_Success() {
+        // given
+        given(franchiseReturnRepository.findByReturnCode(returnCode)).willReturn(Optional.of(returns));
+
+        // when
+        List<ReturnItemInfo> responses = franchiseReturnService.createReturnItems(returnCode, List.of(returnItemCreateCommand));
+
+        // then
+        verify(franchiseReturnRepository, times(1)).findByReturnCode(returnCode);
+        assertEquals(orderItemId, responses.get(0).orderItemId());
+        assertEquals(returnItemId, responses.get(0).returnItemId());
     }
 }

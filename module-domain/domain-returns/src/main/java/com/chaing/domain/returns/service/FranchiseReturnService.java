@@ -165,6 +165,7 @@ public class FranchiseReturnService {
         return ReturnInfo.from(returns);
     }
 
+    // 반품 제품 생성
     public List<ReturnItemInfo> createReturnItems(String returnCode, List<ReturnItemCreateCommand> orderItemIds) {
         // 반품 조회
         Returns returns = franchiseReturnRepository.findByReturnCode(returnCode)

@@ -9,7 +9,8 @@ import lombok.RequiredArgsConstructor;
 public enum HQOrderErrorCode implements ErrorCode {
 
     // 404 NOT FOUND
-    ORDER_NOT_FOUND(404, "FO001", "해당 발주를 찾을 수 없습니다.");
+    ORDER_NOT_FOUND(404, "HO001", "해당 발주를 찾을 수 없습니다."),
+    ORDER_ITEM_NOT_FOUND(404, "HO002", "해당 발주의 제품을 찾을 수 없습니다.");
 
     private final Integer status;
     private final String code;

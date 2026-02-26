@@ -1,6 +1,7 @@
 package com.chaing.domain.returns.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 public record FranchiseReturnUpdateRequest(
         @NotBlank
@@ -12,7 +13,7 @@ public record FranchiseReturnUpdateRequest(
         @NotBlank
         String returnCode,
 
-        @NotBlank
+        @NotNull
         Long orderItemId
 ) {
 }

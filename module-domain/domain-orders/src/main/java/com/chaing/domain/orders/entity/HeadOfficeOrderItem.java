@@ -36,7 +36,7 @@ public class HeadOfficeOrderItem extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long headOrderItemId;
+    private Long headOfficeOrderItemId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "head_office_order_id")

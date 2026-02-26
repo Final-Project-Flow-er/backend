@@ -1,5 +1,6 @@
 package com.chaing.domain.orders.entity;
 
+import com.chaing.core.entity.BaseEntity;
 import com.chaing.domain.orders.enums.HQOrderStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -22,7 +23,7 @@ import java.time.LocalDateTime;
 @Builder
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class HeadOfficeOrder {
+public class HeadOfficeOrder extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

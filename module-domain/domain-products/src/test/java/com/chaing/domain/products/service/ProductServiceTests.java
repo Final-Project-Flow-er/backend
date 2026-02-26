@@ -149,8 +149,8 @@ class ProductServiceTests {
 
         ProductUpdateRequest req = ProductUpdateRequest.builder()
                 .name("수정 상품")
-                .price(12000)
-                .originalPrice(9000)
+                .price(BigDecimal.valueOf(12000))
+                .originalPrice(BigDecimal.valueOf(9000))
                 .status("TEMP_SOLD_OUT")
                 .build();
         when(productRepository.findById(1L)).thenReturn(Optional.of(product));

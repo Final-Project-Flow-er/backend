@@ -83,6 +83,7 @@ public class FranchiseOrderFacade {
                         .productId(1L)
                         .unitPrice(BigDecimal.valueOf(5000))
                         .build(); })
+                .map(item -> { return ProductInfo.builder().productCode(item.productCode()).build(); })
                 .toList();
 
         FranchiseOrder order = franchiseOrderService.createOrder(franchiseId, username, request.toFranchiseOrderCreateCommand(), productInfos);

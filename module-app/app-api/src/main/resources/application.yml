@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: jdbc:mariadb://localhost:3307/chaing
+    url: jdbc:mariadb://localhost:3306/chaing
     username: root
-    password: root
+    password: mariadb1
     driver-class-name: org.mariadb.jdbc.Driver
 
   jpa:

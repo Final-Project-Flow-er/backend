@@ -189,4 +189,12 @@ public class FranchiseOrderService {
                 )
                 .toList();
     }
+
+    public List<String> getSerialCodesByOrderCode(Long franchiseId, String orderCode) {
+        // 발주 제품 조회
+        return franchiseOrderItemRepository.findAllByFranchiseOrder_FranchiseIdAndFranchiseOrder_OrderCode(franchiseId, orderCode)
+                .stream()
+                .map(FranchiseOrderItem::getSerialCode)
+                .toList();
+    }
 }

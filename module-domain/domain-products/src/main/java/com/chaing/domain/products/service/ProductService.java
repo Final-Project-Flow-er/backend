@@ -33,7 +33,6 @@ public class ProductService {
         return productRepository.getProducts(productSearchRequest);
     }
 
-    @Transactional
     public void createProduct(ProductRequest request) {
 
         // 1. 상태 파싱
@@ -77,7 +76,6 @@ public class ProductService {
         }
     }
 
-    @Transactional
     public void updateProduct(Long productId, ProductUpdateRequest req) {
 
         Product product = productRepository.findById(productId)
@@ -91,7 +89,6 @@ public class ProductService {
             syncComponents(productId, req.componentIds());
         }
     }
-    @Transactional
     public void createProductTypes(String type, String productName) {
         if (productTypeRepository.existsByProductType(type)) {
             throw new ProductException(ProductErrorCode.DUPLICATE_PRODUCT_CODE);

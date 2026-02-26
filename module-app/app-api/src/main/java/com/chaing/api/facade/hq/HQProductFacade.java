@@ -13,18 +13,19 @@ import com.chaing.domain.products.exception.ProductErrorCode;
 import com.chaing.domain.products.exception.ProductException;
 import com.chaing.domain.products.service.ProductService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-@Component
+@Service
 @RequiredArgsConstructor
+
+@Transactional(readOnly = true)
 public class HQProductFacade {
     private final ProductService productService;
 
-    @Transactional(readOnly = true)
     public HQProductListResponse getProducts(HQProductSearchRequest request) {
         ProductSearchRequest productSearchRequest = convertProductSearchRequest(request);
         ProductListResponse productListResponse = productService.getProducts(productSearchRequest);
@@ -77,20 +78,20 @@ public class HQProductFacade {
         };
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public void createProduct(HQProductCreateRequest request) {
         ProductRequest productCreateRequest = convertProductRequest(request);
         productService.createProduct(productCreateRequest);
     }
 
     // 트랜잭션 따로 붙여야 함
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public void updateProduct(Long productId, HQProductUpdateRequest request) {
         ProductUpdateRequest productUpdateRequest = convertProductUpdateRequest(request);
         productService.updateProduct(productId, productUpdateRequest);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public void createProductTypes(String type, String productName) {
         productService.createProductTypes(type, productName);
     }

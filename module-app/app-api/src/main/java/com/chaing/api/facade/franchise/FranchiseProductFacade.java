@@ -9,13 +9,17 @@ import com.chaing.domain.products.exception.ProductErrorCode;
 import com.chaing.domain.products.exception.ProductException;
 import com.chaing.domain.products.service.ProductService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @RequiredArgsConstructor
-@Component
+@Service
+
+@Transactional(readOnly = true)
 public class FranchiseProductFacade {
+
     private final ProductService productService;
 
     public FranchiseProductListResponse getProducts(FranchiseProductSearchRequest request) {

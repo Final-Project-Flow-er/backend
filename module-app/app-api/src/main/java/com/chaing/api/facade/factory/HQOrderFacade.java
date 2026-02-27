@@ -1,12 +1,12 @@
 package com.chaing.api.facade.factory;
 
 import com.chaing.core.dto.info.ProductInfo;
-import com.chaing.core.fake.FakeProductService;
 import com.chaing.domain.orders.dto.info.HQOrderInfo;
 import com.chaing.domain.orders.dto.info.HQOrderItemInfo;
 import com.chaing.domain.orders.dto.response.HQOrderDetailResponse;
 import com.chaing.domain.orders.dto.response.HQOrderResponse;
 import com.chaing.domain.orders.service.HQOrderService;
+import com.chaing.domain.products.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -22,7 +22,7 @@ public class HQOrderFacade {
 
     private final HQOrderService hqOrderService;
 
-    private final FakeProductService productService;
+    private final ProductService productService;
 
     // 발주 조회
     public List<HQOrderResponse> getAllOrders(String username) {
@@ -42,7 +42,7 @@ public class HQOrderFacade {
                 .flatMap(List::stream)
                 .distinct()
                 .toList();
-        Map<Long, ProductInfo> productInfoByProductId = productService.getProducts(productIds);
+        Map<Long, ProductInfo> productInfoByProductId = productService.getProductInfos(productIds);
         // 3. Map<orderId, quantity> orderId 별 수량 계산
         Map<Long, Integer> quantityByOrderId = productIdByOrderId.entrySet().stream()
                 .collect(Collectors.toMap(
@@ -78,7 +78,7 @@ public class HQOrderFacade {
         // 1. List<productId> productId 조회
         List<Long> productIds = hqOrderService.getOrderItems(hqId, orderInfo.orderId());
         // 2. Map<productId, List<ProductInfo>> 제품 정보 조회
-        Map<Long, ProductInfo> productInfoByProductId = productService.getProducts(productIds);
+        Map<Long, ProductInfo> productInfoByProductId = productService.getProductInfos(productIds);
         // 3. Map<productId, quantity> 제품 별 개수 조회
         Map<Long, Integer> quantityByProductId = productIds.stream()
                 .collect(Collectors.groupingBy(

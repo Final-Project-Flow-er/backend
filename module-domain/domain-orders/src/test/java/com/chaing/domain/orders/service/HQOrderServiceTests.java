@@ -148,7 +148,7 @@ class HQOrderServiceTests {
             hqOrderService.getAllOrderItems(hqId, List.of(orderId));
         });
         verify(orderItemRepository, times(1)).findAllByHeadOfficeOrder_HqIdAndHeadOfficeOrder_HeadOfficeOrderIdIn(hqId, List.of(orderId));
-        assertEquals(HQOrderErrorCode.ORDER_NOT_FOUND, exception.getErrorCode());
+        assertEquals(HQOrderErrorCode.ORDER_ITEM_NOT_FOUND, exception.getErrorCode());
     }
 
     @Test

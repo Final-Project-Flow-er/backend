@@ -21,6 +21,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -56,6 +57,7 @@ class HQOrderServiceTests {
 
     Long orderId;
     Long orderItemId;
+    String orderCode;
 
     HeadOfficeOrder order;
     HeadOfficeOrderItem orderItem;
@@ -80,6 +82,7 @@ class HQOrderServiceTests {
         unitPrice = BigDecimal.valueOf(5000);
 
         orderId = 10L;
+        orderCode = "orderCode";
 
         order = HeadOfficeOrder.builder()
                 .hqId(hqId)
@@ -92,6 +95,7 @@ class HQOrderServiceTests {
                 .totalQuantity(totalQuantity)
                 .totalAmount(totalAmount)
                 .isRegular(true)
+                .orderCode(orderCode)
                 .build();
         ReflectionTestUtils.setField(order, "headOfficeOrderId", orderId);
 
@@ -145,5 +149,62 @@ class HQOrderServiceTests {
         });
         verify(orderItemRepository, times(1)).findAllByHeadOfficeOrder_HqIdAndHeadOfficeOrder_HeadOfficeOrderIdIn(hqId, List.of(orderId));
         assertEquals(HQOrderErrorCode.ORDER_NOT_FOUND, exception.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("특정 발주 정보 조회 - 성공")
+    void getOrder_Success() {
+        // given
+        given(orderRepository.findByHqIdAndOrderCode(hqId, orderCode)).willReturn(Optional.of(order));
+
+        // when
+        HQOrderInfo response = hqOrderService.getOrder(hqId, orderCode);
+
+        // then
+        verify(orderRepository, times(1)).findByHqIdAndOrderCode(hqId, orderCode);
+        assertEquals(orderId, response.orderId());
+        assertEquals(orderCode, response.orderCode());
+    }
+
+    @Test
+    @DisplayName("잘못된 orderCode로 발주 정보 조회 시 예외 발생")
+    void getOrder_Failure_ORDER_NOT_FOUND() {
+        // given
+        given(orderRepository.findByHqIdAndOrderCode(hqId, orderCode)).willReturn(Optional.empty());
+
+        // when & then
+        HQOrderException exception = assertThrows(HQOrderException.class, () -> {
+            hqOrderService.getOrder(hqId, orderCode);
+        });
+        verify(orderRepository, times(1)).findByHqIdAndOrderCode(hqId, orderCode);
+        assertEquals(HQOrderErrorCode.ORDER_NOT_FOUND, exception.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("발주 제품 productId 조회 - 성공")
+    void getOrderItems_Success() {
+        // given
+        given(orderItemRepository.findAllByHeadOfficeOrder_HqIdAndHeadOfficeOrder_HeadOfficeOrderId(hqId, orderId)).willReturn(List.of(orderItem));
+
+        // when
+        List<Long> response = hqOrderService.getOrderItems(hqId, orderId);
+
+        // then
+        verify(orderItemRepository, times(1)).findAllByHeadOfficeOrder_HqIdAndHeadOfficeOrder_HeadOfficeOrderId(hqId, orderId);
+        assertEquals(orderItemId, response.get(0));
+    }
+
+    @Test
+    @DisplayName("잘못된 orderId로 발주 제품 조회 시 예외 발생")
+    void getOrderItems_Failure_ORDER_ITEM_NOT_FOUND() {
+        // given
+        given(orderItemRepository.findAllByHeadOfficeOrder_HqIdAndHeadOfficeOrder_HeadOfficeOrderId(hqId, orderId)).willReturn(List.of());
+
+        // when & then
+        HQOrderException exception = assertThrows(HQOrderException.class, () -> {
+            hqOrderService.getOrderItems(hqId, orderId);
+        });
+        verify(orderItemRepository, times(1)).findAllByHeadOfficeOrder_HqIdAndHeadOfficeOrder_HeadOfficeOrderId(hqId, orderId);
+        assertEquals(HQOrderErrorCode.ORDER_ITEM_NOT_FOUND, exception.getErrorCode());
     }
 }

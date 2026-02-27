@@ -53,7 +53,7 @@ public class HQOrderService {
                 ));
     }
 
-    // 발주 정보 조회
+    // 특정 발주 정보 조회
     public HQOrderInfo getOrder(Long hqId, String orderCode) {
         HeadOfficeOrder order = orderRepository.findByHqIdAndOrderCode(hqId, orderCode)
                 .orElseThrow(() -> new HQOrderException(HQOrderErrorCode.ORDER_NOT_FOUND));

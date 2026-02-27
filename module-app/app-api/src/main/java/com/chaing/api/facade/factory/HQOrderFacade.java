@@ -52,7 +52,7 @@ public class HQOrderFacade {
 
         // 반환
         return productIdByOrderId.keySet().stream()
-                .map(orderId -> HQOrderResponse.builder()
+                .<HQOrderResponse>map(orderId -> HQOrderResponse.builder()
                         .orderCode(orderInfos.get(orderId).orderCode())
                         .status(orderInfos.get(orderId).status())
                         .quantity(quantityByOrderId.get(orderId))

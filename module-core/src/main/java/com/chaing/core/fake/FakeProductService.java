@@ -1,14 +1,12 @@
 package com.chaing.core.fake;
 
 import com.chaing.core.dto.info.ProductInfo;
-import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@Service
 public class FakeProductService {
     public Map<Long, ProductInfo> getProducts(List<Long> productIds) {
         Map<Long, ProductInfo> response = new HashMap<>();

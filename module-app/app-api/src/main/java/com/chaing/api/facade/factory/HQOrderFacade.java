@@ -61,7 +61,7 @@ public class HQOrderFacade {
                         .requestedDate(orderInfos.get(orderId).requestedDate())
                         .manufacturedDate(orderInfos.get(orderId).manufacturedDate())
                         .storedDate(orderInfos.get(orderId).storedDate())
-                        .productCode(productInfoByProductId.get(productIdByOrderId.get(orderId).getFirst()).productCode())
+                        .productCode(productInfoByProductId.get(productIdByOrderId.get(orderId).get(0)).productCode())
                         .build())
                 .toList();
     }

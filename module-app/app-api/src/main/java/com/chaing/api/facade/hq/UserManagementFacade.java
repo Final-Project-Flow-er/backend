@@ -109,6 +109,7 @@ public class UserManagementFacade {
     }
 
     // 회원 탈퇴
+    @Transactional
     public void deleteUser(Long userId, Long actorId) {
         User user = userManagementService.getUserById(userId);
         userLogService.saveLog(user, actorId, UserAction.DELETE);

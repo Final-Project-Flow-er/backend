@@ -4,6 +4,15 @@ dependencies {
 
     // DB (필요하다면, core에 있으면 생략 가능하지만 명시하는 게 좋음)
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+
+    // Redis
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+
+    // Security
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+
+    // Mail
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
 }
 
 bootJar { enabled = false }

@@ -84,24 +84,4 @@ public class JwtProvider {
 
         return Long.parseLong(claims.getSubject());
     }
-
-    public UserRole getRole(String token) {
-        Claims claims = Jwts.parser()
-                .verifyWith(secretKey)
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
-
-        String roleName = claims.get("role", String.class);
-
-        if (roleName == null || roleName.isBlank()) {
-            return null;
-        }
-
-        try {
-            return UserRole.valueOf(roleName);
-        } catch (IllegalArgumentException e) {
-            return null;
-        }
-    }
 }

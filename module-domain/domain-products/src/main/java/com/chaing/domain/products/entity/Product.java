@@ -1,8 +1,10 @@
 package com.chaing.domain.products.entity;
 
 import com.chaing.core.entity.BaseEntity;
+import com.chaing.domain.products.dto.request.ProductUpdateRequest;
 import com.chaing.domain.products.enums.ProductStatus;
-import com.chaing.domain.products.enums.ProductType;
+import com.chaing.domain.products.exception.ProductErrorCode;
+import com.chaing.domain.products.exception.ProductException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -18,8 +20,9 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.Locale;
 
 @Entity
 @Getter
@@ -47,11 +50,9 @@ public class Product extends BaseEntity {
     @Column(nullable = false)
     private String description;
 
-    // OR, RO, MA
     @NotNull
-    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private ProductType type;
+    private Long productTypeId;
 
     // 이미지 URL
     @NotBlank
@@ -93,4 +94,38 @@ public class Product extends BaseEntity {
     @NotNull
     @Column(nullable = false)
     private Integer weight;
+
+    // 공급가 적용일
+    @Column
+    private LocalDate supplyPriceStartDate;
+
+    @Column
+    private LocalDate supplyPriceEndDate;
+
+    public void update(ProductUpdateRequest req) {
+
+        if (req.name() != null) this.name = req.name();
+        if (req.description() != null) this.description = req.description();
+        if (req.imageUrl() != null) this.imageUrl = req.imageUrl();
+
+        if (req.price() != null) this.price = req.price();
+        if (req.originalPrice() != null) this.costPrice = req.originalPrice();
+        if (req.supplyPrice() != null) this.supplyPrice = req.supplyPrice();
+
+        if (req.baseSafeStock() != null) this.safetyStock = req.baseSafeStock();
+        if (req.kcal() != null) this.kcal = req.kcal();
+
+        if (req.startDate() != null) this.supplyPriceStartDate = req.startDate();
+        if (req.endDate() != null) this.supplyPriceEndDate = req.endDate();
+
+        if (req.status() != null) {
+            try {
+                this.status = ProductStatus.valueOf(
+                        req.status().trim().toUpperCase(Locale.ROOT)
+                );
+            } catch (IllegalArgumentException e) {
+                throw new ProductException(ProductErrorCode.INVALID_PRODUCT_CODE_FORMAT);
+            }
+        }
+    }
 }

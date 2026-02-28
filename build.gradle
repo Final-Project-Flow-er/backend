@@ -100,7 +100,9 @@ subprojects {
             "**/*Generator*",
 
             "**/HeadOffice*",
-            "**/HeadOffice*/**/*"
+            "**/HeadOffice*/**/*",
+
+            "**/Fake*"
     ] + Qdomains
 
     // ★ jacocoTestCoverageVerification용 (정규화된 클래스 이름 패턴)
@@ -124,6 +126,7 @@ subprojects {
             "*.Generator*",
             "*.enums.*",
             "*.HeadOffice*",
+            "*.Fake*"
     ] + QdomainsVerification
 
     afterEvaluate {
@@ -219,7 +222,8 @@ task jacocoRootReport(type: JacocoReport) {
             "**/*Builder*",
             "**/Q*",
             "**/enums/**", "**/enums/**/*",
-            "**/HeadOffice*", "**/HeadOffice*/**/*"
+            "**/HeadOffice*", "**/HeadOffice*/**/*",
+            "**/Fake*"
     ] + Qdomains
 
     afterEvaluate {

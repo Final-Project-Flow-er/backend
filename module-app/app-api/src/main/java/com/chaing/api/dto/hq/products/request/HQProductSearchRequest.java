@@ -1,5 +1,8 @@
 package com.chaing.api.dto.hq.products.request;
 
+import lombok.Builder;
+
+@Builder
 public record HQProductSearchRequest(
         String productCode,  // 상품 코드 (예: OR0101)
         String name,         // 상품 명

@@ -17,8 +17,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
-
 @Entity
 @Getter
 @Builder
@@ -31,17 +29,11 @@ public class ReturnItem {
     private Long returnItemId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "return_id", unique = true)
+    @JoinColumn(name = "return_id")
     private Returns returns;    // fk
 
     @Column(nullable = false)
     private Long franchiseOrderItemId;  // fk
-
-    @Column(nullable = false)
-    private Integer quantity;
-
-    @Column(nullable = false, precision = 19, scale = 2)
-    private BigDecimal totalReturnPrice;
 
     @Column(nullable = false)
     @Builder.Default

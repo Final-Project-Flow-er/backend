@@ -1,8 +1,8 @@
 package com.chaing.domain.users.entity;
 
 import com.chaing.core.entity.BaseEntity;
-import com.chaing.domain.users.command.MyInfoUpdateCommand;
-import com.chaing.domain.users.command.UserUpdateCommand;
+import com.chaing.domain.users.dto.command.MyInfoUpdateCommand;
+import com.chaing.domain.users.dto.command.UserUpdateCommand;
 import com.chaing.domain.users.enums.UserPosition;
 import com.chaing.domain.users.enums.UserRole;
 import com.chaing.domain.users.enums.UserStatus;

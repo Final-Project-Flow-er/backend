@@ -1,7 +1,6 @@
 package com.chaing.api.security.jwt;
 
 import com.chaing.domain.users.entity.User;
-import com.chaing.domain.users.enums.UserRole;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;

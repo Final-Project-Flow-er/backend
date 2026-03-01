@@ -59,7 +59,8 @@ public class InternalTransportController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
-    @Operation(summary = "입고 승인 상태 변경", description = "입고 승인 시 상태 변경")
+    // 고려 사항으로 인해 추후 구현
+/*    @Operation(summary = "입고 승인 상태 변경", description = "입고 승인 시 상태 변경")
     @PatchMapping("/{transportId}/arrival-approve")
     public ResponseEntity<ApiResponse<?>> approveArrival(
             @PathVariable Long transportId, @RequestBody ArrivalApprovalRequest req) {
@@ -73,5 +74,5 @@ public class InternalTransportController {
             @PathVariable Long transportId, @RequestBody TransportForceUpdateRequest req) {
         // TODO: 강제 수정 로직
         return ResponseEntity.ok(ApiResponse.success(null));
-    }
+    }*/
 }

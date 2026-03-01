@@ -42,7 +42,6 @@ public class InternalTransportFacade {
         // 발주 Id, 중량 정보 받아오기
         List<OrderInfo> orders = orderQueryService.getOrderDetails(request.orderIds());
 
-
         // 외부 운송 모듈
         // 송장 번호 가져오기
         Map<String, String> trackingMap = externalTrackingModule.getTrackingNumbers(

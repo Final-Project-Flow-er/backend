@@ -3,6 +3,7 @@ package com.chaing.domain.orders.dto.response;
 import com.chaing.domain.orders.entity.FranchiseOrder;
 import com.chaing.domain.orders.enums.FranchiseOrderStatus;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 
 import java.util.List;
@@ -12,7 +13,7 @@ public record HQOrderStatusUpdateResponse(
         @NotBlank
         String orderCode,
 
-        @NotBlank
+        @NotNull
         FranchiseOrderStatus status
 ) {
     public static HQOrderStatusUpdateResponse from(FranchiseOrder order) {

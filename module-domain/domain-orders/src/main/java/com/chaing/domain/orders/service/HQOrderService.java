@@ -1,17 +1,24 @@
 package com.chaing.domain.orders.service;
 
+import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.domain.orders.dto.info.HQOrderInfo;
+import com.chaing.domain.orders.dto.info.HQOrderItemInfo;
+import com.chaing.domain.orders.dto.reqeust.HQOrderItemUpdateRequest;
 import com.chaing.domain.orders.entity.HeadOfficeOrder;
 import com.chaing.domain.orders.entity.HeadOfficeOrderItem;
 import com.chaing.domain.orders.exception.HQOrderErrorCode;
 import com.chaing.domain.orders.exception.HQOrderException;
 import com.chaing.domain.orders.repository.HeadOfficeOrderItemRepository;
 import com.chaing.domain.orders.repository.HeadOfficeOrderRepository;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -73,5 +80,73 @@ public class HQOrderService {
         return orderItems.stream()
                 .map(HeadOfficeOrderItem::getProductId)
                 .toList();
+    }
+
+    // 발주 제품 수정
+    public List<HQOrderItemInfo> updateOrderItems(Long hqId, String orderCode, List<HQOrderItemUpdateRequest> request, Map<Long, ProductInfo> productInfoByProductId) {
+        // 발주 조회
+        HeadOfficeOrder order = orderRepository.findByHqIdAndOrderCode(hqId, orderCode)
+                .orElseThrow(() -> new HQOrderException(HQOrderErrorCode.ORDER_NOT_FOUND));
+
+        // Map<productId, HeadOfficeOrderItem> 발주 제품 조회
+        Map<Long, HeadOfficeOrderItem> items = orderItemRepository.findAllByHeadOfficeOrder_HqIdAndHeadOfficeOrder_OrderCode(hqId, orderCode).stream()
+                .collect(Collectors.toMap(
+                        HeadOfficeOrderItem::getProductId,
+                        Function.identity()
+                ));
+
+        if (items.isEmpty()) {
+            throw new HQOrderException(HQOrderErrorCode.ORDER_ITEM_NOT_FOUND);
+        }
+
+        // 발주 수정
+        // 1. 요청에 대한 Map<productId, quantity>
+        Map<Long, Integer> requestedItems = request.stream()
+                .collect(Collectors.toMap(
+                        HQOrderItemUpdateRequest::productId,
+                        HQOrderItemUpdateRequest::quantity
+                ));
+        // 2. 추가
+        requestedItems.forEach((productId, quantity) -> {
+            if (!items.containsKey(productId)) {
+                // 추가
+                HeadOfficeOrderItem addedItem = HeadOfficeOrderItem.builder()
+                        .headOfficeOrder(order)
+                        .productId(productId)
+                        .quantity(quantity)
+                        .unitPrice(productInfoByProductId.get(productId).costPrice())
+                        .totalPrice(productInfoByProductId.get(productId).costPrice().multiply(BigDecimal.valueOf(quantity)))
+                        .build();
+
+                orderItemRepository.save(addedItem);
+                items.put(productId, addedItem);
+            } else {
+                // 업데이트
+                items.get(productId).update(productId, quantity);
+            }
+        });
+        // 3. 삭제
+        items.forEach((productId, headOfficeOrderItem) -> {
+            if (!requestedItems.containsKey(productId)) {
+                items.get(productId).delete();
+            }
+        });
+
+        // 반환
+        return items.values().stream()
+                .map(item -> HQOrderItemInfo.of(item, productInfoByProductId))
+                .toList();
+    }
+
+    public HQOrderInfo updateOrder(Long hqId, String orderCode, @NotBlank LocalDateTime manufactureDate) {
+        // 발주 정보 조회
+        HeadOfficeOrder order = orderRepository.findByHqIdAndOrderCode(hqId, orderCode)
+                .orElseThrow(() -> new HQOrderException(HQOrderErrorCode.ORDER_NOT_FOUND));
+
+        // 수정
+        order.update(manufactureDate);
+
+        // 반환
+        return HQOrderInfo.from(order);
     }
 }

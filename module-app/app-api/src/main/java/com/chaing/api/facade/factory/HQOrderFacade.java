@@ -1,14 +1,19 @@
 package com.chaing.api.facade.factory;
 
+import com.chaing.domain.orders.dto.reqeust.HQOrderUpdateRequest;
 import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.domain.orders.dto.info.HQOrderInfo;
 import com.chaing.domain.orders.dto.info.HQOrderItemInfo;
 import com.chaing.domain.orders.dto.response.HQOrderDetailResponse;
 import com.chaing.domain.orders.dto.response.HQOrderResponse;
+import com.chaing.domain.orders.dto.response.HQOrderUpdateResponse;
 import com.chaing.domain.orders.service.HQOrderService;
 import com.chaing.domain.products.service.ProductService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -36,7 +41,7 @@ public class HQOrderFacade {
         // 발주 제품 정보 조회
         List<Long> orderIds = orderInfos.keySet().stream().toList();
         // 1. Map<orderId, List<productId>>
-        Map<Long, List<Long>> productIdByOrderId = hqOrderService.getAllOrderItems(hqId, orderIds);
+        Map<Long, List<Long>> productIdByOrderId = hqOrderService.getAllOrderItemProductId(hqId, orderIds);
         // 2. Map<productId, List<ProductInfo>> productId 별 제품 정보 조회
         List<Long> productIds = productIdByOrderId.values().stream()
                 .flatMap(List::stream)
@@ -76,7 +81,7 @@ public class HQOrderFacade {
 
         // 발주 제품 정보 조회
         // 1. List<productId> productId 조회
-        List<Long> productIds = hqOrderService.getOrderItems(hqId, orderInfo.orderId());
+        List<Long> productIds = hqOrderService.getOrderItemProductId(hqId, orderInfo.orderId());
         // 2. Map<productId, List<ProductInfo>> 제품 정보 조회
         Map<Long, ProductInfo> productInfoByProductId = productService.getProductInfos(productIds);
         // 3. Map<productId, quantity> 제품 별 개수 조회
@@ -111,6 +116,34 @@ public class HQOrderFacade {
         return HQOrderDetailResponse.builder()
                 .orderInfo(orderInfo)
                 .items(orderItemInfos)
+                .build();
+    }
+
+    // 발주 수정
+    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
+    public HQOrderUpdateResponse updateOrder(String username, String orderCode, @Valid HQOrderUpdateRequest request) {
+        // hqId username으로 꺼내오는 로직 추가
+        Long hqId = 10L;
+
+        // orderCode로 발주 조회
+        HQOrderInfo orderInfo = hqOrderService.getOrder(hqId, orderCode);
+
+        // 발주 제품의 productIds 조회
+        List<Long> productIds = hqOrderService.getOrderItemProductId(hqId, orderInfo.orderId());
+
+        // 제품 정보 조회
+        Map<Long, ProductInfo> productInfoByProductId = productService.getProductInfos(productIds);
+
+        // 발주 제품 데이터 수정
+        List<HQOrderItemInfo> itemInfos = hqOrderService.updateOrderItems(hqId, orderCode, request.items(), productInfoByProductId);
+
+        // 발주 정보 수정
+        HQOrderInfo updatedOrderInfo = hqOrderService.updateOrder(hqId, orderCode, request.manufactureDate());
+
+        // 반환
+        return HQOrderUpdateResponse.builder()
+                .orderInfo(orderInfo)
+                .items(itemInfos)
                 .build();
     }
 }

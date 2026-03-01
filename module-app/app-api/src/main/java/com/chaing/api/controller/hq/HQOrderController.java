@@ -68,13 +68,12 @@ public class HQOrderController {
     @Operation(summary = "가맹점의 발주 상태 변경", description = "가맹점의 발주의 상태를 접수/반려로 변경")
     @PatchMapping("/{order-code}/{order-status}")
     public ResponseEntity<ApiResponse<List<HQOrderStatusUpdateResponse>>> updateOrderStatus(
-            @PathVariable("order-code") String orderCode,
             @Valid @RequestBody HQOrderUpdateStatusRequest request
     ) {
         //TODO: Spring Security Context에서 값 꺼내오는 걸로 수정해야 함
         String username = "test";
 
-        return ResponseEntity.ok(ApiResponse.success(hqOrderFacade.updateStatus(username, orderCode, request)));
+        return ResponseEntity.ok(ApiResponse.success(hqOrderFacade.updateStatus(username, request)));
     }
 
     @Operation(summary = "발주 취소", description = "발주 번호로 특정 발주 취소")

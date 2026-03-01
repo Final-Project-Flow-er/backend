@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -131,12 +132,13 @@ public class HQOrderService {
             }
         });
         // 3. 삭제
+        List<Long> toDelete = new ArrayList<>();
         items.forEach((productId, headOfficeOrderItem) -> {
             if (!requestedItems.containsKey(productId)) {
-                items.get(productId).delete();
-                items.remove(productId);
+                toDelete.add(productId);
             }
         });
+        toDelete.forEach(items::remove);
 
         // 반환
         return items.values().stream()

@@ -89,7 +89,7 @@ public class HQOrderService {
                 .orElseThrow(() -> new HQOrderException(HQOrderErrorCode.ORDER_NOT_FOUND));
 
         // Map<productId, HeadOfficeOrderItem> 발주 제품 조회
-        Map<Long, HeadOfficeOrderItem> items = orderItemRepository.findAllByHeadOfficeOrder_HqIdAndHeadOfficeOrder_OrderCode(hqId, orderCode).stream()
+        Map<Long, HeadOfficeOrderItem> items = orderItemRepository.findAllByHeadOfficeOrder_HqIdAndHeadOfficeOrder_OrderCodeAndDeletedAtIsNull(hqId, orderCode).stream()
                 .collect(Collectors.toMap(
                         HeadOfficeOrderItem::getProductId,
                         Function.identity()
@@ -129,6 +129,7 @@ public class HQOrderService {
         items.forEach((productId, headOfficeOrderItem) -> {
             if (!requestedItems.containsKey(productId)) {
                 items.get(productId).delete();
+                items.remove(productId);
             }
         });
 

@@ -251,14 +251,14 @@ class HQOrderServiceTests {
     void updateOrderItems_Success() {
         // given
         given(orderRepository.findByHqIdAndOrderCode(hqId, orderCode)).willReturn(Optional.of(order));
-        given(orderItemRepository.findAllByHeadOfficeOrder_HqIdAndHeadOfficeOrder_OrderCode(hqId, orderCode)).willReturn(List.of(orderItem));
+        given(orderItemRepository.findAllByHeadOfficeOrder_HqIdAndHeadOfficeOrder_OrderCodeAndDeletedAtIsNull(hqId, orderCode)).willReturn(List.of(orderItem));
 
         // when
         List<HQOrderItemInfo> response = hqOrderService.updateOrderItems(hqId, orderCode, List.of(hqOrderItemUpdateRequest), productInfoByProductId);
 
         // then
         verify(orderRepository, times(1)).findByHqIdAndOrderCode(hqId, orderCode);
-        verify(orderItemRepository, times(1)).findAllByHeadOfficeOrder_HqIdAndHeadOfficeOrder_OrderCode(hqId, orderCode);
+        verify(orderItemRepository, times(1)).findAllByHeadOfficeOrder_HqIdAndHeadOfficeOrder_OrderCodeAndDeletedAtIsNull(hqId, orderCode);
         assertTrue(response.stream()
                 .anyMatch(info -> info.productId().equals(newProductId)));
         assertTrue(response.stream()
@@ -280,7 +280,7 @@ class HQOrderServiceTests {
             hqOrderService.updateOrderItems(hqId, orderCode, List.of(hqOrderItemUpdateRequest), productInfoByProductId);
         });
         verify(orderRepository, times(1)).findByHqIdAndOrderCode(hqId, orderCode);
-        verify(orderItemRepository, times(0)).findAllByHeadOfficeOrder_HqIdAndHeadOfficeOrder_OrderCode(hqId, orderCode);
+        verify(orderItemRepository, times(0)).findAllByHeadOfficeOrder_HqIdAndHeadOfficeOrder_OrderCodeAndDeletedAtIsNull(hqId, orderCode);
         assertEquals(HQOrderErrorCode.ORDER_NOT_FOUND, exception.getErrorCode());
     }
 
@@ -289,14 +289,14 @@ class HQOrderServiceTests {
     void updateOrderItems_Failure_ORDER_ITEM_NOT_FOUND() {
         // given
         given(orderRepository.findByHqIdAndOrderCode(hqId, orderCode)).willReturn(Optional.of(order));
-        given(orderItemRepository.findAllByHeadOfficeOrder_HqIdAndHeadOfficeOrder_OrderCode(hqId, orderCode)).willReturn(List.of());
+        given(orderItemRepository.findAllByHeadOfficeOrder_HqIdAndHeadOfficeOrder_OrderCodeAndDeletedAtIsNull(hqId, orderCode)).willReturn(List.of());
 
         // when & then
         HQOrderException exception = assertThrows(HQOrderException.class, () -> {
             hqOrderService.updateOrderItems(hqId, orderCode, List.of(hqOrderItemUpdateRequest), productInfoByProductId);
         });
         verify(orderRepository, times(1)).findByHqIdAndOrderCode(hqId, orderCode);
-        verify(orderItemRepository, times(1)).findAllByHeadOfficeOrder_HqIdAndHeadOfficeOrder_OrderCode(hqId, orderCode);
+        verify(orderItemRepository, times(1)).findAllByHeadOfficeOrder_HqIdAndHeadOfficeOrder_OrderCodeAndDeletedAtIsNull(hqId, orderCode);
         assertEquals(HQOrderErrorCode.ORDER_ITEM_NOT_FOUND, exception.getErrorCode());
     }
 

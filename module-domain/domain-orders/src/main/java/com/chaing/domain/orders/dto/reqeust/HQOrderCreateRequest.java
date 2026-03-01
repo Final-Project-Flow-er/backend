@@ -1,6 +1,8 @@
 package com.chaing.domain.orders.dto.reqeust;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDateTime;
@@ -21,7 +23,7 @@ public record HQOrderCreateRequest(
         @NotNull
         LocalDateTime manufactureDate,
 
-        @NotNull
-        List<HQOrderItemCreateInfo> items
+        @NotEmpty
+        List<@Valid HQOrderItemCreateInfo> items
 ) {
 }

@@ -6,6 +6,7 @@ import com.chaing.domain.orders.dto.info.HQOrderItemInfo;
 import com.chaing.domain.orders.dto.reqeust.HQOrderItemUpdateRequest;
 import com.chaing.domain.orders.entity.HeadOfficeOrder;
 import com.chaing.domain.orders.entity.HeadOfficeOrderItem;
+import com.chaing.domain.orders.enums.HQOrderStatus;
 import com.chaing.domain.orders.exception.HQOrderErrorCode;
 import com.chaing.domain.orders.exception.HQOrderException;
 import com.chaing.domain.orders.repository.HeadOfficeOrderItemRepository;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -150,5 +152,20 @@ public class HQOrderService {
 
         // 반환
         return HQOrderInfo.from(order);
+    }
+
+    public Map<String, HQOrderStatus> cancel(Long hqId, String orderCode) {
+        // 발주 정보 조회
+        HeadOfficeOrder order = orderRepository.findByHqIdAndOrderCode(hqId, orderCode)
+                .orElseThrow(() -> new HQOrderException(HQOrderErrorCode.ORDER_NOT_FOUND));
+
+        // 취소
+        order.cancel();
+
+        // 반환
+        Map<String, HQOrderStatus> result = new HashMap<>();
+        result.put(order.getOrderCode(), order.getOrderStatus());
+
+        return result;
     }
 }

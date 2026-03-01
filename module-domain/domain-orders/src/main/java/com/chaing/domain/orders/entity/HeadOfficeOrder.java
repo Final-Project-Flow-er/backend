@@ -2,6 +2,8 @@ package com.chaing.domain.orders.entity;
 
 import com.chaing.core.entity.BaseEntity;
 import com.chaing.domain.orders.enums.HQOrderStatus;
+import com.chaing.domain.orders.exception.HQOrderErrorCode;
+import com.chaing.domain.orders.exception.HQOrderException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -69,5 +71,15 @@ public class HeadOfficeOrder extends BaseEntity {
 
     public void update(@NotBlank LocalDateTime manufactureDate) {
         this.manufactureDate = manufactureDate;
+    }
+
+    public void cancel() {
+        if (orderStatus == HQOrderStatus.CANCELED) {
+            throw new HQOrderException(HQOrderErrorCode.ORDER_ALREADY_CANCELED);
+        } else if (orderStatus != HQOrderStatus.PENDING) {
+            throw new HQOrderException(HQOrderErrorCode.ORDER_NOT_PENDING);
+        }
+
+        this.orderStatus = HQOrderStatus.CANCELED;
     }
 }

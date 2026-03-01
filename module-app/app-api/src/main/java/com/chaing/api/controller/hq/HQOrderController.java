@@ -91,7 +91,7 @@ public class HQOrderController {
     @Operation(summary = "발주 생성", description = "본사 직원의 요청에 따른 발주 생성")
     @PostMapping
     public ResponseEntity<ApiResponse<HQOrderCreateResponse>> createOrder(
-            @RequestBody HQOrderCreateRequest request
+            @Valid @RequestBody HQOrderCreateRequest request
     ) {
         //TODO: Spring Security Context에서 값 꺼내오는 걸로 수정해야 함
         String username = "test";

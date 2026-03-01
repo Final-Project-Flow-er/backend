@@ -235,7 +235,7 @@ class HQOrderServiceTests {
 
         // then
         verify(orderItemRepository, times(1)).findAllByHeadOfficeOrder_HqIdAndHeadOfficeOrder_HeadOfficeOrderId(hqId, orderId);
-        assertEquals(orderItemId, response.get(0));
+        assertEquals(productId, response.get(0));
     }
 
     @Test

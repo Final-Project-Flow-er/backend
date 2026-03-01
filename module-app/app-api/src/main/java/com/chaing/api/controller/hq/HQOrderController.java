@@ -1,16 +1,15 @@
 package com.chaing.api.controller.hq;
 
 import com.chaing.api.dto.hq.orders.request.HQOrderCreateRequest;
-import com.chaing.domain.orders.dto.reqeust.HQOrderUpdateRequest;
 import com.chaing.api.dto.hq.orders.request.HQOrderUpdateStatusRequest;
+import com.chaing.api.facade.factory.HQOrderFacade;
+import com.chaing.core.dto.ApiResponse;
+import com.chaing.domain.orders.dto.reqeust.HQOrderUpdateRequest;
 import com.chaing.domain.orders.dto.response.HQOrderCancelResponse;
 import com.chaing.domain.orders.dto.response.HQOrderDetailResponse;
 import com.chaing.domain.orders.dto.response.HQOrderResponse;
-import com.chaing.api.facade.factory.HQOrderFacade;
-import com.chaing.core.dto.ApiResponse;
 import com.chaing.domain.orders.dto.response.HQOrderStatusUpdateResponse;
 import com.chaing.domain.orders.dto.response.HQOrderUpdateResponse;
-import com.chaing.domain.orders.enums.FranchiseOrderStatus;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -68,7 +67,7 @@ public class HQOrderController {
 
     @Operation(summary = "가맹점의 발주 상태 변경", description = "가맹점의 발주의 상태를 접수/반려로 변경")
     @PatchMapping("/{order-code}/{order-status}")
-    public ResponseEntity<ApiResponse<HQOrderStatusUpdateResponse>> updateOrderStatus(
+    public ResponseEntity<ApiResponse<List<HQOrderStatusUpdateResponse>>> updateOrderStatus(
             @PathVariable("order-code") String orderCode,
             @Valid @RequestBody HQOrderUpdateStatusRequest request
     ) {

@@ -60,6 +60,7 @@ public class HeadOfficeOrderItem extends BaseEntity {
         if (productId != null &&  quantity != null) {
             this.productId = productId;
             this.quantity = quantity;
+            this.totalPrice = this.unitPrice.multiply(BigDecimal.valueOf(quantity));
         } else {
             throw new HQOrderException(HQOrderErrorCode.INVALID_INPUT);
         }

@@ -13,7 +13,11 @@ public enum HQOrderErrorCode implements ErrorCode {
     ORDER_ITEM_NOT_FOUND(404, "HO002", "해당 발주의 제품을 찾을 수 없습니다."),
 
     // 400 BAD REQUEST
-    INVALID_INPUT(400, "HO003", "잘못된 입력값입니다.");
+    INVALID_INPUT(400, "HO003", "잘못된 입력값입니다."),
+
+    // 409 CONFLICE
+    ORDER_ALREADY_CANCELED(409, "HO004", "이미 취소된 발주입니다."),
+    ORDER_NOT_PENDING(409, "HO005", "상태가 대기인 발주만 취소 가능합니다.");
 
     private final Integer status;
     private final String code;

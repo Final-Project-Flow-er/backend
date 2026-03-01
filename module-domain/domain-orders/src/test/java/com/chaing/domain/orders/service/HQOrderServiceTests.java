@@ -3,6 +3,8 @@ package com.chaing.domain.orders.service;
 import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.domain.orders.dto.info.HQOrderInfo;
 import com.chaing.domain.orders.dto.info.HQOrderItemInfo;
+import com.chaing.domain.orders.dto.reqeust.HQOrderCreateRequest;
+import com.chaing.domain.orders.dto.reqeust.HQOrderItemCreateInfo;
 import com.chaing.domain.orders.dto.reqeust.HQOrderItemUpdateRequest;
 import com.chaing.domain.orders.entity.HeadOfficeOrder;
 import com.chaing.domain.orders.entity.HeadOfficeOrderItem;
@@ -34,6 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class HQOrderServiceTests {
@@ -45,6 +48,9 @@ class HQOrderServiceTests {
 
     @Mock
     private HeadOfficeOrderItemRepository orderItemRepository;
+
+    @Mock
+    private HQOrderCodeGenerator generator;
 
     Long hqId;
     String username;
@@ -390,5 +396,56 @@ class HQOrderServiceTests {
         });
         verify(orderRepository, times(1)).findByHqIdAndOrderCode(hqId, orderCode);
         assertEquals(HQOrderErrorCode.ORDER_NOT_FOUND, exception.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("발주 생성 - 성공")
+    void createOrder_Success() {
+        // given
+        HQOrderItemCreateInfo itemCreateInfo = new HQOrderItemCreateInfo(
+                1L,
+                10
+        );
+
+        HQOrderCreateRequest request = new HQOrderCreateRequest(
+                "username",
+                "phoneNumber",
+                "description",
+                true,
+                LocalDateTime.now(),
+                List.of(itemCreateInfo)
+        );
+
+        when(generator.generate()).thenReturn("HEAD-001");
+
+        // when
+        HQOrderInfo response = hqOrderService.createOrder(hqId, request, 10, BigDecimal.valueOf(30000));
+
+        // then
+        assertEquals(description, response.description());
+        assertEquals(HQOrderStatus.PENDING, response.status());
+        assertEquals("-", response.storedDate());
+        assertEquals("HEAD-001", response.orderCode());
+    }
+
+    @Test
+    @DisplayName("발주 제품 생성 - 성공")
+    void createOrderItems_Success() {
+        // given
+        HQOrderItemCreateInfo itemCreateInfo = new HQOrderItemCreateInfo(
+                1L,
+                10
+        );
+
+        given(orderRepository.findByHeadOfficeOrderId(orderId)).willReturn(Optional.of(order));
+
+        // when
+        List<HQOrderItemInfo> responses = hqOrderService.createOrderItems(orderId, productInfoByProductId, List.of(itemCreateInfo));
+
+        // then
+        verify(orderRepository, times(1)).findByHeadOfficeOrderId(orderId);
+        assertEquals(BigDecimal.valueOf(30000), responses.get(0).totalPrice());
+        assertEquals(BigDecimal.valueOf(3000), responses.get(0).unitPrice());
+        assertEquals(productCode, responses.get(0).productCode());
     }
 }

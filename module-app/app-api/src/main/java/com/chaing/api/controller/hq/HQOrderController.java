@@ -1,7 +1,7 @@
 package com.chaing.api.controller.hq;
 
 import com.chaing.api.dto.hq.orders.request.HQOrderCreateRequest;
-import com.chaing.api.dto.hq.orders.request.HQOrderUpdateRequest;
+import com.chaing.domain.orders.dto.reqeust.HQOrderUpdateRequest;
 import com.chaing.api.dto.hq.orders.request.HQOrderUpdateStatusRequest;
 import com.chaing.domain.orders.dto.response.HQOrderDetailResponse;
 import com.chaing.domain.orders.dto.response.HQOrderResponse;

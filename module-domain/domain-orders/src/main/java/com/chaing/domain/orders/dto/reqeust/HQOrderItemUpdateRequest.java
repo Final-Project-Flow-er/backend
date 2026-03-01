@@ -1,10 +1,10 @@
-package com.chaing.api.dto.hq.orders.request;
+package com.chaing.domain.orders.dto.reqeust;
 
 import jakarta.validation.constraints.NotNull;
 
-public record HQOrderUpdateRequest(
+public record HQOrderItemUpdateRequest(
         @NotNull
-        String productCode,
+        Long productId,
 
         @NotNull
         Integer quantity

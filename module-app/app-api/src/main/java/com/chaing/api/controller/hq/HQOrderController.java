@@ -67,7 +67,7 @@ public class HQOrderController {
     }
 
     @Operation(summary = "가맹점의 발주 상태 변경", description = "가맹점의 발주의 상태를 접수/반려로 변경")
-    @PatchMapping("/{order-code}/{order-status}")
+    @PatchMapping()
     public ResponseEntity<ApiResponse<List<HQOrderStatusUpdateResponse>>> updateOrderStatus(
             @Valid @RequestBody HQOrderUpdateStatusRequest request
     ) {

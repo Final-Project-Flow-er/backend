@@ -138,7 +138,10 @@ public class HQOrderService {
                 toDelete.add(productId);
             }
         });
-        toDelete.forEach(items::remove);
+        toDelete.forEach(productId -> {
+            items.get(productId).delete();
+            items.remove(productId);
+        });
 
         // 반환
         return items.values().stream()

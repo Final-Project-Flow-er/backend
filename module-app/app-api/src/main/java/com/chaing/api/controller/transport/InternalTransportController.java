@@ -4,9 +4,11 @@ import com.chaing.api.dto.transport.internal.request.ArrivalApprovalRequest;
 import com.chaing.api.dto.transport.internal.request.TransportForceUpdateRequest;
 import com.chaing.api.dto.transport.internal.request.VehicleAssignmentRequest;
 import com.chaing.api.dto.transport.internal.response.AvailableVehicleResponse;
+import com.chaing.api.facade.transport.InternalTransportFacade;
 import com.chaing.core.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,12 +23,16 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @Tag(name = "Inner Transport API", description = "내부 운송 관련 API")
 @RequestMapping("/api/v1/transport/internal")
+@RequiredArgsConstructor
 public class InternalTransportController {
+
+    private final InternalTransportFacade transportFacade;
 
     @Operation(summary = "운송 가능 차량 조회", description = "배차 가능 차량 리스트 출력")
     @GetMapping("/available-vehicles")
     public ResponseEntity<ApiResponse<AvailableVehicleResponse>> getAvailableVehicles() {
-        // TODO: 서비스 로직 연결
+
+        transportFacade.getAvailableVehicle();
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

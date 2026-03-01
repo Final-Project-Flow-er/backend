@@ -11,8 +11,5 @@ import java.util.List;
 @Repository
 public interface VehicleRepository extends JpaRepository<Vehicle,Long> {
 
-
-    List<Vehicle> findAllByDispatchableAndStatus(
-            Dispatchable dispatchable,
-            UsableStatus status
-    );}
+    List<Vehicle> findAllByStatusAndDispatchable(UsableStatus status, Dispatchable dispatchable);
+}

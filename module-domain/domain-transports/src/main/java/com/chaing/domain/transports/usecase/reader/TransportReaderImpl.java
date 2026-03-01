@@ -19,27 +19,16 @@ public class TransportReaderImpl implements TransportReader{
     private final TransitRepository transitRepository;
 
     @Override
-    public List<Vehicle> findAvailableVehicles() {
-        return vehicleRepository.findAllByDispatchableAndStatus(Dispatchable.AVAILABLE, UsableStatus.ACTIVE);
+    public List<Vehicle> findCandidateVehicles() {
+        return vehicleRepository.findAllByStatusAndDispatchable(
+                UsableStatus.ACTIVE, Dispatchable.AVAILABLE);
     }
 
     @Override
-    public Double calculateCurrentWeight(Long vehicleId) {
-
-        List<Transit> activeTransits = transitRepository.findAllByVehicleIdAndStatus(vehicleId, DeliverStatus.IN_TRANSIT);
-
-        return activeTransits.stream()
-                .mapToDouble(Transit::getCargoWeight)
+    public Long getCurrentTransitWeight(Long vehicleId) {
+        return transitRepository.findByVehicleId(vehicleId)
+                .stream()
+                .mapToLong(Transit::getWeight)
                 .sum();
-    }
-
-    @Override
-    public Vehicle findVehicle(Long vehicleId) {
-        return null;
-    }
-
-    @Override
-    public List<Transit> findTransits() {
-        return List.of();
     }
 }

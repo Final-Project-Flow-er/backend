@@ -53,4 +53,9 @@ public class Transit extends BaseEntity {
     @NotBlank
     @Column(nullable = false)
     private String trackingNumber;
+
+    // 적재량
+    @NotBlank
+    @Column(nullable = false)
+    private Long weight;
 }

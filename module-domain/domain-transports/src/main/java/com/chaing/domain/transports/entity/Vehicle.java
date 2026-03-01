@@ -46,7 +46,7 @@ public class Vehicle {
     private String driverPhone;
 
     @Column(nullable = false)
-    private Double maxLoad;
+    private Long maxLoad;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)

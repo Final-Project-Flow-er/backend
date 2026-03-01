@@ -7,12 +7,7 @@ import java.util.List;
 
 public interface TransportReader {
 
-    List<Vehicle> findAvailableVehicles();
+    List<Vehicle> findCandidateVehicles();
 
-    Vehicle findVehicle(Long vehicleId);
-
-    List<Transit> findTransits();
-
-    Double calculateCurrentWeight(Long vehicleId);
-
+    Long getCurrentTransitWeight(Long vehicleId);
 }

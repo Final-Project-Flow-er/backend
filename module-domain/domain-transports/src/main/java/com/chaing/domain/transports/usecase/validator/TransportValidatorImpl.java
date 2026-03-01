@@ -10,49 +10,12 @@ import java.util.NoSuchElementException;
 
 @Component
 public class TransportValidatorImpl implements TransportValidator {
-
     @Override
-    public void validateListDispatchable(List<Vehicle> vehicles) {
+    public boolean canLoadWeight(Long maxLoad, Long currentTransitWeight) {
 
-        vehicles.removeIf(vehicle -> vehicle.getDispatchable() != Dispatchable.AVAILABLE);
+        long max = (maxLoad != null)? maxLoad:0L;
+        long current = (currentTransitWeight != null)? currentTransitWeight:0L;
 
-        if (vehicles.isEmpty()) {
-            throw new NoSuchElementException("배차 가능한 차량이 없습니다.");
-        }
-    }
-
-    @Override
-    public void validateListUsableStatus(List<Vehicle> vehicles) {
-
-        vehicles.removeIf(vehicle -> vehicle.getStatus() != UsableStatus.ACTIVE);
-
-        if (vehicles.isEmpty()) {
-            throw new NoSuchElementException("배차 가능한 차량이 없습니다.");
-        }
-    }
-
-    @Override
-    public void validateListWeightCapacity(List<Vehicle> vehicles, Double cargoWeight) {
-
-        vehicles.removeIf(vehicle -> vehicle.getMaxLoad() < cargoWeight);
-
-        if (vehicles.isEmpty()) {
-            throw new NoSuchElementException("배차 가능한 차량이 없습니다.");
-        }
-    }
-
-    @Override
-    public void validateIsDispatchable(Vehicle vehicle) {
-
-    }
-
-    @Override
-    public void validateIsUsable(Vehicle vehicle) {
-
-    }
-
-    @Override
-    public void validateWeightCapacity(Vehicle vehicle, Double cargoWeight) {
-
+        return current < max;
     }
 }

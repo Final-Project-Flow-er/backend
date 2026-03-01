@@ -4,11 +4,14 @@ import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.domain.orders.dto.info.HQOrderInfo;
 import com.chaing.domain.orders.dto.info.HQOrderItemInfo;
 import com.chaing.domain.orders.dto.reqeust.HQOrderUpdateRequest;
+import com.chaing.domain.orders.dto.reqeust.HQOrderUpdateStatusRequest;
 import com.chaing.domain.orders.dto.response.HQOrderCancelResponse;
 import com.chaing.domain.orders.dto.response.HQOrderDetailResponse;
 import com.chaing.domain.orders.dto.response.HQOrderResponse;
+import com.chaing.domain.orders.dto.response.HQOrderStatusUpdateResponse;
 import com.chaing.domain.orders.dto.response.HQOrderUpdateResponse;
 import com.chaing.domain.orders.enums.HQOrderStatus;
+import com.chaing.domain.orders.service.FranchiseOrderService;
 import com.chaing.domain.orders.service.HQOrderService;
 import com.chaing.domain.products.service.ProductService;
 import jakarta.validation.Valid;
@@ -28,7 +31,7 @@ import java.util.stream.Collectors;
 public class HQOrderFacade {
 
     private final HQOrderService hqOrderService;
-
+    private final FranchiseOrderService franchiseOrderService;
     private final ProductService productService;
 
     // 발주 조회
@@ -149,6 +152,7 @@ public class HQOrderFacade {
                 .build();
     }
 
+    // 발주 취소
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public HQOrderCancelResponse cancel(String username, String orderCode) {
         // hqId username으로 꺼내오는 로직 추가
@@ -162,5 +166,15 @@ public class HQOrderFacade {
                 .orderCode(cancelOrder.keySet().iterator().next())
                 .status(cancelOrder.values().iterator().next())
                 .build();
+    }
+
+    // 가맹점 발주 상태 변경(접수/반려)
+    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
+    public List<HQOrderStatusUpdateResponse> updateStatus(String username, @Valid HQOrderUpdateStatusRequest request) {
+        // hqId username으로 꺼내오는 로직 추가
+        Long hqId = 10L;
+
+        // 상태 변경 및 반환
+        return franchiseOrderService.updateStatus(request);
     }
 }

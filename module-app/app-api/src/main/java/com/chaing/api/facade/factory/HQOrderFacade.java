@@ -1,12 +1,12 @@
 package com.chaing.api.facade.factory;
 
-import com.chaing.domain.orders.dto.reqeust.HQOrderCreateRequest;
+import com.chaing.domain.orders.dto.request.HQOrderCreateRequest;
 import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.domain.orders.dto.info.HQOrderInfo;
 import com.chaing.domain.orders.dto.info.HQOrderItemInfo;
-import com.chaing.domain.orders.dto.reqeust.HQOrderItemCreateInfo;
-import com.chaing.domain.orders.dto.reqeust.HQOrderUpdateRequest;
-import com.chaing.domain.orders.dto.reqeust.HQOrderUpdateStatusRequest;
+import com.chaing.domain.orders.dto.request.HQOrderItemCreateInfo;
+import com.chaing.domain.orders.dto.request.HQOrderUpdateRequest;
+import com.chaing.domain.orders.dto.request.HQOrderUpdateStatusRequest;
 import com.chaing.domain.orders.dto.response.HQOrderCancelResponse;
 import com.chaing.domain.orders.dto.response.HQOrderCreateResponse;
 import com.chaing.domain.orders.dto.response.HQOrderDetailResponse;

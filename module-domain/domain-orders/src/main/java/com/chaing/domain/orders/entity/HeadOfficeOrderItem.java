@@ -1,6 +1,8 @@
 package com.chaing.domain.orders.entity;
 
 import com.chaing.core.entity.BaseEntity;
+import com.chaing.domain.orders.exception.HQOrderErrorCode;
+import com.chaing.domain.orders.exception.HQOrderException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -53,4 +55,13 @@ public class HeadOfficeOrderItem extends BaseEntity {
 
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal totalPrice;
+
+    public void update(Long productId, Integer quantity) {
+        if (productId != null &&  quantity != null) {
+            this.productId = productId;
+            this.quantity = quantity;
+        } else {
+            throw new HQOrderException(HQOrderErrorCode.INVALID_INPUT);
+        }
+    }
 }

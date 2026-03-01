@@ -9,6 +9,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.validation.constraints.NotBlank;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -65,4 +66,8 @@ public class HeadOfficeOrder extends BaseEntity {
     @Column(nullable = false)
     @Builder.Default
     private Boolean isRegular = true;
+
+    public void update(@NotBlank LocalDateTime manufactureDate) {
+        this.manufactureDate = manufactureDate;
+    }
 }

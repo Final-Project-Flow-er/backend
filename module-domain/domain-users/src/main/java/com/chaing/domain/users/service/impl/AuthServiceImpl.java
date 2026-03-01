@@ -102,7 +102,7 @@ public class AuthServiceImpl implements AuthService {
         List<Character> pwdChars = passwordBuilder.chars()
                 .mapToObj(c -> (char) c)
                 .collect(Collectors.toList());
-        Collections.shuffle(pwdChars);
+        Collections.shuffle(pwdChars, random);
 
         return pwdChars.stream()
                 .map(String::valueOf)

@@ -19,4 +19,6 @@ public record AvailableVehicleResponse(
                 currentWeight,
                 vehicle.getMaxLoad() - currentWeight
         );
-    }}
+    }
+
+}

@@ -2,6 +2,8 @@ package com.chaing.domain.transports.usecase.executor;
 
 import com.chaing.domain.transports.dto.OrderInfo;
 import com.chaing.domain.transports.entity.Transit;
+import com.chaing.domain.transports.exception.TransportErrorCode;
+import com.chaing.domain.transports.exception.TransportException;
 import com.chaing.domain.transports.repository.TransitRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -28,5 +30,17 @@ public class TransportExecutorImpl implements TransportExecutor {
                 .toList();
 
         transitRepository.saveAll(transits);
+    }
+
+    @Override
+    public String cancelTransit(Long transportId) {
+        Transit transit = transitRepository.findById(transportId)
+                .orElseThrow(() -> new TransportException(TransportErrorCode.TRANSPORT_NOT_FOUND));
+
+        String orderCode = transit.getOrderCode();
+
+        transitRepository.delete(transit);
+
+        return orderCode;
     }
 }

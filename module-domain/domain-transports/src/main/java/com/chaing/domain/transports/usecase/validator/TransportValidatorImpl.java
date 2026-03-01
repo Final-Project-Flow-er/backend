@@ -3,6 +3,7 @@ package com.chaing.domain.transports.usecase.validator;
 import com.chaing.core.enums.UsableStatus;
 import com.chaing.core.exception.ErrorCode;
 import com.chaing.domain.transports.entity.Vehicle;
+import com.chaing.domain.transports.enums.DeliverStatus;
 import com.chaing.domain.transports.enums.Dispatchable;
 import com.chaing.domain.transports.exception.TransportErrorCode;
 import com.chaing.domain.transports.exception.TransportException;
@@ -32,6 +33,13 @@ public class TransportValidatorImpl implements TransportValidator {
 
         if (current + incoming > max) {
             throw new TransportException(TransportErrorCode.TRANSPORT_LOAD_EXCEEDED);
+        }
+    }
+
+    @Override
+    public void checkCancellable(DeliverStatus status) {
+        if(status != DeliverStatus.PENDING) {
+            throw new TransportException((TransportErrorCode.TRANSPORT_CAN_NOT_CANCEL));
         }
     }
 }

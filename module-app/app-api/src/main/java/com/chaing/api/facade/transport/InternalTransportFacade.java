@@ -1,7 +1,8 @@
 package com.chaing.api.facade.transport;
 
 import com.chaing.api.dto.transport.internal.request.VehicleAssignmentRequest;
-import com.chaing.domain.transports.dto.response.AvailableVehicleResponse;
+import com.chaing.api.dto.transport.internal.response.AvailableVehicleResponse;
+import com.chaing.api.dto.transport.internal.response.TransportCancelResponse;
 import com.chaing.domain.transports.service.InternalTransportService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -19,8 +20,18 @@ public class InternalTransportFacade {
 
     // 운송 가능 차량 리스트 조회
     public List<AvailableVehicleResponse> getAvailableVehicle() {
+        List<com.chaing.domain.transports.dto.response.AvailableVehicleResponse> domainResponses = transportService.getAvailableVehicle();
 
-        return transportService.getAvailableVehicle();
+        // API용 DTO로 변환
+        return domainResponses.stream()
+                .map(res -> new AvailableVehicleResponse(
+                        res.vehicleId(),
+                        res.vehicleNumber(),
+                        res.maxLoad(),
+                        res.currentWeight(),
+                        res.availableWeight()
+                ))
+                .toList();
     }
 
     // 차량 배정
@@ -45,5 +56,15 @@ public class InternalTransportFacade {
                 trackingMap     // String
         );
         // 정산 관련 도메인
+    }
+
+    @Transactional
+    public TransportCancelResponse cancelAssignment(Long transportId) {
+
+        // 운송 도메인 해체 로직
+        String cancelledOrderCode = transportService.cancelAssignment(transportId);
+
+        // 응답 DTO 생성
+        return TransportCancelResponse.from(transportId, cancelledOrderCode);
     }
 }

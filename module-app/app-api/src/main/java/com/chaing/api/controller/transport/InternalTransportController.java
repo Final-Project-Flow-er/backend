@@ -4,6 +4,7 @@ import com.chaing.api.dto.transport.internal.request.ArrivalApprovalRequest;
 import com.chaing.api.dto.transport.internal.request.TransportForceUpdateRequest;
 import com.chaing.api.dto.transport.internal.request.VehicleAssignmentRequest;
 import com.chaing.api.dto.transport.internal.response.AvailableVehicleResponse;
+import com.chaing.api.dto.transport.internal.response.TransportCancelResponse;
 import com.chaing.api.facade.transport.InternalTransportFacade;
 import com.chaing.core.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -20,6 +21,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @RestController
 @Tag(name = "Inner Transport API", description = "내부 운송 관련 API")
 @RequestMapping("/api/v1/transport/internal")
@@ -30,15 +33,15 @@ public class InternalTransportController {
 
     @Operation(summary = "운송 가능 차량 조회", description = "배차 가능 차량 리스트 출력")
     @GetMapping("/available-vehicles")
-    public ResponseEntity<ApiResponse<AvailableVehicleResponse>> getAvailableVehicles() {
+    public ResponseEntity<ApiResponse<List<AvailableVehicleResponse>>> getAvailableVehicles() {
 
-        transportFacade.getAvailableVehicle();
-        return ResponseEntity.ok(ApiResponse.success(null));
+        List<AvailableVehicleResponse> response = transportFacade.getAvailableVehicle();
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @Operation(summary = "차량 배정", description = "미배정 주문 차량 배정")
     @PostMapping("/assign")
-    public ResponseEntity<ApiResponse<?>> assignVehicle(
+    public ResponseEntity<ApiResponse<Void>> assignVehicle(
             @RequestBody VehicleAssignmentRequest request) {
         // TODO: 배정 로직 작성
         transportFacade.assignVehicle(request);
@@ -48,10 +51,12 @@ public class InternalTransportController {
 
     @Operation(summary = "배차 해제", description = "배정된 차량 해제")
     @DeleteMapping("/assign/{transportId}")
-    public ResponseEntity<ApiResponse<?>> cancelAssignment(
+    public ResponseEntity<ApiResponse<TransportCancelResponse>> cancelAssignment(
             @PathVariable Long transportId) {
         // TODO: 해제 로직 작성
-        return ResponseEntity.ok(ApiResponse.success(null));
+        TransportCancelResponse response = transportFacade.cancelAssignment(transportId);
+
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @Operation(summary = "입고 승인 상태 변경", description = "입고 승인 시 상태 변경")

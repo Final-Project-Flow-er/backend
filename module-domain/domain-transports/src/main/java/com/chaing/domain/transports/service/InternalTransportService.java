@@ -5,6 +5,7 @@ import com.chaing.domain.transports.dto.request.TransportForceUpdateRequest;
 import com.chaing.domain.transports.dto.request.VehicleAssignmentRequest;
 import com.chaing.domain.transports.dto.response.AvailableVehicleResponse;
 import com.chaing.domain.transports.entity.Vehicle;
+import com.chaing.domain.transports.enums.DeliverStatus;
 import com.chaing.domain.transports.usecase.executor.TransportExecutor;
 import com.chaing.domain.transports.usecase.reader.TransportReader;
 import com.chaing.domain.transports.usecase.validator.TransportValidator;
@@ -68,5 +69,17 @@ public class InternalTransportService {
 
         // 차량 배정
         executor.createTransits(vehicleId, orders, trackingMap);
+    }
+
+    @Transactional
+    public String cancelAssignment(Long transportId) {
+        // 배정 정보 조회
+        DeliverStatus status = reader.getTransitStatus(transportId);
+
+        // 취소 가능 여부 검증
+        validator.checkCancellable(status);
+
+        // Transit 삭제 후 OrderCode 리턴
+        return executor.cancelTransit(transportId);
     }
 }

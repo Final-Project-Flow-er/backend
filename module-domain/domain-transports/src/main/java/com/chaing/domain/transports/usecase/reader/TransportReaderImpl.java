@@ -5,6 +5,8 @@ import com.chaing.domain.transports.entity.Transit;
 import com.chaing.domain.transports.entity.Vehicle;
 import com.chaing.domain.transports.enums.DeliverStatus;
 import com.chaing.domain.transports.enums.Dispatchable;
+import com.chaing.domain.transports.exception.TransportErrorCode;
+import com.chaing.domain.transports.exception.TransportException;
 import com.chaing.domain.transports.repository.TransitRepository;
 import com.chaing.domain.transports.repository.VehicleRepository;
 import lombok.RequiredArgsConstructor;
@@ -35,5 +37,12 @@ public class TransportReaderImpl implements TransportReader{
     @Override
     public Long getVehicleMaxLoad(Long vehicleId) {
         return vehicleRepository.findMaxLoad(vehicleId);
+    }
+
+    @Override
+    public DeliverStatus getTransitStatus(Long transportId) {
+        return transitRepository.findById(transportId)
+                .map(Transit::getStatus)
+                .orElseThrow(() -> new TransportException(TransportErrorCode.TRANSPORT_NOT_FOUND));
     }
 }

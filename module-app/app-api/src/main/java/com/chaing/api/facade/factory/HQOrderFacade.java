@@ -14,6 +14,8 @@ import com.chaing.domain.orders.dto.response.HQOrderResponse;
 import com.chaing.domain.orders.dto.response.HQOrderStatusUpdateResponse;
 import com.chaing.domain.orders.dto.response.HQOrderUpdateResponse;
 import com.chaing.domain.orders.enums.HQOrderStatus;
+import com.chaing.domain.orders.exception.HQOrderErrorCode;
+import com.chaing.domain.orders.exception.HQOrderException;
 import com.chaing.domain.orders.service.FranchiseOrderService;
 import com.chaing.domain.orders.service.HQOrderService;
 import com.chaing.domain.products.service.ProductService;
@@ -198,8 +200,15 @@ public class HQOrderFacade {
                 .map(HQOrderItemCreateInfo::quantity)
                 .reduce(0, Integer::sum);
         BigDecimal totalAmount = request.items().stream()
-                .map(item -> productInfoByProductId.get(item.productId()).costPrice()
-                        .multiply(BigDecimal.valueOf(item.quantity())))
+                .map(item -> {
+                    ProductInfo productInfo = productInfoByProductId.get(item.productId());
+
+                    if (productInfo == null) {
+                        throw new HQOrderException(HQOrderErrorCode.PRODUCT_NOT_FOUND);
+                    }
+
+                    return productInfo.costPrice().multiply(BigDecimal.valueOf(item.quantity()));
+                })
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         HQOrderInfo orderInfo = hqOrderService.createOrder(hqId, request, totalQuantity, totalAmount);
 

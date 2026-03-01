@@ -1,5 +1,6 @@
 package com.chaing.api.facade.user;
 
+import com.chaing.api.dto.user.event.PasswordResetEvent;
 import com.chaing.api.dto.user.request.LoginRequest;
 import com.chaing.api.dto.user.request.ResetPasswordRequest;
 import com.chaing.api.dto.user.response.LoginResponse;
@@ -11,10 +12,10 @@ import com.chaing.domain.users.enums.UserAction;
 import com.chaing.domain.users.exception.UserErrorCode;
 import com.chaing.domain.users.exception.UserException;
 import com.chaing.domain.users.service.AuthService;
-import com.chaing.domain.users.service.MailService;
 import com.chaing.domain.users.service.UserLogService;
 import com.chaing.domain.users.service.UserManagementService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,7 +29,7 @@ public class AuthFacade {
     private final AuthService authService;
     private final UserManagementService userManagementService;
     private final UserLogService userLogService;
-    private final MailService mailService;
+    private final ApplicationEventPublisher eventPublisher;
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
 
@@ -65,7 +66,7 @@ public class AuthFacade {
 
         authService.resetPassword(user, tempPassword);
         userLogService.saveLog(user, user.getUserId(), UserAction.PASSWORD_UPDATE);
-        mailService.sendTempPassword(request.email(), tempPassword);
+        eventPublisher.publishEvent(new PasswordResetEvent(request.email(), tempPassword));
     }
 
     // 토큰 재발급

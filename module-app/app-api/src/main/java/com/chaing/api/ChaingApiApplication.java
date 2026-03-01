@@ -6,7 +6,9 @@ import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.data.redis.repository.configuration.EnableRedisRepositories;
+import org.springframework.scheduling.annotation.EnableAsync;
 
+@EnableAsync
 @EnableJpaAuditing
 @SpringBootApplication(scanBasePackages = "com.chaing") // 패키지 전체 스캔
 @EntityScan(basePackages = "com.chaing")                // 타 모듈 @Entity 전부 탐색

@@ -6,6 +6,7 @@ import com.chaing.api.dto.hq.user.response.CreateUserResponse;
 import com.chaing.api.dto.hq.user.response.UserDetailResponse;
 import com.chaing.api.dto.hq.user.response.UserLogResponse;
 import com.chaing.api.dto.hq.user.response.UserSummaryResponse;
+import com.chaing.api.dto.user.event.UserRegisteredEvent;
 import com.chaing.domain.users.entity.User;
 import com.chaing.domain.users.entity.UserLog;
 import com.chaing.domain.users.enums.UserAction;
@@ -13,10 +14,10 @@ import com.chaing.domain.users.enums.UserStatus;
 import com.chaing.domain.users.exception.UserErrorCode;
 import com.chaing.domain.users.exception.UserException;
 import com.chaing.domain.users.service.AuthService;
-import com.chaing.domain.users.service.MailService;
 import com.chaing.domain.users.service.UserLogService;
 import com.chaing.domain.users.service.UserManagementService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -30,7 +31,7 @@ public class UserManagementFacade {
     private final UserManagementService userManagementService;
     private final AuthService authService;
     private final UserLogService userLogService;
-    private final MailService mailService;
+    private final ApplicationEventPublisher eventPublisher;
 
     // 회원 등록
     @Transactional
@@ -60,7 +61,7 @@ public class UserManagementFacade {
 
         userManagementService.registerUser(user, tempPassword);
         userLogService.saveLog(user, actorId, UserAction.REGISTER);
-        mailService.sendRegisterMail(user.getEmail(), loginId, tempPassword, employeeNumber);
+        eventPublisher.publishEvent(new UserRegisteredEvent(user.getEmail(), loginId, tempPassword, employeeNumber));
 
         return CreateUserResponse.from(user);
     }

@@ -2,6 +2,7 @@ package com.chaing.api.security.principal;
 
 import com.chaing.domain.users.entity.User;
 import com.chaing.domain.users.enums.UserRole;
+import com.chaing.domain.users.enums.UserStatus;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -17,12 +18,14 @@ public class UserPrincipal implements UserDetails {
     private final String loginId;
     private final String password;
     private final UserRole role;
+    private final UserStatus status;
 
     public UserPrincipal(User user) {
         this.id = user.getUserId();
         this.loginId = user.getLoginId();
         this.password = user.getPassword();
         this.role = user.getRole();
+        this.status = user.getStatus();
     }
 
     @Override
@@ -37,9 +40,9 @@ public class UserPrincipal implements UserDetails {
     @Override
     public boolean isAccountNonExpired() { return true; }
     @Override
-    public boolean isAccountNonLocked() { return true; }
+    public boolean isAccountNonLocked() { return status == UserStatus.ACTIVE; }
     @Override
     public boolean isCredentialsNonExpired() { return true; }
     @Override
-    public boolean isEnabled() { return true; }
+    public boolean isEnabled() { return status == UserStatus.ACTIVE; }
 }

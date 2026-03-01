@@ -13,6 +13,7 @@ public enum UserErrorCode implements ErrorCode {
     INVALID_PASSWORD_FORMAT(400, "U002", "올바르지 않은 비밀번호 형식입니다."),
     INVALID_PASSWORD(400, "U003", "올바르지 않은 비밀번호입니다."),
     EMAIL_MISMATCH(400, "U004", "아이디와 이메일이 일치하지 않습니다."),
+    INVALID_ROLE(400, "U005", "유효하지 않은 권한입니다."),
 
     // 401 UNAUTHORIZED
     REFRESH_TOKEN_NOT_FOUND(401, "A001", "세션이 만료되었습니다. 다시 로그인해 주세요."),
@@ -25,16 +26,15 @@ public enum UserErrorCode implements ErrorCode {
     DELETED_USER(403, "A006", "삭제된 계정입니다."),
 
     // 404 NOT FOUND
-    USER_NOT_FOUND(404, "U005", "해당 회원을 찾을 수 없습니다."),
-    INVALID_ROLE(400, "U006", "유효하지 않은 권한입니다."),
-    BUSINESS_UNIT_NOT_FOUND(400, "U007", "사업장이 존재하지 않습니다."),
-    HASH_ALGORITHM_NOT_FOUND(400, "U009", "해싱 알고리즘을 찾을 수 없습니다."),
+    USER_NOT_FOUND(404, "U006", "해당 회원을 찾을 수 없습니다."),
+    BUSINESS_UNIT_NOT_FOUND(404, "U007", "사업장이 존재하지 않습니다."),
 
     // 409 CONFLICT
     DUPLICATE_EMAIL(409, "U008", "중복된 이메일입니다."),
 
     // 500 INTERNAL SERVER ERROR
-    MAIL_SEND_FAILED(500, "M001", "메일 발송을 실패했습니다."),
+    HASH_ALGORITHM_NOT_FOUND(500, "S001", "해싱 알고리즘을 찾을 수 없습니다."),
+    MAIL_SEND_FAILED(500, "S002", "메일 발송을 실패했습니다."),
     ;
 
     private final Integer status;

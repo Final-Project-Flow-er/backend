@@ -44,11 +44,6 @@ public class Transit extends BaseEntity {
     @Column(nullable = false)
     private DeliverStatus status;
 
-    // 박스코드
-    @NotBlank
-    @Column(nullable = false)
-    private String boxCode;
-
     // 송장 번호
     @NotBlank
     @Column(nullable = false)
@@ -58,4 +53,14 @@ public class Transit extends BaseEntity {
     @NotBlank
     @Column(nullable = false)
     private Long weight;
+
+    public static Transit create(Long vehicleId, String orderCode, Long weight, String trackingNumber) {
+        return Transit.builder()
+                .orderCode(orderCode)
+                .vehicleId(vehicleId)
+                .status(DeliverStatus.PENDING) // 생성 시 기본값은 항상 READY!
+                .trackingNumber(trackingNumber)
+                .weight(weight)
+                .build();
+    }
 }

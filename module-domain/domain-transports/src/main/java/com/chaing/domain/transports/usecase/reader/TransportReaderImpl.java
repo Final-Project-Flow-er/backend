@@ -31,4 +31,9 @@ public class TransportReaderImpl implements TransportReader{
                 .mapToLong(Transit::getWeight)
                 .sum();
     }
+
+    @Override
+    public Long getVehicleMaxLoad(Long vehicleId) {
+        return vehicleRepository.findMaxLoad(vehicleId);
+    }
 }

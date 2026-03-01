@@ -39,8 +39,10 @@ public class InternalTransportController {
     @Operation(summary = "차량 배정", description = "미배정 주문 차량 배정")
     @PostMapping("/assign")
     public ResponseEntity<ApiResponse<?>> assignVehicle(
-            @RequestBody VehicleAssignmentRequest req) {
+            @RequestBody VehicleAssignmentRequest request) {
         // TODO: 배정 로직 작성
+        transportFacade.assignVehicle(request);
+
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

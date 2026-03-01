@@ -7,4 +7,6 @@ import java.util.List;
 public interface TransportValidator {
 
     boolean canLoadWeight(Long maxLoad, Long currentTransitWeight);
+
+    void checkLoadable(Long maxLoad, Long currentWeight, Long newWeight);
 }

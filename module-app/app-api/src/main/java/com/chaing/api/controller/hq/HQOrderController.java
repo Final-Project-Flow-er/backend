@@ -7,8 +7,10 @@ import com.chaing.domain.orders.dto.response.HQOrderDetailResponse;
 import com.chaing.domain.orders.dto.response.HQOrderResponse;
 import com.chaing.api.facade.factory.HQOrderFacade;
 import com.chaing.core.dto.ApiResponse;
+import com.chaing.domain.orders.dto.response.HQOrderUpdateResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -29,7 +31,6 @@ public class HQOrderController {
 
     private final HQOrderFacade hqOrderFacade;
 
-    // 목 데이터 넣어서 통합 테스트 해봐야함
     @Operation(summary = "발주 조회", description = "본사의 발주 전체 조회")
     @GetMapping
     public ResponseEntity<ApiResponse<List<HQOrderResponse>>> getAllOrders() {
@@ -51,12 +52,15 @@ public class HQOrderController {
     }
 
     @Operation(summary = "발주 수정", description = "발주 번호로 특정 발주 수정")
-    @PatchMapping("/{order-number}")
-    public ResponseEntity<ApiResponse<HQOrderResponse>> updateOrder(
-            @PathVariable("order-number") String orderNumber,
-            @RequestBody HQOrderUpdateRequest request
+    @PatchMapping("/{order-code}")
+    public ResponseEntity<ApiResponse<HQOrderUpdateResponse>> updateOrder(
+            @PathVariable("order-code") String orderCode,
+            @Valid @RequestBody HQOrderUpdateRequest request
     ) {
-        return ResponseEntity.ok(ApiResponse.success(HQOrderResponse.builder().build()));
+        //TODO: Spring Security Context에서 값 꺼내오는 걸로 수정해야 함
+        String username = "test";
+
+        return ResponseEntity.ok(ApiResponse.success(hqOrderFacade.updateOrder(username, orderCode, request)));
     }
 
     @Operation(summary = "발주 상태 변경", description = "접수, 반려 등 특정 발주의 상태 변경")

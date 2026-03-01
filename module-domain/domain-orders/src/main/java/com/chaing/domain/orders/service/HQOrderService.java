@@ -115,13 +115,18 @@ public class HQOrderService {
         // 2. 추가
         requestedItems.forEach((productId, quantity) -> {
             if (!items.containsKey(productId)) {
+                ProductInfo productInfo = productInfoByProductId.get(productId);
+                if (productInfo == null) {
+                    throw new HQOrderException(HQOrderErrorCode.INVALID_INPUT);
+                }
+
                 // 추가
                 HeadOfficeOrderItem addedItem = HeadOfficeOrderItem.builder()
                         .headOfficeOrder(order)
                         .productId(productId)
                         .quantity(quantity)
-                        .unitPrice(productInfoByProductId.get(productId).costPrice())
-                        .totalPrice(productInfoByProductId.get(productId).costPrice().multiply(BigDecimal.valueOf(quantity)))
+                        .unitPrice(productInfo.costPrice())
+                        .totalPrice(productInfo.costPrice().multiply(BigDecimal.valueOf(quantity)))
                         .build();
 
                 orderItemRepository.save(addedItem);

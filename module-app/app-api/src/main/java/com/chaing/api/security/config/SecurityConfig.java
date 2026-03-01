@@ -57,8 +57,7 @@ public class SecurityConfig {
                         .authenticationEntryPoint((request, response, authException) -> {
                             response.setContentType("application/json;charset=UTF-8");
                             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                            String message = authException.getMessage();
-                            response.getWriter().write(String.format("{\"success\":false, \"message\":\"%s\"}", message));
+                            response.getWriter().write("{\"success\":false,\"message\":\"인증에 실패했습니다.\"}");
                         })
                 )
                 .addFilterBefore(

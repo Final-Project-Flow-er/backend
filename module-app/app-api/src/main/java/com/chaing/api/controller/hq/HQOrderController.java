@@ -87,11 +87,14 @@ public class HQOrderController {
         return ResponseEntity.ok(ApiResponse.success(hqOrderFacade.cancel(username, orderCode)));
     }
 
-    @Operation(summary = "발주 생성", description = "발주 생성")
+    @Operation(summary = "발주 생성", description = "본사 직원의 요청에 따른 발주 생성")
     @PostMapping
-    public ResponseEntity<ApiResponse<HQOrderResponse>> createOrder(
+    public ResponseEntity<ApiResponse<HQOrderCreateResponse>> createOrder(
             @RequestBody HQOrderCreateRequest request
     ) {
-        return ResponseEntity.ok(ApiResponse.success(HQOrderResponse.builder().build()));
+        //TODO: Spring Security Context에서 값 꺼내오는 걸로 수정해야 함
+        String username = "test";
+
+        return ResponseEntity.ok(ApiResponse.success(hqOrderFacade.create(username, request)));
     }
 }

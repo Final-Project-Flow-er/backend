@@ -150,7 +150,7 @@ public class HQOrderFacade {
 
         // 반환
         return HQOrderUpdateResponse.builder()
-                .orderInfo(orderInfo)
+                .orderInfo(updatedOrderInfo)
                 .items(itemInfos)
                 .build();
     }

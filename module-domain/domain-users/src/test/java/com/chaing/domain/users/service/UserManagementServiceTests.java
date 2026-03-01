@@ -1,6 +1,8 @@
 package com.chaing.domain.users.service;
 
+import com.chaing.domain.users.dto.command.UserUpdateCommand;
 import com.chaing.domain.users.entity.User;
+import com.chaing.domain.users.enums.UserPosition;
 import com.chaing.domain.users.enums.UserRole;
 import com.chaing.domain.users.enums.UserStatus;
 import com.chaing.domain.users.exception.UserException;
@@ -17,6 +19,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -151,6 +154,34 @@ class UserManagementServiceTests {
         assertNotNull(result);
         assertEquals("유저", result.getUsername());
         verify(userRepository, times(1)).findById(userId);
+    }
+
+    @Test
+    @DisplayName("회원 정보 수정")
+    void updateUser() {
+
+        // given
+        Long userId = 1L;
+        User user = User.builder().userId(userId).email("old@test.com").build();
+        UserUpdateCommand command = new UserUpdateCommand(
+                "유저",
+                "new@test.com",
+                "010-1234-5678",
+                LocalDate.of(1995, 5, 1),
+                "image",
+                UserRole.HQ,
+                UserPosition.SYSTEM_MANAGER,
+                1L
+        );
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(userRepository.existsByEmail("new@test.com")).thenReturn(false);
+
+        // when
+        User result = userManagementService.updateUser(userId, command);
+
+        // then
+        assertNotNull(result);
     }
 
     @Test

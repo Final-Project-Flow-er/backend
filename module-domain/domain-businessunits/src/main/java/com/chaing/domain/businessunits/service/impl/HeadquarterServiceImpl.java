@@ -1,0 +1,26 @@
+package com.chaing.domain.businessunits.service.impl;
+
+import com.chaing.domain.businessunits.dto.command.BusinessUnitUpdateCommand;
+import com.chaing.domain.businessunits.dto.internal.BusinessUnitInternal;
+import com.chaing.domain.businessunits.repository.HeadquarterRepository;
+import com.chaing.domain.businessunits.service.BusinessUnitService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+@Service
+@RequiredArgsConstructor
+public class HeadquarterServiceImpl implements BusinessUnitService {
+
+    private final HeadquarterRepository headquarterRepository;
+
+    // 본사 아이디로 본사 조회
+    @Override
+    public BusinessUnitInternal getById(Long id) {
+        return null;
+    }
+
+    // 본사 정보 수정
+    @Override
+    public void updateInfo(Long id, BusinessUnitUpdateCommand command) {
+    }
+}

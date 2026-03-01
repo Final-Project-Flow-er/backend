@@ -3,6 +3,7 @@ package com.chaing.api.controller.hq;
 import com.chaing.api.dto.hq.orders.request.HQOrderCreateRequest;
 import com.chaing.domain.orders.dto.reqeust.HQOrderUpdateRequest;
 import com.chaing.api.dto.hq.orders.request.HQOrderUpdateStatusRequest;
+import com.chaing.domain.orders.dto.response.HQOrderCancelResponse;
 import com.chaing.domain.orders.dto.response.HQOrderDetailResponse;
 import com.chaing.domain.orders.dto.response.HQOrderResponse;
 import com.chaing.api.facade.factory.HQOrderFacade;
@@ -74,7 +75,7 @@ public class HQOrderController {
 
     @Operation(summary = "발주 취소", description = "발주 번호로 특정 발주 취소")
     @PatchMapping("/{order-code}/cancellation")
-    public ResponseEntity<ApiResponse<HQOrderResponse>> cancelOrder(
+    public ResponseEntity<ApiResponse<HQOrderCancelResponse>> cancelOrder(
             @PathVariable("order-code") String orderCode
     ) {
         //TODO: Spring Security Context에서 값 꺼내오는 걸로 수정해야 함

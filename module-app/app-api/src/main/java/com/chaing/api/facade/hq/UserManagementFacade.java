@@ -115,6 +115,7 @@ public class UserManagementFacade {
         User user = userManagementService.getUserById(userId);
         userLogService.saveLog(user, actorId, UserAction.DELETE);
 
+        authService.deleteRefreshToken(userId);
         userManagementService.deleteUser(userId);
     }
 }

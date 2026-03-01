@@ -13,7 +13,7 @@ import com.chaing.domain.orders.exception.HQOrderErrorCode;
 import com.chaing.domain.orders.exception.HQOrderException;
 import com.chaing.domain.orders.repository.HeadOfficeOrderItemRepository;
 import com.chaing.domain.orders.repository.HeadOfficeOrderRepository;
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -150,7 +150,7 @@ public class HQOrderService {
     }
 
     // 발주 정보 수정
-    public HQOrderInfo updateOrder(Long hqId, String orderCode, @NotBlank LocalDateTime manufactureDate) {
+    public HQOrderInfo updateOrder(Long hqId, String orderCode, @NotNull LocalDateTime manufactureDate) {
         // 발주 정보 조회
         HeadOfficeOrder order = orderRepository.findByHqIdAndOrderCode(hqId, orderCode)
                 .orElseThrow(() -> new HQOrderException(HQOrderErrorCode.ORDER_NOT_FOUND));

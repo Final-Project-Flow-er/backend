@@ -8,7 +8,9 @@ import com.chaing.domain.orders.dto.response.HQOrderDetailResponse;
 import com.chaing.domain.orders.dto.response.HQOrderResponse;
 import com.chaing.api.facade.factory.HQOrderFacade;
 import com.chaing.core.dto.ApiResponse;
+import com.chaing.domain.orders.dto.response.HQOrderStatusUpdateResponse;
 import com.chaing.domain.orders.dto.response.HQOrderUpdateResponse;
+import com.chaing.domain.orders.enums.FranchiseOrderStatus;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -64,13 +66,16 @@ public class HQOrderController {
         return ResponseEntity.ok(ApiResponse.success(hqOrderFacade.updateOrder(username, orderCode, request)));
     }
 
-    @Operation(summary = "발주 상태 변경", description = "접수, 반려 등 특정 발주의 상태 변경")
-    @PatchMapping("/{order-number}/status")
-    public ResponseEntity<ApiResponse<HQOrderResponse>> updateOrderStatus(
-            @PathVariable("order-number") String orderNumber,
-            @RequestBody HQOrderUpdateStatusRequest request
+    @Operation(summary = "가맹점의 발주 상태 변경", description = "가맹점의 발주의 상태를 접수/반려로 변경")
+    @PatchMapping("/{order-code}/{order-status}")
+    public ResponseEntity<ApiResponse<HQOrderStatusUpdateResponse>> updateOrderStatus(
+            @PathVariable("order-code") String orderCode,
+            @Valid @RequestBody HQOrderUpdateStatusRequest request
     ) {
-        return ResponseEntity.ok(ApiResponse.success(HQOrderResponse.builder().build()));
+        //TODO: Spring Security Context에서 값 꺼내오는 걸로 수정해야 함
+        String username = "test";
+
+        return ResponseEntity.ok(ApiResponse.success(hqOrderFacade.updateStatus(username, orderCode, request)));
     }
 
     @Operation(summary = "발주 취소", description = "발주 번호로 특정 발주 취소")

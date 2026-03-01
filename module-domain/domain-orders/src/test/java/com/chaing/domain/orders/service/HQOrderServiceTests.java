@@ -1,6 +1,9 @@
 package com.chaing.domain.orders.service;
 
+import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.domain.orders.dto.info.HQOrderInfo;
+import com.chaing.domain.orders.dto.info.HQOrderItemInfo;
+import com.chaing.domain.orders.dto.reqeust.HQOrderItemUpdateRequest;
 import com.chaing.domain.orders.entity.HeadOfficeOrder;
 import com.chaing.domain.orders.entity.HeadOfficeOrderItem;
 import com.chaing.domain.orders.enums.HQOrderStatus;
@@ -19,12 +22,15 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -55,12 +61,19 @@ class HQOrderServiceTests {
     Integer quantity;
     BigDecimal unitPrice;
 
+    Long newProductId;
+    Integer newQuantity;
+
     Long orderId;
     Long orderItemId;
     String orderCode;
 
     HeadOfficeOrder order;
     HeadOfficeOrderItem orderItem;
+
+    HQOrderItemUpdateRequest hqOrderItemUpdateRequest;
+
+    Map<Long, ProductInfo> productInfoByProductId;
 
     @BeforeEach
     public void setUp() {
@@ -107,6 +120,31 @@ class HQOrderServiceTests {
                 .totalPrice(unitPrice.multiply(BigDecimal.valueOf(quantity)))
                 .build();
         ReflectionTestUtils.setField(orderItem, "headOfficeOrderItemId", orderItemId);
+
+        newProductId = 20L;
+        newQuantity = 1000;
+        hqOrderItemUpdateRequest = new HQOrderItemUpdateRequest(
+                newProductId,
+                newQuantity
+        );
+
+        productInfoByProductId = new HashMap<>();
+        productInfoByProductId.put(1L, ProductInfo.builder()
+                        .productId(productId)
+                        .productCode(productCode)
+                        .productName(productName)
+                        .retailPrice(BigDecimal.valueOf(5000))
+                        .costPrice(BigDecimal.valueOf(3000))
+                        .tradePrice(BigDecimal.valueOf(10000))
+                .build());
+        productInfoByProductId.put(20L, ProductInfo.builder()
+                .productId(productId)
+                .productCode(productCode)
+                .productName(productName)
+                .retailPrice(BigDecimal.valueOf(5000))
+                .costPrice(BigDecimal.valueOf(3000))
+                .tradePrice(BigDecimal.valueOf(10000))
+                .build());
     }
 
     @Test
@@ -205,6 +243,60 @@ class HQOrderServiceTests {
             hqOrderService.getOrderItemProductId(hqId, orderId);
         });
         verify(orderItemRepository, times(1)).findAllByHeadOfficeOrder_HqIdAndHeadOfficeOrder_HeadOfficeOrderId(hqId, orderId);
+        assertEquals(HQOrderErrorCode.ORDER_ITEM_NOT_FOUND, exception.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("발주 제품 수정 - 성공")
+    void updateOrderItems_Success() {
+        // given
+        given(orderRepository.findByHqIdAndOrderCode(hqId, orderCode)).willReturn(Optional.of(order));
+        given(orderItemRepository.findAllByHeadOfficeOrder_HqIdAndHeadOfficeOrder_OrderCode(hqId, orderCode)).willReturn(List.of(orderItem));
+
+        // when
+        List<HQOrderItemInfo> response = hqOrderService.updateOrderItems(hqId, orderCode, List.of(hqOrderItemUpdateRequest), productInfoByProductId);
+
+        // then
+        verify(orderRepository, times(1)).findByHqIdAndOrderCode(hqId, orderCode);
+        verify(orderItemRepository, times(1)).findAllByHeadOfficeOrder_HqIdAndHeadOfficeOrder_OrderCode(hqId, orderCode);
+        assertTrue(response.stream()
+                .anyMatch(info -> info.productId().equals(newProductId)));
+        assertTrue(response.stream()
+                .anyMatch(info -> info.quantity().equals(newQuantity)));
+        assertFalse(response.stream()
+                .noneMatch(info -> info.productId().equals(newProductId)));
+        assertFalse(response.stream()
+                .noneMatch(info -> info.quantity().equals(newQuantity)));
+    }
+
+    @Test
+    @DisplayName("잘못된 값으로 발주 조회 시 예외 발생")
+    void updateOrderItems_Failure_ORDER_NOT_FOUND() {
+        // given
+        given(orderRepository.findByHqIdAndOrderCode(hqId, orderCode)).willReturn(Optional.empty());
+
+        // when & then
+        HQOrderException exception = assertThrows(HQOrderException.class, () -> {
+            hqOrderService.updateOrderItems(hqId, orderCode, List.of(hqOrderItemUpdateRequest), productInfoByProductId);
+        });
+        verify(orderRepository, times(1)).findByHqIdAndOrderCode(hqId, orderCode);
+        verify(orderItemRepository, times(0)).findAllByHeadOfficeOrder_HqIdAndHeadOfficeOrder_OrderCode(hqId, orderCode);
+        assertEquals(HQOrderErrorCode.ORDER_NOT_FOUND, exception.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("잘못된 값으로 발주 제품 조회 시 예외 발생")
+    void updateOrderItems_Failure_ORDER_ITEM_NOT_FOUND() {
+        // given
+        given(orderRepository.findByHqIdAndOrderCode(hqId, orderCode)).willReturn(Optional.of(order));
+        given(orderItemRepository.findAllByHeadOfficeOrder_HqIdAndHeadOfficeOrder_OrderCode(hqId, orderCode)).willReturn(List.of());
+
+        // when & then
+        HQOrderException exception = assertThrows(HQOrderException.class, () -> {
+            hqOrderService.updateOrderItems(hqId, orderCode, List.of(hqOrderItemUpdateRequest), productInfoByProductId);
+        });
+        verify(orderRepository, times(1)).findByHqIdAndOrderCode(hqId, orderCode);
+        verify(orderItemRepository, times(1)).findAllByHeadOfficeOrder_HqIdAndHeadOfficeOrder_OrderCode(hqId, orderCode);
         assertEquals(HQOrderErrorCode.ORDER_ITEM_NOT_FOUND, exception.getErrorCode());
     }
 }

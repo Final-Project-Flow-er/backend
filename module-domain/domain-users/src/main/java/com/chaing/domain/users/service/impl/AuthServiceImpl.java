@@ -10,8 +10,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Collections;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -22,13 +26,35 @@ public class AuthServiceImpl implements AuthService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
 
+    // 토큰 해싱
+    @Override
+    public String hashToken(String token) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(token.getBytes(StandardCharsets.UTF_8));
+
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hash) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) hexString.append('0');
+                hexString.append(hex);
+            }
+            return hexString.toString();
+
+        } catch (NoSuchAlgorithmException e) {
+            throw new UserException(UserErrorCode.HASH_ALGORITHM_NOT_FOUND);
+        }
+    }
+
     // refresh token 저장 (로그인)
     @Override
     public void saveRefreshToken(Long userId, String token, Long expiration) {
+        String hashedToken = hashToken(token);
+
         refreshTokenRepository.findById(userId)
                 .ifPresentOrElse(
-                        existingToken -> existingToken.updateToken(token, expiration),
-                        () -> refreshTokenRepository.save(RefreshToken.create(userId, token, expiration))
+                        existingToken -> existingToken.updateToken(hashedToken, expiration),
+                        () -> refreshTokenRepository.save(RefreshToken.create(userId, hashedToken, expiration))
                 );
     }
 

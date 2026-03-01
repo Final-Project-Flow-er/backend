@@ -80,7 +80,7 @@ public class AuthFacade {
         Long userId = jwtProvider.getUserId(refreshToken);
         String savedToken = authService.getRefreshToken(userId);
 
-        if (!savedToken.equals(refreshToken)) {
+        if (!savedToken.equals(authService.hashToken(refreshToken))) {
             throw new UserException(UserErrorCode.TOKEN_MISMATCH);
         }
 

@@ -299,4 +299,33 @@ class HQOrderServiceTests {
         verify(orderItemRepository, times(1)).findAllByHeadOfficeOrder_HqIdAndHeadOfficeOrder_OrderCode(hqId, orderCode);
         assertEquals(HQOrderErrorCode.ORDER_ITEM_NOT_FOUND, exception.getErrorCode());
     }
+
+    @Test
+    @DisplayName("발주 정보 수정 - 성공")
+    void updateOrder_Success() {
+        // given
+        given(orderRepository.findByHqIdAndOrderCode(hqId, orderCode)).willReturn(Optional.of(order));
+        LocalDateTime manufactureDate = LocalDateTime.of(2026, 2, 20, 10, 0);
+
+        // when
+        HQOrderInfo response = hqOrderService.updateOrder(hqId, orderCode, manufactureDate);
+
+        // then
+        verify(orderRepository, times(1)).findByHqIdAndOrderCode(hqId, orderCode);
+        assertEquals(manufactureDate, response.manufacturedDate());
+    }
+
+    @Test
+    @DisplayName("잘못된 정보로 발주 조회 시 예외 발생")
+    void updateOrder_Failure_ORDER_NOT_FOUND() {
+        // given
+        given(orderRepository.findByHqIdAndOrderCode(hqId, orderCode)).willReturn(Optional.empty());
+
+        // when & then
+        HQOrderException exception = assertThrows(HQOrderException.class, () -> {
+            hqOrderService.updateOrder(hqId, orderCode, manufactureDate);
+        });
+        verify(orderRepository, times(1)).findByHqIdAndOrderCode(hqId, orderCode);
+        assertEquals(HQOrderErrorCode.ORDER_NOT_FOUND, exception.getErrorCode());
+    }
 }

@@ -138,6 +138,7 @@ public class HQOrderService {
                 .toList();
     }
 
+    // 발주 정보 수정
     public HQOrderInfo updateOrder(Long hqId, String orderCode, @NotBlank LocalDateTime manufactureDate) {
         // 발주 정보 조회
         HeadOfficeOrder order = orderRepository.findByHqIdAndOrderCode(hqId, orderCode)

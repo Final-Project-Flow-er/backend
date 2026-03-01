@@ -2,6 +2,8 @@ package com.chaing.domain.orders.dto.info;
 
 import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.domain.orders.entity.HeadOfficeOrderItem;
+import com.chaing.domain.orders.exception.HQOrderErrorCode;
+import com.chaing.domain.orders.exception.HQOrderException;
 import lombok.Builder;
 
 import java.math.BigDecimal;
@@ -25,6 +27,10 @@ public record HQOrderItemInfo(
     public static HQOrderItemInfo of(HeadOfficeOrderItem item, Map<Long, ProductInfo> productInfoByProductId) {
         Long productId = item.getProductId();
         ProductInfo info = productInfoByProductId.get(productId);
+
+        if (info == null) {
+            throw new HQOrderException(HQOrderErrorCode.PRODUCT_NOT_FOUND);
+        }
 
         return HQOrderItemInfo.builder()
                 .productId(productId)

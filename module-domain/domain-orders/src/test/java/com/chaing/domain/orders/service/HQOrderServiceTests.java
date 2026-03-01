@@ -328,4 +328,67 @@ class HQOrderServiceTests {
         verify(orderRepository, times(1)).findByHqIdAndOrderCode(hqId, orderCode);
         assertEquals(HQOrderErrorCode.ORDER_NOT_FOUND, exception.getErrorCode());
     }
+
+    @Test
+    @DisplayName("발주 취소 - 성공")
+    void cancelOrder_Success() {
+        // given
+        given(orderRepository.findByHqIdAndOrderCode(hqId, orderCode)).willReturn(Optional.of(order));
+
+        // when
+        Map<String, HQOrderStatus> response = hqOrderService.cancel(hqId, orderCode);
+
+        // then
+        verify(orderRepository, times(1)).findByHqIdAndOrderCode(hqId, orderCode);
+        assertEquals(HQOrderStatus.CANCELED, response.values().iterator().next());
+        assertEquals(orderCode, response.keySet().iterator().next());
+    }
+
+    @Test
+    @DisplayName("발주 상태가 CANCELLED일 때 취소 시도 시 예외 발생")
+    void cancelOrder_Failure_ORDER_ALREADY_CANCELLED() {
+        // given
+        HeadOfficeOrder cancelledOrder = HeadOfficeOrder.builder()
+                .orderStatus(HQOrderStatus.CANCELED)
+                .build();
+        given(orderRepository.findByHqIdAndOrderCode(hqId, orderCode)).willReturn(Optional.of(cancelledOrder));
+
+        // when & then
+        HQOrderException exception = assertThrows(HQOrderException.class, () -> {
+            hqOrderService.cancel(hqId, orderCode);
+        });
+        verify(orderRepository, times(1)).findByHqIdAndOrderCode(hqId, orderCode);
+        assertEquals(HQOrderErrorCode.ORDER_ALREADY_CANCELED, exception.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("발주 상태가 PENDING이 아닐 때 취소 요청 시 예외 발생")
+    void cancelOrder_Failure_ORDER_NOT_PENDING() {
+        // given
+        HeadOfficeOrder shippingOrder = HeadOfficeOrder.builder()
+                .orderStatus(HQOrderStatus.SHIPPING)
+                .build();
+        given(orderRepository.findByHqIdAndOrderCode(hqId, orderCode)).willReturn(Optional.of(shippingOrder));
+
+        // when & then
+        HQOrderException exception = assertThrows(HQOrderException.class, () -> {
+            hqOrderService.cancel(hqId, orderCode);
+        });
+        verify(orderRepository, times(1)).findByHqIdAndOrderCode(hqId, orderCode);
+        assertEquals(HQOrderErrorCode.ORDER_NOT_PENDING, exception.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("잘못된 값으로 발주 조회 시 예외 발생")
+    void cancelOrder_Failure_ORDER_NOT_FOUND() {
+        // given
+        given(orderRepository.findByHqIdAndOrderCode(hqId, orderCode)).willReturn(Optional.empty());
+
+        // when & then
+        HQOrderException exception = assertThrows(HQOrderException.class, () -> {
+            hqOrderService.cancel(hqId, orderCode);
+        });
+        verify(orderRepository, times(1)).findByHqIdAndOrderCode(hqId, orderCode);
+        assertEquals(HQOrderErrorCode.ORDER_NOT_FOUND, exception.getErrorCode());
+    }
 }

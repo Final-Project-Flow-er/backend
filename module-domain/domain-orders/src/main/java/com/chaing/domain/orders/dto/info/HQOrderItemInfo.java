@@ -5,6 +5,7 @@ import com.chaing.domain.orders.entity.HeadOfficeOrderItem;
 import lombok.Builder;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Map;
 
 @Builder
@@ -33,5 +34,11 @@ public record HQOrderItemInfo(
                 .unitPrice(item.getUnitPrice())
                 .totalPrice(item.getTotalPrice())
                 .build();
+    }
+
+    public static List<HQOrderItemInfo> ofList(List<HeadOfficeOrderItem> orderItems, Map<Long, ProductInfo> productInfoByProductId) {
+        return orderItems.stream()
+                .map(item -> HQOrderItemInfo.of(item, productInfoByProductId))
+                .toList();
     }
 }

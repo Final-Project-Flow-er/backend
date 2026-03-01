@@ -1,10 +1,10 @@
-package com.chaing.api.dto.hq.orders.request;
+package com.chaing.domain.orders.dto.reqeust;
 
-import com.chaing.domain.orders.dto.reqeust.HQOrderItemCreateInfo;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public record HQOrderCreateRequest(
         @NotBlank

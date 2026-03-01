@@ -125,12 +125,12 @@ class HQOrderServiceTests {
 
     @Test
     @DisplayName("발주 제품 정보 조회 - 성공")
-    void getAllOrderItems_Success() {
+    void getAllOrderItemProductId_Success() {
         // given
         given(orderItemRepository.findAllByHeadOfficeOrder_HqIdAndHeadOfficeOrder_HeadOfficeOrderIdIn(hqId, List.of(orderId))).willReturn(List.of(orderItem));
 
         // when
-        Map<Long, List<Long>> response = hqOrderService.getAllOrderItems(hqId, List.of(orderId));
+        Map<Long, List<Long>> response = hqOrderService.getAllOrderItemProductId(hqId, List.of(orderId));
 
         // then
         verify(orderItemRepository, times(1)).findAllByHeadOfficeOrder_HqIdAndHeadOfficeOrder_HeadOfficeOrderIdIn(hqId, List.of(orderId));
@@ -145,7 +145,7 @@ class HQOrderServiceTests {
 
         // when & then
         HQOrderException exception = assertThrows(HQOrderException.class, () -> {
-            hqOrderService.getAllOrderItems(hqId, List.of(orderId));
+            hqOrderService.getAllOrderItemProductId(hqId, List.of(orderId));
         });
         verify(orderItemRepository, times(1)).findAllByHeadOfficeOrder_HqIdAndHeadOfficeOrder_HeadOfficeOrderIdIn(hqId, List.of(orderId));
         assertEquals(HQOrderErrorCode.ORDER_ITEM_NOT_FOUND, exception.getErrorCode());
@@ -182,12 +182,12 @@ class HQOrderServiceTests {
 
     @Test
     @DisplayName("발주 제품 productId 조회 - 성공")
-    void getOrderItems_Success() {
+    void getOrderItemProductId_Success() {
         // given
         given(orderItemRepository.findAllByHeadOfficeOrder_HqIdAndHeadOfficeOrder_HeadOfficeOrderId(hqId, orderId)).willReturn(List.of(orderItem));
 
         // when
-        List<Long> response = hqOrderService.getOrderItems(hqId, orderId);
+        List<Long> response = hqOrderService.getOrderItemProductId(hqId, orderId);
 
         // then
         verify(orderItemRepository, times(1)).findAllByHeadOfficeOrder_HqIdAndHeadOfficeOrder_HeadOfficeOrderId(hqId, orderId);
@@ -202,7 +202,7 @@ class HQOrderServiceTests {
 
         // when & then
         HQOrderException exception = assertThrows(HQOrderException.class, () -> {
-            hqOrderService.getOrderItems(hqId, orderId);
+            hqOrderService.getOrderItemProductId(hqId, orderId);
         });
         verify(orderItemRepository, times(1)).findAllByHeadOfficeOrder_HqIdAndHeadOfficeOrder_HeadOfficeOrderId(hqId, orderId);
         assertEquals(HQOrderErrorCode.ORDER_ITEM_NOT_FOUND, exception.getErrorCode());

@@ -36,7 +36,7 @@ public class HQOrderService {
     // 발주 제품 정보 조회
     // orderId로 orderItem 조회
     // Map<orderId, List<productId>>
-    public Map<Long, List<Long>> getAllOrderItems(Long hqId, List<Long> orderIds) {
+    public Map<Long, List<Long>> getAllOrderItemProductId(Long hqId, List<Long> orderIds) {
         List<HeadOfficeOrderItem> orderItems = orderItemRepository.findAllByHeadOfficeOrder_HqIdAndHeadOfficeOrder_HeadOfficeOrderIdIn(hqId, orderIds);
 
         if (orderItems == null || orderItems.isEmpty()) {
@@ -63,7 +63,7 @@ public class HQOrderService {
 
     // 발주 제품 productId 조회
     // List<productId>
-    public List<Long> getOrderItems(Long hqId, Long orderId) {
+    public List<Long> getOrderItemProductId(Long hqId, Long orderId) {
         List<HeadOfficeOrderItem> orderItems = orderItemRepository.findAllByHeadOfficeOrder_HqIdAndHeadOfficeOrder_HeadOfficeOrderId(hqId, orderId);
 
         if (orderItems == null || orderItems.isEmpty()) {

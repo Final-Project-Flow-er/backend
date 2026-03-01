@@ -1,6 +1,7 @@
 package com.chaing.domain.businessunits.entity;
 
 import com.chaing.core.entity.BaseEntity;
+import com.chaing.domain.businessunits.dto.command.BusinessUnitUpdateCommand;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -40,4 +41,11 @@ public class Headquarter extends BaseEntity {
 
     @Column(nullable = false, unique = true)
     private String businessNumber;
+
+    public void updateHqInfo(BusinessUnitUpdateCommand command) {
+        this.name = command.name();
+        this.address = command.address();
+        this.phone = command.phone();
+        this.representativeName = command.representativeName();
+    }
 }

@@ -3,6 +3,7 @@ package com.chaing.domain.businessunits.entity;
 import com.chaing.core.entity.BaseEntity;
 import com.chaing.core.enums.Region;
 import com.chaing.core.enums.UsableStatus;
+import com.chaing.domain.businessunits.dto.command.BusinessUnitUpdateCommand;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -57,4 +58,17 @@ public class Factory extends BaseEntity {
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private UsableStatus status = UsableStatus.ACTIVE;
+
+    public void updateFactoryInfo(BusinessUnitUpdateCommand command) {
+        this.name = command.name();
+        this.address = command.address();
+        this.phone = command.phone();
+        this.representativeName = command.representativeName();
+        this.region = command.region();
+
+        if (command.factoryUpdate() != null) {
+            var detail = command.factoryUpdate();
+            this.productionLineCount = detail.productionLineCount();
+        }
+    }
 }

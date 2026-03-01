@@ -3,6 +3,7 @@ package com.chaing.domain.businessunits.entity;
 import com.chaing.core.entity.BaseEntity;
 import com.chaing.core.enums.Region;
 import com.chaing.core.enums.UsableStatus;
+import com.chaing.domain.businessunits.dto.command.BusinessUnitUpdateCommand;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -76,4 +77,23 @@ public class Franchise extends BaseEntity {
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private UsableStatus status = UsableStatus.ACTIVE;
+
+    public void updateFranchiseInfo(BusinessUnitUpdateCommand command) {
+        this.name = command.name();
+        this.address = command.address();
+        this.phone = command.phone();
+        this.representativeName = command.representativeName();
+        this.region = command.region();
+
+        if (command.franchiseUpdate() != null) {
+            var detail = command.franchiseUpdate();
+            this.operatingDays = detail.operatingDays();
+            this.openTime = detail.openTime();
+            this.closeTime = detail.closeTime();
+            this.imageUrl = detail.imageUrl();
+            this.distanceToFactory = detail.distanceToFactory();
+            this.warningCount = detail.warningCount();
+            this.penaltyEndDate = detail.penaltyEndDate();
+        }
+    }
 }

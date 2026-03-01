@@ -1,12 +1,13 @@
-package com.chaing.api.dto.hq.orders.request;
+package com.chaing.domain.orders.dto.reqeust;
 
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import lombok.Builder;
 
 import java.util.List;
 
+@Builder
 public record HQOrderUpdateStatusRequest(
-        @NotBlank
+        @NotNull
         List<String> orderCodes,
 
         @NotNull

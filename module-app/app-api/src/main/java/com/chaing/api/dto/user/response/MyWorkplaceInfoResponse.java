@@ -1,9 +1,9 @@
 package com.chaing.api.dto.user.response;
 
 import com.chaing.core.enums.Region;
-import com.chaing.domain.businesses.entity.Factory;
-import com.chaing.domain.businesses.entity.Franchise;
-import com.chaing.domain.businesses.entity.Headquarter;
+import com.chaing.domain.businessunits.entity.Factory;
+import com.chaing.domain.businessunits.entity.Franchise;
+import com.chaing.domain.businessunits.entity.Headquarter;
 import lombok.Builder;
 
 import java.time.LocalDateTime;

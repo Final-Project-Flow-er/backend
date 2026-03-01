@@ -1,4 +1,4 @@
-package com.chaing.domain.businesses.entity;
+package com.chaing.domain.businessunits.entity;
 
 import com.chaing.core.entity.BaseEntity;
 import com.chaing.core.enums.Region;

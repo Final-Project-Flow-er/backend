@@ -51,11 +51,14 @@ public class AuthServiceImpl implements AuthService {
     public void saveRefreshToken(Long userId, String token, Long expiration) {
         String hashedToken = hashToken(token);
 
-        refreshTokenRepository.findById(userId)
-                .ifPresentOrElse(
-                        existingToken -> existingToken.updateToken(hashedToken, expiration),
-                        () -> refreshTokenRepository.save(RefreshToken.create(userId, hashedToken, expiration))
-                );
+        RefreshToken refreshToken = refreshTokenRepository.findById(userId)
+                .map(existingToken -> {
+                    existingToken.updateToken(hashedToken, expiration);
+                    return existingToken;
+                })
+                .orElseGet(() -> RefreshToken.create(userId, hashedToken, expiration));
+
+        refreshTokenRepository.save(refreshToken);
     }
 
     // refresh token 조회 (토큰 재발급)

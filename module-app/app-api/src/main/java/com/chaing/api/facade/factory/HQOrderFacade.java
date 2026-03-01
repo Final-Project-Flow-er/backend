@@ -1,11 +1,14 @@
 package com.chaing.api.facade.factory;
 
+import com.chaing.domain.orders.dto.reqeust.HQOrderCreateRequest;
 import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.domain.orders.dto.info.HQOrderInfo;
 import com.chaing.domain.orders.dto.info.HQOrderItemInfo;
+import com.chaing.domain.orders.dto.reqeust.HQOrderItemCreateInfo;
 import com.chaing.domain.orders.dto.reqeust.HQOrderUpdateRequest;
 import com.chaing.domain.orders.dto.reqeust.HQOrderUpdateStatusRequest;
 import com.chaing.domain.orders.dto.response.HQOrderCancelResponse;
+import com.chaing.domain.orders.dto.response.HQOrderCreateResponse;
 import com.chaing.domain.orders.dto.response.HQOrderDetailResponse;
 import com.chaing.domain.orders.dto.response.HQOrderResponse;
 import com.chaing.domain.orders.dto.response.HQOrderStatusUpdateResponse;
@@ -101,19 +104,19 @@ public class HQOrderFacade {
         // 4. List<HQOrderItemInfo>
         List<HQOrderItemInfo> orderItemInfos = productInfoByProductId.keySet().stream()
                 .map(productId -> {
-                    ProductInfo productInfo = productInfoByProductId.get(productId);
-                    Integer quantity = quantityByProductId.get(productId);
-                    BigDecimal unitPrice = productInfo.costPrice();
-                    BigDecimal totalPrice = unitPrice.multiply(BigDecimal.valueOf(quantity));
+                            ProductInfo productInfo = productInfoByProductId.get(productId);
+                            Integer quantity = quantityByProductId.get(productId);
+                            BigDecimal unitPrice = productInfo.costPrice();
+                            BigDecimal totalPrice = unitPrice.multiply(BigDecimal.valueOf(quantity));
 
-                    return HQOrderItemInfo.builder()
-                            .productId(productId)
-                            .productCode(productInfo.productCode())
-                            .productName(productInfo.productName())
-                            .quantity(quantity)
-                            .unitPrice(unitPrice)
-                            .totalPrice(totalPrice)
-                            .build();
+                            return HQOrderItemInfo.builder()
+                                    .productId(productId)
+                                    .productCode(productInfo.productCode())
+                                    .productName(productInfo.productName())
+                                    .quantity(quantity)
+                                    .unitPrice(unitPrice)
+                                    .totalPrice(totalPrice)
+                                    .build();
                         }
                 ).toList();
 
@@ -176,5 +179,37 @@ public class HQOrderFacade {
 
         // 상태 변경 및 반환
         return franchiseOrderService.updateStatus(request);
+    }
+
+    // 발주 생성
+    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
+    public HQOrderCreateResponse create(String username, HQOrderCreateRequest request) {
+        // hqId username으로 꺼내오는 로직 추가
+        Long hqId = 10L;
+
+        // 발주 제품 정보 조회
+        List<Long> productIds = request.items().stream()
+                .map(HQOrderItemCreateInfo::productId)
+                .toList();
+        Map<Long, ProductInfo> productInfoByProductId = productService.getProductInfos(productIds);
+
+        // 발주 생성
+        Integer totalQuantity = request.items().stream()
+                .map(HQOrderItemCreateInfo::quantity)
+                .reduce(0, Integer::sum);
+        BigDecimal totalAmount = request.items().stream()
+                .map(item -> productInfoByProductId.get(item.productId()).costPrice()
+                        .multiply(BigDecimal.valueOf(item.quantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        HQOrderInfo orderInfo = hqOrderService.createOrder(hqId, request, totalQuantity, totalAmount);
+
+        // 발주 제품 생성
+        List<HQOrderItemInfo> items = hqOrderService.createOrderItems(orderInfo.orderId(), productInfoByProductId, request.items());
+
+        // 반환
+        return HQOrderCreateResponse.builder()
+                .orderInfo(orderInfo)
+                .items(items)
+                .build();
     }
 }

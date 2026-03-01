@@ -1,6 +1,6 @@
 package com.chaing.api.controller.hq;
 
-import com.chaing.api.dto.hq.orders.request.HQOrderCreateRequest;
+import com.chaing.domain.orders.dto.reqeust.HQOrderCreateRequest;
 import com.chaing.domain.orders.dto.reqeust.HQOrderUpdateStatusRequest;
 import com.chaing.api.facade.factory.HQOrderFacade;
 import com.chaing.core.dto.ApiResponse;

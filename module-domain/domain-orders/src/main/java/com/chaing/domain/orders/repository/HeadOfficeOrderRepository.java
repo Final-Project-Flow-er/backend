@@ -12,4 +12,6 @@ public interface HeadOfficeOrderRepository extends JpaRepository<HeadOfficeOrder
     List<HeadOfficeOrder> findAllByHqIdAndUsername(Long hqId, String username);
 
     Optional<HeadOfficeOrder> findByHqIdAndOrderCode(Long hqId, String orderCode);
+
+    Optional<HeadOfficeOrder> findByHeadOfficeOrderId(Long orderId);
 }

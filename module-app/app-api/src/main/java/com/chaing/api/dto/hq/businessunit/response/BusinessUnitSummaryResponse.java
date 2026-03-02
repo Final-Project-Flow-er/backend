@@ -16,7 +16,7 @@ public record BusinessUnitSummaryResponse(
         UsableStatus status,
         String unitType,
         String operatingDays,
-        boolean isReturnBlocked
+        Boolean isReturnBlocked
 ) {
     public static BusinessUnitSummaryResponse from(BusinessUnitInternal internal) {
         return new BusinessUnitSummaryResponse(
@@ -28,7 +28,7 @@ public record BusinessUnitSummaryResponse(
                 internal.status(),
                 internal.unitType(),
                 internal.franchiseDetail() != null ? internal.franchiseDetail().operatingDays() : null,
-                internal.franchiseDetail() != null && internal.franchiseDetail().isReturnBlocked()
+                internal.franchiseDetail() != null ? internal.franchiseDetail().isReturnBlocked() : null
         );
     }
 }

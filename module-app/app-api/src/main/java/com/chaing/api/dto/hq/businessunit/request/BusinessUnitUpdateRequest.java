@@ -58,7 +58,7 @@ public record BusinessUnitUpdateRequest(
     }
 
     public record FactoryUpdateRequest(
-            int productionLineCount
+            Integer productionLineCount
     ) {
         public FactoryUpdate toCommand() {
             return new FactoryUpdate(productionLineCount);

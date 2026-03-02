@@ -20,7 +20,7 @@ import static org.mockito.Mockito.when;
 
 
 @ExtendWith(MockitoExtension.class)
-class InventoryLogServiceTest {
+class InventoryLogServiceTests {
 
     @Mock
     private InventoryLogRepository inventoryLogRepository;

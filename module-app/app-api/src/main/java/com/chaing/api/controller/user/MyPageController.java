@@ -1,6 +1,6 @@
 package com.chaing.api.controller.user;
 
-import com.chaing.api.dto.hq.management.response.BusinessUnitDetailResponse;
+import com.chaing.api.dto.hq.businessunit.response.BusinessUnitDetailResponse;
 import com.chaing.api.dto.user.request.ChangePasswordRequest;
 import com.chaing.api.dto.user.request.UpdateMyBusinessUnitInfoRequest;
 import com.chaing.api.dto.user.request.UpdateMyInfoRequest;

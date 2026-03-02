@@ -1,4 +1,4 @@
-package com.chaing.api.dto.hq.management.request;
+package com.chaing.api.dto.hq.businessunit.request;
 
 import com.chaing.core.enums.UsableStatus;
 import jakarta.validation.constraints.NotNull;

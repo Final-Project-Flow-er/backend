@@ -1,9 +1,10 @@
-package com.chaing.api.dto.hq.management.request;
+package com.chaing.api.dto.hq.businessunit.request;
 
 import com.chaing.core.enums.Region;
 import com.chaing.domain.businessunits.dto.command.BusinessUnitCreateCommand;
 import com.chaing.domain.businessunits.dto.command.BusinessUnitCreateCommand.FranchiseCreate;
 import com.chaing.domain.businessunits.dto.command.BusinessUnitCreateCommand.FactoryCreate;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -30,7 +31,10 @@ public record BusinessUnitCreateRequest(
         @NotNull(message = "지역은 필수입니다.")
         Region region,
 
+        @Valid
         FranchiseCreateRequest franchiseCreate,
+
+        @Valid
         FactoryCreateRequest factoryCreate
 ) {
 

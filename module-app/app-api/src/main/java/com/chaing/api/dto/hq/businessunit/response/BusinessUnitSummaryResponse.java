@@ -1,4 +1,4 @@
-package com.chaing.api.dto.hq.management.response;
+package com.chaing.api.dto.hq.businessunit.response;
 
 import com.chaing.core.enums.Region;
 import com.chaing.core.enums.UsableStatus;

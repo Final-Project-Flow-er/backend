@@ -1,8 +1,8 @@
 package com.chaing.api.dto.user.request;
 
-import com.chaing.api.dto.hq.management.request.BusinessUnitUpdateRequest;
-import com.chaing.api.dto.hq.management.request.BusinessUnitUpdateRequest.FranchiseUpdateRequest;
-import com.chaing.api.dto.hq.management.request.BusinessUnitUpdateRequest.FactoryUpdateRequest;
+import com.chaing.api.dto.hq.businessunit.request.BusinessUnitUpdateRequest;
+import com.chaing.api.dto.hq.businessunit.request.BusinessUnitUpdateRequest.FranchiseUpdateRequest;
+import com.chaing.api.dto.hq.businessunit.request.BusinessUnitUpdateRequest.FactoryUpdateRequest;
 
 import java.time.LocalTime;
 

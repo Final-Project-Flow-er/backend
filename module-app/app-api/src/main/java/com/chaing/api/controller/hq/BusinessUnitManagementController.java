@@ -1,10 +1,10 @@
 package com.chaing.api.controller.hq;
 
-import com.chaing.api.dto.hq.management.request.BusinessUnitCreateRequest;
-import com.chaing.api.dto.hq.management.request.BusinessUnitStatusUpdateRequest;
-import com.chaing.api.dto.hq.management.request.BusinessUnitUpdateRequest;
-import com.chaing.api.dto.hq.management.response.BusinessUnitDetailResponse;
-import com.chaing.api.dto.hq.management.response.BusinessUnitSummaryResponse;
+import com.chaing.api.dto.hq.businessunit.request.BusinessUnitCreateRequest;
+import com.chaing.api.dto.hq.businessunit.request.BusinessUnitStatusUpdateRequest;
+import com.chaing.api.dto.hq.businessunit.request.BusinessUnitUpdateRequest;
+import com.chaing.api.dto.hq.businessunit.response.BusinessUnitDetailResponse;
+import com.chaing.api.dto.hq.businessunit.response.BusinessUnitSummaryResponse;
 import com.chaing.api.facade.hq.BusinessUnitManagementFacade;
 import com.chaing.core.dto.ApiResponse;
 import com.chaing.domain.businessunits.enums.BusinessUnitType;

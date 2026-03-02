@@ -26,9 +26,10 @@ public class HeadquarterServiceImpl implements BusinessUnitService {
 
     // 본사 정보 수정
     @Override
-    public void updateInfo(Long id, BusinessUnitUpdateCommand command) {
+    public BusinessUnitInternal updateInfo(Long id, BusinessUnitUpdateCommand command) {
         Headquarter hq = headquarterRepository.findById(id)
                 .orElseThrow(() -> new BusinessUnitException(BusinessUnitErrorCode.BUSINESS_UNIT_NOT_FOUND));
         hq.updateHqInfo(command);
+        return BusinessUnitInternal.from(hq);
     }
 }

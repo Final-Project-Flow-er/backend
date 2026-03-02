@@ -11,10 +11,15 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Pageable;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -30,7 +35,6 @@ class BusinessUnitCodeGeneratorTests {
     private BusinessUnitCodeGenerator codeGenerator;
 
     @Test
-    @SuppressWarnings("unchecked")
     @DisplayName("가맹점 코드 생성")
     void generateFranchiseCode() {
 
@@ -40,8 +44,8 @@ class BusinessUnitCodeGeneratorTests {
         Franchise lastFranchise = Franchise.builder().franchiseCode(prefix + "05").build();
 
         // when
-        when(franchiseRepository.findFirstByFranchiseCodeStartingWithOrderByFranchiseCodeDesc(prefix))
-                .thenReturn(Optional.empty(), Optional.of(lastFranchise));
+        when(franchiseRepository.findMaxCodeByPrefix(eq(prefix), any(Pageable.class)))
+                .thenReturn(Collections.emptyList(), List.of(lastFranchise));
 
         // then
         assertEquals(prefix + "01", codeGenerator.generateFranchiseCode(region));
@@ -49,7 +53,6 @@ class BusinessUnitCodeGeneratorTests {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     @DisplayName("공장 코드 생성")
     void generateFactoryCode() {
 
@@ -58,8 +61,8 @@ class BusinessUnitCodeGeneratorTests {
         Factory lastFactory = Factory.builder().factoryCode("FA12").build();
 
         // when
-        when(factoryRepository.findFirstByFactoryCodeStartingWithOrderByFactoryCodeDesc(prefix))
-                .thenReturn(Optional.empty(), Optional.of(lastFactory));
+        when(factoryRepository.findMaxCodeByPrefix(eq(prefix), any(Pageable.class)))
+                .thenReturn(Collections.emptyList(), List.of(lastFactory));
 
         // then
         assertEquals("FA01", codeGenerator.generateFactoryCode());

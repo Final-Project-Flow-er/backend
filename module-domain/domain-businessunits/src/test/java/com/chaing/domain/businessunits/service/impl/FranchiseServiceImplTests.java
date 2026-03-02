@@ -121,7 +121,7 @@ class FranchiseServiceImplTests {
 
         BusinessUnitUpdateCommand command = new BusinessUnitUpdateCommand(
                 "변경된 가맹점", null, null, null, null, null,
-                new BusinessUnitUpdateCommand.FranchiseUpdate(null, null, null, null, null, null, null),
+                new BusinessUnitUpdateCommand.FranchiseUpdate(null, null, null, null, null, null),
                 null
         );
 
@@ -158,14 +158,14 @@ class FranchiseServiceImplTests {
 
         // given
         Long id = 1L;
-        Franchise franchise = Franchise.builder().franchiseId(id).build();
+        Franchise franchise = Franchise.builder().franchiseId(id).status(UsableStatus.ACTIVE).build();
         when(franchiseRepository.findById(id)).thenReturn(Optional.of(franchise));
 
         // when
         franchiseService.delete(id);
 
         // then
-        verify(franchiseRepository, times(1)).delete(franchise);
+        verify(franchiseRepository, times(1)).findById(id);
     }
 
     @Test

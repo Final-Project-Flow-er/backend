@@ -10,7 +10,7 @@ public record InventoryLogResponse(
         LocalDateTime date,
 
         // 반품 코드 (발주코드/반품코드/없을 수도 있음)
-        String serialCode,
+        String transactionCode,
 
         // 박스 코드
         String boxCode,

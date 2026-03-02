@@ -24,7 +24,6 @@ public record BusinessUnitUpdateCommand(
             LocalTime openTime,
             LocalTime closeTime,
             String imageUrl,
-            Integer warningCount,
             LocalDateTime penaltyEndDate,
             Double distanceToFactory
     ) {}

@@ -45,15 +45,11 @@ public record BusinessUnitUpdateRequest(
             LocalTime openTime,
             LocalTime closeTime,
             String imageUrl,
-            Integer warningCount,
             LocalDateTime penaltyEndDate,
             Double distanceToFactory
     ) {
         public FranchiseUpdate toCommand() {
-            return new FranchiseUpdate(
-                    operatingDays, openTime, closeTime, imageUrl,
-                    warningCount, penaltyEndDate, distanceToFactory
-            );
+            return new FranchiseUpdate(operatingDays, openTime, closeTime, imageUrl, penaltyEndDate, distanceToFactory);
         }
     }
 

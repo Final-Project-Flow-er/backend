@@ -95,7 +95,6 @@ public class Franchise extends BaseEntity {
                 .closeTime(detail.closeTime())
                 .imageUrl(detail.imageUrl())
                 .distanceToFactory(distance)
-                .warningCount(0)
                 .status(UsableStatus.ACTIVE)
                 .build();
     }
@@ -114,11 +113,7 @@ public class Franchise extends BaseEntity {
             if (detail.openTime() != null) this.openTime = detail.openTime();
             if (detail.closeTime() != null) this.closeTime = detail.closeTime();
             if (detail.imageUrl() != null) this.imageUrl = detail.imageUrl();
-
             if (detail.distanceToFactory() != null) this.distanceToFactory = detail.distanceToFactory();
-            if (detail.warningCount() != null) {
-                this.warningCount = detail.warningCount();
-            }
             if (detail.penaltyEndDate() != null) this.penaltyEndDate = detail.penaltyEndDate();
         }
     }

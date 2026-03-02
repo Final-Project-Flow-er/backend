@@ -34,7 +34,6 @@ public record UpdateMyBusinessUnitInfoRequest(
                         this.closeTime,
                         this.imageUrl,
                         null,
-                        null,
                         null
                 ),
 

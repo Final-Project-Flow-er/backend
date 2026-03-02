@@ -8,8 +8,8 @@ import org.springframework.data.domain.Pageable;
 
 public interface BusinessUnitManagementService extends BusinessUnitService {
 
-    void create(BusinessUnitCreateCommand command);
+    BusinessUnitInternal create(BusinessUnitCreateCommand command);
     Page<BusinessUnitInternal> getBusinessUnitList(Pageable pageable);
-    void updateStatus(Long id, UsableStatus status);
+    BusinessUnitInternal updateStatus(Long id, UsableStatus status);
     void delete(Long id);
 }

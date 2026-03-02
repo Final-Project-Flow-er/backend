@@ -6,5 +6,5 @@ import com.chaing.domain.businessunits.dto.internal.BusinessUnitInternal;
 public interface BusinessUnitService {
 
     BusinessUnitInternal getById(Long id);
-    void updateInfo(Long id, BusinessUnitUpdateCommand command);
+    BusinessUnitInternal updateInfo(Long id, BusinessUnitUpdateCommand command);
 }

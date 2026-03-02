@@ -1,17 +1,22 @@
 package com.chaing.api.facade.user;
 
+import com.chaing.api.dto.hq.management.response.BusinessUnitDetailResponse;
 import com.chaing.api.dto.user.request.ChangePasswordRequest;
+import com.chaing.api.dto.user.request.UpdateMyBusinessUnitInfoRequest;
 import com.chaing.api.dto.user.request.UpdateMyInfoRequest;
-import com.chaing.api.dto.user.request.UpdateMyWorkplaceInfoRequest;
 import com.chaing.api.dto.user.response.MyInfoResponse;
-import com.chaing.api.dto.user.response.MyWorkplaceInfoResponse;
+import com.chaing.api.facade.hq.BusinessUnitManagementFacade;
+import com.chaing.domain.businessunits.enums.BusinessUnitType;
 import com.chaing.domain.users.entity.User;
 import com.chaing.domain.users.enums.UserAction;
+import com.chaing.domain.users.enums.UserRole;
 import com.chaing.domain.users.service.MyPageService;
 import com.chaing.domain.users.service.UserLogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -20,6 +25,7 @@ public class MyPageFacade {
 
     private final MyPageService myPageService;
     private final UserLogService userLogService;
+    private final BusinessUnitManagementFacade businessUnitManagementFacade;
 
     // 내 정보 조회
     @Transactional(readOnly = true)
@@ -45,21 +51,24 @@ public class MyPageFacade {
 
     // 내 사업장 정보 조회
     @Transactional(readOnly = true)
-    public MyWorkplaceInfoResponse getMyWorkplaceInfo(Long userId) {
-
-        Long businessUnitId = myPageService.getMyBusinessUnitId(userId);
-
-        // TODO: 사업장 서비스가 생기면 해당 ID로 상세 정보 조회 (권한별)
-        return MyWorkplaceInfoResponse.builder().build();
+    public BusinessUnitDetailResponse getMyBusinessUnitInfo(Long userId) {
+        User user = myPageService.getMyInfo(userId);
+        BusinessUnitType unitType = ROLE_TYPE_MAP.get(user.getRole());
+        return businessUnitManagementFacade.getDetail(unitType, user.getBusinessUnitId());
     }
 
     // 내 사업장 정보 수정
     @Transactional
-    public MyWorkplaceInfoResponse updateMyWorkplaceInfo(Long userId, UpdateMyWorkplaceInfoRequest request) {
-
-        Long businessUnitId = myPageService.getMyBusinessUnitId(userId);
-
-        // TODO: 사업장 서비스 수정 로직 사용 (권한별)
-        return MyWorkplaceInfoResponse.builder().build();
+    public BusinessUnitDetailResponse updateMyBusinessUnitInfo(Long userId, UpdateMyBusinessUnitInfoRequest request) {
+        User user = myPageService.getMyInfo(userId);
+        BusinessUnitType unitType = ROLE_TYPE_MAP.get(user.getRole());
+        return businessUnitManagementFacade.updateInfo(unitType, user.getBusinessUnitId(), request.toManagementRequest());
     }
+
+    // Role과 BusinessUnitType 매핑
+    private static final Map<UserRole, BusinessUnitType> ROLE_TYPE_MAP = Map.of(
+            UserRole.HQ, BusinessUnitType.HQ,
+            UserRole.FRANCHISE, BusinessUnitType.FRANCHISE,
+            UserRole.FACTORY, BusinessUnitType.FACTORY
+    );
 }

@@ -6,6 +6,7 @@ import com.chaing.domain.businessunits.exception.BusinessUnitException;
 import com.chaing.domain.businessunits.repository.FactoryRepository;
 import com.chaing.domain.businessunits.repository.FranchiseRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -18,7 +19,8 @@ public class BusinessUnitCodeGenerator {
     // 가맹점 코드 생성
     public String generateFranchiseCode(Region region) {
         String prefix = region.getCode();
-        return franchiseRepository.findFirstByFranchiseCodeStartingWithOrderByFranchiseCodeDesc(prefix)
+        return franchiseRepository.findMaxCodeByPrefix(prefix, PageRequest.of(0, 1))
+                .stream().findFirst()
                 .map(franchise -> {
                     String lastFullCode = franchise.getFranchiseCode();
                     int nextNum = Integer.parseInt(lastFullCode.substring(prefix.length())) + 1;
@@ -35,7 +37,8 @@ public class BusinessUnitCodeGenerator {
     // 공장 코드 생성
     public String generateFactoryCode() {
         String prefix = "FA";
-        return factoryRepository.findFirstByFactoryCodeStartingWithOrderByFactoryCodeDesc(prefix)
+        return factoryRepository.findMaxCodeByPrefix(prefix, PageRequest.of(0, 1))
+                .stream().findFirst()
                 .map(factory -> {
                     String lastFullCode = factory.getFactoryCode();
                     int nextNum = Integer.parseInt(lastFullCode.substring(prefix.length())) + 1;

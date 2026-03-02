@@ -10,6 +10,8 @@ import com.chaing.domain.businessunits.enums.BusinessUnitType;
 import com.chaing.domain.users.entity.User;
 import com.chaing.domain.users.enums.UserAction;
 import com.chaing.domain.users.enums.UserRole;
+import com.chaing.domain.users.exception.UserErrorCode;
+import com.chaing.domain.users.exception.UserException;
 import com.chaing.domain.users.service.MyPageService;
 import com.chaing.domain.users.service.UserLogService;
 import lombok.RequiredArgsConstructor;
@@ -53,7 +55,7 @@ public class MyPageFacade {
     @Transactional(readOnly = true)
     public BusinessUnitDetailResponse getMyBusinessUnitInfo(Long userId) {
         User user = myPageService.getMyInfo(userId);
-        BusinessUnitType unitType = ROLE_TYPE_MAP.get(user.getRole());
+        BusinessUnitType unitType = validateAndGetUnitType(user);
         return businessUnitManagementFacade.getDetail(unitType, user.getBusinessUnitId());
     }
 
@@ -61,7 +63,7 @@ public class MyPageFacade {
     @Transactional
     public BusinessUnitDetailResponse updateMyBusinessUnitInfo(Long userId, UpdateMyBusinessUnitInfoRequest request) {
         User user = myPageService.getMyInfo(userId);
-        BusinessUnitType unitType = ROLE_TYPE_MAP.get(user.getRole());
+        BusinessUnitType unitType = validateAndGetUnitType(user);
         return businessUnitManagementFacade.updateInfo(unitType, user.getBusinessUnitId(), request.toManagementRequest());
     }
 
@@ -71,4 +73,13 @@ public class MyPageFacade {
             UserRole.FRANCHISE, BusinessUnitType.FRANCHISE,
             UserRole.FACTORY, BusinessUnitType.FACTORY
     );
+
+    // 역할과 사업장 존재 검증
+    private BusinessUnitType validateAndGetUnitType(User user) {
+        BusinessUnitType unitType = ROLE_TYPE_MAP.get(user.getRole());
+        if (unitType == null || user.getBusinessUnitId() == null) {
+            throw new UserException(UserErrorCode.INVALID_BUSINESS_UNIT_ACCESS);
+        }
+        return unitType;
+    }
 }

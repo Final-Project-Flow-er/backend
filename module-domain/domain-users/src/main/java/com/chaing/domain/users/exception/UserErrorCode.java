@@ -24,6 +24,7 @@ public enum UserErrorCode implements ErrorCode {
     ACCESS_DENIED(403, "A004", "접근 권한이 없습니다."),
     INACTIVATED_USER(403, "A005", "비활성화된 계정입니다."),
     DELETED_USER(403, "A006", "삭제된 계정입니다."),
+    INVALID_BUSINESS_UNIT_ACCESS(400, "A007", "연결된 사업장이 없거나 접근 권한이 없습니다."),
 
     // 404 NOT FOUND
     USER_NOT_FOUND(404, "U006", "해당 회원을 찾을 수 없습니다."),
@@ -34,8 +35,7 @@ public enum UserErrorCode implements ErrorCode {
 
     // 500 INTERNAL SERVER ERROR
     HASH_ALGORITHM_NOT_FOUND(500, "S001", "해싱 알고리즘을 찾을 수 없습니다."),
-    MAIL_SEND_FAILED(500, "S002", "메일 발송을 실패했습니다."),
-    ;
+    MAIL_SEND_FAILED(500, "S002", "메일 발송을 실패했습니다.");
 
     private final Integer status;
     private final String code;

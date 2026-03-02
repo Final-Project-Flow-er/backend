@@ -60,14 +60,16 @@ public class Factory extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private UsableStatus status = UsableStatus.ACTIVE;
 
-    public static Factory from(BusinessUnitCreateCommand command) {
+    public static Factory from(BusinessUnitCreateCommand command, String generatedCode) {
         var detail = command.factoryCreate();
 
         return Factory.builder()
+                .factoryCode(generatedCode)
                 .name(command.name())
                 .address(command.address())
                 .phone(command.phone())
                 .representativeName(command.representativeName())
+                .businessNumber(command.businessNumber())
                 .region(command.region())
                 .productionLineCount(detail.productionLineCount())
                 .status(UsableStatus.ACTIVE)

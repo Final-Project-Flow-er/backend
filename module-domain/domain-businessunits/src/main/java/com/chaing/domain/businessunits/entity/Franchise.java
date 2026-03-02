@@ -79,43 +79,73 @@ public class Franchise extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private UsableStatus status = UsableStatus.ACTIVE;
 
-    public static Franchise from(BusinessUnitCreateCommand command) {
+    public static Franchise from(BusinessUnitCreateCommand command, String generatedCode, Double distance) {
         var detail = command.franchiseCreate();
 
         return Franchise.builder()
+                .franchiseCode(generatedCode)
                 .name(command.name())
                 .address(command.address())
                 .phone(command.phone())
                 .representativeName(command.representativeName())
+                .businessNumber(command.businessNumber())
                 .region(command.region())
                 .operatingDays(detail.operatingDays())
                 .openTime(detail.openTime())
                 .closeTime(detail.closeTime())
                 .imageUrl(detail.imageUrl())
+                .distanceToFactory(distance)
+                .warningCount(0)
                 .status(UsableStatus.ACTIVE)
                 .build();
     }
 
     public void updateFranchiseInfo(BusinessUnitUpdateCommand command) {
-        this.name = command.name();
-        this.address = command.address();
-        this.phone = command.phone();
-        this.representativeName = command.representativeName();
-        this.region = command.region();
+        if (command.name() != null) this.name = command.name();
+        if (command.address() != null) this.address = command.address();
+        if (command.phone() != null) this.phone = command.phone();
+        if (command.representativeName() != null) this.representativeName = command.representativeName();
+        if (command.region() != null) this.region = command.region();
 
         if (command.franchiseUpdate() != null) {
             var detail = command.franchiseUpdate();
-            this.operatingDays = detail.operatingDays();
-            this.openTime = detail.openTime();
-            this.closeTime = detail.closeTime();
-            this.imageUrl = detail.imageUrl();
-            this.distanceToFactory = detail.distanceToFactory();
-            this.warningCount = detail.warningCount();
-            this.penaltyEndDate = detail.penaltyEndDate();
+
+            if (detail.operatingDays() != null) this.operatingDays = detail.operatingDays();
+            if (detail.openTime() != null) this.openTime = detail.openTime();
+            if (detail.closeTime() != null) this.closeTime = detail.closeTime();
+            if (detail.imageUrl() != null) this.imageUrl = detail.imageUrl();
+
+            if (detail.distanceToFactory() != null) this.distanceToFactory = detail.distanceToFactory();
+            if (detail.warningCount() != null) {
+                this.warningCount = detail.warningCount();
+            }
+            if (detail.penaltyEndDate() != null) this.penaltyEndDate = detail.penaltyEndDate();
         }
     }
 
     public void updateStatus(UsableStatus status) {
         this.status = status;
+    }
+
+    public void addWarning() {
+        this.warningCount++;
+
+        if (this.warningCount >= 3 && this.warningCount % 3 == 0) {
+            applyPenalty();
+        }
+    }
+
+    private void applyPenalty() {
+        LocalDateTime now = LocalDateTime.now();
+
+        if (this.penaltyEndDate != null && this.penaltyEndDate.isAfter(now)) {
+            this.penaltyEndDate = this.penaltyEndDate.plusMonths(1);
+        } else {
+            this.penaltyEndDate = now.plusMonths(1);
+        }
+    }
+
+    public boolean isReturnBlocked() {
+        return this.penaltyEndDate != null && this.penaltyEndDate.isAfter(LocalDateTime.now());
     }
 }

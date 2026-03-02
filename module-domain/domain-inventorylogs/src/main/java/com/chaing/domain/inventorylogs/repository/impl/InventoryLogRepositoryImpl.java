@@ -133,7 +133,8 @@ public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom 
                         log.quantity))
                 .from(log)
                 .where(
-                        log.logType.eq(LogType.SALE),
+                        log.logType.eq(LogType.SALE)
+                                .or(log.logType.eq(LogType.REFUND)),
                         betweenDate(request.startDate(), request.endDate()),
                         containsTransactionCode(request.transactionCode()),
                         actorContains("FRANCHISE",franchiseId),
@@ -244,7 +245,7 @@ public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom 
                 log.boxCode,
                 log.productName,
                 log.logType,
-                log.quantity,
+                log.boxQuantity,
                 log.fromLocationCode,
                 log.toLocationCode,
                 log.supplyPrice,

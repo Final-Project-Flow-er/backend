@@ -43,9 +43,9 @@ public class Headquarter extends BaseEntity {
     private String businessNumber;
 
     public void updateHqInfo(BusinessUnitUpdateCommand command) {
-        this.name = command.name();
-        this.address = command.address();
-        this.phone = command.phone();
-        this.representativeName = command.representativeName();
+        if (command.name() != null) this.name = command.name();
+        if (command.address() != null) this.address = command.address();
+        if (command.phone() != null) this.phone = command.phone();
+        if (command.representativeName() != null) this.representativeName = command.representativeName();
     }
 }

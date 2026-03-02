@@ -90,6 +90,7 @@ public class BusinessUnitManagementFacade {
         switch (type) {
             case FRANCHISE -> franchiseService.delete(id);
             case FACTORY -> factoryService.delete(id);
+            default -> throw new BusinessUnitException(BusinessUnitErrorCode.INVALID_BUSINESS_UNIT_TYPE);
         }
     }
 

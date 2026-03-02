@@ -1,5 +1,6 @@
 package com.chaing.domain.products.service;
 
+import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.domain.products.dto.request.ProductRequest;
 import com.chaing.domain.products.dto.request.ProductSearchRequest;
 import com.chaing.domain.products.dto.request.ProductUpdateRequest;
@@ -15,10 +16,12 @@ import com.chaing.domain.products.repository.ProductRepository;
 import com.chaing.domain.products.repository.ProductTypeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -153,5 +156,20 @@ public class ProductService {
         } catch (IllegalArgumentException e) {
             throw new ProductException(ProductErrorCode.INVALID_PRODUCT_STATUS);
         }
+    }
+
+    public Map<Long, ProductInfo> getProductInfos(List<Long> productIds) {
+        return productRepository.findAllByProductIdIn(productIds).stream()
+                .collect(Collectors.toMap(
+                        Product::getProductId,
+                        entry -> ProductInfo.builder()
+                                .productId(entry.getProductId())
+                                .productCode(entry.getProductCode())
+                                .productName(entry.getName())
+                                .retailPrice(entry.getPrice())
+                                .costPrice(entry.getCostPrice())
+                                .tradePrice(entry.getSupplyPrice())
+                                .build()
+                ));
     }
 }

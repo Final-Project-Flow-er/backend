@@ -5,7 +5,7 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public enum HeadOrderStatus {
+public enum HQOrderStatus {
 
     PENDING("PENDING", "대기"),
     ACCEPTED("ACCEPTED", "접수"),

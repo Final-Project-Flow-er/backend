@@ -30,6 +30,6 @@ public record BusinessUnitUpdateCommand(
     ) {}
 
     public record FactoryUpdate(
-            int productionLineCount
+            Integer productionLineCount
     ) {}
 }

@@ -77,15 +77,18 @@ public class Factory extends BaseEntity {
     }
 
     public void updateFactoryInfo(BusinessUnitUpdateCommand command) {
-        this.name = command.name();
-        this.address = command.address();
-        this.phone = command.phone();
-        this.representativeName = command.representativeName();
-        this.region = command.region();
+        if (command.name() != null) this.name = command.name();
+        if (command.address() != null) this.address = command.address();
+        if (command.phone() != null) this.phone = command.phone();
+        if (command.representativeName() != null) this.representativeName = command.representativeName();
+        if (command.region() != null) this.region = command.region();
 
         if (command.factoryUpdate() != null) {
             var detail = command.factoryUpdate();
-            this.productionLineCount = detail.productionLineCount();
+
+            if (detail.productionLineCount() != null) {
+                this.productionLineCount = detail.productionLineCount();
+            }
         }
     }
 

@@ -38,7 +38,7 @@ public class BusinessUnitManagementController {
     @Operation(summary = "신규 사업장 등록", description = "본사 관리자가 가맹점 또는 공장을 등록")
     @PostMapping("/{type}")
     public ResponseEntity<ApiResponse<BusinessUnitDetailResponse>> createBusinessUnit(
-            @Schema(allowableValues = {"FRANCHISE", "FACTORY"})
+            @Schema(allowableValues = {"franchise", "factory"})
             @PathVariable BusinessUnitType type,
             @Valid @RequestBody BusinessUnitCreateRequest request
     ) {
@@ -48,7 +48,7 @@ public class BusinessUnitManagementController {
     @Operation(summary = "사업장 목록 조회", description = "사업장 목록을 페이징하여 조회")
     @GetMapping("/{type}")
     public ResponseEntity<ApiResponse<Page<BusinessUnitSummaryResponse>>> getBusinessUnits(
-            @Schema(allowableValues = {"FRANCHISE", "FACTORY"})
+            @Schema(allowableValues = {"franchise", "factory"})
             @PathVariable BusinessUnitType type,
             Pageable pageable
     ) {
@@ -58,6 +58,7 @@ public class BusinessUnitManagementController {
     @Operation(summary = "사업장 상세 조회", description = "특정 사업장의 상세 정보 조회")
     @GetMapping("/{type}/{id}")
     public ResponseEntity<ApiResponse<BusinessUnitDetailResponse>> getBusinessUnitDetail(
+            @Schema(allowableValues = {"hq", "franchise", "factory"})
             @PathVariable BusinessUnitType type,
             @PathVariable Long id
     ) {
@@ -67,6 +68,7 @@ public class BusinessUnitManagementController {
     @Operation(summary = "사업장 정보 수정", description = "특정 사업장의 정보 수정")
     @PatchMapping("/{type}/{id}")
     public ResponseEntity<ApiResponse<BusinessUnitDetailResponse>> updateBusinessUnit(
+            @Schema(allowableValues = {"hq", "franchise", "factory"})
             @PathVariable BusinessUnitType type,
             @PathVariable Long id,
             @Valid @RequestBody BusinessUnitUpdateRequest request
@@ -77,7 +79,7 @@ public class BusinessUnitManagementController {
     @Operation(summary = "사업장 상태 변경", description = "사업장의 상태를 활성화 또는 비활성화 상태로 변경")
     @PatchMapping("/{type}/{id}/status")
     public ResponseEntity<ApiResponse<BusinessUnitDetailResponse>> updateBusinessUnitStatus(
-            @Schema(allowableValues = {"FRANCHISE", "FACTORY"})
+            @Schema(allowableValues = {"franchise", "factory"})
             @PathVariable BusinessUnitType type,
             @PathVariable Long id,
             @Valid @RequestBody BusinessUnitStatusUpdateRequest request
@@ -88,7 +90,7 @@ public class BusinessUnitManagementController {
     @Operation(summary = "사업장 삭제", description = "사업장 삭제 (soft delete)")
     @DeleteMapping("/{type}/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteBusinessUnit(
-            @Schema(allowableValues = {"FRANCHISE", "FACTORY"})
+            @Schema(allowableValues = {"franchise", "factory"})
             @PathVariable BusinessUnitType type,
             @PathVariable Long id
     ) {
@@ -97,7 +99,7 @@ public class BusinessUnitManagementController {
     }
 
     @Operation(summary = "가맹점 경고 부여", description = "가맹점에 경고 부여 (경고 3회 시 한 달간 반품 정지)")
-    @PostMapping("/FRANCHISE/{id}/warnings")
+    @PostMapping("/franchise/{id}/warnings")
     public ResponseEntity<ApiResponse<BusinessUnitDetailResponse>> addWarning(
             @PathVariable Long id
     ) {

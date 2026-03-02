@@ -51,7 +51,7 @@ public class UserManagementService {
         String prefix = switch (role) {
             case HQ -> "hq";
             case FRANCHISE -> "fr";
-            case FACTORY -> "fc";
+            case FACTORY -> "fa";
             default -> throw new UserException(UserErrorCode.INVALID_ROLE);
         };
 

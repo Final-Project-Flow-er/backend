@@ -37,10 +37,18 @@ public class SwaggerConfig {
     }
 
     @Bean
-    public GroupedOpenApi returnApi() {
+    public GroupedOpenApi franchiseReturnApi() {
         return GroupedOpenApi.builder()
-                .group("반품(Return)")
+                .group("가맹점 반품(Return)")
                 .pathsToMatch("/api/v1/franchise/returns/**")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi hqReturnApi() {
+        return GroupedOpenApi.builder()
+                .group("본사 반품(Return)")
+                .pathsToMatch("/api/v1/hq/returns/**")
                 .build();
     }
 

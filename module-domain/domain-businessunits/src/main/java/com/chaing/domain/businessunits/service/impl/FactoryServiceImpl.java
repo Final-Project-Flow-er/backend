@@ -1,6 +1,7 @@
 package com.chaing.domain.businessunits.service.impl;
 
 import com.chaing.core.enums.UsableStatus;
+import com.chaing.domain.businessunits.component.BusinessUnitCodeGenerator;
 import com.chaing.domain.businessunits.dto.command.BusinessUnitCreateCommand;
 import com.chaing.domain.businessunits.dto.command.BusinessUnitUpdateCommand;
 import com.chaing.domain.businessunits.dto.internal.BusinessUnitInternal;
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Service;
 public class FactoryServiceImpl implements BusinessUnitManagementService {
 
     private final FactoryRepository factoryRepository;
+    private final BusinessUnitCodeGenerator codeGenerator;
 
     // 공장 아이디로 공장 조회
     @Override
@@ -30,17 +32,20 @@ public class FactoryServiceImpl implements BusinessUnitManagementService {
 
     // 공장 정보 수정
     @Override
-    public void updateInfo(Long id, BusinessUnitUpdateCommand command) {
+    public BusinessUnitInternal updateInfo(Long id, BusinessUnitUpdateCommand command) {
         Factory factory = factoryRepository.findById(id)
                 .orElseThrow(() -> new BusinessUnitException(BusinessUnitErrorCode.BUSINESS_UNIT_NOT_FOUND));
         factory.updateFactoryInfo(command);
+        return BusinessUnitInternal.from(factory);
     }
 
     // 공장 등록
     @Override
-    public void create(BusinessUnitCreateCommand command) {
-        Factory factory = Factory.from(command);
+    public BusinessUnitInternal create(BusinessUnitCreateCommand command) {
+        String generatedCode = codeGenerator.generateFactoryCode();
+        Factory factory = Factory.from(command, generatedCode);
         factoryRepository.save(factory);
+        return BusinessUnitInternal.from(factory);
     }
 
     // 공장 목록 조회
@@ -51,10 +56,11 @@ public class FactoryServiceImpl implements BusinessUnitManagementService {
 
     // 공장 상태 변경
     @Override
-    public void updateStatus(Long id, UsableStatus status) {
+    public BusinessUnitInternal updateStatus(Long id, UsableStatus status) {
         Factory factory = factoryRepository.findById(id)
                 .orElseThrow(() -> new BusinessUnitException(BusinessUnitErrorCode.BUSINESS_UNIT_NOT_FOUND));
         factory.updateStatus(status);
+        return BusinessUnitInternal.from(factory);
     }
 
     // 공장 삭제

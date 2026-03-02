@@ -5,6 +5,8 @@ import com.chaing.core.enums.Region;
 import com.chaing.core.enums.UsableStatus;
 import com.chaing.domain.businessunits.dto.command.BusinessUnitCreateCommand;
 import com.chaing.domain.businessunits.dto.command.BusinessUnitUpdateCommand;
+import com.chaing.domain.businessunits.exception.BusinessUnitErrorCode;
+import com.chaing.domain.businessunits.exception.BusinessUnitException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -63,6 +65,10 @@ public class Factory extends BaseEntity {
     public static Factory from(BusinessUnitCreateCommand command, String generatedCode) {
         var detail = command.factoryCreate();
 
+        if (detail.productionLineCount() < 0) {
+            throw new BusinessUnitException(BusinessUnitErrorCode.INVALID_PRODUCTION_LINE_COUNT);
+        }
+
         return Factory.builder()
                 .factoryCode(generatedCode)
                 .name(command.name())
@@ -87,6 +93,9 @@ public class Factory extends BaseEntity {
             var detail = command.factoryUpdate();
 
             if (detail.productionLineCount() != null) {
+                if (detail.productionLineCount() < 0) {
+                    throw new BusinessUnitException(BusinessUnitErrorCode.INVALID_PRODUCTION_LINE_COUNT);
+                }
                 this.productionLineCount = detail.productionLineCount();
             }
         }

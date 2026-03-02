@@ -1,6 +1,8 @@
 package com.chaing.domain.orders.entity;
 
 import com.chaing.core.entity.BaseEntity;
+import com.chaing.domain.orders.exception.HQOrderErrorCode;
+import com.chaing.domain.orders.exception.HQOrderException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -36,7 +38,7 @@ public class HeadOfficeOrderItem extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long headOrderItemId;
+    private Long headOfficeOrderItemId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "head_office_order_id")
@@ -53,4 +55,14 @@ public class HeadOfficeOrderItem extends BaseEntity {
 
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal totalPrice;
+
+    public void update(Long productId, Integer quantity) {
+        if (productId != null &&  quantity != null) {
+            this.productId = productId;
+            this.quantity = quantity;
+            this.totalPrice = this.unitPrice.multiply(BigDecimal.valueOf(quantity));
+        } else {
+            throw new HQOrderException(HQOrderErrorCode.INVALID_INPUT);
+        }
+    }
 }

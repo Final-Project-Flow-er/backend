@@ -12,6 +12,7 @@ sonarqube {
         property "sonar.host.url", "http://beyond21.iptime.org:7011"
         property "sonar.token", "sqp_af86ebfcb52046b70985dd61ed8987912936db86"
         property "sonar.coverage.jacoco.xmlReportPaths", "build/jacoco/xml/jacocoRootReport.xml"
+        property "sonar.java.source", "21"
     }
 }
 
@@ -26,7 +27,12 @@ def jacocoProjectNames = ["domain-orders", "domain-returns", "domain-sales", "do
 subprojects {
     group = 'com.chaing'
     version = '0.0.1-SNAPSHOT'
-    sourceCompatibility = '17'
+
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(21)
+        }
+    }
 
     apply plugin: 'java'
     apply plugin: 'java-library'

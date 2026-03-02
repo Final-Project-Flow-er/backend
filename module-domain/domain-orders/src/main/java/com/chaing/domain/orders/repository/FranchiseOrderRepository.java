@@ -19,4 +19,6 @@ public interface FranchiseOrderRepository extends JpaRepository<FranchiseOrder, 
     Optional<FranchiseOrder> findByFranchiseIdAndFranchiseOrderId(Long franchiseId, Long orderId);
 
     List<FranchiseOrder> findAllByFranchiseIdAndOrderStatus(Long franchiseId, FranchiseOrderStatus orderStatus);
+
+    List<FranchiseOrder> findAllByOrderCodeIn(List<String> orderCodes);
 }

@@ -146,7 +146,7 @@ class FranchiseReturnServiceTests {
                 .isInspected(false)
                 .returnItemStatus(ReturnItemStatus.BEFORE_INSPECTION)
                 .build();
-        ReflectionTestUtils.setField(returnItem, "returnItemId", orderId);
+        ReflectionTestUtils.setField(returnItem, "returnItemId", returnItemId);
 
         franchiseReturnItemCreateRequest = new FranchiseReturnItemCreateRequest(
                 boxCode,

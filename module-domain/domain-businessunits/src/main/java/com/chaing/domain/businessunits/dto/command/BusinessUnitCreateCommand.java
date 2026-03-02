@@ -10,6 +10,7 @@ public record BusinessUnitCreateCommand(
         String address,
         String phone,
         String representativeName,
+        String businessNumber,
         Region region,
 
         FranchiseCreate franchiseCreate,

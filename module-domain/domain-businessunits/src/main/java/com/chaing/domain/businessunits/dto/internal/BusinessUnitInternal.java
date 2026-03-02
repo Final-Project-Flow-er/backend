@@ -35,6 +35,7 @@ public record BusinessUnitInternal(
             String imageUrl,
             int warningCount,
             LocalDateTime penaltyEndDate,
+            boolean isReturnBlocked,
             Double distanceToFactory
     ) {}
 
@@ -56,7 +57,7 @@ public record BusinessUnitInternal(
                 fr.getRepresentativeName(), fr.getBusinessNumber(), fr.getRegion(), fr.getStatus(), "FRANCHISE",
                 null,
                 new FranchiseDetail(fr.getOperatingDays(), fr.getOpenTime(), fr.getCloseTime(),
-                        fr.getImageUrl(), fr.getWarningCount(), fr.getPenaltyEndDate(), fr.getDistanceToFactory()),
+                        fr.getImageUrl(), fr.getWarningCount(), fr.getPenaltyEndDate(), fr.isReturnBlocked(), fr.getDistanceToFactory()),
                 null
         );
     }

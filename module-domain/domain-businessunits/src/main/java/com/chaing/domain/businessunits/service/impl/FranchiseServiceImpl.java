@@ -71,7 +71,7 @@ public class FranchiseServiceImpl implements BusinessUnitManagementService {
     public void delete(Long id) {
         Franchise franchise = franchiseRepository.findById(id)
                 .orElseThrow(() -> new BusinessUnitException(BusinessUnitErrorCode.BUSINESS_UNIT_NOT_FOUND));
-        franchiseRepository.delete(franchise);
+        franchise.delete();
     }
 
     // 가맹점 경고 부여

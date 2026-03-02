@@ -1,6 +1,9 @@
 package com.chaing.domain.orders.entity;
 
-import com.chaing.domain.orders.enums.HeadOrderStatus;
+import com.chaing.core.entity.BaseEntity;
+import com.chaing.domain.orders.enums.HQOrderStatus;
+import com.chaing.domain.orders.exception.HQOrderErrorCode;
+import com.chaing.domain.orders.exception.HQOrderException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -22,14 +25,17 @@ import java.time.LocalDateTime;
 @Builder
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class HeadOfficeOrder {
+public class HeadOfficeOrder extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long headOfficeOrderId;
 
     @Column(nullable = false, unique = true)
-    private String orderNumber;
+    private String orderCode;
+
+    @Column(nullable = false)
+    private Long hqId;
 
     @Column(nullable = false)
     private String username;
@@ -41,12 +47,16 @@ public class HeadOfficeOrder {
     private LocalDateTime manufactureDate;
 
     @Column
-    private String requirement;
+    private String description;
+
+    @Column
+    @Builder.Default
+    private String storedDate = "-";
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     @Builder.Default
-    private HeadOrderStatus orderStatus = HeadOrderStatus.PENDING;
+    private HQOrderStatus orderStatus = HQOrderStatus.PENDING;
 
     @Column(nullable = false)
     private Integer totalQuantity;
@@ -57,4 +67,18 @@ public class HeadOfficeOrder {
     @Column(nullable = false)
     @Builder.Default
     private Boolean isRegular = true;
+
+    public void update(LocalDateTime manufactureDate) {
+        this.manufactureDate = manufactureDate;
+    }
+
+    public void cancel() {
+        if (orderStatus == HQOrderStatus.CANCELED) {
+            throw new HQOrderException(HQOrderErrorCode.ORDER_ALREADY_CANCELED);
+        } else if (orderStatus != HQOrderStatus.PENDING) {
+            throw new HQOrderException(HQOrderErrorCode.ORDER_NOT_PENDING);
+        }
+
+        this.orderStatus = HQOrderStatus.CANCELED;
+    }
 }

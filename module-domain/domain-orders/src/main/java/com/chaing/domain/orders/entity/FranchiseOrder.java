@@ -138,4 +138,18 @@ public class FranchiseOrder extends BaseEntity {
                 .map(FranchiseOrderItem::getTotalPrice)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
+
+    public void accept() {
+        if (this.orderStatus != FranchiseOrderStatus.PENDING) {
+            throw new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_INVALID_STATUS);
+        }
+        this.orderStatus = FranchiseOrderStatus.ACCEPTED;
+    }
+
+    public void reject() {
+        if (this.orderStatus != FranchiseOrderStatus.PENDING) {
+            throw new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_INVALID_STATUS);
+        }
+        this.orderStatus = FranchiseOrderStatus.REJECTED;
+    }
 }

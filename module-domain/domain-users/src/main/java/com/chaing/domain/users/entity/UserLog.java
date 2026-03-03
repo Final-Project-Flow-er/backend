@@ -17,6 +17,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
+
 @Entity
 @Getter
 @Builder
@@ -29,14 +31,17 @@ public class UserLog extends BaseEntity {
     private Long logId;
 
     @Column(nullable = false)
-    private Long userId;
+    private Long targetUserId;
+
+    @Column(nullable = false)
+    private Long actorId;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private UserAction action;
 
     @Column(nullable = false)
-    private String name;
+    private String targetUsername;
 
     @Column(nullable = false)
     private String employeeNumber;
@@ -46,6 +51,9 @@ public class UserLog extends BaseEntity {
 
     @Column(nullable = false)
     private String phone;
+
+    @Column(nullable = false)
+    private LocalDate birthDate;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)

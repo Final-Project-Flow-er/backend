@@ -17,6 +17,7 @@ public enum FranchiseReturnErrorCode implements ErrorCode {
 
     // 409 CONFLICT
     CANCEL_NOT_ALLOWED(409, "RE004", "반품의 상태가 대기일 때만 취소 가능합니다."),
+    ALREADY_ACCEPTED(409, "", "이미 접수된 상태입니다."),
 
     // 400 BAD REQUEST
     INVALID_PRODUCT_INFO(400, "RE005", "제품에 대한 정보가 옳지 않습니다."),

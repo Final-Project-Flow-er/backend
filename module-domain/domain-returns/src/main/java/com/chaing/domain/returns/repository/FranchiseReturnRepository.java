@@ -2,6 +2,7 @@ package com.chaing.domain.returns.repository;
 
 import com.chaing.domain.returns.entity.Returns;
 import com.chaing.domain.returns.enums.ReturnStatus;
+import jakarta.validation.constraints.NotBlank;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -17,4 +18,6 @@ public interface FranchiseReturnRepository extends JpaRepository<Returns, Long> 
     List<Returns> findAllByReturnStatus(ReturnStatus status);
 
     List<Returns> findAllByReturnStatusNot(ReturnStatus returnStatus);
+
+    List<Returns> findAllByReturnCodeIn(List<@NotBlank String> returnCodes);
 }

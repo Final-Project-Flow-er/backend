@@ -1,7 +1,7 @@
 package com.chaing.api.facade.hq;
 
+import com.chaing.api.dto.hq.response.HQReturnProductResponse;
 import com.chaing.api.dto.hq.response.HQReturnResponse;
-import com.chaing.domain.returns.dto.request.HQReturnUpdateRequest;
 import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.core.dto.info.ReturnItemInfo;
 import com.chaing.domain.inventories.service.InventoryService;
@@ -10,10 +10,12 @@ import com.chaing.domain.products.service.ProductService;
 import com.chaing.domain.returns.dto.command.HQReturnCommand;
 import com.chaing.domain.returns.dto.command.HQReturnDetailCommand;
 import com.chaing.domain.returns.dto.command.ReturnItemInspection;
+import com.chaing.domain.returns.dto.request.HQReturnUpdateRequest;
 import com.chaing.domain.returns.dto.response.FranchiseReturnItemDetailResponse;
 import com.chaing.domain.returns.dto.response.HQReturnDetailResponse;
 import com.chaing.domain.returns.dto.response.HQReturnUpdateResponse;
 import com.chaing.domain.returns.dto.response.ReturnAndOrderInfo;
+import com.chaing.domain.returns.dto.response.ReturnInfo;
 import com.chaing.domain.returns.enums.ReturnItemStatus;
 import com.chaing.domain.returns.enums.ReturnStatus;
 import com.chaing.domain.returns.enums.ReturnType;
@@ -22,6 +24,7 @@ import com.chaing.domain.returns.exception.FranchiseReturnException;
 import com.chaing.domain.returns.service.FakeReturnFranchiseService;
 import com.chaing.domain.returns.service.FranchiseReturnService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -292,5 +295,17 @@ public class HQReturnFacade {
                 .returnCode(returnCode)
                 .inspectionBySerialCode(inspectionBySerialCode)
                 .build();
+    }
+
+    // 반품 요청 상태 변경
+    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
+    public List<HQReturnProductResponse> updateReturnStatus(List<@NotBlank String> returnCodes) {
+        // 반품 상태 변경
+        List<ReturnInfo> updatedReturns = franchiseReturnService.updateReturnStatus(returnCodes);
+
+        // 반환
+        return updatedReturns.stream()
+                .map(HQReturnProductResponse::from)
+                .toList();
     }
 }

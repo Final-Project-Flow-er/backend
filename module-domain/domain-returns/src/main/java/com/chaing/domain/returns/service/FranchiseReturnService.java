@@ -20,6 +20,7 @@ import com.chaing.domain.returns.exception.FranchiseReturnException;
 import com.chaing.domain.returns.repository.FranchiseReturnItemRepository;
 import com.chaing.domain.returns.repository.FranchiseReturnRepository;
 import com.chaing.domain.returns.repository.interfaces.FranchiseReturnRepositoryCustom;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -310,5 +311,20 @@ public class FranchiseReturnService {
                         ReturnItem::getReturnItemId,
                         ReturnItemInspection::from
                 ));
+    }
+
+    // 반품 요청 상태 변경
+    public List<ReturnInfo> updateReturnStatus(List<@NotBlank String> returnCodes) {
+        List<Returns> items = franchiseReturnRepository.findAllByReturnCodeIn(returnCodes);
+
+        if (items == null || items.isEmpty()) {
+            throw new FranchiseReturnException(FranchiseReturnErrorCode.RETURN_NOT_FOUND);
+        }
+
+        items.forEach(Returns::updateStatus);
+
+        return items.stream()
+                .map(ReturnInfo::from)
+                .toList();
     }
 }

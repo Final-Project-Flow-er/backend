@@ -193,10 +193,6 @@ public class FranchiseReturnService {
     public Map<Long, HQReturnCommand> getAllReturnByStatus(ReturnStatus status) {
         List<Returns> returns = franchiseReturnRepository.findAllByReturnStatus(status);
 
-        if (returns == null || returns.isEmpty()) {
-            throw new FranchiseReturnException(FranchiseReturnErrorCode.RETURN_NOT_FOUND);
-        }
-
         return returns.stream()
                 .collect(Collectors.toMap(
                         Returns::getReturnId,
@@ -224,10 +220,6 @@ public class FranchiseReturnService {
     // return: Map<returnId, HQReturnCommand>
     public Map<Long, HQReturnCommand> getAllNotPendingReturn() {
         List<Returns> returns = franchiseReturnRepository.findAllByReturnStatusNot(ReturnStatus.PENDING);
-
-        if (returns == null || returns.isEmpty()) {
-            throw new FranchiseReturnException(FranchiseReturnErrorCode.RETURN_NOT_FOUND);
-        }
 
         return returns.stream()
                 .collect(Collectors.toMap(

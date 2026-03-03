@@ -3,7 +3,7 @@ package com.chaing.api.controller.franchise;
 import com.chaing.api.facade.franchise.FranchiseReturnFacade;
 import com.chaing.core.dto.ApiResponse;
 import com.chaing.domain.returns.dto.request.FranchiseReturnCreateRequest;
-import com.chaing.domain.returns.dto.request.FranchiseReturnUpdateRequest;
+import com.chaing.core.dto.request.FranchiseReturnUpdateRequest;
 import com.chaing.domain.returns.dto.response.FranchiseReturnAndReturnItemCreateResponse;
 import com.chaing.domain.returns.dto.response.FranchiseReturnCreateResponse;
 import com.chaing.domain.returns.dto.response.FranchiseReturnDetailResponse;

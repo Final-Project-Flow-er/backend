@@ -33,7 +33,7 @@ public class HQReturnController {
 
     @Operation(summary = "반품 요청 조회", description = "반품 요청 전체 조회")
     @GetMapping
-    @PreAuthorize("hasRole('HQ')")
+    @PreAuthorize("hasAnyRole('HQ', 'ADMIN')")
     public ResponseEntity<ApiResponse<List<HQReturnResponse>>> getAllReturns(
             @RequestParam Boolean isAccepted,
             @AuthenticationPrincipal UserPrincipal userPrincipal
@@ -44,11 +44,15 @@ public class HQReturnController {
     }
 
     @Operation(summary = "특정 반품 요청 조회", description = "특정 반품 요청 조회")
-    @GetMapping("/{return-number}")
+    @GetMapping("/{return-code}")
+    @PreAuthorize("hasAnyRole('HQ', 'ADMIN')")
     public ResponseEntity<ApiResponse<HQReturnResponse>> getReturn(
-            @PathVariable("return-number") String returnNumber
+            @PathVariable("return-code") String returnCode,
+            @AuthenticationPrincipal UserPrincipal userPrincipal
     ) {
-        return ResponseEntity.ok(ApiResponse.success(HQReturnResponse.builder().build()));
+        String username = userPrincipal.getUsername();
+
+        return ResponseEntity.ok(ApiResponse.success(hqReturnFacade.getReturn(username, returnCode)));
     }
 
     @Operation(summary = "반품 요청 상태 변경", description = "접수, 검수 등으로 상태 변경")

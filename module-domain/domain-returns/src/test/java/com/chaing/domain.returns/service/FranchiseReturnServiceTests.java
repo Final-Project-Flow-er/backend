@@ -1,6 +1,7 @@
 package com.chaing.domain.returns.service;
 
 import com.chaing.core.dto.returns.response.FranchiseOrderInfo;
+import com.chaing.domain.returns.dto.command.HQReturnCommand;
 import com.chaing.domain.returns.dto.command.ReturnItemCreateCommand;
 import com.chaing.domain.returns.dto.request.FranchiseReturnCreateRequest;
 import com.chaing.domain.returns.dto.request.FranchiseReturnItemCreateRequest;
@@ -8,7 +9,7 @@ import com.chaing.domain.returns.dto.response.FranchiseReturnAndReturnItemRespon
 import com.chaing.domain.returns.dto.response.FranchiseReturnInfo;
 import com.chaing.domain.returns.dto.response.FranchiseReturnProductInfo;
 import com.chaing.domain.returns.dto.response.ReturnInfo;
-import com.chaing.domain.returns.dto.response.ReturnItemInfo;
+import com.chaing.domain.returns.dto.response.ReturnAndOrderInfo;
 import com.chaing.domain.returns.entity.ReturnItem;
 import com.chaing.domain.returns.entity.Returns;
 import com.chaing.domain.returns.enums.ReturnItemStatus;
@@ -83,7 +84,7 @@ class FranchiseReturnServiceTests {
     FranchiseReturnCreateRequest franchiseReturnCreateRequest;
     FranchiseReturnItemCreateRequest franchiseReturnItemCreateRequest;
     FranchiseOrderInfo franchiseOrderInfo;
-    ReturnItemInfo returnItemInfo;
+    ReturnAndOrderInfo returnAndOrderInfo;
     ReturnItemCreateCommand returnItemCreateCommand;
     FranchiseReturnProductInfo franchiseReturnProductInfo;
 
@@ -170,7 +171,7 @@ class FranchiseReturnServiceTests {
                 .franchiseCode(franchiseCode)
                 .build();
 
-        returnItemInfo = new ReturnItemInfo(
+        returnAndOrderInfo = new ReturnAndOrderInfo(
                 orderItemId,
                 returnItemId
         );
@@ -364,7 +365,7 @@ class FranchiseReturnServiceTests {
         given(franchiseReturnRepository.findByReturnCode(returnCode)).willReturn(Optional.of(returns));
 
         // when
-        List<ReturnItemInfo> responses = franchiseReturnService.createReturnItems(returnCode, List.of(returnItemCreateCommand));
+        List<ReturnAndOrderInfo> responses = franchiseReturnService.createReturnItems(returnCode, List.of(returnItemCreateCommand));
 
         // then
         verify(franchiseReturnRepository, times(1)).findByReturnCode(returnCode);
@@ -383,5 +384,34 @@ class FranchiseReturnServiceTests {
         });
         verify(franchiseReturnRepository, times(1)).findByReturnCode(returnCode);
         assertEquals(FranchiseReturnErrorCode.RETURN_NOT_FOUND, exception.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("대기 상태의 반품 요청 조회 - 성공")
+    void getAllReturnByStatus_Success() {
+        // given
+        given(franchiseReturnRepository.findAllByReturnStatus(ReturnStatus.PENDING)).willReturn(List.of(returns));
+
+        // when
+        Map<Long, HQReturnCommand> response = franchiseReturnService.getAllReturnByStatus(ReturnStatus.PENDING);
+
+        // then
+        verify(franchiseReturnRepository, times(1)).findAllByReturnStatus(ReturnStatus.PENDING);
+        assertEquals(ReturnStatus.PENDING, response.values().stream().findFirst().get().status());
+    }
+
+    @Test
+    @DisplayName("대기 상태의 반품 제품 조회 - 성공")
+    void getAllReturnItemByStatus_Success() {
+        // given
+        given(franchiseReturnItemRepository.findAllByReturns_ReturnStatus(ReturnStatus.PENDING)).willReturn(List.of(returnItem));
+
+        // when
+        Map<Long, List<ReturnAndOrderInfo>> response = franchiseReturnService.getAllReturnItemByStatus(ReturnStatus.PENDING);
+
+        // then
+        verify(franchiseReturnItemRepository, times(1)).findAllByReturns_ReturnStatus(ReturnStatus.PENDING);
+        assertEquals(returnItemId, response.values().stream().findFirst().get().get(0).returnItemId());
+        assertEquals(orderItemId, response.values().stream().findFirst().get().get(0).orderItemId());
     }
 }

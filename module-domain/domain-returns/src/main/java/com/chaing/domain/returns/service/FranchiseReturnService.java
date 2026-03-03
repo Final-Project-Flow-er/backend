@@ -1,15 +1,17 @@
 package com.chaing.domain.returns.service;
 
 import com.chaing.core.dto.returns.response.FranchiseOrderInfo;
+import com.chaing.domain.returns.dto.command.HQReturnCommand;
 import com.chaing.domain.returns.dto.command.ReturnItemCreateCommand;
 import com.chaing.domain.returns.dto.request.FranchiseReturnCreateRequest;
 import com.chaing.domain.returns.dto.response.FranchiseReturnAndReturnItemResponse;
 import com.chaing.domain.returns.dto.response.FranchiseReturnInfo;
 import com.chaing.domain.returns.dto.response.FranchiseReturnProductInfo;
 import com.chaing.domain.returns.dto.response.ReturnInfo;
-import com.chaing.domain.returns.dto.response.ReturnItemInfo;
+import com.chaing.domain.returns.dto.response.ReturnAndOrderInfo;
 import com.chaing.domain.returns.entity.ReturnItem;
 import com.chaing.domain.returns.entity.Returns;
+import com.chaing.domain.returns.enums.ReturnStatus;
 import com.chaing.domain.returns.exception.FranchiseReturnErrorCode;
 import com.chaing.domain.returns.exception.FranchiseReturnException;
 import com.chaing.domain.returns.repository.FranchiseReturnItemRepository;
@@ -164,7 +166,7 @@ public class FranchiseReturnService {
     }
 
     // 반품 제품 생성
-    public List<ReturnItemInfo> createReturnItems(String returnCode, List<ReturnItemCreateCommand> orderItemIds) {
+    public List<ReturnAndOrderInfo> createReturnItems(String returnCode, List<ReturnItemCreateCommand> orderItemIds) {
         // 반품 조회
         Returns returns = franchiseReturnRepository.findByReturnCode(returnCode)
                 .orElseThrow(() -> new FranchiseReturnException(FranchiseReturnErrorCode.RETURN_NOT_FOUND));
@@ -183,6 +185,70 @@ public class FranchiseReturnService {
         franchiseReturnItemRepository.saveAll(returnItems);
 
         // 결과 반환
-        return ReturnItemInfo.from(returnItems);
+        return ReturnAndOrderInfo.from(returnItems);
+    }
+
+    // 대기 상태의 반품 요청 조회
+    // return: Map<returnId, HQReturnCommand>
+    public Map<Long, HQReturnCommand> getAllReturnByStatus(ReturnStatus status) {
+        List<Returns> returns = franchiseReturnRepository.findAllByReturnStatus(status);
+
+        if (returns == null || returns.isEmpty()) {
+            throw new FranchiseReturnException(FranchiseReturnErrorCode.RETURN_NOT_FOUND);
+        }
+
+        return returns.stream()
+                .collect(Collectors.toMap(
+                        Returns::getReturnId,
+                        HQReturnCommand::from
+                ));
+    }
+
+    // 대기 상태의 반품 제품 조회
+    // return: Map<returnId, List<ReturnAndOrderInfo>>
+    public Map<Long, List<ReturnAndOrderInfo>> getAllReturnItemByStatus(ReturnStatus status) {
+        List<ReturnItem> items = franchiseReturnItemRepository.findAllByReturns_ReturnStatus(status);
+
+        if (items == null || items.isEmpty()) {
+            throw new FranchiseReturnException(FranchiseReturnErrorCode.RETURN_ITEM_NOT_FOUND);
+        }
+
+        return items.stream()
+                .collect(Collectors.groupingBy(
+                        item -> item.getReturns().getReturnId(),
+                        Collectors.mapping(ReturnAndOrderInfo::from, Collectors.toList())
+                ));
+    }
+
+    // 대기 상태가 아닌 반품 요청 조회
+    // return: Map<returnId, HQReturnCommand>
+    public Map<Long, HQReturnCommand> getAllNotPendingReturn() {
+        List<Returns> returns = franchiseReturnRepository.findAllByReturnStatusNot(ReturnStatus.PENDING);
+
+        if (returns == null || returns.isEmpty()) {
+            throw new FranchiseReturnException(FranchiseReturnErrorCode.RETURN_NOT_FOUND);
+        }
+
+        return returns.stream()
+                .collect(Collectors.toMap(
+                        Returns::getReturnId,
+                        HQReturnCommand::from
+                ));
+    }
+
+    // 대기 상태가 아닌 반품 제품 조회
+    // Map<returnId, List<ReturnItemInfo>>
+    public Map<Long, List<ReturnAndOrderInfo>> getAllNotPendingReturnItem() {
+        List<ReturnItem> items = franchiseReturnItemRepository.findAllByReturns_ReturnStatusNot(ReturnStatus.PENDING);
+
+        if (items == null || items.isEmpty()) {
+            throw new FranchiseReturnException(FranchiseReturnErrorCode.RETURN_ITEM_NOT_FOUND);
+        }
+
+        return items.stream()
+                .collect(Collectors.groupingBy(
+                        item -> item.getReturns().getReturnId(),
+                        Collectors.mapping(ReturnAndOrderInfo::from, Collectors.toList())
+                ));
     }
 }

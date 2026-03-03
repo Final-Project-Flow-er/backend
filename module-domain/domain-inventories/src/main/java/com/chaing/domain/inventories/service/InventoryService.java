@@ -1,14 +1,25 @@
-package com.chaing.domain.returns.service;
+package com.chaing.domain.inventories.service;
 
+import com.chaing.core.dto.info.ReturnItemInfo;
+import com.chaing.core.dto.request.FranchiseReturnUpdateRequest;
 import com.chaing.core.dto.returns.request.ReturnToInventoryRequest;
-import com.chaing.domain.returns.dto.request.FranchiseReturnUpdateRequest;
+import com.chaing.domain.inventories.entity.FranchiseInventory;
+import com.chaing.domain.inventories.repository.FranchiseInventoryRepository;
 import jakarta.validation.constraints.NotBlank;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
-public class FakeInventoryService {
+@RequiredArgsConstructor
+public class InventoryService {
+
+    private final FranchiseInventoryRepository inventoryRepository;
+
+    // 수정 예정
     public List<ReturnToInventoryRequest> getProducts(List<String> serialCodes) {
         return List.of(
                 new ReturnToInventoryRequest(
@@ -23,7 +34,21 @@ public class FakeInventoryService {
         return List.of(1L, 2L);
     }
 
+    // 수정 예정
     public List<String> getSerialCodes(Long franchiseId, @NotBlank String boxCode) {
         return List.of("SerialCode");
+    }
+
+    // boxCode, productId 조회
+    // return: Map<serialCode, returnItemCommand>
+    public Map<String, ReturnItemInfo> getAllReturnItemInfoBySerialCode(List<String> serialCodes) {
+        return inventoryRepository.findAllBySerialCodeIn(serialCodes).stream()
+                .collect(Collectors.toMap(
+                        FranchiseInventory::getSerialCode,
+                        item -> ReturnItemInfo.builder()
+                                .boxCode(item.getBoxCode())
+                                .productId(item.getProductId())
+                                .build()
+                ));
     }
 }

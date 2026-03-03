@@ -7,6 +7,7 @@ import com.chaing.api.dto.hq.response.HQReturnResponse;
 import com.chaing.api.facade.hq.HQReturnFacade;
 import com.chaing.api.security.principal.UserPrincipal;
 import com.chaing.core.dto.ApiResponse;
+import com.chaing.domain.returns.dto.response.HQReturnDetailResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -46,7 +47,7 @@ public class HQReturnController {
     @Operation(summary = "특정 반품 요청 조회", description = "특정 반품 요청 조회")
     @GetMapping("/{return-code}")
     @PreAuthorize("hasAnyRole('HQ', 'ADMIN')")
-    public ResponseEntity<ApiResponse<HQReturnResponse>> getReturn(
+    public ResponseEntity<ApiResponse<HQReturnDetailResponse>> getReturn(
             @PathVariable("return-code") String returnCode,
             @AuthenticationPrincipal UserPrincipal userPrincipal
     ) {

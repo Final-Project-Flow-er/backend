@@ -414,4 +414,18 @@ class FranchiseReturnServiceTests {
         assertEquals(returnItemId, response.values().stream().findFirst().get().get(0).returnItemId());
         assertEquals(orderItemId, response.values().stream().findFirst().get().get(0).orderItemId());
     }
+
+    @Test
+    @DisplayName("반품에 대한 반품 제품이 없을 시 예외 발생")
+    void getAllReturnItemByStatus_Failure_RETURN_ITEM_NOT_FOUND() {
+        // given
+        given(franchiseReturnItemRepository.findAllByReturns_ReturnStatus(ReturnStatus.PENDING)).willReturn(List.of());
+
+        // when & then
+        FranchiseReturnException exception = assertThrows(FranchiseReturnException.class, () -> {
+            franchiseReturnService.getAllReturnItemByStatus(ReturnStatus.PENDING);
+        });
+        verify(franchiseReturnItemRepository, times(1)).findAllByReturns_ReturnStatus(ReturnStatus.PENDING);
+        assertEquals(FranchiseReturnErrorCode.RETURN_ITEM_NOT_FOUND, exception.getErrorCode());
+    }
 }

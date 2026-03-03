@@ -2,13 +2,14 @@ package com.chaing.domain.returns.service;
 
 import com.chaing.core.dto.returns.response.FranchiseOrderInfo;
 import com.chaing.domain.returns.dto.command.HQReturnCommand;
+import com.chaing.domain.returns.dto.command.HQReturnDetailCommand;
 import com.chaing.domain.returns.dto.command.ReturnItemCreateCommand;
 import com.chaing.domain.returns.dto.request.FranchiseReturnCreateRequest;
 import com.chaing.domain.returns.dto.response.FranchiseReturnAndReturnItemResponse;
 import com.chaing.domain.returns.dto.response.FranchiseReturnInfo;
 import com.chaing.domain.returns.dto.response.FranchiseReturnProductInfo;
-import com.chaing.domain.returns.dto.response.ReturnInfo;
 import com.chaing.domain.returns.dto.response.ReturnAndOrderInfo;
+import com.chaing.domain.returns.dto.response.ReturnInfo;
 import com.chaing.domain.returns.entity.ReturnItem;
 import com.chaing.domain.returns.entity.Returns;
 import com.chaing.domain.returns.enums.ReturnStatus;
@@ -241,6 +242,29 @@ public class FranchiseReturnService {
                 .collect(Collectors.groupingBy(
                         item -> item.getReturns().getReturnId(),
                         Collectors.mapping(ReturnAndOrderInfo::from, Collectors.toList())
+                ));
+    }
+
+    // 본사 특정 반품 조회
+    public HQReturnDetailCommand getHQReturnInfo(String returnCode) {
+        return HQReturnDetailCommand.from(
+                franchiseReturnRepository.findByReturnCode(returnCode)
+                        .orElseThrow(() -> new FranchiseReturnException(FranchiseReturnErrorCode.RETURN_NOT_FOUND))
+        );
+    }
+
+    // return: Map<returnItemId, orderItemId>
+    public Map<Long, Long> getReturnItemId(String returnCode) {
+        List<ReturnItem> items = franchiseReturnItemRepository.findAllByReturns_ReturnCode(returnCode);
+
+        if (items == null || items.isEmpty()) {
+            throw new FranchiseReturnException(FranchiseReturnErrorCode.RETURN_ITEM_NOT_FOUND);
+        }
+
+        return items.stream()
+                .collect(Collectors.toMap(
+                        ReturnItem::getReturnItemId,
+                        ReturnItem::getFranchiseOrderItemId
                 ));
     }
 }

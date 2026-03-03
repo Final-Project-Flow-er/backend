@@ -232,4 +232,11 @@ public class FranchiseOrderService {
                         FranchiseOrderItem::getSerialCode
                 ));
     }
+
+    // OrderCode 조회
+    public String getOrderCodeByOrderId(Long orderId) {
+        return franchiseOrderRepository.findById(orderId)
+                .orElseThrow(() -> new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_NOT_FOUND))
+                .getOrderCode();
+    }
 }

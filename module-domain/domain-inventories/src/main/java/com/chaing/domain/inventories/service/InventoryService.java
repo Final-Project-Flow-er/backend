@@ -51,4 +51,35 @@ public class InventoryService {
                                 .build()
                 ));
     }
+
+    // return: Map<boxCode, serialCode>
+    public Map<String, String> getBoxCode(List<String> serialCodes) {
+        List<FranchiseInventory> inventories = inventoryRepository.findAllBySerialCodeIn(serialCodes);
+
+        if (inventories == null || inventories.isEmpty()) {
+            // ErrorCode 추가해주세요
+        }
+
+        return inventories.stream()
+                .collect(Collectors.toMap(
+                        FranchiseInventory::getSerialCode,
+                        FranchiseInventory::getBoxCode
+                ));
+    }
+
+    // serialCode로 productId 조회
+    // Map<serialCode, productId>
+    public Map<String, Long> getProductIdBySerialCode(List<String> serialCodes) {
+        List<FranchiseInventory> inventories = inventoryRepository.findAllBySerialCodeIn(serialCodes);
+
+        if (inventories == null || inventories.isEmpty()) {
+            // ErrorCode 추가해 주세요
+        }
+
+        return inventories.stream()
+                .collect(Collectors.toMap(
+                        FranchiseInventory::getSerialCode,
+                        FranchiseInventory::getProductId
+                ));
+    }
 }

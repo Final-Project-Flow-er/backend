@@ -7,6 +7,9 @@ import com.chaing.domain.inventories.service.InventoryService;
 import com.chaing.domain.orders.service.FranchiseOrderService;
 import com.chaing.domain.products.service.ProductService;
 import com.chaing.domain.returns.dto.command.HQReturnCommand;
+import com.chaing.domain.returns.dto.command.HQReturnDetailCommand;
+import com.chaing.domain.returns.dto.response.FranchiseReturnItemResponse;
+import com.chaing.domain.returns.dto.response.HQReturnDetailResponse;
 import com.chaing.domain.returns.dto.response.ReturnAndOrderInfo;
 import com.chaing.domain.returns.enums.ReturnStatus;
 import com.chaing.domain.returns.exception.FranchiseReturnErrorCode;
@@ -129,5 +132,77 @@ public class HQReturnFacade {
                             .build();
                 })
                 .toList();
+    }
+
+    // 특정 반품 조회
+    public HQReturnDetailResponse getReturn(String username, String returnCode) {
+        // 반품 정보 조회
+        HQReturnDetailCommand returnInfo = franchiseReturnService.getHQReturnInfo(returnCode);
+
+        // 발주 코드 조회
+        String orderCode = franchiseOrderService.getOrderCodeByOrderId(returnInfo.franchiseOrderId());
+
+        // franchiseCode 조회
+        String franchiseCode = franchiseService.getFranchise(returnInfo.franchiseId());
+
+        // 연관 발주 제품 정보 조회
+        // Map<returnItemId, orderItemId>
+        Map<Long, Long> orderItemIdByReturnItemId = franchiseReturnService.getReturnItemId(returnCode);
+        List<Long> orderItemIds = orderItemIdByReturnItemId.values().stream().toList();
+
+        // 재고 정보 조회
+        // Map<orderItemId, serialCode>
+        Map<Long, String> serialCodeByOrderItemId = franchiseOrderService.getSerialCodesByOrderItemId(orderItemIds);
+        List<String> serialCodes = serialCodeByOrderItemId.values().stream().toList();
+        // Map<boxCode, serialCode>
+        Map<String, String> boxCodeBySerialCode = inventoryService.getBoxCode(serialCodes);
+        // Map<serialCode, productId>
+        Map<String, Long> productIdBySerialCode = inventoryService.getProductIdBySerialCode(serialCodes);
+        log.info("productIdBySerialCode: {}", productIdBySerialCode);
+
+        // 제품 정보 조회
+        List<Long> productIds = productIdBySerialCode.values().stream().toList();
+        log.info("productIds: {}", productIds);
+        // Map<productId, ProductInfo>
+        Map<Long, ProductInfo> productInfoByProductId = productService.getProductInfos(productIds);
+        log.info("productInfoByProductId: {}", productInfoByProductId);
+
+        // 반품 제품 DTO
+        List<FranchiseReturnItemResponse> items = boxCodeBySerialCode.entrySet().stream()
+                .map(entry -> {
+                    log.info("entry: {}", entry);
+                    Long productId = productIdBySerialCode.get(entry.getKey());
+                    log.info("productId: {}", productId);
+                    ProductInfo productInfo = productInfoByProductId.get(productId);
+                    log.info("productInfo: {}", productInfo);
+
+                    if (productInfo == null) {
+                        throw new FranchiseReturnException(FranchiseReturnErrorCode.PRODUCT_NOT_FOUND);
+                    }
+
+                    return FranchiseReturnItemResponse.builder()
+                            .boxCode(entry.getValue())
+                            .serialCode(entry.getKey())
+                            .productCode(productInfo.productCode())
+                            .productName(productInfo.productName())
+                            .unitPrice(productInfo.retailPrice())
+                            .build();
+                })
+                .toList();
+
+        // 반환
+        return HQReturnDetailResponse.builder()
+                .returnCode(returnCode)
+                .orderCode(orderCode)
+                .franchiseCode(franchiseCode)
+                .requestedDate(returnInfo.requestedDate())
+                .username(returnInfo.receiver())
+                .phoneNumber(returnInfo.phoneNumber())
+                .type(returnInfo.type())
+                .status(returnInfo.status())
+                .description(returnInfo.description())
+                .totalAmount(returnInfo.totalPrice())
+                .items(items)
+                .build();
     }
 }

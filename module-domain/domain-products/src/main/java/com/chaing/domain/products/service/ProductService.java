@@ -20,8 +20,6 @@ import org.springframework.stereotype.Service;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -159,6 +157,8 @@ public class ProductService {
     }
 
     public Map<Long, ProductInfo> getProductInfos(List<Long> productIds) {
+
+
         return productRepository.findAllByProductIdIn(productIds).stream()
                 .collect(Collectors.toMap(
                         Product::getProductId,

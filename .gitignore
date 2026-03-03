@@ -48,3 +48,6 @@ GEMINI.md
 
 ### SQL ###
 src/main/resources/dml
+
+### API Document ###
+docs

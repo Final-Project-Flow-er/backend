@@ -7,6 +7,7 @@ import com.chaing.domain.returns.dto.command.ReturnItemCreateCommand;
 import com.chaing.domain.returns.dto.command.ReturnItemInspection;
 import com.chaing.domain.returns.dto.request.FranchiseReturnCreateRequest;
 import com.chaing.domain.returns.dto.request.FranchiseReturnItemCreateRequest;
+import com.chaing.domain.returns.dto.request.HQReturnUpdateRequest;
 import com.chaing.domain.returns.dto.response.FranchiseReturnAndReturnItemResponse;
 import com.chaing.domain.returns.dto.response.FranchiseReturnInfo;
 import com.chaing.domain.returns.dto.response.FranchiseReturnProductInfo;
@@ -571,6 +572,52 @@ class FranchiseReturnServiceTests {
         // when & then
         FranchiseReturnException exception = assertThrows(FranchiseReturnException.class, () -> {
             franchiseReturnService.getReturnItemInspection(List.of(returnItemId));
+        });
+        assertEquals(FranchiseReturnErrorCode.RETURN_ITEM_NOT_FOUND, exception.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("반품 제품 검수 상태 업데이트 - 성공")
+    void updateReturnItemStatus_Success() {
+        // given
+        given(franchiseReturnItemRepository.findAllByReturnItemIdIn(List.of(returnItemId))).willReturn(List.of(returnItem));
+
+        Map<Long, String> serialCodeByReturnItemId = Map.of(returnItemId, serialCode);
+        List<HQReturnUpdateRequest> requests = List.of(
+                HQReturnUpdateRequest.builder()
+                        .serialCode(serialCode)
+                        .isInspected(true)
+                        .status(ReturnItemStatus.NORMAL)
+                        .build()
+        );
+
+        // when
+        Map<Long, ReturnItemInspection> response = franchiseReturnService.updateReturnItemStatus(serialCodeByReturnItemId, requests);
+
+        // then
+        verify(franchiseReturnItemRepository, times(1)).findAllByReturnItemIdIn(List.of(returnItemId));
+        assertEquals(ReturnItemStatus.NORMAL, response.values().stream().findFirst().get().status());
+        assertEquals(true, response.values().stream().findFirst().get().isInspected());
+    }
+
+    @Test
+    @DisplayName("반품에 대한 반품 제품이 존재하지 않을 시 예외 발생")
+    void updateReturnItemStatus_Failure_RETURN_ITEM_NOT_FOUND() {
+        // given
+        given(franchiseReturnItemRepository.findAllByReturnItemIdIn(List.of(returnItemId))).willReturn(List.of());
+
+        Map<Long, String> serialCodeByReturnItemId = Map.of(returnItemId, serialCode);
+        List<HQReturnUpdateRequest> requests = List.of(
+                HQReturnUpdateRequest.builder()
+                        .serialCode(serialCode)
+                        .isInspected(true)
+                        .status(ReturnItemStatus.NORMAL)
+                        .build()
+        );
+
+        // when & then
+        FranchiseReturnException exception = assertThrows(FranchiseReturnException.class, () -> {
+            franchiseReturnService.updateReturnItemStatus(serialCodeByReturnItemId, requests);
         });
         assertEquals(FranchiseReturnErrorCode.RETURN_ITEM_NOT_FOUND, exception.getErrorCode());
     }

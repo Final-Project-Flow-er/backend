@@ -216,4 +216,20 @@ public class FranchiseOrderService {
 
         return HQOrderStatusUpdateResponse.from(orders);
     }
+
+    // 제품 식별 번호 반환
+    // return: Map<orderItemId, serialCode>
+    public Map<Long, String> getSerialCodesByOrderItemId(List<Long> orderItemIds) {
+        List<FranchiseOrderItem> items = franchiseOrderItemRepository.findAllByFranchiseOrderItemIdIn(orderItemIds);
+
+        if (items == null || items.isEmpty()) {
+            throw new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_ITEM_NOT_FOUND);
+        }
+
+        return items.stream()
+                .collect(Collectors.toMap(
+                        FranchiseOrderItem::getFranchiseOrderItemId,
+                        FranchiseOrderItem::getSerialCode
+                ));
+    }
 }

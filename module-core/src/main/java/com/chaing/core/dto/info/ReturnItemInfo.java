@@ -1,6 +1,9 @@
-package com.chaing.domain.returns.dto.command;
+package com.chaing.core.dto.info;
 
-public record ReturnItemCommand(
+import lombok.Builder;
+
+@Builder
+public record ReturnItemInfo(
         String boxCode,
 
         Long productId

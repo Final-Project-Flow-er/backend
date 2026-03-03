@@ -38,7 +38,7 @@ public record HQReturnResponse(
         BigDecimal totalPrice,
 
         @NotBlank
-        String reciever,
+        String receiver,
 
         @NotBlank
         String phoneNumber,

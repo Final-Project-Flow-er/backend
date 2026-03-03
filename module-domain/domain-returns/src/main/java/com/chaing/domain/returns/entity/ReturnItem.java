@@ -1,6 +1,9 @@
 package com.chaing.domain.returns.entity;
 
+import com.chaing.domain.returns.dto.request.HQReturnUpdateRequest;
 import com.chaing.domain.returns.enums.ReturnItemStatus;
+import com.chaing.domain.returns.exception.FranchiseReturnErrorCode;
+import com.chaing.domain.returns.exception.FranchiseReturnException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -43,4 +46,14 @@ public class ReturnItem {
     @Enumerated(EnumType.STRING)
     @Builder.Default
     private ReturnItemStatus returnItemStatus = ReturnItemStatus.BEFORE_INSPECTION;
+
+    // 반품 제품 검수 상태 업데이트
+    public void update(HQReturnUpdateRequest hqReturnUpdateRequest) {
+        if (hqReturnUpdateRequest == null) {
+            throw new FranchiseReturnException(FranchiseReturnErrorCode.INVALID_REQUEST);
+        }
+
+        this.isInspected = hqReturnUpdateRequest.isInspected();
+        this.returnItemStatus = hqReturnUpdateRequest.status();
+    }
 }

@@ -6,6 +6,7 @@ import com.chaing.domain.returns.dto.command.HQReturnDetailCommand;
 import com.chaing.domain.returns.dto.command.ReturnItemCreateCommand;
 import com.chaing.domain.returns.dto.command.ReturnItemInspection;
 import com.chaing.domain.returns.dto.request.FranchiseReturnCreateRequest;
+import com.chaing.domain.returns.dto.request.HQReturnUpdateRequest;
 import com.chaing.domain.returns.dto.response.FranchiseReturnAndReturnItemResponse;
 import com.chaing.domain.returns.dto.response.FranchiseReturnInfo;
 import com.chaing.domain.returns.dto.response.FranchiseReturnProductInfo;
@@ -277,6 +278,32 @@ public class FranchiseReturnService {
         if (items == null || items.isEmpty()) {
             throw new FranchiseReturnException(FranchiseReturnErrorCode.RETURN_ITEM_NOT_FOUND);
         }
+
+        return items.stream()
+                .collect(Collectors.toMap(
+                        ReturnItem::getReturnItemId,
+                        ReturnItemInspection::from
+                ));
+    }
+
+    // 반품 제품 검수 상태 업데이트
+    // Map<returnItemId, ReturnItemInspection>
+    public Map<Long, ReturnItemInspection> updateReturnItemStatus(Map<Long, String> serialCodeByReturnItemId, List<HQReturnUpdateRequest> request) {
+        List<Long> returnItemIds = serialCodeByReturnItemId.keySet().stream().toList();
+        List<ReturnItem> items = franchiseReturnItemRepository.findAllByReturnItemIdIn(returnItemIds);
+        Map<String, HQReturnUpdateRequest> requestBySerialCode = request.stream()
+                .collect(Collectors.toMap(
+                        HQReturnUpdateRequest::serialCode,
+                        Function.identity()
+                ));
+
+        if (items == null || items.isEmpty()) {
+            throw new FranchiseReturnException(FranchiseReturnErrorCode.RETURN_ITEM_NOT_FOUND);
+        }
+
+        items.forEach(item -> {
+            item.update(requestBySerialCode.get(serialCodeByReturnItemId.get(item.getReturnItemId())));
+        });
 
         return items.stream()
                 .collect(Collectors.toMap(

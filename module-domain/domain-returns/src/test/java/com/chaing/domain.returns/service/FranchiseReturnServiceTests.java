@@ -621,4 +621,31 @@ class FranchiseReturnServiceTests {
         });
         assertEquals(FranchiseReturnErrorCode.RETURN_ITEM_NOT_FOUND, exception.getErrorCode());
     }
+
+    @Test
+    @DisplayName("반품 요청 상태 변경 - 성공")
+    void updateReturnsStatus_Success() {
+        // given
+        given(franchiseReturnRepository.findAllByReturnCodeIn(List.of(returnCode))).willReturn(List.of(returns));
+
+        // when
+        List<ReturnInfo> response = franchiseReturnService.updateReturnStatus(List.of(returnCode));
+
+        // then
+        verify(franchiseReturnRepository, times(1)).findAllByReturnCodeIn(List.of(returnCode));
+        assertEquals(ReturnStatus.ACCEPTED, response.stream().findFirst().get().status());
+    }
+
+    @Test
+    @DisplayName("잘못된 값으로 반품 조회 시 예외 발생")
+    void updateReturnsStatus_Failure_RETURN_NOT_FOUND() {
+        // given
+        given(franchiseReturnRepository.findAllByReturnCodeIn(List.of(returnCode))).willReturn(List.of());
+
+        // when & then
+        FranchiseReturnException exception = assertThrows(FranchiseReturnException.class, () -> {
+            franchiseReturnService.updateReturnStatus(List.of(returnCode));
+        });
+        assertEquals(FranchiseReturnErrorCode.RETURN_NOT_FOUND, exception.getErrorCode());
+    }
 }

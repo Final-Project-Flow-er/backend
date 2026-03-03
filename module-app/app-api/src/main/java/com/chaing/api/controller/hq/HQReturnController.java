@@ -2,16 +2,16 @@ package com.chaing.api.controller.hq;
 
 import com.chaing.api.dto.hq.response.HQReturnProductResponse;
 import com.chaing.api.dto.hq.response.HQReturnResponse;
-import com.chaing.api.dto.hq.returns.request.HQReturnProductRequest;
-import com.chaing.domain.returns.dto.request.HQReturnUpdateRequest;
 import com.chaing.api.facade.hq.HQReturnFacade;
 import com.chaing.api.security.principal.UserPrincipal;
 import com.chaing.core.dto.ApiResponse;
+import com.chaing.domain.returns.dto.request.HQReturnUpdateRequest;
 import com.chaing.domain.returns.dto.response.HQReturnDetailResponse;
 import com.chaing.domain.returns.dto.response.HQReturnUpdateResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -59,12 +59,12 @@ public class HQReturnController {
     }
 
     @Operation(summary = "반품 요청 상태 변경", description = "접수, 검수 등으로 상태 변경")
-    @PatchMapping("/{return-number}/inspection")
+    @PatchMapping
+    @PreAuthorize("hasAnyRole('HQ', 'ADMIN')")
     public ResponseEntity<ApiResponse<List<HQReturnProductResponse>>> inspectProduct(
-            @PathVariable("return-number") String returnNumber,
-            @RequestBody HQReturnProductRequest request
+            @RequestBody List<@NotBlank String> returnCodes
     ) {
-        return ResponseEntity.ok(ApiResponse.success(List.of(HQReturnProductResponse.builder().build())));
+        return ResponseEntity.ok(ApiResponse.success(hqReturnFacade.updateReturnStatus(returnCodes)));
     }
 
     @Operation(summary = "반품 제품 검수", description = "반품 요청 들어온 상품 검수")

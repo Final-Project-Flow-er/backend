@@ -2,6 +2,7 @@ package com.chaing.domain.returns.service;
 
 import com.chaing.core.dto.returns.response.FranchiseOrderInfo;
 import com.chaing.domain.returns.dto.command.HQReturnCommand;
+import com.chaing.domain.returns.dto.command.HQReturnDetailCommand;
 import com.chaing.domain.returns.dto.command.ReturnItemCreateCommand;
 import com.chaing.domain.returns.dto.request.FranchiseReturnCreateRequest;
 import com.chaing.domain.returns.dto.request.FranchiseReturnItemCreateRequest;
@@ -482,6 +483,65 @@ class FranchiseReturnServiceTests {
             franchiseReturnService.getAllNotPendingReturnItem();
         });
         verify(franchiseReturnItemRepository, times(1)).findAllByReturns_ReturnStatusNot(ReturnStatus.PENDING);
+        assertEquals(FranchiseReturnErrorCode.RETURN_ITEM_NOT_FOUND, exception.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("본사 특정 반품 조회 - 성공")
+    void getHQReturnInfo() {
+        // given
+        given(franchiseReturnRepository.findByReturnCode(returnCode)).willReturn(Optional.of(returns));
+
+        // when
+        HQReturnDetailCommand response = franchiseReturnService.getHQReturnInfo(returnCode);
+
+        // then
+        verify(franchiseReturnRepository, times(1)).findByReturnCode(returnCode);
+        assertEquals(returnId, response.returnId());
+        assertEquals(orderId, response.franchiseOrderId());
+        assertEquals(phoneNumber, response.phoneNumber());
+    }
+
+    @Test
+    @DisplayName("잘못된 값으로 반품 조회 시 예외 발생")
+    void getHQReturnInfo_Failure_RETURN_NOT_FOUND() {
+        // given
+        given(franchiseReturnRepository.findByReturnCode(returnCode)).willReturn(Optional.empty());
+
+        // when & then
+        FranchiseReturnException exception = assertThrows(FranchiseReturnException.class, () -> {
+            franchiseReturnService.getHQReturnInfo(returnCode);
+        });
+        verify(franchiseReturnRepository, times(1)).findByReturnCode(returnCode);
+        assertEquals(FranchiseReturnErrorCode.RETURN_NOT_FOUND, exception.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("반품에 해당하는 반품 제품 id 조회")
+    void getReturnItemId_Success() {
+        // given
+        given(franchiseReturnItemRepository.findAllByReturns_ReturnCode(returnCode)).willReturn(List.of(returnItem));
+
+        // when
+        Map<Long, Long> response = franchiseReturnService.getReturnItemId(returnCode);
+
+        // then
+        verify(franchiseReturnItemRepository, times(1)).findAllByReturns_ReturnCode(returnCode);
+        assertEquals(returnItemId, response.keySet().stream().findFirst().get());
+        assertEquals(orderItemId, response.values().stream().findFirst().get());
+    }
+
+    @Test
+    @DisplayName("반품에 해당하는 제품이 없을 시 예외 발생")
+    void getReturnItemId_Failure_RETURN_ITEM_NOT_FOUND() {
+        // given
+        given(franchiseReturnItemRepository.findAllByReturns_ReturnCode(returnCode)).willReturn(List.of());
+
+        // when & then
+        FranchiseReturnException exception = assertThrows(FranchiseReturnException.class, () -> {
+            franchiseReturnService.getReturnItemId(returnCode);
+        });
+        verify(franchiseReturnItemRepository, times(1)).findAllByReturns_ReturnCode(returnCode);
         assertEquals(FranchiseReturnErrorCode.RETURN_ITEM_NOT_FOUND, exception.getErrorCode());
     }
 }

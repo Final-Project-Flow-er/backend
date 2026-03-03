@@ -1,4 +1,4 @@
-package com.chaing.api.dto.hq.returns.request;
+package com.chaing.domain.returns.dto.request;
 
 import com.chaing.domain.returns.enums.ReturnItemStatus;
 import jakarta.validation.constraints.NotBlank;

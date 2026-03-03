@@ -58,7 +58,7 @@ public class HQReturnController {
         return ResponseEntity.ok(ApiResponse.success(hqReturnFacade.getReturn(username, returnCode)));
     }
 
-    @Operation(summary = "반품 요청 상태 변경", description = "접수, 검수 등으로 상태 변경")
+    @Operation(summary = "반품 요청 상태 접수", description = "가맹점의 반품 요청 상태 접수")
     @PatchMapping
     @PreAuthorize("hasAnyRole('HQ', 'ADMIN')")
     public ResponseEntity<ApiResponse<List<HQReturnProductResponse>>> inspectProduct(

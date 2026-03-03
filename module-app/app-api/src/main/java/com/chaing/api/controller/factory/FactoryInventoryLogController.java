@@ -1,10 +1,12 @@
 package com.chaing.api.controller.factory;
 
-import com.chaing.api.dto.factory.inventorylogs.request.FactoryLogRequest;
+import com.chaing.api.facade.factory.FactoryInventoryLogFacade;
 import com.chaing.core.dto.ApiResponse;
-import com.chaing.core.enums.LogType;
+import com.chaing.domain.inventorylogs.dto.request.FactoryLogRequest;
+import com.chaing.domain.inventorylogs.dto.response.InventoryLogListResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,22 +17,30 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
 
+@RequiredArgsConstructor
 @RestController
 @Tag(name = "FactoryInventoryLog API", description = "공장 재고 로그 관련 API")
 @RequestMapping("/api/v1/factory/log")
 public class FactoryInventoryLogController {
 
+    private final FactoryInventoryLogFacade factoryInventoryLogFacade;
     @Operation(summary = "공장 재고 이력 조회", description = "공장의 재고 이력을 확인합니다.")
     @GetMapping("/{factoryId}")
-    public ResponseEntity<ApiResponse<?>> findFactoryInventoryLogs(
+    public ResponseEntity<ApiResponse<InventoryLogListResponse>> findFactoryInventoryLogs(
             @PathVariable Long factoryId,
             @RequestParam(required = false) String productName,
-            @RequestParam(required = false) LogType logType,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
-            @RequestParam(required = false) String serialCode
+            @RequestParam(required = false) String logType,
+
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate startDate,
+
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate endDate,
+            @RequestParam(required = false) String transactionCode
     ) {
-        FactoryLogRequest request = new FactoryLogRequest(productName, logType, startDate, endDate, serialCode);
-        return ResponseEntity.ok(ApiResponse.success(null));
+        FactoryLogRequest request = new FactoryLogRequest(productName, logType, startDate, endDate, transactionCode);
+        return ResponseEntity.ok(ApiResponse.success(factoryInventoryLogFacade.findFactoryInventoryLogs(factoryId, request)));
     }
 }

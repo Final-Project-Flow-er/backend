@@ -1,15 +1,16 @@
 package com.chaing.api.controller.hq;
 
-import com.chaing.api.dto.hq.returns.request.HQReturnProductRequest;
-import com.chaing.api.dto.hq.returns.request.HQReturnUpdateRequest;
 import com.chaing.api.dto.hq.response.HQReturnProductResponse;
 import com.chaing.api.dto.hq.response.HQReturnResponse;
+import com.chaing.api.dto.hq.returns.request.HQReturnProductRequest;
+import com.chaing.api.dto.hq.returns.request.HQReturnUpdateRequest;
 import com.chaing.api.facade.hq.HQReturnFacade;
 import com.chaing.api.security.principal.UserPrincipal;
 import com.chaing.core.dto.ApiResponse;
 import com.chaing.domain.returns.dto.response.HQReturnDetailResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -59,11 +60,11 @@ public class HQReturnController {
     @Operation(summary = "반품 요청 상태 변경", description = "접수, 검수 등으로 상태 변경")
     @PatchMapping("/{return-code}")
     @PreAuthorize("hasAnyRole('HQ', 'ADMIN')")
-    public ResponseEntity<ApiResponse<HQReturnResponse>> updateReturn(
+    public ResponseEntity<ApiResponse<HQReturnDetailResponse>> updateReturn(
             @PathVariable("return-code") String returnCode,
-            @RequestBody HQReturnUpdateRequest request
+            @Valid @RequestBody HQReturnUpdateRequest request
     ) {
-        return ResponseEntity.ok(ApiResponse.success(HQReturnResponse.builder().build()));
+        return ResponseEntity.ok(ApiResponse.success(hqReturnFacade.updateReturn(returnCode, request)));
     }
 
     @Operation(summary = "반품 제품 검수", description = "반품 요청 들어온 상품 검수")

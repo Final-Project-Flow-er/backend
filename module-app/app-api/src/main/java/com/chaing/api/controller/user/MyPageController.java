@@ -1,10 +1,10 @@
 package com.chaing.api.controller.user;
 
+import com.chaing.api.dto.hq.businessunit.response.BusinessUnitDetailResponse;
 import com.chaing.api.dto.user.request.ChangePasswordRequest;
+import com.chaing.api.dto.user.request.UpdateMyBusinessUnitInfoRequest;
 import com.chaing.api.dto.user.request.UpdateMyInfoRequest;
-import com.chaing.api.dto.user.request.UpdateMyWorkplaceInfoRequest;
 import com.chaing.api.dto.user.response.MyInfoResponse;
-import com.chaing.api.dto.user.response.MyWorkplaceInfoResponse;
 import com.chaing.api.facade.user.MyPageFacade;
 import com.chaing.api.security.principal.UserPrincipal;
 import com.chaing.core.dto.ApiResponse;
@@ -59,20 +59,20 @@ public class MyPageController {
 
     @Operation(summary = "내 사업장 정보 조회", description = "로그인된 사용자가 소속된 사업장 정보 조회")
     @GetMapping("/workplace")
-    public ResponseEntity<ApiResponse<MyWorkplaceInfoResponse>> getMyWorkplaceInfo(
+    public ResponseEntity<ApiResponse<BusinessUnitDetailResponse>> getMyWorkplaceInfo(
             @AuthenticationPrincipal UserPrincipal principal
     ) {
-        MyWorkplaceInfoResponse response = myPageFacade.getMyWorkplaceInfo(principal.getId());
+        BusinessUnitDetailResponse response = myPageFacade.getMyBusinessUnitInfo(principal.getId());
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @Operation(summary = "내 사업장 정보 수정", description = "로그인된 사용자가 소속된 사업장 정보 수정")
     @PatchMapping("/workplace")
-    public ResponseEntity<ApiResponse<MyWorkplaceInfoResponse>> updateMyWorkplaceInfo(
+    public ResponseEntity<ApiResponse<BusinessUnitDetailResponse>> updateMyWorkplaceInfo(
             @AuthenticationPrincipal UserPrincipal principal,
-            @Valid @RequestBody UpdateMyWorkplaceInfoRequest request
+            @Valid @RequestBody UpdateMyBusinessUnitInfoRequest request
     ) {
-        MyWorkplaceInfoResponse response = myPageFacade.updateMyWorkplaceInfo(principal.getId(), request);
+        BusinessUnitDetailResponse response = myPageFacade.updateMyBusinessUnitInfo(principal.getId(), request);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 }

@@ -57,9 +57,10 @@ public class HQReturnController {
     }
 
     @Operation(summary = "반품 요청 상태 변경", description = "접수, 검수 등으로 상태 변경")
-    @PatchMapping("/{return-number}")
+    @PatchMapping("/{return-code}")
+    @PreAuthorize("hasAnyRole('HQ', 'ADMIN')")
     public ResponseEntity<ApiResponse<HQReturnResponse>> updateReturn(
-            @PathVariable("return-number") String returnNumber,
+            @PathVariable("return-code") String returnCode,
             @RequestBody HQReturnUpdateRequest request
     ) {
         return ResponseEntity.ok(ApiResponse.success(HQReturnResponse.builder().build()));

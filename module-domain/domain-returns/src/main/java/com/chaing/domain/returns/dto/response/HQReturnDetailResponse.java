@@ -30,6 +30,6 @@ public record HQReturnDetailResponse(
 
         BigDecimal totalAmount,
 
-        List<FranchiseReturnItemResponse> items
+        List<FranchiseReturnItemDetailResponse> items
 ) {
 }

@@ -4,6 +4,7 @@ import com.chaing.core.dto.returns.response.FranchiseOrderInfo;
 import com.chaing.domain.returns.dto.command.HQReturnCommand;
 import com.chaing.domain.returns.dto.command.HQReturnDetailCommand;
 import com.chaing.domain.returns.dto.command.ReturnItemCreateCommand;
+import com.chaing.domain.returns.dto.command.ReturnItemInspection;
 import com.chaing.domain.returns.dto.request.FranchiseReturnCreateRequest;
 import com.chaing.domain.returns.dto.response.FranchiseReturnAndReturnItemResponse;
 import com.chaing.domain.returns.dto.response.FranchiseReturnInfo;
@@ -265,6 +266,22 @@ public class FranchiseReturnService {
                 .collect(Collectors.toMap(
                         ReturnItem::getReturnItemId,
                         ReturnItem::getFranchiseOrderItemId
+                ));
+    }
+
+    // 반품 제품 검수 상태 반환
+    // Map<returnItemId, ReturnItemInspection>
+    public Map<Long, ReturnItemInspection> getReturnItemInspection(List<Long> returnItemIds) {
+        List<ReturnItem> items = franchiseReturnItemRepository.findAllByReturnItemIdIn(returnItemIds);
+
+        if (items == null || items.isEmpty()) {
+            throw new FranchiseReturnException(FranchiseReturnErrorCode.RETURN_ITEM_NOT_FOUND);
+        }
+
+        return items.stream()
+                .collect(Collectors.toMap(
+                        ReturnItem::getReturnItemId,
+                        ReturnItemInspection::from
                 ));
     }
 }

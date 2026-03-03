@@ -14,4 +14,6 @@ public interface FranchiseReturnItemRepository extends JpaRepository<ReturnItem,
     List<ReturnItem> findAllByReturns_ReturnStatus(ReturnStatus status);
 
     List<ReturnItem> findAllByReturns_ReturnStatusNot(ReturnStatus returnStatus);
+
+    List<ReturnItem> findAllByReturnItemIdIn(List<Long> returnItemIds);
 }

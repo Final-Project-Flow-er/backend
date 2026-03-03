@@ -8,7 +8,8 @@ import com.chaing.domain.orders.service.FranchiseOrderService;
 import com.chaing.domain.products.service.ProductService;
 import com.chaing.domain.returns.dto.command.HQReturnCommand;
 import com.chaing.domain.returns.dto.command.HQReturnDetailCommand;
-import com.chaing.domain.returns.dto.response.FranchiseReturnItemResponse;
+import com.chaing.domain.returns.dto.command.ReturnItemInspection;
+import com.chaing.domain.returns.dto.response.FranchiseReturnItemDetailResponse;
 import com.chaing.domain.returns.dto.response.HQReturnDetailResponse;
 import com.chaing.domain.returns.dto.response.ReturnAndOrderInfo;
 import com.chaing.domain.returns.enums.ReturnStatus;
@@ -149,6 +150,9 @@ public class HQReturnFacade {
         // Map<returnItemId, orderItemId>
         Map<Long, Long> orderItemIdByReturnItemId = franchiseReturnService.getReturnItemId(returnCode);
         List<Long> orderItemIds = orderItemIdByReturnItemId.values().stream().toList();
+        List<Long> returnItemIds = orderItemIdByReturnItemId.keySet().stream().toList();
+        // Map<returnItemId, returnItemInspection>
+        Map<Long, ReturnItemInspection> returnItemInspectionByReturnItemId = franchiseReturnService.getReturnItemInspection(returnItemIds);
 
         // 재고 정보 조회
         // Map<orderItemId, serialCode>
@@ -167,8 +171,22 @@ public class HQReturnFacade {
         Map<Long, ProductInfo> productInfoByProductId = productService.getProductInfos(productIds);
         log.info("productInfoByProductId: {}", productInfoByProductId);
 
+        // 역방향 Map
+        // Map<serialCode, orderItemId>
+        Map<String, Long> orderItemIdBySerialCode = serialCodeByOrderItemId.entrySet().stream()
+                .collect(Collectors.toMap(
+                                Map.Entry::getValue, Map.Entry::getKey
+                        )
+                );
+        // Map<orderItemId, returnItemId>
+        Map<Long, Long> returnItemIdByOrderItemId = orderItemIdByReturnItemId.entrySet().stream()
+                .collect(Collectors.toMap(
+                                Map.Entry::getValue, Map.Entry::getKey
+                        )
+                );
+
         // 반품 제품 DTO
-        List<FranchiseReturnItemResponse> items = boxCodeBySerialCode.entrySet().stream()
+        List<FranchiseReturnItemDetailResponse> items = boxCodeBySerialCode.entrySet().stream()
                 .map(entry -> {
                     log.info("entry: {}", entry);
                     Long productId = productIdBySerialCode.get(entry.getKey());
@@ -176,16 +194,19 @@ public class HQReturnFacade {
                     ProductInfo productInfo = productInfoByProductId.get(productId);
                     log.info("productInfo: {}", productInfo);
 
+                    Long orderItemId = orderItemIdBySerialCode.get(entry.getKey());
+                    Long returnItemId = returnItemIdByOrderItemId.get(orderItemId);
+                    ReturnItemInspection inspection = returnItemInspectionByReturnItemId.get(returnItemId);
+
                     if (productInfo == null) {
                         throw new FranchiseReturnException(FranchiseReturnErrorCode.PRODUCT_NOT_FOUND);
                     }
 
-                    return FranchiseReturnItemResponse.builder()
+                    return FranchiseReturnItemDetailResponse.builder()
                             .boxCode(entry.getValue())
                             .serialCode(entry.getKey())
-                            .productCode(productInfo.productCode())
-                            .productName(productInfo.productName())
-                            .unitPrice(productInfo.retailPrice())
+                            .isInspected(inspection.isInspected())
+                            .status(inspection.status())
                             .build();
                 })
                 .toList();

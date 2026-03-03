@@ -6,7 +6,7 @@ dependencies {
     implementation project(':domain-inventories')
     implementation project(':domain-users')
     implementation project(':domain-settlements')
-    implementation project(':domain-businesses')
+    implementation project(':domain-businessunits')
     implementation project(':domain-notices')
     implementation project(':domain-notifications')
     implementation project(':domain-inventorylogs')
@@ -24,6 +24,17 @@ dependencies {
 
     // Swagger (SpringDoc)
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0'
+
+    // Security
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+
+    // JWT
+    implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
+
+    // Redis
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 }
 
 test {

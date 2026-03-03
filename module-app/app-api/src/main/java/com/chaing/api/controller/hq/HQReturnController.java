@@ -1,7 +1,7 @@
 package com.chaing.api.controller.hq;
 
-import com.chaing.api.dto.hq.request.HQReturnProductRequest;
-import com.chaing.api.dto.hq.request.HQReturnUpdateRequest;
+import com.chaing.api.dto.hq.returns.request.HQReturnProductRequest;
+import com.chaing.api.dto.hq.returns.request.HQReturnUpdateRequest;
 import com.chaing.api.dto.hq.response.HQReturnProductResponse;
 import com.chaing.api.dto.hq.response.HQReturnResponse;
 import com.chaing.core.dto.ApiResponse;

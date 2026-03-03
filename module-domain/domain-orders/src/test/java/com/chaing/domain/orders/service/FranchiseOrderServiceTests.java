@@ -6,6 +6,8 @@ import com.chaing.domain.orders.dto.command.FranchiseOrderCreateCommand;
 import com.chaing.domain.orders.dto.command.FranchiseOrderUpdateCommand;
 import com.chaing.domain.orders.dto.info.FranchiseOrderCreateInfo;
 import com.chaing.domain.orders.dto.info.FranchiseOrderItemInfo;
+import com.chaing.domain.orders.dto.request.HQOrderUpdateStatusRequest;
+import com.chaing.domain.orders.dto.response.HQOrderStatusUpdateResponse;
 import com.chaing.domain.orders.entity.FranchiseOrder;
 import com.chaing.domain.orders.entity.FranchiseOrderItem;
 import com.chaing.domain.orders.enums.FranchiseOrderStatus;
@@ -70,6 +72,11 @@ class FranchiseOrderServiceTests {
     FranchiseOrder franchiseOrder;
     FranchiseOrderItem franchiseOrderItem;
 
+    FranchiseOrder shippingFranchiseOrder;
+
+    HQOrderUpdateStatusRequest hqOrderUpdateStatusRequestAccept;
+    HQOrderUpdateStatusRequest hqOrderUpdateStatusRequestReject;
+
     @BeforeEach
     void setUp() {
         franchiseId = 1L;
@@ -118,6 +125,20 @@ class FranchiseOrderServiceTests {
         ReflectionTestUtils.setField(franchiseOrderItem, "franchiseOrderItemId", franchiseOrderItemId);
 
         franchiseOrder.addOrderItem(franchiseOrderItem);
+
+        hqOrderUpdateStatusRequestAccept = HQOrderUpdateStatusRequest.builder()
+                .orderCodes(List.of(orderCode))
+                .isAccepted(true)
+                .build();
+
+        hqOrderUpdateStatusRequestReject = HQOrderUpdateStatusRequest.builder()
+                .orderCodes(List.of(orderCode))
+                .isAccepted(false)
+                .build();
+
+        shippingFranchiseOrder = FranchiseOrder.builder()
+                .orderStatus(FranchiseOrderStatus.SHIPPING)
+                .build();
     }
 
     @Test
@@ -472,5 +493,77 @@ class FranchiseOrderServiceTests {
         // then
         verify(franchiseOrderItemRepository, times(1)).findAllByFranchiseOrder_FranchiseIdAndFranchiseOrder_OrderCode(franchiseId, orderCode);
         assertEquals(serialCode, responses.get(0));
+    }
+
+    @Test
+    @DisplayName("본사에서의 가맹점의 발주 접수 -  성공")
+    void updateOrderStatus_Accept_Success() {
+        // given
+        given(franchiseOrderRepository.findAllByOrderCodeIn(List.of(orderCode))).willReturn(List.of(franchiseOrder));
+
+        // when
+        List<HQOrderStatusUpdateResponse> responses = franchiseOrderService.updateStatus(hqOrderUpdateStatusRequestAccept);
+
+        // then
+        verify(franchiseOrderRepository, times(1)).findAllByOrderCodeIn(List.of(orderCode));
+        assertEquals(orderCode, responses.get(0).orderCode());
+        assertEquals(FranchiseOrderStatus.ACCEPTED, responses.get(0).status());
+    }
+
+    @Test
+    @DisplayName("본사에서의 가맹점의 발주 반려 -  성공")
+    void updateOrderStatus_Reject_Success() {
+        // given
+        given(franchiseOrderRepository.findAllByOrderCodeIn(List.of(orderCode))).willReturn(List.of(franchiseOrder));
+
+        // when
+        List<HQOrderStatusUpdateResponse> responses = franchiseOrderService.updateStatus(hqOrderUpdateStatusRequestReject);
+
+        // then
+        verify(franchiseOrderRepository, times(1)).findAllByOrderCodeIn(List.of(orderCode));
+        assertEquals(orderCode, responses.get(0).orderCode());
+        assertEquals(FranchiseOrderStatus.REJECTED, responses.get(0).status());
+    }
+
+    @Test
+    @DisplayName("잘못된 값으로 발주 조회 시 예외 발생")
+    void updateOrderStatus_Failure_ORDER_NOT_FOUND() {
+        // given
+        given(franchiseOrderRepository.findAllByOrderCodeIn(List.of(orderCode))).willReturn(List.of());
+
+        // when & then
+        FranchiseOrderException exception = assertThrows(FranchiseOrderException.class, () -> {
+            franchiseOrderService.updateStatus(hqOrderUpdateStatusRequestAccept);
+        });
+        verify(franchiseOrderRepository, times(1)).findAllByOrderCodeIn(List.of(orderCode));
+        assertEquals(FranchiseOrderErrorCode.ORDER_NOT_FOUND, exception.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("가맹점 발주 접수 시 상태가 PENDING이 아닐 경우 예외 발생")
+    void updateOrderStatus_Accept_Failure_ORDER_INVALID_STATUS() {
+        // given
+        given(franchiseOrderRepository.findAllByOrderCodeIn(List.of(orderCode))).willReturn(List.of(shippingFranchiseOrder));
+
+        // when & then
+        FranchiseOrderException exception = assertThrows(FranchiseOrderException.class, () -> {
+            franchiseOrderService.updateStatus(hqOrderUpdateStatusRequestAccept);
+        });
+        verify(franchiseOrderRepository, times(1)).findAllByOrderCodeIn(List.of(orderCode));
+        assertEquals(FranchiseOrderErrorCode.ORDER_INVALID_STATUS, exception.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("가맹점 발주 반려 시 상태가 PENDING이 아닐 경우 예외 발생")
+    void updateOrderStatus_Reject_Failure_ORDER_INVALID_STATUS() {
+        // given
+        given(franchiseOrderRepository.findAllByOrderCodeIn(List.of(orderCode))).willReturn(List.of(shippingFranchiseOrder));
+
+        // when & then
+        FranchiseOrderException exception = assertThrows(FranchiseOrderException.class, () -> {
+            franchiseOrderService.updateStatus(hqOrderUpdateStatusRequestReject);
+        });
+        verify(franchiseOrderRepository, times(1)).findAllByOrderCodeIn(List.of(orderCode));
+        assertEquals(FranchiseOrderErrorCode.ORDER_INVALID_STATUS, exception.getErrorCode());
     }
 }

@@ -6,6 +6,8 @@ import com.chaing.core.dto.returns.response.FranchiseReturnTargetResponse;
 import com.chaing.domain.orders.dto.command.FranchiseOrderCreateCommand;
 import com.chaing.domain.orders.dto.command.FranchiseOrderUpdateCommand;
 import com.chaing.domain.orders.dto.info.FranchiseOrderItemInfo;
+import com.chaing.domain.orders.dto.request.HQOrderUpdateStatusRequest;
+import com.chaing.domain.orders.dto.response.HQOrderStatusUpdateResponse;
 import com.chaing.domain.orders.entity.FranchiseOrder;
 import com.chaing.domain.orders.entity.FranchiseOrderItem;
 import com.chaing.domain.orders.enums.FranchiseOrderStatus;
@@ -14,6 +16,7 @@ import com.chaing.domain.orders.exception.FranchiseOrderException;
 import com.chaing.domain.orders.repository.FranchiseOrderItemRepository;
 import com.chaing.domain.orders.repository.FranchiseOrderRepository;
 import com.chaing.domain.orders.support.ProductInfo;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -192,5 +195,25 @@ public class FranchiseOrderService {
                 .stream()
                 .map(FranchiseOrderItem::getSerialCode)
                 .toList();
+    }
+
+    // 본사에서 가맹점의 발주 상태 수정
+    public List<HQOrderStatusUpdateResponse> updateStatus(@Valid HQOrderUpdateStatusRequest request) {
+        // 발주 조회
+        List<FranchiseOrder> orders = franchiseOrderRepository.findAllByOrderCodeIn(request.orderCodes());
+
+        if (orders == null || orders.isEmpty()) {
+            throw new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_NOT_FOUND);
+        }
+
+        if (request.isAccepted()) {
+            // 접수 처리
+            orders.forEach(FranchiseOrder::accept);
+        } else {
+            // 반려 처리
+            orders.forEach(FranchiseOrder::reject);
+        }
+
+        return HQOrderStatusUpdateResponse.from(orders);
     }
 }

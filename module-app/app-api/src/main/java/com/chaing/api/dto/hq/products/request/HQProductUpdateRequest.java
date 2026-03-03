@@ -1,13 +1,14 @@
 package com.chaing.api.dto.hq.products.request;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
 public record HQProductUpdateRequest(
         String name,                // 상품명
-        Integer price,              // 판매가
-        Integer originalPrice,      // 원가
-        Integer supplyPrice,        // 공급가
+        BigDecimal price,              // 판매가
+        BigDecimal originalPrice,      // 원가
+        BigDecimal supplyPrice,        // 공급가
         String status,              // 상태
         Integer baseSafeStock,      // 기준 안전재고
         Integer kcal,               // 칼로리

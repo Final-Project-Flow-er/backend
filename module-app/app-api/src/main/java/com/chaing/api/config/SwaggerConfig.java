@@ -80,7 +80,7 @@ public class SwaggerConfig {
     public GroupedOpenApi businessUnitManagementApi() {
         return GroupedOpenApi.builder()
                 .group("사업장 관리(Business Unit Management)")
-                .pathsToMatch("/api/v1/hq/management/business-units/**")
+                .pathsToMatch("/api/v1/hq/business-units/**")
                 .build();
     }
 

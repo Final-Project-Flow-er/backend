@@ -30,7 +30,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('HQ')")
 @Tag(name = "Business Unit Management API", description = "사업장 통합 관리 API")
-@RequestMapping("/api/v1/hq/management/business-units")
+@RequestMapping("/api/v1/hq/business-units")
 public class BusinessUnitManagementController {
 
     private final BusinessUnitManagementFacade businessUnitManagementFacade;

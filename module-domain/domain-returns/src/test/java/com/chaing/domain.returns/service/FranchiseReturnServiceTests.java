@@ -428,4 +428,60 @@ class FranchiseReturnServiceTests {
         verify(franchiseReturnItemRepository, times(1)).findAllByReturns_ReturnStatus(ReturnStatus.PENDING);
         assertEquals(FranchiseReturnErrorCode.RETURN_ITEM_NOT_FOUND, exception.getErrorCode());
     }
+
+    @Test
+    @DisplayName("대기 상태가 아닌 반품 요청 조회 - 성공")
+    void getAllNotPendingReturn_Success() {
+        // given
+        Returns notPending = Returns.builder().returnStatus(ReturnStatus.SHIPPING).build();
+        given(franchiseReturnRepository.findAllByReturnStatusNot(ReturnStatus.PENDING)).willReturn(List.of(notPending));
+
+        // when
+        Map<Long, HQReturnCommand>  response = franchiseReturnService.getAllNotPendingReturn();
+
+        // then
+        verify(franchiseReturnRepository, times(1)).findAllByReturnStatusNot(ReturnStatus.PENDING);
+        assertEquals(ReturnStatus.SHIPPING, response.values().stream().findFirst().get().status());
+    }
+
+    @Test
+    @DisplayName("대기 상태가 아닌 반품 제품 조회 - 성공")
+    void getAllNotPendingReturnItem_Success() {
+        // given
+        Long notPendingId = 3L;
+        Returns notPending = Returns.builder()
+                .returnStatus(ReturnStatus.SHIPPING)
+                .build();
+        ReflectionTestUtils.setField(notPending, "returnId", notPendingId);
+
+        Long returnItemId = 4L;
+        ReturnItem item = ReturnItem.builder()
+                .returns(notPending)
+                .franchiseOrderItemId(orderItemId)
+                .build();
+        ReflectionTestUtils.setField(item, "returnItemId", returnItemId);
+        given(franchiseReturnItemRepository.findAllByReturns_ReturnStatusNot(ReturnStatus.PENDING)).willReturn(List.of(item));
+
+        // when
+        Map<Long, List<ReturnAndOrderInfo>> response = franchiseReturnService.getAllNotPendingReturnItem();
+
+        // then
+        verify(franchiseReturnItemRepository, times(1)).findAllByReturns_ReturnStatusNot(ReturnStatus.PENDING);
+        assertEquals(returnItemId, response.values().stream().findFirst().get().get(0).returnItemId());
+        assertEquals(orderItemId, response.values().stream().findFirst().get().get(0).orderItemId());
+    }
+
+    @Test
+    @DisplayName("반품에 대한 반품 제품이 없을 시 예외 발생")
+    void getAllNotPendingReturnItem_Failure_RETURN_ITEM_NOT_FOUND() {
+        // given
+        given(franchiseReturnItemRepository.findAllByReturns_ReturnStatusNot(ReturnStatus.PENDING)).willReturn(List.of());
+
+        // when & then
+        FranchiseReturnException exception = assertThrows(FranchiseReturnException.class, () -> {
+            franchiseReturnService.getAllNotPendingReturnItem();
+        });
+        verify(franchiseReturnItemRepository, times(1)).findAllByReturns_ReturnStatusNot(ReturnStatus.PENDING);
+        assertEquals(FranchiseReturnErrorCode.RETURN_ITEM_NOT_FOUND, exception.getErrorCode());
+    }
 }

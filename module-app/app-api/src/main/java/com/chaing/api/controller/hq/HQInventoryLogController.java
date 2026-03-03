@@ -1,12 +1,15 @@
 package com.chaing.api.controller.hq;
 
-import com.chaing.api.dto.hq.inventorylogs.request.HQFranchiseLogRequest;
-import com.chaing.api.dto.hq.inventorylogs.request.HQLogRequest;
-import com.chaing.api.dto.hq.inventorylogs.request.HQFactoryLogRequest;
+import com.chaing.api.facade.hq.HQInventoryLogFacade;
 import com.chaing.core.dto.ApiResponse;
-import com.chaing.core.enums.LogType;
+import com.chaing.domain.inventorylogs.dto.request.FactoryLogRequest;
+import com.chaing.domain.inventorylogs.dto.request.FranchiseLogRequest;
+import com.chaing.domain.inventorylogs.dto.request.LogRequest;
+import com.chaing.domain.inventorylogs.dto.response.FranchiseInventoryLogListResponse;
+import com.chaing.domain.inventorylogs.dto.response.InventoryLogListResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,84 +20,126 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
 
+@RequiredArgsConstructor
 @RestController
 @Tag(name = "HqInventoryLog API", description = "본사 재고 로그 관련 API")
 @RequestMapping("/api/v1/hq/log")
 public class HQInventoryLogController {
 
+    private final HQInventoryLogFacade hqInventoryLogFacade;
+
     @Operation(summary = "본사 반품 입고 이력 조회", description = "본사의 반품 입고 이력을 확인합니다.")
     @GetMapping("/return-inbound")
-    public ResponseEntity<ApiResponse<?>> findReturnInboundLogs(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
-            @RequestParam(required = false) String serialCode
+    public ResponseEntity<ApiResponse<InventoryLogListResponse>> findReturnInboundLogs(
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate startDate,
+
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate endDate,
+
+            @RequestParam(required = false)
+            String transactionCode
     ) {
-        HQLogRequest request = new HQLogRequest(startDate, endDate, serialCode);
-        return ResponseEntity.ok(ApiResponse.success(null));
+        LogRequest request = new LogRequest(startDate, endDate, transactionCode);
+        return ResponseEntity.ok(ApiResponse.success(hqInventoryLogFacade.findReturnInboundLogs(request)));
     }
 
     @Operation(summary = "본사 반품 출고 이력 조회", description = "본사의 반품 출고 이력을 확인합니다.")
-    @GetMapping("/return-outbound/{franchiseId}")
-    public ResponseEntity<ApiResponse<?>> findReturnOutboundLogs(
-            @PathVariable Long franchiseId,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
-            @RequestParam(required = false) String serialCode
+    @GetMapping("/return-outbound")
+    public ResponseEntity<ApiResponse<InventoryLogListResponse>> findReturnOutboundLogs(
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate startDate,
+
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate endDate,
+
+            @RequestParam(required = false) String transactionCode
     ) {
-        HQLogRequest request = new HQLogRequest(startDate, endDate, serialCode);
-        return ResponseEntity.ok(ApiResponse.success(null));
+        LogRequest request = new LogRequest(startDate, endDate, transactionCode);
+        return ResponseEntity.ok(ApiResponse.success(hqInventoryLogFacade.findReturnOutboundLogs(request)));
     }
 
     @Operation(summary = "본사 폐기 이력 조회", description = "본사의 폐기 이력을 확인합니다.")
     @GetMapping("/disposal")
-    public ResponseEntity<ApiResponse<?>> findDisposalLogs(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
-            @RequestParam(required = false) String serialCode
+    public ResponseEntity<ApiResponse<InventoryLogListResponse>> findDisposalLogs(
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate startDate,
+
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate endDate,
+
+            @RequestParam(required = false) String transactionCode
     ) {
-        HQLogRequest request = new HQLogRequest(startDate, endDate, serialCode);
-        return ResponseEntity.ok(ApiResponse.success(null));
+        LogRequest request = new LogRequest(startDate, endDate, transactionCode);
+        return ResponseEntity.ok(ApiResponse.success(hqInventoryLogFacade.findDisposalLogs(request)));
     }
 
     @Operation(summary = "가맹점 물류 입출고 이력 조회", description = "본사에서 가맹점 물류 입출고 이력을 확인합니다.")
     @GetMapping("/franchise-inventory/{franchiseId}")
-    public ResponseEntity<ApiResponse<?>> findFranchiseInboundOutboundLogs(
+    public ResponseEntity<ApiResponse<FranchiseInventoryLogListResponse>> findFranchiseInboundOutboundLogs(
             @PathVariable Long franchiseId,
-            @RequestParam(required = false) String productName,
-            @RequestParam(required = false) LogType logType,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
-            @RequestParam(required = false) String serialCode
+            @RequestParam(required = false)
+            String productName,
+
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate startDate,
+
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate endDate,
+
+            @RequestParam(required = false) String transactionCode
     ) {
-        HQFranchiseLogRequest request = new HQFranchiseLogRequest(productName, logType, startDate, endDate, serialCode);
-        return ResponseEntity.ok(ApiResponse.success(null));
+        FranchiseLogRequest request = new FranchiseLogRequest(productName, startDate, endDate, transactionCode);
+        return ResponseEntity.ok(ApiResponse.success(hqInventoryLogFacade.findFranchiseInboundOutboundLogs(franchiseId, request)));
     }
 
     @Operation(summary = "가맹점 판매 환불 이력 조회", description = "본사에서 가맹점 판매 환불 이력을 확인합니다.")
     @GetMapping("/franchise-sales/{franchiseId}")
-    public ResponseEntity<ApiResponse<?>> findFranchiseSalesRefundLogs(
+    public ResponseEntity<ApiResponse<FranchiseInventoryLogListResponse>> findFranchiseSalesRefundLogs(
             @PathVariable Long franchiseId,
-            @RequestParam(required = false) String productName,
-            @RequestParam(required = false) LogType logType,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
-            @RequestParam(required = false) String serialCode
+            @RequestParam(required = false)
+            String productName,
+
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate startDate,
+
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate endDate,
+
+            @RequestParam(required = false)
+            String transactionCode
     ) {
-        HQFranchiseLogRequest request = new HQFranchiseLogRequest(productName, logType, startDate, endDate, serialCode);
-        return ResponseEntity.ok(ApiResponse.success(null));
+        FranchiseLogRequest request = new FranchiseLogRequest(productName, startDate, endDate, transactionCode);
+        return ResponseEntity.ok(ApiResponse.success(hqInventoryLogFacade.findFranchiseSalesRefundLogs(franchiseId, request)));
     }
 
     @Operation(summary = "공장 재고 이력 조회", description = "본사에서 공장의 재고 이력을 확인합니다.")
     @GetMapping("/factory/{factoryId}")
-    public ResponseEntity<ApiResponse<?>> findFactoryInventoryLogs(
+    public ResponseEntity<ApiResponse<InventoryLogListResponse>> findFactoryInventoryLogs(
             @PathVariable Long factoryId,
             @RequestParam(required = false) String productName,
-            @RequestParam(required = false) LogType logType,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
-            @RequestParam(required = false) String serialCode
+            @RequestParam(required = false) String logType,
+
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate startDate,
+
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate endDate,
+            @RequestParam(required = false) String transactionCode
     ) {
-        HQFactoryLogRequest request = new HQFactoryLogRequest(productName, logType, startDate, endDate, serialCode);
-        return ResponseEntity.ok(ApiResponse.success(null));
+        FactoryLogRequest request = new FactoryLogRequest(productName, logType, startDate, endDate, transactionCode);
+        return ResponseEntity.ok(ApiResponse.success(hqInventoryLogFacade.findFactoryInventoryLogs(factoryId, request)));
     }
 }

@@ -1,6 +1,7 @@
 package com.chaing.api.facade.hq;
 
 import com.chaing.api.dto.hq.response.HQReturnResponse;
+import com.chaing.domain.returns.dto.request.HQReturnUpdateRequest;
 import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.core.dto.info.ReturnItemInfo;
 import com.chaing.domain.inventories.service.InventoryService;
@@ -11,15 +12,21 @@ import com.chaing.domain.returns.dto.command.HQReturnDetailCommand;
 import com.chaing.domain.returns.dto.command.ReturnItemInspection;
 import com.chaing.domain.returns.dto.response.FranchiseReturnItemDetailResponse;
 import com.chaing.domain.returns.dto.response.HQReturnDetailResponse;
+import com.chaing.domain.returns.dto.response.HQReturnUpdateResponse;
 import com.chaing.domain.returns.dto.response.ReturnAndOrderInfo;
+import com.chaing.domain.returns.enums.ReturnItemStatus;
 import com.chaing.domain.returns.enums.ReturnStatus;
+import com.chaing.domain.returns.enums.ReturnType;
 import com.chaing.domain.returns.exception.FranchiseReturnErrorCode;
 import com.chaing.domain.returns.exception.FranchiseReturnException;
 import com.chaing.domain.returns.service.FakeReturnFranchiseService;
 import com.chaing.domain.returns.service.FranchiseReturnService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -29,6 +36,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class HQReturnFacade {
 
     private final InventoryService inventoryService;
@@ -66,8 +74,10 @@ public class HQReturnFacade {
                 .flatMap(List::stream)
                 .map(ReturnAndOrderInfo::orderItemId)
                 .toList();
+        log.info("orderItemIds: {}", orderItemIds);
         // 2. Map<orderItemId, serialCode>
         Map<Long, String> serialCodeByOrderItemId = franchiseOrderService.getSerialCodesByOrderItemId(orderItemIds);
+        log.info("serialCodeByOrderItemId: {}", serialCodeByOrderItemId);
         // 3. Map<returnId, List<serialCode>>
         Map<Long, List<String>> serialCodeByReturnId = returnItemByReturnId.entrySet().stream()
                 .collect(Collectors.toMap(
@@ -78,6 +88,7 @@ public class HQReturnFacade {
                                         .filter(Objects::nonNull)
                                         .toList()
                 ));
+        log.info("serialCodeByReturnId: {}", serialCodeByReturnId);
 
         // Map<serialCode, returnItemCommand> boxCode 조회
         List<String> serialCodes = serialCodeByReturnId.values().stream()
@@ -224,6 +235,62 @@ public class HQReturnFacade {
                 .description(returnInfo.description())
                 .totalAmount(returnInfo.totalPrice())
                 .items(items)
+                .build();
+    }
+
+    // 반품 요청 제품 검수
+    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
+    public HQReturnUpdateResponse updateReturn(String returnCode, @Valid List<HQReturnUpdateRequest> request) {
+        // 반품 조회
+        HQReturnDetailCommand returnInfo = franchiseReturnService.getHQReturnInfo(returnCode);
+
+        // 반품 제품 업데이트
+        // Map<returnItemId, orderItemId>
+        Map<Long, Long> orderItemIdByReturnItemId = franchiseReturnService.getReturnItemId(returnCode);
+        // Map<orderItemId, serialCode>
+        List<Long> orderItemIds = orderItemIdByReturnItemId.values().stream().toList();
+        Map<Long, String> serialCodeByOrderItemId = franchiseOrderService.getSerialCodesByOrderItemId(orderItemIds);
+        // Map<returnItemId, serialCode>
+        Map<Long, String> serialCodeByReturnItemId = orderItemIdByReturnItemId.entrySet().stream()
+                        .collect(Collectors.toMap(
+                                Map.Entry::getKey,
+                                entry -> serialCodeByOrderItemId.get(entry.getValue())
+                        ));
+        // Map<returnItemId, ReturnItemInspection>
+        Map<Long, ReturnItemInspection> inspections = franchiseReturnService.updateReturnItemStatus(serialCodeByReturnItemId, request);
+
+        // 정산
+        boolean isProductNormal = inspections.values().stream()
+                .noneMatch(inspection -> inspection.status().equals(ReturnItemStatus.DEFECTIVE));
+
+        if (returnInfo.type().equals(ReturnType.MISORDER)) {
+            if (isProductNormal) {
+                // 경고 1회 추가
+                // 정산 취소
+            } else {
+                // 경고 1회 추가
+            }
+        } else {
+            if (isProductNormal) {
+                // 경고 1회 추가
+            } else {
+                // 정산 취소
+            }
+        }
+
+        // 반환 DTO
+        // Map<serialCode, ReturnItemInspection>
+        Map<String, ReturnItemInspection> inspectionBySerialCode = serialCodeByReturnItemId.entrySet().stream()
+                .collect(Collectors.toMap(
+                        Map.Entry::getValue,
+                        entry -> inspections.get(entry.getKey())
+                ));
+
+        // 반환
+        return HQReturnUpdateResponse.builder()
+                .returnId(returnInfo.returnId())
+                .returnCode(returnCode)
+                .inspectionBySerialCode(inspectionBySerialCode)
                 .build();
     }
 }

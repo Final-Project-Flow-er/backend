@@ -4,6 +4,7 @@ import com.chaing.core.dto.returns.response.FranchiseOrderInfo;
 import com.chaing.domain.returns.dto.command.HQReturnCommand;
 import com.chaing.domain.returns.dto.command.HQReturnDetailCommand;
 import com.chaing.domain.returns.dto.command.ReturnItemCreateCommand;
+import com.chaing.domain.returns.dto.command.ReturnItemInspection;
 import com.chaing.domain.returns.dto.request.FranchiseReturnCreateRequest;
 import com.chaing.domain.returns.dto.request.FranchiseReturnItemCreateRequest;
 import com.chaing.domain.returns.dto.response.FranchiseReturnAndReturnItemResponse;
@@ -542,6 +543,35 @@ class FranchiseReturnServiceTests {
             franchiseReturnService.getReturnItemId(returnCode);
         });
         verify(franchiseReturnItemRepository, times(1)).findAllByReturns_ReturnCode(returnCode);
+        assertEquals(FranchiseReturnErrorCode.RETURN_ITEM_NOT_FOUND, exception.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("반품 제품 검수 상태 반환 - 성공")
+    void getReturnItemInspection_Success() {
+        // given
+        given(franchiseReturnItemRepository.findAllByReturnItemIdIn(List.of(returnItemId))).willReturn(List.of(returnItem));
+
+        // when
+        Map<Long, ReturnItemInspection> response = franchiseReturnService.getReturnItemInspection(List.of(returnItemId));
+
+        // then
+        verify(franchiseReturnItemRepository, times(1)).findAllByReturnItemIdIn(List.of(returnItemId));
+        assertEquals(returnItemId, response.keySet().stream().findFirst().get());
+        assertEquals(false, response.values().stream().findFirst().get().isInspected());
+        assertEquals(ReturnItemStatus.BEFORE_INSPECTION, response.values().stream().findFirst().get().status());
+    }
+
+    @Test
+    @DisplayName("잘못된 값으로 반품 제품 조회 시 예외 발생")
+    void getReturnItemInspection_Failure_RETURN_ITEM_NOT_FOUND() {
+        // given
+        given(franchiseReturnItemRepository.findAllByReturnItemIdIn(List.of(returnItemId))).willReturn(List.of());
+
+        // when & then
+        FranchiseReturnException exception = assertThrows(FranchiseReturnException.class, () -> {
+            franchiseReturnService.getReturnItemInspection(List.of(returnItemId));
+        });
         assertEquals(FranchiseReturnErrorCode.RETURN_ITEM_NOT_FOUND, exception.getErrorCode());
     }
 }

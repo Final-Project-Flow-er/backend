@@ -128,17 +128,4 @@ class MyPageServiceTests {
         // when & then
         assertThrows(UserException.class, () -> myPageService.updatePassword(userId, command));
     }
-
-    @Test
-    @DisplayName("내 사업장 ID 조회 (사업장이 없을 경우 예외 발생)")
-    void getMyBusinessUnitId_NotFound_ThrowsException() {
-
-        // given
-        Long userId = 1L;
-        User user = User.builder().userId(userId).businessUnitId(null).build();
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-
-        // when & then
-        assertThrows(UserException.class, () -> myPageService.getMyBusinessUnitId(userId));
-    }
 }

@@ -2,7 +2,6 @@ package com.chaing.api.controller.franchise;
 
 import com.chaing.api.facade.franchise.FranchiseInventoryLogFacade;
 import com.chaing.core.dto.ApiResponse;
-import com.chaing.domain.businesses.entity.Franchise;
 import com.chaing.domain.inventorylogs.dto.request.FranchiseLogRequest;
 import com.chaing.domain.inventorylogs.dto.response.FranchiseInventoryLogListResponse;
 import io.swagger.v3.oas.annotations.Operation;

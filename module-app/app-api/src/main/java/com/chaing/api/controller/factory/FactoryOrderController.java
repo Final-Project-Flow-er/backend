@@ -30,7 +30,7 @@ public class FactoryOrderController {
     @Operation(summary = "대기 발주 조회", description = "본사의 대기 상태 발주 전체 조회")
     @GetMapping
     @PreAuthorize("hasAnyRole('FACTORY', 'ADMIN')")
-    public ResponseEntity<ApiResponse<List<FactoryPendingOrderResponse>>> getAllPendingOrders() {
+    public ResponseEntity<ApiResponse<List<FactoryOrderResponse>>> getAllPendingOrders() {
         return ResponseEntity.ok(ApiResponse.success(factoryFacade.getAllPendingOrders()));
     }
 
@@ -38,7 +38,7 @@ public class FactoryOrderController {
     @GetMapping("/accepted")
     @PreAuthorize("hasAnyRole('FACTORY', 'ADMIN')")
     public ResponseEntity<ApiResponse<List<FactoryOrderResponse>>> getAllOrders() {
-        return ResponseEntity.ok(ApiResponse.success(List.of(FactoryOrderResponse.builder().build())));
+        return ResponseEntity.ok(ApiResponse.success(factoryFacade.getAllOrders()));
     }
 
     @Operation(summary = "특정 발주 조회", description = "발주 번호로 본사의 특정 발주 조회")

@@ -1,5 +1,6 @@
 package com.chaing.api.facade.factory;
 
+import com.chaing.api.dto.factory.response.FactoryOrderResponse;
 import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.domain.orders.dto.info.HQOrderInfo;
 import com.chaing.domain.orders.dto.response.FactoryPendingOrderResponse;
@@ -19,7 +20,7 @@ public class FactoryFacade {
     private final HQOrderService hqOrderService;
     private final ProductService productService;
 
-    public List<FactoryPendingOrderResponse> getAllPendingOrders() {
+    public List<FactoryOrderResponse> getAllPendingOrders() {
         // 대기 상태 발주 정보 조회
         // Map<orderId, HQOrderInfo>
         Map<Long, HQOrderInfo> orderByOrderId = hqOrderService.getAllPendingOrders();

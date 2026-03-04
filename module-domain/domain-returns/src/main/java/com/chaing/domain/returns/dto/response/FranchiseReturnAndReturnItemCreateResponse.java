@@ -5,6 +5,6 @@ import java.util.List;
 public record FranchiseReturnAndReturnItemCreateResponse(
         ReturnInfo returnInfo,
 
-        List<ReturnItemInfo> returnItemInfos
+        List<ReturnAndOrderInfo> returnAndOrderInfos
 ) {
 }

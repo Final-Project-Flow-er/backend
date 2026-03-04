@@ -9,7 +9,7 @@ import com.chaing.domain.orders.service.FranchiseOrderService;
 import com.chaing.domain.returns.dto.command.ReturnItemCreateCommand;
 import com.chaing.domain.returns.dto.request.FranchiseReturnCreateRequest;
 import com.chaing.domain.returns.dto.request.FranchiseReturnItemCreateRequest;
-import com.chaing.domain.returns.dto.request.FranchiseReturnUpdateRequest;
+import com.chaing.core.dto.request.FranchiseReturnUpdateRequest;
 import com.chaing.domain.returns.dto.response.FranchiseReturnAndReturnItemCreateResponse;
 import com.chaing.domain.returns.dto.response.FranchiseReturnAndReturnItemResponse;
 import com.chaing.domain.returns.dto.response.FranchiseReturnCreateResponse;
@@ -21,12 +21,12 @@ import com.chaing.domain.returns.dto.response.FranchiseReturnResponse;
 import com.chaing.domain.returns.dto.response.FranchiseReturnTargetOrderItem;
 import com.chaing.domain.returns.dto.response.FranchiseReturnUpdateResponse;
 import com.chaing.domain.returns.dto.response.ReturnInfo;
-import com.chaing.domain.returns.dto.response.ReturnItemInfo;
+import com.chaing.domain.returns.dto.response.ReturnAndOrderInfo;
 import com.chaing.domain.returns.exception.FranchiseReturnErrorCode;
 import com.chaing.domain.returns.exception.FranchiseReturnException;
 import com.chaing.domain.returns.service.FranchiseReturnService;
 import com.chaing.domain.returns.service.FakeReturnFranchiseService;
-import com.chaing.domain.returns.service.FakeInventoryService;
+import com.chaing.domain.inventories.service.InventoryService;
 import com.chaing.domain.returns.service.FakeReturnProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -49,7 +49,7 @@ public class FranchiseReturnFacade {
     private final FranchiseOrderService franchiseOrderService;
 
     // 가짜
-    private final FakeInventoryService fakeInventoryService;
+    private final InventoryService inventoryService;
     private final FakeReturnProductService fakeReturnProductService;
     private final FakeReturnFranchiseService fakeReturnFranchiseService;
 
@@ -86,7 +86,7 @@ public class FranchiseReturnFacade {
                 .map(OrderItemIdAndSerialCode::serialCode)
                 .toList();
 
-        List<ReturnToInventoryRequest> inventoryRequests = fakeInventoryService.getProducts(serialCodes);
+        List<ReturnToInventoryRequest> inventoryRequests = inventoryService.getProducts(serialCodes);
         Map<String, ReturnToInventoryRequest> serialCodeAndInventoryMap = inventoryRequests.stream()
                 .collect(Collectors.toMap(
                         ReturnToInventoryRequest::serialCode,
@@ -159,7 +159,7 @@ public class FranchiseReturnFacade {
         List<String> serialCodes = franchiseOrderService.getSerialCodeList(orderItemIds);
 
         // 제품 정보
-        List<ReturnToInventoryRequest> inventoryRequests = fakeInventoryService.getProducts(serialCodes);
+        List<ReturnToInventoryRequest> inventoryRequests = inventoryService.getProducts(serialCodes);
         List<FranchiseReturnProductInfo> productInfos = fakeReturnProductService.getProduct(returnCode);
 
         // 가맹점 코드
@@ -211,7 +211,7 @@ public class FranchiseReturnFacade {
         Long franchiseId = 1L;
 
         // 1. 제품 식별코드, 박스코드로 FranchiseInventory에서 productId 조회
-        List<Long> productIds = fakeInventoryService.getProductsBySerialCodeAndBoxCode(requests);
+        List<Long> productIds = inventoryService.getProductsBySerialCodeAndBoxCode(requests);
         // 2. productId로 Product에서 productCode, productName, unitPrice 조회
         List<FranchiseReturnProductInfo> productInfos = fakeReturnProductService.getProduct(returnCode);
         // 3. 조회한 값들로 ReturnItem 수정
@@ -291,7 +291,7 @@ public class FranchiseReturnFacade {
                 .collect(Collectors.toMap(
                         Function.identity(),
                         boxCode -> {
-                            List<String> serialCodes = fakeInventoryService.getSerialCodes(franchiseId, boxCode);
+                            List<String> serialCodes = inventoryService.getSerialCodes(franchiseId, boxCode);
 
                             if (serialCodes == null || serialCodes.isEmpty()) {
                                 throw new FranchiseReturnException(FranchiseReturnErrorCode.INVALID_BOX_CODE);
@@ -320,12 +320,12 @@ public class FranchiseReturnFacade {
         List<ReturnItemCreateCommand> orderItemIds = orderItemIdBySerialCode.entrySet().stream()
                 .map(entry -> new ReturnItemCreateCommand(entry.getKey(), entry.getValue()))
                 .toList();
-        List<ReturnItemInfo> returnItemInfos = franchiseReturnService.createReturnItems(returnInfo.returnCode(), orderItemIds);
+        List<ReturnAndOrderInfo> returnAndOrderInfos = franchiseReturnService.createReturnItems(returnInfo.returnCode(), orderItemIds);
 
         // 결과 반환
         return new FranchiseReturnAndReturnItemCreateResponse(
                 returnInfo,
-                returnItemInfos
+                returnAndOrderInfos
         );
     }
 
@@ -358,7 +358,7 @@ public class FranchiseReturnFacade {
         // 1. orderCode로 orderItem serialCode 조회
         List<String> serialCodes = franchiseOrderService.getSerialCodesByOrderCode(franchiseId, orderCode);
         // 2. orderItem serialCode로 franchiseInventory boxCode, productId 조회
-        List<ReturnToInventoryRequest> inventoryInfo = fakeInventoryService.getProducts(serialCodes);
+        List<ReturnToInventoryRequest> inventoryInfo = inventoryService.getProducts(serialCodes);
         // 3. productId로 product 조회
         List<Long> productIds = inventoryInfo.stream()
                 .map(ReturnToInventoryRequest::productId)

@@ -13,6 +13,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class UserManagementService {
@@ -72,6 +74,10 @@ public class UserManagementService {
     public User getUserById(Long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
+    }
+
+    public List<Long> getAllUserIds() {
+        return userRepository.getAllUserIds();
     }
 
     // 로그인 아이디로 회원 조회

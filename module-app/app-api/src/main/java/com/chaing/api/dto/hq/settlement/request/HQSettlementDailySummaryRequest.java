@@ -6,7 +6,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDate;
 
-public record HQSettlementDailyFranchiseRequest(
+public record HQSettlementDailySummaryRequest(
         @Schema(description = "조회 날짜", example = "2026-02-26", requiredMode = Schema.RequiredMode.REQUIRED)
         @NotNull
         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)

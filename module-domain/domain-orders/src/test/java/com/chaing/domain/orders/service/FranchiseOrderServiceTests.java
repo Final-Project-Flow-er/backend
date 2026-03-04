@@ -162,13 +162,13 @@ class FranchiseOrderServiceTests {
     @DisplayName("가맹점 발주 목록 조회 - 성공")
     void getAllOrders_Success() {
         // given
-        given(franchiseOrderRepository.findAllByFranchiseIdAndUsername(franchiseId, username)).willReturn(List.of(franchiseOrder));
+        given(franchiseOrderRepository.findAllByFranchiseIdAndUserId(franchiseId, username)).willReturn(List.of(franchiseOrder));
 
         // when
         List<FranchiseOrder> orders = franchiseOrderService.getAllOrders(franchiseId, username);
 
         // then
-        verify(franchiseOrderRepository, times(1)).findAllByFranchiseIdAndUsername(franchiseId, username);
+        verify(franchiseOrderRepository, times(1)).findAllByFranchiseIdAndUserId(franchiseId, username);
         assertEquals(1, orders.size());
         assertEquals(1L, orders.get(0).getFranchiseOrderId());
     }
@@ -371,13 +371,13 @@ class FranchiseOrderServiceTests {
     @DisplayName("franchiseOrderId에 대한 returnCode 반환 - 성공")
     void getAllOrderCode_Success() {
         // given
-        given(franchiseOrderRepository.findAllByFranchiseOrderIdIn(List.of(franchiseOrderId))).willReturn(List.of(franchiseOrder));
+        given(franchiseOrderRepository.findAllByFranchiseOrderIdInAndDeletedAtIsNull(List.of(franchiseOrderId))).willReturn(List.of(franchiseOrder));
 
         // when
         Map<Long, String> response = franchiseOrderService.getAllOrderCode(List.of(franchiseOrderId));
 
         // then
-        verify(franchiseOrderRepository, times(1)).findAllByFranchiseOrderIdIn(List.of(franchiseOrderId));
+        verify(franchiseOrderRepository, times(1)).findAllByFranchiseOrderIdInAndDeletedAtIsNull(List.of(franchiseOrderId));
         assertEquals(orderCode, response.get(franchiseOrderId));
     }
 

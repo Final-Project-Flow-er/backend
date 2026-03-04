@@ -3,9 +3,15 @@ package com.chaing.api.facade.franchise;
 import com.chaing.api.dto.franchise.orders.request.FranchiseOrderCreateRequest;
 import com.chaing.api.dto.franchise.orders.request.FranchiseOrderUpdateRequest;
 import com.chaing.api.dto.franchise.orders.response.FranchiseOrderResponse;
+import com.chaing.core.dto.info.ProductInfo;
+import com.chaing.domain.orders.dto.command.FranchiseOrderCommand;
+import com.chaing.domain.orders.dto.command.FranchiseOrderItemCommand;
 import com.chaing.domain.orders.entity.FranchiseOrder;
+import com.chaing.domain.orders.exception.OrderErrorCode;
+import com.chaing.domain.orders.exception.OrderException;
 import com.chaing.domain.orders.service.FranchiseOrderService;
-import com.chaing.domain.orders.support.ProductInfo;
+import com.chaing.domain.products.service.ProductService;
+import com.chaing.domain.users.service.UserManagementService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -13,6 +19,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -20,15 +28,78 @@ import java.util.List;
 public class FranchiseOrderFacade {
 
     private final FranchiseOrderService franchiseOrderService;
+    private final UserManagementService userManagementService;
+    private final ProductService productService;
 
     // 가맹점 발주 조회
-    public List<FranchiseOrderResponse> getAllOrders(String username) {
-        // franchiseId username으로 조회하는 로직 추가 필요
-        Long franchiseId = 1L;
+    public List<FranchiseOrderResponse> getAllOrders(Long userId) {
+        // franchiseId
+        Long franchiseId = userManagementService.getFranchiseIdByUserId(userId);
 
-        List<FranchiseOrder> orders = franchiseOrderService.getAllOrders(franchiseId, username);
+        // username
+        String username = userManagementService.getUsernameByUserId(userId);
 
-        return FranchiseOrderResponse.from(orders);
+        // Map<orderId, FranchiseOrderCommand>
+        Map<Long, FranchiseOrderCommand> orders = franchiseOrderService.getAllOrders(franchiseId, userId);
+
+        // List<orderId>
+        List<Long> orderIds = orders.keySet().stream().toList();
+
+        // Map<orderId, List<FranchiseOrderItemCommand>>
+        Map<Long, List<FranchiseOrderItemCommand>> orderItemByOrderId = franchiseOrderService.getOrderItemsByOrderIds(orderIds);
+
+        // Map<orderItemId, orderId>
+        Map<Long, Long> orderIdByOrderItemId = orderItemByOrderId.entrySet().stream()
+                .flatMap(entry -> entry.getValue().stream()
+                        .map(item -> Map.entry(entry.getKey(), item.orderItemId())))
+                .collect(Collectors.toMap(
+                        Map.Entry::getValue,
+                        Map.Entry::getKey
+                ));
+
+        // Map<productId, List<orderItemId>>
+        Map<Long, List<Long>> orderItemIdsByProductId = franchiseOrderService.getOrderItemIdsAndProductIdsByOrderId(orderIds);
+
+        // List<productId>
+        List<Long> productIds = orderItemIdsByProductId.keySet().stream().toList();
+
+        // Map<productId, ProductInfo>
+        Map<Long, ProductInfo> productInfoByProductId = productService.getProductInfos(productIds);
+
+        return orderItemIdsByProductId.entrySet().stream()
+                .map(entry -> {
+                    Long productId = entry.getKey();
+                    Long orderItemId = entry.getValue().get(0);
+                    Long orderId = orderIdByOrderItemId.get(orderItemId);
+
+                    FranchiseOrderCommand orderCommand = orders.get(orderId);
+                    FranchiseOrderItemCommand orderItemCommand = orderItemByOrderId.get(orderId).get(0);
+                    ProductInfo productInfo = productInfoByProductId.get(productId);
+
+                    if (orderCommand == null) {
+                        throw new OrderException(OrderErrorCode.ORDER_NOT_FOUND);
+                    }
+
+                    if (orderItemCommand == null) {
+                        throw new OrderException(OrderErrorCode.ORDER_ITEM_NOT_FOUND);
+                    }
+
+                    if (productInfo == null) {
+                        throw new OrderException(OrderErrorCode.PRODUCT_NOT_FOUND);
+                    }
+
+                    return FranchiseOrderResponse.builder()
+                            .orderCode(orderCommand.orderCode())
+                            .orderStatus(orderCommand.orderStatus())
+                            .productCode(productInfo.productCode())
+                            .unitPrice(orderItemCommand.unitPrice())
+                            .totalPrice(orderCommand.totalPrice())
+                            .requestedDate(orderCommand.requestedDate())
+                            .receiver(username)
+                            .deliveryDate(orderCommand.deliveryDate())
+                            .build();
+                })
+                .toList();
     }
 
     // 가맹점의 발주 번호에 따른 특정 발주 조회

@@ -1,9 +1,7 @@
-package com.chaing.api.dto.franchise.orders.response;
+package com.chaing.domain.orders.dto.response;
 
 import com.chaing.domain.orders.entity.FranchiseOrderItem;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 
 import java.math.BigDecimal;
@@ -11,19 +9,12 @@ import java.util.List;
 
 @Builder
 public record FranchiseOrderItemResponse(
-        @NotNull
         String serialCode,
 
-        @NotNull
-        @Min(0)
         BigDecimal unitPrice,
 
-        @NotNull
-        @Min(0)
         Integer quantity,
 
-        @NotNull
-        @Min(0)
         BigDecimal totalUnitPrice
 ) {
     public static FranchiseOrderItemResponse from(FranchiseOrderItem franchiseOrderItem) {

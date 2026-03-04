@@ -10,11 +10,11 @@ import java.util.Optional;
 
 @Repository
 public interface FranchiseOrderRepository extends JpaRepository<FranchiseOrder, Long> {
-    List<FranchiseOrder> findAllByFranchiseIdAndUsername(Long franchiseId, String username);
+    List<FranchiseOrder> findAllByFranchiseIdAndUserId(Long franchiseId, Long username);
 
     Optional<FranchiseOrder> findByFranchiseIdAndUsernameAndOrderCode(Long franchiseId, String username, String orderCode);
 
-    List<FranchiseOrder> findAllByFranchiseOrderIdIn(List<Long> orderIds);
+    List<FranchiseOrder> findAllByFranchiseOrderIdInAndDeletedAtIsNull(List<Long> orderIds);
 
     Optional<FranchiseOrder> findByFranchiseIdAndFranchiseOrderId(Long franchiseId, Long orderId);
 

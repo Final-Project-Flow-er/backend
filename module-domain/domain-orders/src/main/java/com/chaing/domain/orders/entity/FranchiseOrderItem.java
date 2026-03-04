@@ -39,22 +39,14 @@ public class FranchiseOrderItem extends BaseEntity {
     @Column(nullable = false)
     private Long productId;
 
-    @Column(nullable = false)
-    private Integer quantity;
-
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal unitPrice;
-
-    @Column(nullable = false, precision = 19, scale = 2)
-    private BigDecimal totalPrice;
 
     public void allocateFranchiseOrder(FranchiseOrder franchiseOrder) {
         this.franchiseOrder = franchiseOrder;
     }
 
     public void update(FranchiseOrderItemInfo item) {
-        this.quantity = item.quantity();
         this.unitPrice = item.unitPrice();
-        this.totalPrice = item.unitPrice().multiply(BigDecimal.valueOf(item.quantity()));
     }
 }

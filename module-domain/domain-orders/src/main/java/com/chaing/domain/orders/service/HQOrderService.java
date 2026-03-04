@@ -273,8 +273,9 @@ public class HQOrderService {
                 ));
     }
 
+    // 발주 전체 조회
     public Map<Long, HQOrderInfo> getAllOrdersByFactory() {
-        List<HeadOfficeOrder> orders = orderRepository.findAllByOrderStatusNot(HQOrderStatus.PENDING);
+        List<HeadOfficeOrder> orders = orderRepository.findAll();
 
         return orders.stream()
                 .collect(Collectors.toMap(

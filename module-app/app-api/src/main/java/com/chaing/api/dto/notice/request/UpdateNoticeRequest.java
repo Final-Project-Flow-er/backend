@@ -6,7 +6,7 @@ public record UpdateNoticeRequest(
 
         String title,
         String content,
-        boolean important
+        Boolean important
 ) {
     public NoticeUpdateCommand toCommand() {
         return new NoticeUpdateCommand(

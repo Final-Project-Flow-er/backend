@@ -53,6 +53,6 @@ public class Notice extends BaseEntity {
         this.title = command.title();
         this.content = command.content();
         this.authorId = authorId;
-        this.important = command.important();
+        if (command.important() != null) this.important = command.important();
     }
 }

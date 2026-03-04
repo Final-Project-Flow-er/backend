@@ -4,6 +4,6 @@ public record NoticeUpdateCommand(
 
         String title,
         String content,
-        boolean important
+        Boolean important
 ) {
 }

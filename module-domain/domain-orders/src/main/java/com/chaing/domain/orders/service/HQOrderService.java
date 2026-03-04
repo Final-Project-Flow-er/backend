@@ -305,6 +305,10 @@ public class HQOrderService {
 
     public List<HQOrderForTransitResponse> getOrdersForTransit(List<Long> orderIds) {
 
+        if(orderIds == null || orderIds.isEmpty()) {
+            throw new HQOrderException(HQOrderErrorCode.INVALID_INPUT);
+        }
+
         List<HeadOfficeOrderItem> allItems = orderItemRepository
                 .findByHeadOfficeOrder_HeadOfficeOrderIdInAndHeadOfficeOrder_StatusAndDeletedAtIsNull(
                         orderIds,
@@ -317,6 +321,12 @@ public class HQOrderService {
 
         Map<HeadOfficeOrder, List<HeadOfficeOrderItem>> itemsByOrder = allItems.stream()
                 .collect(Collectors.groupingBy(HeadOfficeOrderItem::getHeadOfficeOrder));
+
+        long requestedCount = orderIds.stream().distinct().count();
+
+        if (itemsByOrder.size() != requestedCount) {
+            throw new HQOrderException(HQOrderErrorCode.ORDER_NOT_FOUND);
+        }
 
         return itemsByOrder.entrySet().stream()
                 .map(entry -> {

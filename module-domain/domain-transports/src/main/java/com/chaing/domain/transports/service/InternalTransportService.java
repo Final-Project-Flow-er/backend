@@ -66,6 +66,9 @@ public class InternalTransportService {
         // 적재 가능 유효성 검증
         validator.checkLoadable(maxLoad, currentWeight, newWeight);
 
+        // 송장 유효성 검증
+        validator.checkTrackingNumber(orders, trackingMap);
+
         // 차량 배정
         executor.createTransits(vehicleId, orders, trackingMap);
     }

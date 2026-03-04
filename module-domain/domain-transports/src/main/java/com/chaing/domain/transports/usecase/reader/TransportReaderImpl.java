@@ -30,7 +30,7 @@ public class TransportReaderImpl implements TransportReader{
     public Long getCurrentTransitWeight(Long vehicleId) {
         return transitRepository.findByVehicleId(vehicleId)
                 .stream()
-                .mapToLong(Transit::getWeight)
+                .mapToLong(t -> t.getWeight() != null ? t.getWeight() : 0L)
                 .sum();
     }
 

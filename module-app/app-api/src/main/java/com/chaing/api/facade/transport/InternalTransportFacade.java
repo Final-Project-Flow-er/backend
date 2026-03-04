@@ -82,7 +82,7 @@ public class InternalTransportFacade {
         // 운송 도메인
         transportService.assignVehicle(
                 request.vehicleId(),
-                orderInfos, // Long
+                orderInfos,
                 trackingMap,     // String
                 totalWeight
         );

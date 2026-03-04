@@ -81,4 +81,18 @@ public class HeadOfficeOrder extends BaseEntity {
 
         this.orderStatus = HQOrderStatus.CANCELED;
     }
+
+    public void accept() {
+        if (orderStatus != HQOrderStatus.PENDING) {
+            throw new HQOrderException(HQOrderErrorCode.ORDER_NOT_PENDING);
+        }
+        this.orderStatus = HQOrderStatus.ACCEPTED;
+    }
+
+    public void reject() {
+        if (orderStatus != HQOrderStatus.PENDING) {
+            throw new HQOrderException(HQOrderErrorCode.ORDER_NOT_PENDING);
+        }
+        this.orderStatus = HQOrderStatus.REJECTED;
+    }
 }

@@ -37,6 +37,9 @@ public class FranchiseOrderItem extends BaseEntity {
     private String serialCode;
 
     @Column(nullable = false)
+    private Long productId;
+
+    @Column(nullable = false)
     private Integer quantity;
 
     @Column(nullable = false, precision = 19, scale = 2)

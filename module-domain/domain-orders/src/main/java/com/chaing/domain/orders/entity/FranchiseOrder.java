@@ -45,10 +45,7 @@ public class FranchiseOrder extends BaseEntity {
     private String orderCode;
 
     @Column(nullable = false)
-    private String username;
-
-    @Column(nullable = false)
-    private String phoneNumber;
+    private Long userId;
 
     @Column(nullable = false)
     private String address;
@@ -81,8 +78,6 @@ public class FranchiseOrder extends BaseEntity {
         return FranchiseOrder.builder()
                 .franchiseId(franchiseId)
                 .orderCode(orderCode)
-                .username(username)
-                .phoneNumber(request.phoneNumber())
                 .address(request.address())
                 .requirement(request.requirement())
                 .deliveryDate(request.deliveryDate())
@@ -102,8 +97,6 @@ public class FranchiseOrder extends BaseEntity {
     }
 
     public void update(FranchiseOrderUpdateCommand request) {
-        this.username = request.username();
-        this.phoneNumber = request.phoneNumber();
         this.address = request.address();
         this.requirement = request.requirement();
         this.deliveryTime = request.deliveryTime();

@@ -75,9 +75,14 @@ public class InternalTransportFacade {
 
         // 외부 운송 모듈
         // 송장 번호 가져오기
-        Map<String, String> trackingMap = externalTrackingModule.getTrackingNumbers(
-                orderInfos.stream().map(OrderInfo::orderCode).toList()
+        Map<String, String> trackingMap = Map.of(
+                "ORD001", "TRACK-12345",
+                "ORD002", "TRACK-67890"
         );
+                /* 외부 운송 모듈 구현 전 임시 값으로 대체
+                externalTrackingModule.getTrackingNumbers(
+                orderInfos.stream().map(OrderInfo::orderCode).toList()
+        );*/
 
         // 운송 도메인
         transportService.assignVehicle(

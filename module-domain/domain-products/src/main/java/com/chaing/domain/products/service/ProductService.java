@@ -177,11 +177,13 @@ public class ProductService {
 
         List<Product> products = productRepository.findAllByProductIdIn(productIds);
 
-        return products.stream()
-                .collect(Collectors.toMap(
-                        Product::getProductId,
-                        Product::getWeight,
-                        (existing, replacement) -> existing         // 중복 예외 처리
-                ));
+        Map<Long, Integer> weightMap = products.stream()
+                .collect(Collectors.toMap(Product::getProductId, Product::getWeight));
+
+        if (weightMap.size() != productIds.stream().distinct().count()) {
+                throw new ProductException(ProductErrorCode.PRODUCT_NOT_FOUND);
+        }
+
+        return weightMap;
     }
 }

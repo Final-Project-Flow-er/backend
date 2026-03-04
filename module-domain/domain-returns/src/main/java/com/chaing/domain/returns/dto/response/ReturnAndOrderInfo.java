@@ -4,21 +4,21 @@ import com.chaing.domain.returns.entity.ReturnItem;
 
 import java.util.List;
 
-public record ReturnItemInfo(
+public record ReturnAndOrderInfo(
         Long orderItemId,
 
         Long returnItemId
 ) {
-    public static ReturnItemInfo from(ReturnItem returnItem) {
-        return new ReturnItemInfo(
+    public static ReturnAndOrderInfo from(ReturnItem returnItem) {
+        return new ReturnAndOrderInfo(
                 returnItem.getFranchiseOrderItemId(),
                 returnItem.getReturnItemId()
         );
     }
 
-    public static List<ReturnItemInfo> from(List<ReturnItem> returnItems) {
+    public static List<ReturnAndOrderInfo> from(List<ReturnItem> returnItems) {
         return returnItems.stream()
-                .map(ReturnItemInfo::from)
+                .map(ReturnAndOrderInfo::from)
                 .toList();
     }
 }

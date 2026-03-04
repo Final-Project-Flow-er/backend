@@ -1,8 +1,8 @@
 package com.chaing.api.controller.factory;
 
-import com.chaing.domain.orders.dto.request.FactoryOrderRequest;
 import com.chaing.api.facade.factory.FactoryFacade;
 import com.chaing.core.dto.ApiResponse;
+import com.chaing.domain.orders.dto.request.FactoryOrderRequest;
 import com.chaing.domain.orders.dto.response.FactoryOrderResponse;
 import com.chaing.domain.orders.dto.response.FactoryOrderUpdateResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -13,7 +13,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -36,14 +35,6 @@ public class FactoryOrderController {
             @RequestParam Boolean isAccepted
     ) {
         return ResponseEntity.ok(ApiResponse.success(factoryFacade.getAllOrders(isAccepted)));
-    }
-
-    @Operation(summary = "특정 발주 조회", description = "발주 번호로 본사의 특정 발주 조회")
-    @GetMapping("/{order-number}")
-    public ResponseEntity<ApiResponse<FactoryOrderResponse>> getOrder(
-            @PathVariable("order-number") String orderNumber
-    ) {
-        return ResponseEntity.ok(ApiResponse.success(FactoryOrderResponse.builder().build()));
     }
 
     @Operation(summary = "발주 상태 변경", description = "발주 상태를 접수/반려로 변경")

@@ -4,10 +4,11 @@ import com.chaing.api.dto.notice.request.CreateNoticeRequest;
 import com.chaing.api.dto.notice.request.UpdateNoticeRequest;
 import com.chaing.api.dto.notice.response.NoticeDetailResponse;
 import com.chaing.api.dto.notice.response.NoticeSummaryResponse;
-import com.chaing.domain.notices.dto.command.NoticeCreateCommand;
-import com.chaing.domain.notices.dto.command.NoticeUpdateCommand;
+import com.chaing.api.facade.notification.NotificationFacade;
 import com.chaing.domain.notices.entity.Notice;
 import com.chaing.domain.notices.service.NoticeService;
+import com.chaing.domain.notifications.enums.NotificationType;
+import com.chaing.domain.notifications.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class NoticeFacade {
 
     private final NoticeService noticeService;
+    private final NotificationFacade notificationFacade;
 
     // 공지사항 상세 조회
     public NoticeDetailResponse getNoticeDetail(Long id) {
@@ -37,18 +39,30 @@ public class NoticeFacade {
     // 공지사항 등록
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public NoticeDetailResponse createNotice(CreateNoticeRequest request, Long authorId) {
-        NoticeCreateCommand command = request.toCommand();
-        Notice notice = noticeService.create(command, authorId);
-        // TODO: 공지사항 알림 생성
+        Notice notice = noticeService.create(request.toCommand(), authorId);
+
+        // 공지사항 알림 생성
+        notificationFacade.sendNotificationToAll(
+                NotificationType.NOTICE,
+                "[공지] " + notice.getTitle(),
+                notice.getNoticeId()
+        );
+
         return NoticeDetailResponse.from(notice);
     }
 
     // 공지사항 수정
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public NoticeDetailResponse updateNotice(Long id, UpdateNoticeRequest request, Long updaterId) {
-        NoticeUpdateCommand command = request.toCommand();
-        Notice notice = noticeService.update(id, command, updaterId);
-        // TODO: 공지사항 알림 생성
+        Notice notice = noticeService.update(id, request.toCommand(), updaterId);
+
+        // 공지사항 알림 수정
+        notificationFacade.updateNotificationsByTarget(
+                NotificationType.NOTICE,
+                "[수정된 공지] " + notice.getTitle(),
+                notice.getNoticeId()
+        );
+
         return NoticeDetailResponse.from(notice);
     }
 
@@ -56,5 +70,6 @@ public class NoticeFacade {
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public void deleteNotice(Long id) {
         noticeService.delete(id);
+        notificationFacade.deleteNotificationsByTarget(NotificationType.NOTICE, id);
     }
 }

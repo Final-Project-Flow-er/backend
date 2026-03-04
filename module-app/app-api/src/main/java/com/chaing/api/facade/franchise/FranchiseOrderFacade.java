@@ -1,7 +1,7 @@
 package com.chaing.api.facade.franchise;
 
 import com.chaing.api.dto.franchise.orders.request.FranchiseOrderCreateRequest;
-import com.chaing.api.dto.franchise.orders.request.FranchiseOrderUpdateRequest;
+import com.chaing.domain.orders.dto.request.FranchiseOrderUpdateRequest;
 import com.chaing.api.dto.franchise.orders.response.FranchiseOrderResponse;
 import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.domain.orders.dto.command.FranchiseOrderCommand;
@@ -9,6 +9,7 @@ import com.chaing.domain.orders.dto.command.FranchiseOrderDetailCommand;
 import com.chaing.domain.orders.dto.command.FranchiseOrderItemCommand;
 import com.chaing.domain.orders.dto.response.FranchiseOrderDetailResponse;
 import com.chaing.domain.orders.dto.response.FranchiseOrderItemDetailResponse;
+import com.chaing.domain.orders.dto.response.FranchiseOrderUpdateResponse;
 import com.chaing.domain.orders.entity.FranchiseOrder;
 import com.chaing.domain.orders.exception.OrderErrorCode;
 import com.chaing.domain.orders.exception.OrderException;
@@ -181,18 +182,47 @@ public class FranchiseOrderFacade {
     }
 
     // 가맹점의 발주 수정
-    @Transactional(rollbackFor = Exception.class)
-    public FranchiseOrderResponse updateOrder(String username, String orderCode, FranchiseOrderUpdateRequest request) {
-        // franchiseId username으로 조회하는 로직 추가 필요
-        Long franchiseId = 1L;
+    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
+    public FranchiseOrderUpdateResponse updateOrder(Long userId, String orderCode, List<FranchiseOrderUpdateRequest> requests) {
+        // franchiseId
+        Long franchiseId = userManagementService.getFranchiseIdByUserId(userId);
 
-        // 수령인이 user 목록에 없으면 예외 발생
+        // FranchiseOrderDetailCommand
+        FranchiseOrderDetailCommand order = franchiseOrderService.getOrder(franchiseId, userId, orderCode);
 
-        FranchiseOrder order = franchiseOrderService.getOrder(franchiseId, username, orderCode);
+        // Map<orderId, List<FranchiseOrderItemCommand>>
+        Map<Long, List<FranchiseOrderItemCommand>> orderItemsByOrderId = franchiseOrderService.getOrderItemsByOrderId(order.orderId());
 
-        franchiseOrderService.updateOrder(order, request.toFranchiseOrderUpdateCommand());
+        // List<productId>
+        List<Long> productIds = orderItemsByOrderId.values().stream()
+                .flatMap(List::stream)
+                .map(FranchiseOrderItemCommand::productId)
+                .toList();
 
-        return FranchiseOrderResponse.from(order);
+        // Map<productId, ProductInfo>
+        Map<Long, ProductInfo> productInfoByProductId = productService.getProductInfos(productIds);
+
+        // Map<productCode, ProductInfo>
+        Map<String, ProductInfo> productInfoByProductCode = productInfoByProductId.values().stream()
+                .collect(Collectors.toMap(
+                        ProductInfo::productCode,
+                        Function.identity()
+                ));
+
+        // Map<productId, FranchiseOrderUpdateRequest>
+        Map<Long, FranchiseOrderUpdateRequest> requestByProductId = requests.stream()
+                .collect(Collectors.toMap(
+                        request -> productInfoByProductCode.get(request.productCode()).productId(),
+                        Function.identity()
+                ));
+
+        // 발주 수정
+        List<FranchiseOrderItemDetailResponse> itemResponses = franchiseOrderService.updateOrder(order.orderId(), requestByProductId, productInfoByProductId);
+
+        return FranchiseOrderUpdateResponse.builder()
+                .orderCode(orderCode)
+                .items(itemResponses)
+                .build();
     }
 
     // 가맹점 발주 취소

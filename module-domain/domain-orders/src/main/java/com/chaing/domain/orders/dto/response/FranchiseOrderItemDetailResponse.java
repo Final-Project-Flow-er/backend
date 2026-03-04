@@ -16,5 +16,4 @@ public record FranchiseOrderItemDetailResponse(
 
         BigDecimal totalPrice
 ) {
-
 }

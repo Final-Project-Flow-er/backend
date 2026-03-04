@@ -172,4 +172,16 @@ public class ProductService {
                                 .build()
                 ));
     }
+
+    public Map<Long, Integer> getWeightsByProductIds(List<Long> productIds) {
+
+        List<Product> products = productRepository.findAllByProductIdIn(productIds);
+
+        return products.stream()
+                .collect(Collectors.toMap(
+                        Product::getProductId,
+                        Product::getWeight,
+                        (existing, replacement) -> existing         // 중복 예외 처리
+                ));
+    }
 }

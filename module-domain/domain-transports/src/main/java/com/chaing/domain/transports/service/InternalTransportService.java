@@ -13,12 +13,14 @@ import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.validation.annotation.Validated;
 
 import java.util.List;
 import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
+@Validated
 @Transactional(readOnly = true)
 public class InternalTransportService {
 
@@ -48,21 +50,18 @@ public class InternalTransportService {
     }
 
     // 차량 배정
+    @Transactional
     public void assignVehicle(
             @NotNull(message = "차량을 선택해주세요") Long vehicleId,
             List<OrderInfo> orders,
-            Map<String, String> trackingMap) {
+            Map<String, String> trackingMap,
+            Long newWeight) {
 
         // 최대 적재량 조회
         Long maxLoad = reader.getVehicleMaxLoad(vehicleId);
 
         // 기존 적재량 조회
         Long currentWeight = reader.getCurrentTransitWeight(vehicleId);
-
-        // 새로 배정할 주문들의 적재량 계산
-        Long newWeight = orders.stream()
-                .mapToLong(OrderInfo::weight)
-                .sum();
 
         // 적재 가능 유효성 검증
         validator.checkLoadable(maxLoad, currentWeight, newWeight);
@@ -82,4 +81,5 @@ public class InternalTransportService {
         // Transit 삭제 후 OrderCode 리턴
         return executor.cancelTransit(transportId);
     }
+
 }

@@ -34,7 +34,7 @@ public class Transit extends BaseEntity {
     private String orderCode;
 
     // 차량 정보
-    @NotBlank
+    @NotNull
     @Column(nullable = false)
     private Long vehicleId;
 

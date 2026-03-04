@@ -3,6 +3,10 @@ package com.chaing.api.facade.transport;
 import com.chaing.api.dto.transport.internal.request.VehicleAssignmentRequest;
 import com.chaing.api.dto.transport.internal.response.AvailableVehicleResponse;
 import com.chaing.api.dto.transport.internal.response.TransportCancelResponse;
+import com.chaing.domain.orders.dto.response.HQOrderForTransitResponse;
+import com.chaing.domain.orders.service.HQOrderService;
+import com.chaing.domain.products.service.ProductService;
+import com.chaing.domain.transports.dto.OrderInfo;
 import com.chaing.domain.transports.service.InternalTransportService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -17,6 +21,8 @@ import java.util.Map;
 public class InternalTransportFacade {
 
     private final InternalTransportService transportService;
+    private final HQOrderService hQOrderService;
+    private final ProductService productService;
 
     // 운송 가능 차량 리스트 조회
     public List<AvailableVehicleResponse> getAvailableVehicle() {
@@ -40,19 +46,45 @@ public class InternalTransportFacade {
 
         // 발주 도메인
         // 발주 Id, 중량 정보 받아오기
-        List<OrderInfo> orders = orderQueryService.getOrderDetails(request.orderIds());
+        List<HQOrderForTransitResponse> orders = hQOrderService.getOrdersForTransit(request.orderIds());
+
+        // 상품 Id 추출
+        List<Long> productIds = orders.stream()
+                .flatMap(order -> order.items().stream())
+                .map(HQOrderForTransitResponse.OrderItemForTransit::productId)
+                .distinct()
+                .toList();
+
+        // 상품 무게와 정보 조회
+        Map<Long, Integer> weightMap = productService.getWeightsByProductIds(productIds);
+
+        // 발주 정보 dto 타입 변환(가공)
+        List<OrderInfo> orderInfos =orders.stream()
+                .map(order -> {
+                    long orderWeight = order.items().stream()
+                            .mapToLong(item -> (long) weightMap.getOrDefault(item.productId(), 0) *item.quantity())
+                            .sum();
+                    return new OrderInfo(order.orderId(), order.orderCode(), orderWeight);
+                })
+                .toList();
+
+        // 선택된 발주의 총 무게 계산
+        Long totalWeight = orderInfos.stream()
+                .mapToLong(OrderInfo::weight)
+                .sum();
 
         // 외부 운송 모듈
         // 송장 번호 가져오기
         Map<String, String> trackingMap = externalTrackingModule.getTrackingNumbers(
-                orders.stream().map(OrderInfo::getOrderCode).toList()
+                orderInfos.stream().map(OrderInfo::orderCode).toList()
         );
 
         // 운송 도메인
         transportService.assignVehicle(
                 request.vehicleId(),
-                orders, // Long
-                trackingMap     // String
+                orderInfos, // Long
+                trackingMap,     // String
+                totalWeight
         );
         // 정산 관련 도메인
     }

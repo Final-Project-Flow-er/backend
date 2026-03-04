@@ -6,6 +6,7 @@ import com.chaing.domain.orders.dto.info.HQOrderItemInfo;
 import com.chaing.domain.orders.dto.request.HQOrderCreateRequest;
 import com.chaing.domain.orders.dto.request.HQOrderItemCreateInfo;
 import com.chaing.domain.orders.dto.request.HQOrderItemUpdateRequest;
+import com.chaing.domain.orders.dto.response.HQOrderForTransitResponse;
 import com.chaing.domain.orders.entity.HeadOfficeOrder;
 import com.chaing.domain.orders.entity.HeadOfficeOrderItem;
 import com.chaing.domain.orders.enums.HQOrderStatus;
@@ -226,5 +227,37 @@ public class HQOrderService {
 
         // 반환
         return HQOrderItemInfo.ofList(orderItems, productInfoByProductId);
+    }
+
+    public List<HQOrderForTransitResponse> getOrdersForTransit(List<Long> orderIds) {
+
+        List<HeadOfficeOrderItem> allItems = orderItemRepository.findByHeadOfficeOrder_HeadOfficeOrderIdIn(orderIds);
+
+        if (allItems.isEmpty()) {
+            throw new HQOrderException(HQOrderErrorCode.ORDER_ITEM_NOT_FOUND);
+        }
+
+        Map<HeadOfficeOrder, List<HeadOfficeOrderItem>> itemsByOrder = allItems.stream()
+                .collect(Collectors.groupingBy(HeadOfficeOrderItem::getHeadOfficeOrder));
+
+        return itemsByOrder.entrySet().stream()
+                .map(entry -> {
+                    HeadOfficeOrder order = entry.getKey();
+                    List<HeadOfficeOrderItem> items = entry.getValue();
+
+                    List<HQOrderForTransitResponse.OrderItemForTransit> itemResponses = items.stream()
+                            .map(item -> new HQOrderForTransitResponse.OrderItemForTransit(
+                                    item.getProductId(),
+                                    item.getQuantity()
+                            ))
+                            .toList();
+
+                    return new HQOrderForTransitResponse(
+                            order.getHeadOfficeOrderId(),
+                            order.getOrderCode(),
+                            itemResponses
+                    );
+                })
+                .toList();
     }
 }

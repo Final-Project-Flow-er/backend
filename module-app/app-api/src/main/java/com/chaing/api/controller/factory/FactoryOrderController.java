@@ -1,9 +1,10 @@
 package com.chaing.api.controller.factory;
 
-import com.chaing.api.dto.factory.request.FactoryOrderRequest;
+import com.chaing.domain.orders.dto.request.FactoryOrderRequest;
 import com.chaing.api.facade.factory.FactoryFacade;
 import com.chaing.core.dto.ApiResponse;
 import com.chaing.domain.orders.dto.response.FactoryOrderResponse;
+import com.chaing.domain.orders.dto.response.FactoryOrderUpdateResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -48,7 +49,7 @@ public class FactoryOrderController {
     @Operation(summary = "발주 상태 변경", description = "발주 상태를 접수/반려로 변경")
     @PatchMapping
     @PreAuthorize("hasAnyRole('FACTORY', 'ADMIN')")
-    public ResponseEntity<ApiResponse<FactoryOrderResponse>> updateOrder(
+    public ResponseEntity<ApiResponse<List<FactoryOrderUpdateResponse>>> updateOrder(
             @Valid @RequestBody FactoryOrderRequest request
     ) {
         return ResponseEntity.ok(ApiResponse.success(factoryFacade.updateOrders(request)));

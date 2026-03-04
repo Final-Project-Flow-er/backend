@@ -1,12 +1,18 @@
 package com.chaing.api.facade.factory;
 
-import com.chaing.domain.orders.dto.response.FactoryOrderResponse;
+import com.chaing.domain.orders.dto.request.FactoryOrderRequest;
 import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.domain.orders.dto.info.HQOrderInfo;
+import com.chaing.domain.orders.dto.response.FactoryOrderResponse;
+import com.chaing.domain.orders.dto.response.FactoryOrderUpdateResponse;
+import com.chaing.domain.orders.enums.HQOrderStatus;
 import com.chaing.domain.orders.service.HQOrderService;
 import com.chaing.domain.products.service.ProductService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -14,6 +20,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class FactoryFacade {
 
     private final HQOrderService hqOrderService;
@@ -30,6 +37,10 @@ public class FactoryFacade {
         } else {
             // 대기 발주 조회
             orderByOrderId = hqOrderService.getAllPendingOrders();
+        }
+
+        if (orderByOrderId.isEmpty()) {
+            return List.of();
         }
 
         // List<orderId>
@@ -92,6 +103,24 @@ public class FactoryFacade {
                             .storedDate(orderInfo.storedDate())
                             .build();
                 })
+                .toList();
+    }
+
+    // 발주 접수/반려
+    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
+    public List<FactoryOrderUpdateResponse> updateOrders(@Valid FactoryOrderRequest request) {
+        // 재고 확인
+
+        // 접수/반려
+        // Map<orderCode, HQOrderStatus>
+        Map<String, HQOrderStatus> orderStatusByOrderCode = hqOrderService.updateOrderStatus(request);
+
+        // 반환
+        return orderStatusByOrderCode.entrySet().stream()
+                .map(entry -> FactoryOrderUpdateResponse.builder()
+                        .orderCode(entry.getKey())
+                        .status(entry.getValue())
+                        .build())
                 .toList();
     }
 }

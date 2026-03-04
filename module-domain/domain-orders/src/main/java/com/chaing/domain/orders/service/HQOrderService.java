@@ -3,6 +3,7 @@ package com.chaing.domain.orders.service;
 import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.domain.orders.dto.info.HQOrderInfo;
 import com.chaing.domain.orders.dto.info.HQOrderItemInfo;
+import com.chaing.domain.orders.dto.request.FactoryOrderRequest;
 import com.chaing.domain.orders.dto.request.HQOrderCreateRequest;
 import com.chaing.domain.orders.dto.request.HQOrderItemCreateInfo;
 import com.chaing.domain.orders.dto.request.HQOrderItemUpdateRequest;
@@ -231,10 +232,6 @@ public class HQOrderService {
     public Map<Long, HQOrderInfo> getAllPendingOrders() {
         List<HeadOfficeOrder> orders = orderRepository.findAllByOrderStatus(HQOrderStatus.PENDING);
 
-        if (orders == null || orders.isEmpty()) {
-            throw new HQOrderException(HQOrderErrorCode.ORDER_NOT_FOUND);
-        }
-
         return orders.stream()
                 .collect(Collectors.toMap(
                         HeadOfficeOrder::getHeadOfficeOrderId,
@@ -281,6 +278,27 @@ public class HQOrderService {
                 .collect(Collectors.toMap(
                         HeadOfficeOrder::getHeadOfficeOrderId,
                         HQOrderInfo::from
+                ));
+    }
+
+    // 발주 접수/반려
+    public Map<String, HQOrderStatus> updateOrderStatus(FactoryOrderRequest request) {
+        List<HeadOfficeOrder> orders = orderRepository.findAllByOrderCodeIn(request.orderCodes());
+
+        if (orders == null || orders.isEmpty()) {
+            throw new HQOrderException(HQOrderErrorCode.ORDER_NOT_FOUND);
+        }
+
+        if (request.isAccept()) {
+            orders.forEach(HeadOfficeOrder::accept);
+        } else {
+            orders.forEach(HeadOfficeOrder::reject);
+        }
+
+        return orders.stream()
+                .collect(Collectors.toMap(
+                        HeadOfficeOrder::getOrderCode,
+                        HeadOfficeOrder::getOrderStatus
                 ));
     }
 }

@@ -40,6 +40,11 @@ public class TransportValidatorImpl implements TransportValidator {
 
     @Override
     public void checkTrackingNumber(List<OrderInfo> orders, Map<String, String> trackingMap) {
+
+        if(orders == null || orders.isEmpty()) {
+            throw new TransportException(TransportErrorCode.TRANSPORT_TRACKING_NUMBER_MISSING);
+        }
+
         if (trackingMap == null || trackingMap.isEmpty()) {
             throw new TransportException(TransportErrorCode.TRANSPORT_TRACKING_NUMBER_IS_NULL);
         }

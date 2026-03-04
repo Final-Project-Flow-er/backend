@@ -36,7 +36,7 @@ public class InternalTransportController {
     }
 
     @Operation(summary = "차량 배정", description = "미배정 주문 차량 배정")
-    @PostMapping("/assign")
+    @PostMapping("/assignments")
     public ResponseEntity<ApiResponse<Void>> assignVehicle(
             @RequestBody VehicleAssignmentRequest request) {
         // TODO: 배정 로직 작성
@@ -46,7 +46,7 @@ public class InternalTransportController {
     }
 
     @Operation(summary = "배차 해제", description = "배정된 차량 해제")
-    @DeleteMapping("/assign/{transportId}")
+    @DeleteMapping("/assignments/{transportId}")
     public ResponseEntity<ApiResponse<TransportCancelResponse>> cancelAssignment(
             @PathVariable Long transportId) {
         // TODO: 해제 로직 작성

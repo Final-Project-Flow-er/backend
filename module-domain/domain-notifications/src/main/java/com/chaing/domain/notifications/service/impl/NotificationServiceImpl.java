@@ -22,8 +22,8 @@ public class NotificationServiceImpl implements NotificationService {
 
     // 알림 생성
     @Override
-    public void sendNotification(NotificationCreateCommand command, Long targetId) {
-        Notification notification = Notification.createNotification(command, targetId);
+    public void sendNotification(NotificationCreateCommand command) {
+        Notification notification = Notification.createNotification(command);
         notificationRepository.save(notification);
     }
 

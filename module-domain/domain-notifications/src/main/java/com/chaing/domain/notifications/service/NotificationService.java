@@ -8,7 +8,7 @@ import org.springframework.data.domain.Pageable;
 
 public interface NotificationService {
 
-    void sendNotification(NotificationCreateCommand command, Long targetId);
+    void sendNotification(NotificationCreateCommand command);
     void updateNotificationsByTarget(NotificationType type, String message, Long targetId);
     void deleteNotificationsByTarget(NotificationType type, Long targetId);
     Page<Notification> getNotificationList(Long userId, Pageable pageable);

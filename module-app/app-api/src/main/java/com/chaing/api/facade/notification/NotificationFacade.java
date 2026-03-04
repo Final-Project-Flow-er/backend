@@ -36,7 +36,7 @@ public class NotificationFacade {
                     .targetId(targetId)
                     .build();
 
-            notificationService.sendNotification(command, targetId);
+            notificationService.sendNotification(command);
         });
     }
 
@@ -51,7 +51,7 @@ public class NotificationFacade {
                 .targetId(targetId)
                 .build();
 
-        notificationService.sendNotification(command, targetId);
+        notificationService.sendNotification(command);
     }
 
     // 알림 수정

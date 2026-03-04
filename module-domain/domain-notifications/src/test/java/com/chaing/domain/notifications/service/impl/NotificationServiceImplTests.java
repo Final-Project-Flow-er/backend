@@ -68,7 +68,7 @@ class NotificationServiceImplTests {
     }
 
     @Test
-    @DisplayName("타겟 정보를 기반으로 기존 알림들의 내용을 수정하고 안읽음 처리한다")
+    @DisplayName("타겟 정보를 기반으로 기존 알림 내용 수정")
     void updateNotificationsByTarget() {
 
         // given
@@ -86,7 +86,7 @@ class NotificationServiceImplTests {
     }
 
     @Test
-    @DisplayName("타입과 타겟 ID가 일치하는 알림을 일괄 삭제한다")
+    @DisplayName("타입과 타겟 ID가 일치하는 알림 일괄 삭제")
     void deleteNotificationsByTarget() {
 
         // when
@@ -97,7 +97,7 @@ class NotificationServiceImplTests {
     }
 
     @Test
-    @DisplayName("=알림 목록 조회")
+    @DisplayName("알림 목록 조회")
     void getNotificationList() {
 
         // given

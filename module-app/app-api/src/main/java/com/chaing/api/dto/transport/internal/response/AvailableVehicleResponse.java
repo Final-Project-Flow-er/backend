@@ -12,13 +12,16 @@ public record AvailableVehicleResponse(
         Long availableLoad      // 적재 가능 잔여량 (max - current)
 ) {
     public static AvailableVehicleResponse from(Vehicle vehicle, Long currentLoad) {
+            long safeCurrentLoad = currentLoad == null ? 0L : currentLoad;
+            long safeMaxLoad = vehicle.getMaxLoad() == null ? 0L : vehicle.getMaxLoad();
+            long safeAvailableLoad = Math.max(0L, safeMaxLoad - safeCurrentLoad);
+
         return AvailableVehicleResponse.builder()
                 .vehicleId(vehicle.getVehicleId())
                 .vehicleNumber(vehicle.getVehicleNumber())
-                .maxLoad(vehicle.getMaxLoad())
-                .currentLoad(currentLoad)
-                // 화면에서 계산할 수도 있지만, 서버에서 넘겨주는 게 안전해!
-                .availableLoad(vehicle.getMaxLoad() - currentLoad)
+                .maxLoad(safeMaxLoad)
+                .currentLoad(safeCurrentLoad)
+                .availableLoad(safeAvailableLoad)
                 .build();
     }
 }

@@ -6,6 +6,7 @@ import com.chaing.api.dto.franchise.orders.request.FranchiseOrderUpdateRequest;
 import com.chaing.api.facade.franchise.FranchiseOrderFacade;
 import com.chaing.api.security.principal.UserPrincipal;
 import com.chaing.core.dto.ApiResponse;
+import com.chaing.domain.orders.dto.response.FranchiseOrderDetailResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -44,13 +45,13 @@ public class FranchiseOrderController {
     @Operation(summary = "특정 발주 조회", description = "가맹점 id와 발주 번호로 특정 발주 조회")
     @GetMapping("/{order-code}")
     @PreAuthorize("hasAnyRole('ADMIN', 'FRANCHISE', 'HQ')")
-    public ResponseEntity<ApiResponse<FranchiseOrderResponse>> getOrder(
-            @PathVariable("order-code") String orderCode
+    public ResponseEntity<ApiResponse<FranchiseOrderDetailResponse>> getOrder(
+            @PathVariable("order-code") String orderCode,
+            @AuthenticationPrincipal UserPrincipal userPrincipal
     ) {
-        //TODO: Spring Security Context에서 값 꺼내오는 걸로 수정해야 함
-        String username = "test";
+        Long userId = userPrincipal.getId();
 
-        return ResponseEntity.ok(ApiResponse.success(franchiseOrderFacade.getOrder(username, orderCode)));
+        return ResponseEntity.ok(ApiResponse.success(franchiseOrderFacade.getOrder(userId, orderCode)));
     }
 
     @Operation(summary = "발주 수정", description = "가맹점 id와 발주 번호로 특정 발주 수정")

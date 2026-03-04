@@ -177,13 +177,13 @@ class FranchiseOrderServiceTests {
     @DisplayName("가맹점 특정 발주 조회 - 성공")
     void getOrder_Success() {
         // given
-        given(franchiseOrderRepository.findByFranchiseIdAndUsernameAndOrderCode(franchiseId, username, orderCode)).willReturn(Optional.of(franchiseOrder));
+        given(franchiseOrderRepository.findByFranchiseIdAndUserIdAndOrderCode(franchiseId, username, orderCode)).willReturn(Optional.of(franchiseOrder));
 
         // when
         FranchiseOrder result = franchiseOrderService.getOrder(franchiseId, username, orderCode);
 
         // then
-        verify(franchiseOrderRepository, times(1)).findByFranchiseIdAndUsernameAndOrderCode(franchiseId, username, orderCode);
+        verify(franchiseOrderRepository, times(1)).findByFranchiseIdAndUserIdAndOrderCode(franchiseId, username, orderCode);
         assertEquals(franchiseOrder, result);
     }
 
@@ -191,7 +191,7 @@ class FranchiseOrderServiceTests {
     @DisplayName("존재하지 않는 발주 코드로 조회 시 예외 발생")
     void getOrder_Failure_ORDER_NOT_FOUND() {
         // given
-        given(franchiseOrderRepository.findByFranchiseIdAndUsernameAndOrderCode(franchiseId, username, orderCode)).willReturn(Optional.empty());
+        given(franchiseOrderRepository.findByFranchiseIdAndUserIdAndOrderCode(franchiseId, username, orderCode)).willReturn(Optional.empty());
 
         // when & then
         FranchiseOrderException exception = assertThrows(FranchiseOrderException.class, () -> franchiseOrderService.getOrder(franchiseId, username, orderCode));

@@ -121,4 +121,9 @@ public class UserManagementService {
         User user = getUserById(userId);
         return user.getUsername();
     }
+
+    public String getPhoneNumberByUserId(Long userId) {
+        User user = getUserById(userId);
+        return user.getPhone();
+    }
 }

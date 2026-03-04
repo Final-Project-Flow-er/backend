@@ -12,7 +12,7 @@ import java.util.Optional;
 public interface FranchiseOrderRepository extends JpaRepository<FranchiseOrder, Long> {
     List<FranchiseOrder> findAllByFranchiseIdAndUserId(Long franchiseId, Long username);
 
-    Optional<FranchiseOrder> findByFranchiseIdAndUsernameAndOrderCode(Long franchiseId, String username, String orderCode);
+    Optional<FranchiseOrder> findByFranchiseIdAndUserIdAndOrderCode(Long franchiseId, Long userId, String orderCode);
 
     List<FranchiseOrder> findAllByFranchiseOrderIdInAndDeletedAtIsNull(List<Long> orderIds);
 

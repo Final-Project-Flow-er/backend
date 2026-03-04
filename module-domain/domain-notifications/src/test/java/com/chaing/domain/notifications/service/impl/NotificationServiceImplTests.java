@@ -61,7 +61,7 @@ class NotificationServiceImplTests {
                 .build();
 
         // when
-        notificationService.sendNotification(command, targetId);
+        notificationService.sendNotification(command);
 
         // then
         verify(notificationRepository, times(1)).save(any(Notification.class));

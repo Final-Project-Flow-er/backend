@@ -448,4 +448,33 @@ class HQOrderServiceTests {
         assertEquals(BigDecimal.valueOf(3000), responses.get(0).unitPrice());
         assertEquals(productCode, responses.get(0).productCode());
     }
+
+    @Test
+    @DisplayName("대기 상태 발주 제품 정보 조회 - 성공")
+    void getOrderItemIdsByOrderIdAndStatus_Success() {
+        // given
+        given(orderItemRepository.findAllByHeadOfficeOrder_HeadOfficeOrderIdIn(List.of(orderId))).willReturn(List.of(orderItem));
+
+        // when
+        Map<Long, List<Long>> response = hqOrderService.getOrderItemIdsByOrderIdAndStatus(List.of(orderId));
+
+        // then
+        verify(orderItemRepository, times(1)).findAllByHeadOfficeOrder_HeadOfficeOrderIdIn(List.of(orderId));
+        assertEquals(orderId, response.keySet().stream().findFirst().get());
+        assertEquals(orderItemId, response.values().stream().findFirst().get().get(0));
+    }
+
+    @Test
+    @DisplayName("잘못된 값으로 HeadOfficeOrderItem 조회 시 예외 발생")
+    void getOrderItemIdsByOrderIdAndStatus_Failure_ORDER_ITEM_NOT_FOUND() {
+        // given
+        given(orderItemRepository.findAllByHeadOfficeOrder_HeadOfficeOrderIdIn(List.of(orderId))).willReturn(List.of());
+
+        // when & then
+        HQOrderException exception = assertThrows(HQOrderException.class, () -> {
+            hqOrderService.getOrderItemIdsByOrderIdAndStatus(List.of(orderId));
+        });
+        verify(orderItemRepository, times(1)).findAllByHeadOfficeOrder_HeadOfficeOrderIdIn(List.of(orderId));
+        assertEquals(HQOrderErrorCode.ORDER_ITEM_NOT_FOUND, exception.getErrorCode());
+    }
 }

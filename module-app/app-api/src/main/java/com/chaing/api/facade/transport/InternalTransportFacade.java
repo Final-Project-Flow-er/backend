@@ -7,6 +7,8 @@ import com.chaing.domain.orders.dto.response.HQOrderForTransitResponse;
 import com.chaing.domain.orders.service.HQOrderService;
 import com.chaing.domain.products.service.ProductService;
 import com.chaing.domain.transports.dto.OrderInfo;
+import com.chaing.domain.transports.exception.TransportErrorCode;
+import com.chaing.domain.transports.exception.TransportException;
 import com.chaing.domain.transports.service.InternalTransportService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -62,7 +64,13 @@ public class InternalTransportFacade {
         List<OrderInfo> orderInfos =orders.stream()
                 .map(order -> {
                     long orderWeight = order.items().stream()
-                            .mapToLong(item -> (long) weightMap.getOrDefault(item.productId(), 0) *item.quantity())
+                            .mapToLong(item -> {
+                                Integer weight = weightMap.get(item.productId());
+                                if (weight == null) {
+                                    throw new TransportException(TransportErrorCode.TRANSPORT_WEIGHT_IS_NOT_VALID);
+                                }
+                                return (long) weight * item.quantity();
+                            })
                             .sum();
                     return new OrderInfo(order.orderId(), order.orderCode(), orderWeight);
                 })

@@ -50,7 +50,7 @@ public class Transit extends BaseEntity {
     private String trackingNumber;
 
     // 적재량
-    @NotBlank
+    @NotNull
     @Column(nullable = false)
     private Long weight;
 

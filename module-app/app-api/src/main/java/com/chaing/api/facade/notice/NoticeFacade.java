@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -34,7 +35,7 @@ public class NoticeFacade {
     }
 
     // 공지사항 등록
-    @Transactional
+    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public NoticeDetailResponse createNotice(CreateNoticeRequest request, Long authorId) {
         NoticeCreateCommand command = request.toCommand();
         Notice notice = noticeService.create(command, authorId);
@@ -43,7 +44,7 @@ public class NoticeFacade {
     }
 
     // 공지사항 수정
-    @Transactional
+    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public NoticeDetailResponse updateNotice(Long id, UpdateNoticeRequest request, Long updaterId) {
         NoticeUpdateCommand command = request.toCommand();
         Notice notice = noticeService.update(id, command, updaterId);
@@ -52,7 +53,7 @@ public class NoticeFacade {
     }
 
     // 공지사항 삭제
-    @Transactional
+    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public void deleteNotice(Long id) {
         noticeService.delete(id);
     }

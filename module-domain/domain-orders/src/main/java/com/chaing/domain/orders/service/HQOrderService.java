@@ -310,7 +310,7 @@ public class HQOrderService {
         }
 
         List<HeadOfficeOrderItem> allItems = orderItemRepository
-                .findByHeadOfficeOrder_HeadOfficeOrderIdInAndHeadOfficeOrder_StatusAndDeletedAtIsNull(
+                .findByHeadOfficeOrder_HeadOfficeOrderIdInAndHeadOfficeOrder_OrderStatusAndDeletedAtIsNull(
                         orderIds,
                         HQOrderStatus.AWAITING
                 );

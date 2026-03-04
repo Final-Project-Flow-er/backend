@@ -10,6 +10,7 @@ import com.chaing.domain.orders.dto.command.FranchiseOrderDetailCommand;
 import com.chaing.domain.orders.dto.command.FranchiseOrderItemCommand;
 import com.chaing.domain.orders.dto.request.FranchiseOrderUpdateRequest;
 import com.chaing.domain.orders.dto.request.HQOrderUpdateStatusRequest;
+import com.chaing.domain.orders.dto.response.FranchiseOrderCancelResponse;
 import com.chaing.domain.orders.dto.response.FranchiseOrderItemDetailResponse;
 import com.chaing.domain.orders.dto.response.HQOrderStatusUpdateResponse;
 import com.chaing.domain.orders.entity.FranchiseOrder;
@@ -47,14 +48,14 @@ public class FranchiseOrderService {
 
     // 발주 번호에 따른 가맹점 특정 발주 조회
     public FranchiseOrderDetailCommand getOrder(Long franchiseId, Long userId, String orderCode) {
-        FranchiseOrder order = franchiseOrderRepository.findByFranchiseIdAndUserIdAndOrderCode(franchiseId, userId, orderCode).orElseThrow(() -> new OrderException(OrderErrorCode.ORDER_NOT_FOUND));
+        FranchiseOrder order = franchiseOrderRepository.findByFranchiseIdAndUserIdAndOrderCodeDeletedAtIsNull(franchiseId, userId, orderCode).orElseThrow(() -> new OrderException(OrderErrorCode.ORDER_NOT_FOUND));
 
         return FranchiseOrderDetailCommand.from(order);
     }
 
     // 발주 번호에 따른 발주 정보 반환
     public FranchiseOrderInfo getOrderInfo(Long franchiseId, String username, String orderCode, String franchiseCode) {
-        FranchiseOrder order = franchiseOrderRepository.findByFranchiseIdAndUserIdAndOrderCode(franchiseId, username, orderCode).orElseThrow(() -> new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_NOT_FOUND));
+        FranchiseOrder order = franchiseOrderRepository.findByFranchiseIdAndUserIdAndOrderCodeDeletedAtIsNull(franchiseId, username, orderCode).orElseThrow(() -> new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_NOT_FOUND));
 
         return FranchiseOrderInfo.builder().orderId(order.getFranchiseOrderId()).username(order.getUsername()).phoneNumber(order.getPhoneNumber()).franchiseCode(franchiseCode).build();
     }
@@ -62,10 +63,11 @@ public class FranchiseOrderService {
     // 가맹점의 발주 수정
     public List<FranchiseOrderItemDetailResponse> updateOrder(Long orderId, Map<Long, FranchiseOrderUpdateRequest> requestByProductId, Map<Long, ProductInfo> productInfoByProductId) {
         // 발주 조회
-        FranchiseOrder order = franchiseOrderRepository.findByFranchiseOrderId(orderId).orElseThrow(() -> new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_NOT_FOUND));
+        FranchiseOrder order = franchiseOrderRepository.findByFranchiseOrderIdAndDeletedAtIsNull(orderId)
+                .orElseThrow(() -> new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_NOT_FOUND));
 
         // 발주 제품 조회
-        List<FranchiseOrderItem> items = franchiseOrderItemRepository.findAllByFranchiseOrder_FranchiseOrderId(orderId);
+        List<FranchiseOrderItem> items = franchiseOrderItemRepository.findAllByFranchiseOrder_FranchiseOrderIdAndDeletedAtIsNull(orderId);
 
         if (items == null || items.isEmpty()) {
             throw new OrderException(OrderErrorCode.ORDER_ITEM_NOT_FOUND);
@@ -118,8 +120,13 @@ public class FranchiseOrderService {
     }
 
     // 가맹점 발주 취소
-    public void cancelOrder(FranchiseOrder order) {
+    public FranchiseOrderCancelResponse cancelOrder(Long userId, Long franchiseId, String orderCode) {
+        FranchiseOrder order = franchiseOrderRepository.findByFranchiseIdAndUserIdAndOrderCodeDeletedAtIsNull(franchiseId, userId, orderCode)
+                .orElseThrow(() -> new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_NOT_FOUND));
+
         order.cancel();
+
+        return FranchiseOrderCancelResponse.from(order);
     }
 
     // 가맹점 발주 생성
@@ -264,7 +271,7 @@ public class FranchiseOrderService {
 
     // return: Map<orderId, List<FranchiseOrderItemCommand>>
     public Map<Long, List<FranchiseOrderItemCommand>> getOrderItemsByOrderId(Long orderId) {
-        List<FranchiseOrderItem> items = franchiseOrderItemRepository.findAllByFranchiseOrder_FranchiseOrderId(orderId);
+        List<FranchiseOrderItem> items = franchiseOrderItemRepository.findAllByFranchiseOrder_FranchiseOrderIdAndDeletedAtIsNull(orderId);
 
         if (items == null || items.isEmpty()) {
             throw new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_ITEM_NOT_FOUND);
@@ -278,7 +285,7 @@ public class FranchiseOrderService {
 
     // Map<productId, List<orderItemId>>
     public Map<Long, List<Long>> getOrderItemIdsAndProductIdsByOrderId(Long orderId) {
-        List<FranchiseOrderItem> items = franchiseOrderItemRepository.findAllByFranchiseOrder_FranchiseOrderId(orderId);
+        List<FranchiseOrderItem> items = franchiseOrderItemRepository.findAllByFranchiseOrder_FranchiseOrderIdAndDeletedAtIsNull(orderId);
 
         if (items == null || items.isEmpty()) {
             throw new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_ITEM_NOT_FOUND);

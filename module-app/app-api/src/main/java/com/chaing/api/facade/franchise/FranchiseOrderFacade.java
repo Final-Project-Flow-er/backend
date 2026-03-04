@@ -7,6 +7,7 @@ import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.domain.orders.dto.command.FranchiseOrderCommand;
 import com.chaing.domain.orders.dto.command.FranchiseOrderDetailCommand;
 import com.chaing.domain.orders.dto.command.FranchiseOrderItemCommand;
+import com.chaing.domain.orders.dto.response.FranchiseOrderCancelResponse;
 import com.chaing.domain.orders.dto.response.FranchiseOrderDetailResponse;
 import com.chaing.domain.orders.dto.response.FranchiseOrderItemDetailResponse;
 import com.chaing.domain.orders.dto.response.FranchiseOrderUpdateResponse;
@@ -226,16 +227,13 @@ public class FranchiseOrderFacade {
     }
 
     // 가맹점 발주 취소
-    @Transactional(rollbackFor = Exception.class)
-    public FranchiseOrderResponse cancelOrder(String username, String orderCode) {
-        // franchiseId username으로 조회하는 로직 추가 필요
-        Long franchiseId = 1L;
+    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
+    public FranchiseOrderCancelResponse cancelOrder(Long userId, String orderCode) {
+        // franchiseId
+        Long franchiseId = userManagementService.getFranchiseIdByUserId(userId);
 
-        FranchiseOrder order = franchiseOrderService.getOrder(franchiseId, username, orderCode);
-
-        franchiseOrderService.cancelOrder(order);
-
-        return FranchiseOrderResponse.from(order);
+        // 취소 및 반환
+        return franchiseOrderService.cancelOrder(userId, franchiseId, orderCode);
     }
 
     // 가맹점 발주 생성

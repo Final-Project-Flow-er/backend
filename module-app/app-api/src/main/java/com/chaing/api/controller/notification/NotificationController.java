@@ -36,7 +36,7 @@ public class NotificationController {
     }
 
     @Operation(summary = "알림 단건 읽음 처리", description = "특정 알림을 읽음 상태로 변경")
-    @PatchMapping("/{id}/read")
+    @PatchMapping("/{id}")
     public ResponseEntity<ApiResponse<NotificationListResponse>> readNotification(
             @PathVariable Long id
     ) {

@@ -70,6 +70,6 @@ public class NotificationServiceImpl implements NotificationService {
     public void deleteNotification(Long notificationId) {
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new NotificationException(NotificationErrorCode.NOTIFICATION_NOT_FOUND));
-        notification.delete();
+        notificationRepository.delete(notification);
     }
 }

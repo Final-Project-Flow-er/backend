@@ -272,4 +272,14 @@ public class HQOrderService {
                         HeadOfficeOrderItem::getProductId
                 ));
     }
+
+    public Map<Long, HQOrderInfo> getAllOrdersByFactory() {
+        List<HeadOfficeOrder> orders = orderRepository.findAllByOrderStatusNot(HQOrderStatus.PENDING);
+
+        return orders.stream()
+                .collect(Collectors.toMap(
+                        HeadOfficeOrder::getHeadOfficeOrderId,
+                        HQOrderInfo::from
+                ));
+    }
 }

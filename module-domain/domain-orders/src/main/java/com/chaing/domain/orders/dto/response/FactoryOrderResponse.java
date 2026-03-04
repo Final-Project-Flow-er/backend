@@ -1,4 +1,4 @@
-package com.chaing.api.dto.factory.response;
+package com.chaing.domain.orders.dto.response;
 
 import com.chaing.domain.orders.enums.HQOrderStatus;
 import lombok.Builder;

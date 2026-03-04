@@ -64,7 +64,13 @@ public class InternalTransportService {
         Long currentWeight = reader.getCurrentTransitWeight(vehicleId);
 
         // 적재 가능 유효성 검증
-        validator.checkLoadable(maxLoad, currentWeight, newWeight);
+        long computedNewWeight = orders.stream()
+                .map(OrderInfo::weight)
+                .filter(java.util.Objects::nonNull)
+                .mapToLong(Long::longValue)
+                .sum();
+
+        validator.checkLoadable(maxLoad, currentWeight, computedNewWeight);
 
         // 송장 유효성 검증
         validator.checkTrackingNumber(orders, trackingMap);

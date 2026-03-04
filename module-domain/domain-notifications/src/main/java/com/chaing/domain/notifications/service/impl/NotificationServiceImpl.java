@@ -51,8 +51,8 @@ public class NotificationServiceImpl implements NotificationService {
 
     // 알림 상세 조회
     @Override
-    public Notification readNotification(Long notificationId) {
-        Notification notification = notificationRepository.findById(notificationId)
+    public Notification readNotification(Long notificationId, Long userId) {
+        Notification notification = notificationRepository.findByNotificationIdAndUserId(notificationId, userId)
                 .orElseThrow(() -> new NotificationException(NotificationErrorCode.NOTIFICATION_NOT_FOUND));
         notification.read();
         return notification;
@@ -67,8 +67,8 @@ public class NotificationServiceImpl implements NotificationService {
 
     // 알림 삭제
     @Override
-    public void deleteNotification(Long notificationId) {
-        Notification notification = notificationRepository.findById(notificationId)
+    public void deleteNotification(Long notificationId, Long userId) {
+        Notification notification = notificationRepository.findByNotificationIdAndUserId(notificationId, userId)
                 .orElseThrow(() -> new NotificationException(NotificationErrorCode.NOTIFICATION_NOT_FOUND));
         notificationRepository.delete(notification);
     }

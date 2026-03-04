@@ -38,9 +38,10 @@ public class NotificationController {
     @Operation(summary = "알림 단건 읽음 처리", description = "특정 알림을 읽음 상태로 변경")
     @PatchMapping("/{id}")
     public ResponseEntity<ApiResponse<NotificationListResponse>> readNotification(
-            @PathVariable Long id
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserPrincipal principal
     ) {
-        return ResponseEntity.ok(ApiResponse.success(notificationFacade.readNotification(id)));
+        return ResponseEntity.ok(ApiResponse.success(notificationFacade.readNotification(id, principal.getId())));
     }
 
     @Operation(summary = "알림 전체 읽음 처리", description = "읽지 않은 모든 알림을 한 번에 읽음 처리")
@@ -55,9 +56,10 @@ public class NotificationController {
     @Operation(summary = "알림 삭제", description = "특정 알림 삭제")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteNotification(
-            @PathVariable Long id
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserPrincipal principal
     ) {
-        notificationFacade.deleteNotification(id);
+        notificationFacade.deleteNotification(id, principal.getId());
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

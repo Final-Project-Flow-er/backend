@@ -74,8 +74,8 @@ public class NotificationFacade {
 
     // 알림 단건 읽음 처리
     @Transactional
-    public NotificationListResponse readNotification(Long notificationId) {
-        Notification notification = notificationService.readNotification(notificationId);
+    public NotificationListResponse readNotification(Long notificationId, Long userId) {
+        Notification notification = notificationService.readNotification(notificationId, userId);
         return NotificationListResponse.from(notification);
     }
 
@@ -87,7 +87,7 @@ public class NotificationFacade {
 
     // 알림 삭제
     @Transactional
-    public void deleteNotification(Long notificationId) {
-        notificationService.deleteNotification(notificationId);
+    public void deleteNotification(Long notificationId, Long userId) {
+        notificationService.deleteNotification(notificationId, userId);
     }
 }

@@ -12,7 +12,7 @@ public interface NotificationService {
     void updateNotificationsByTarget(NotificationType type, String message, Long targetId);
     void deleteNotificationsByTarget(NotificationType type, Long targetId);
     Page<Notification> getNotificationList(Long userId, Pageable pageable);
-    Notification readNotification(Long notificationId);
+    Notification readNotification(Long notificationId, Long userId);
     void markAllAsRead(Long userId);
-    void deleteNotification(Long notificationId);
+    void deleteNotification(Long notificationId, Long userId);
 }

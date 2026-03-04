@@ -42,7 +42,7 @@ public class NoticeService {
     }
 
 
-    // 공지사항 삭제 - 본사
+    // 공지사항 삭제
     public void delete(Long id) {
         Notice notice = getById(id);
         notice.delete();

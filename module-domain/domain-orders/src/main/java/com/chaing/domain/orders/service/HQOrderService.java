@@ -285,7 +285,7 @@ public class HQOrderService {
     public Map<String, HQOrderStatus> updateOrderStatus(FactoryOrderRequest request) {
         List<HeadOfficeOrder> orders = orderRepository.findAllByOrderCodeIn(request.orderCodes());
 
-        if (orders == null || orders.isEmpty()) {
+        if (orders == null || orders.isEmpty() || orders.size() != request.orderCodes().size()) {
             throw new HQOrderException(HQOrderErrorCode.ORDER_NOT_FOUND);
         }
 

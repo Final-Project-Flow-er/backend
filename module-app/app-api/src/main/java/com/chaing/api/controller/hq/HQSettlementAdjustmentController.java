@@ -20,7 +20,7 @@ import java.util.List;
 
 @RestController
 @Tag(name = "HQVoucherAdjustment API", description = "본사 조정 전표 관리 API")
-@RequestMapping("/api/v1/hq/voucher-adjustments")
+@RequestMapping("/api/v1/hq/settlements/voucher-adjustments")
 @RequiredArgsConstructor
 public class HQSettlementAdjustmentController {
 

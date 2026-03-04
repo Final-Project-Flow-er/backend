@@ -19,7 +19,7 @@ import java.util.List;
 
 @RestController
 @Tag(name = "HQSettlementConfirm API", description = "본사 정산 확정(작성중 -> 확정요청 -> 최종확정)")
-@RequestMapping("/api/v1/hq/settlement-confirm")
+@RequestMapping("/api/v1/hq/settlements/confirm")
 @RequiredArgsConstructor
 public class HQSettlementConfirmController {
 

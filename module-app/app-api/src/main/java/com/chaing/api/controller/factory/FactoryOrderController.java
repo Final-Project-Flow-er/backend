@@ -2,10 +2,14 @@ package com.chaing.api.controller.factory;
 
 import com.chaing.api.dto.factory.request.FactoryOrderRequest;
 import com.chaing.api.dto.factory.response.FactoryOrderResponse;
+import com.chaing.api.facade.factory.FactoryFacade;
 import com.chaing.core.dto.ApiResponse;
+import com.chaing.domain.orders.dto.response.FactoryPendingOrderResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,10 +22,21 @@ import java.util.List;
 @RestController
 @Tag(name = "Factory Order API", description = "공장 발주 관련 API")
 @RequestMapping("/api/v1/factory/orders")
+@RequiredArgsConstructor
 public class FactoryOrderController {
 
-    @Operation(summary = "발주 조회", description = "본사의 발주 전체 조회")
+    private final FactoryFacade factoryFacade;
+
+    @Operation(summary = "대기 발주 조회", description = "본사의 대기 상태 발주 전체 조회")
     @GetMapping
+    @PreAuthorize("hasAnyRole('FACTORY', 'ADMIN')")
+    public ResponseEntity<ApiResponse<List<FactoryPendingOrderResponse>>> getAllPendingOrders() {
+        return ResponseEntity.ok(ApiResponse.success(factoryFacade.getAllPendingOrders()));
+    }
+
+    @Operation(summary = "전체 발주 조회", description = "본사의 발주 전체 조회")
+    @GetMapping("/accepted")
+    @PreAuthorize("hasAnyRole('FACTORY', 'ADMIN')")
     public ResponseEntity<ApiResponse<List<FactoryOrderResponse>>> getAllOrders() {
         return ResponseEntity.ok(ApiResponse.success(List.of(FactoryOrderResponse.builder().build())));
     }

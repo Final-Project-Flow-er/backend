@@ -109,7 +109,7 @@ public class SwaggerConfig {
     }
 
     @Bean
-    public GroupedOpenApi InternalTransportApi() {
+    public GroupedOpenApi internalTransportApi() {
         return GroupedOpenApi.builder()
                 .group("내부 운송(Internal Transport")
                 .pathsToMatch("/api/v1/transport/internal/**")

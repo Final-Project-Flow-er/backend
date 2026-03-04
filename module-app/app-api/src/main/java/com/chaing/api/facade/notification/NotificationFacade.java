@@ -26,7 +26,7 @@ public class NotificationFacade {
     @Transactional
     public void sendNotificationToAll(NotificationType type, String message, Long targetId) {
 
-        List<Long> allUserIds = userManagementService.getAllUserIds();
+        List<Long> allUserIds = userManagementService.getAllActiveUserIds();
 
         allUserIds.forEach(receiverId -> {
             NotificationCreateCommand command = NotificationCreateCommand.builder()

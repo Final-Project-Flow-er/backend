@@ -76,8 +76,8 @@ public class UserManagementService {
                 .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
     }
 
-    public List<Long> getAllUserIds() {
-        return userRepository.getAllUserIds();
+    public List<Long> getAllActiveUserIds() {
+        return userRepository.getAllActiveUserIds();
     }
 
     // 로그인 아이디로 회원 조회

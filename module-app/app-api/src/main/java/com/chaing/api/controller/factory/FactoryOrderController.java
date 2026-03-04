@@ -45,7 +45,7 @@ public class FactoryOrderController {
         return ResponseEntity.ok(ApiResponse.success(FactoryOrderResponse.builder().build()));
     }
 
-    @Operation(summary = "발주 상태 변경", description = "발주 상태를 접수, 반려 등으로 변경")
+    @Operation(summary = "발주 상태 변경", description = "발주 상태를 접수/반려로 변경")
     @PatchMapping
     @PreAuthorize("hasAnyRole('FACTORY', 'ADMIN')")
     public ResponseEntity<ApiResponse<FactoryOrderResponse>> updateOrder(

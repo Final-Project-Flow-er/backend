@@ -3,6 +3,7 @@ package com.chaing.domain.orders.service;
 import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.domain.orders.dto.info.HQOrderInfo;
 import com.chaing.domain.orders.dto.info.HQOrderItemInfo;
+import com.chaing.domain.orders.dto.request.FactoryOrderRequest;
 import com.chaing.domain.orders.dto.request.HQOrderCreateRequest;
 import com.chaing.domain.orders.dto.request.HQOrderItemCreateInfo;
 import com.chaing.domain.orders.dto.request.HQOrderItemUpdateRequest;
@@ -227,6 +228,79 @@ public class HQOrderService {
 
         // 반환
         return HQOrderItemInfo.ofList(orderItems, productInfoByProductId);
+    }
+
+    public Map<Long, HQOrderInfo> getAllPendingOrders() {
+        List<HeadOfficeOrder> orders = orderRepository.findAllByOrderStatus(HQOrderStatus.PENDING);
+
+        return orders.stream()
+                .collect(Collectors.toMap(
+                        HeadOfficeOrder::getHeadOfficeOrderId,
+                        HQOrderInfo::from
+                ));
+    }
+
+    // 대기 상태 발주 제품 정보 조회
+    // return: Map<orderId, List<orderItemId>>
+    public Map<Long, List<Long>> getOrderItemIdsByOrderIdAndStatus(List<Long> orderIds) {
+        List<HeadOfficeOrderItem> orderItems = orderItemRepository.findAllByHeadOfficeOrder_HeadOfficeOrderIdIn(orderIds);
+
+        if (orderItems == null || orderItems.isEmpty()) {
+            throw new HQOrderException(HQOrderErrorCode.ORDER_ITEM_NOT_FOUND);
+        }
+
+        return orderItems.stream()
+                .collect(Collectors.groupingBy(
+                        item -> item.getHeadOfficeOrder().getHeadOfficeOrderId(),
+                        Collectors.mapping(HeadOfficeOrderItem::getHeadOfficeOrderItemId, Collectors.toList())
+                ));
+    }
+
+    // return: Map<orderItemId, productId>
+    public Map<Long, Long> getProductIdsByOrderItemIds(List<Long> orderItemIds) {
+        List<HeadOfficeOrderItem> items = orderItemRepository.findAllByHeadOfficeOrderItemIdIn(orderItemIds);
+
+        if (items == null || items.isEmpty()) {
+            throw new HQOrderException(HQOrderErrorCode.ORDER_ITEM_NOT_FOUND);
+        }
+
+        return items.stream()
+                .collect(Collectors.toMap(
+                        HeadOfficeOrderItem::getHeadOfficeOrderItemId,
+                        HeadOfficeOrderItem::getProductId
+                ));
+    }
+
+    // 발주 전체 조회
+    public Map<Long, HQOrderInfo> getAllOrdersByFactory() {
+        List<HeadOfficeOrder> orders = orderRepository.findAll();
+
+        return orders.stream()
+                .collect(Collectors.toMap(
+                        HeadOfficeOrder::getHeadOfficeOrderId,
+                        HQOrderInfo::from
+                ));
+    }
+
+    // 발주 접수/반려
+    public Map<String, HQOrderStatus> updateOrderStatus(FactoryOrderRequest request) {
+        List<HeadOfficeOrder> orders = orderRepository.findAllByOrderCodeIn(request.orderCodes());
+
+        if (orders == null || orders.isEmpty() || orders.size() != request.orderCodes().size()) {
+            throw new HQOrderException(HQOrderErrorCode.ORDER_NOT_FOUND);
+        }
+
+        if (request.isAccept()) {
+            orders.forEach(HeadOfficeOrder::accept);
+        } else {
+            orders.forEach(HeadOfficeOrder::reject);
+        }
+
+        return orders.stream()
+                .collect(Collectors.toMap(
+                        HeadOfficeOrder::getOrderCode,
+                        HeadOfficeOrder::getOrderStatus
+                ));
     }
 
     public List<HQOrderForTransitResponse> getOrdersForTransit(List<Long> orderIds) {

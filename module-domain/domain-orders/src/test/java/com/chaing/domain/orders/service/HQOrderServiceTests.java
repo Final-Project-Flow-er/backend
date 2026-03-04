@@ -3,6 +3,7 @@ package com.chaing.domain.orders.service;
 import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.domain.orders.dto.info.HQOrderInfo;
 import com.chaing.domain.orders.dto.info.HQOrderItemInfo;
+import com.chaing.domain.orders.dto.request.FactoryOrderRequest;
 import com.chaing.domain.orders.dto.request.HQOrderCreateRequest;
 import com.chaing.domain.orders.dto.request.HQOrderItemCreateInfo;
 import com.chaing.domain.orders.dto.request.HQOrderItemUpdateRequest;
@@ -519,5 +520,64 @@ class HQOrderServiceTests {
         // then
         verify(orderRepository, times(1)).findAll();
         assertEquals(orderId, response.keySet().stream().findFirst().get());
+    }
+
+    @Test
+    @DisplayName("발주 접수 - 성공")
+    void updateOrderStatus_Accept_Success() {
+        // given
+        given(orderRepository.findAllByOrderCodeIn(List.of(orderCode))).willReturn(List.of(order));
+
+        FactoryOrderRequest request = new FactoryOrderRequest(
+                true,
+                List.of(orderCode)
+        );
+
+        // when
+        Map<String, HQOrderStatus> response = hqOrderService.updateOrderStatus(request);
+
+        // then
+        verify(orderRepository, times(1)).findAllByOrderCodeIn(List.of(orderCode));
+        assertEquals(orderCode, response.keySet().stream().findFirst().get());
+        assertEquals(HQOrderStatus.ACCEPTED, response.get(orderCode));
+    }
+
+    @Test
+    @DisplayName("발주 반려 - 성공")
+    void updateOrderStatus_Reject_Success() {
+        // given
+        given(orderRepository.findAllByOrderCodeIn(List.of(orderCode))).willReturn(List.of(order));
+
+        FactoryOrderRequest request = new FactoryOrderRequest(
+                false,
+                List.of(orderCode)
+        );
+
+        // when
+        Map<String, HQOrderStatus> response = hqOrderService.updateOrderStatus(request);
+
+        // then
+        verify(orderRepository, times(1)).findAllByOrderCodeIn(List.of(orderCode));
+        assertEquals(orderCode, response.keySet().stream().findFirst().get());
+        assertEquals(HQOrderStatus.REJECTED, response.get(orderCode));
+    }
+
+    @Test
+    @DisplayName("잘못된 값으로 발주 조회 시 예외 발생")
+    void updateOrderStatus_Failure_ORDER_NOT_FOUND() {
+        // given
+        given(orderRepository.findAllByOrderCodeIn(List.of(orderCode))).willReturn(List.of());
+
+        FactoryOrderRequest request = new FactoryOrderRequest(
+                false,
+                List.of(orderCode)
+        );
+
+        // when & then
+        HQOrderException exception = assertThrows(HQOrderException.class, () -> {
+            hqOrderService.updateOrderStatus(request);
+        });
+        verify(orderRepository, times(1)).findAllByOrderCodeIn(List.of(orderCode));
+        assertEquals(HQOrderErrorCode.ORDER_NOT_FOUND, exception.getErrorCode());
     }
 }

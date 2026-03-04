@@ -47,6 +47,7 @@ class NoticeServiceTests {
                 .content("내용")
                 .important(false)
                 .authorId(authorId)
+                .updaterId(null)
                 .build();
     }
 
@@ -118,15 +119,18 @@ class NoticeServiceTests {
     void update() {
 
         // given
+        Long updaterId = 2L;
         NoticeUpdateCommand command = new NoticeUpdateCommand("수정된 제목", "수정된 내용", true);
         given(noticeRepository.findById(noticeId)).willReturn(Optional.of(notice));
 
         // when
-        Notice result = noticeService.update(noticeId, command, authorId);
+        Notice result = noticeService.update(noticeId, command, updaterId);
 
         // then
         assertThat(result.getTitle()).isEqualTo("수정된 제목");
         assertThat(result.isImportant()).isTrue();
+        assertThat(result.getAuthorId()).isEqualTo(1L);
+        assertThat(result.getUpdaterId()).isEqualTo(2L);
     }
 
     @Test

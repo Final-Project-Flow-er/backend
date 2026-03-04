@@ -9,7 +9,9 @@ import com.chaing.domain.users.service.UserManagementService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -23,7 +25,8 @@ public class NotificationFacade {
     private final UserManagementService userManagementService;
 
     // 전체 알림 생성
-    @Transactional
+    @Async("notificationTaskExecutor")
+    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public void sendNotificationToAll(NotificationType type, String message, Long targetId) {
 
         List<Long> allUserIds = userManagementService.getAllActiveUserIds();

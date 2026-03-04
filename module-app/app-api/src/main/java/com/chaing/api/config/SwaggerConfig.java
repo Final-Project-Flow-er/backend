@@ -116,45 +116,6 @@ public class SwaggerConfig {
                 .build();
     }
 
-    @Bean
-    public GroupedOpenApi ExternalTransportApi() {
-        return GroupedOpenApi.builder()
-                .group("외부 운송(External Transport")
-                .pathsToMatch("/api/v1/transport/external/**")
-                .build();
-    }
-
-    @Bean
-    public GroupedOpenApi hqInventoryApi() {
-        return GroupedOpenApi.builder()
-                .group("본사 재고(HqInventory)")
-                .pathsToMatch("/api/v1/hq/inventory/**")
-                .build();
-    }
-
-    @Bean
-    public GroupedOpenApi franchiseInventoryApi() {
-        return GroupedOpenApi.builder()
-                .group("가맹점 재고(FranchiseInventory)")
-                .pathsToMatch("/api/v1/franchise/inventory/**")
-                .build();
-    }
-
-    @Bean
-    public GroupedOpenApi InternalTransportApi() {
-        return GroupedOpenApi.builder()
-                .group("내부 운송(Internal Transport")
-                .pathsToMatch("/api/v1/transport/internal/**")
-                .build();
-    }
-
-    @Bean
-    public GroupedOpenApi ExternalTransportApi() {
-        return GroupedOpenApi.builder()
-                .group("외부 운송(External Transport")
-                .pathsToMatch("/api/v1/transport/external/**")
-                .build();
-    }
 
     @Bean
     public GroupedOpenApi hqProductApi() {

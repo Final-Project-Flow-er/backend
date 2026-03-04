@@ -8,7 +8,6 @@ import com.chaing.api.facade.notification.NotificationFacade;
 import com.chaing.domain.notices.entity.Notice;
 import com.chaing.domain.notices.service.NoticeService;
 import com.chaing.domain.notifications.enums.NotificationType;
-import com.chaing.domain.notifications.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

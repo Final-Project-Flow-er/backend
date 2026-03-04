@@ -1,7 +1,6 @@
 package com.chaing.api.facade.notification;
 
 import com.chaing.api.dto.notification.response.NotificationListResponse;
-import com.chaing.domain.notices.entity.Notice;
 import com.chaing.domain.notifications.dto.command.NotificationCreateCommand;
 import com.chaing.domain.notifications.entity.Notification;
 import com.chaing.domain.notifications.enums.NotificationType;

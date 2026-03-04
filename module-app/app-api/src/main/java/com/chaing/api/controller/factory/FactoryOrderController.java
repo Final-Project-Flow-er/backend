@@ -27,14 +27,7 @@ public class FactoryOrderController {
 
     private final FactoryFacade factoryFacade;
 
-    @Operation(summary = "대기 발주 조회", description = "본사의 대기 상태 발주 전체 조회")
-    @GetMapping
-    @PreAuthorize("hasAnyRole('FACTORY', 'ADMIN')")
-    public ResponseEntity<ApiResponse<List<FactoryOrderResponse>>> getAllPendingOrders() {
-        return ResponseEntity.ok(ApiResponse.success(factoryFacade.getAllPendingOrders()));
-    }
-
-    @Operation(summary = "전체 발주 조회", description = "본사의 발주 전체 조회")
+    @Operation(summary = "발주 조회", description = "본사의 발주 대기/전체 조회")
     @GetMapping("/accepted")
     @PreAuthorize("hasAnyRole('FACTORY', 'ADMIN')")
     public ResponseEntity<ApiResponse<List<FactoryOrderResponse>>> getAllOrders(

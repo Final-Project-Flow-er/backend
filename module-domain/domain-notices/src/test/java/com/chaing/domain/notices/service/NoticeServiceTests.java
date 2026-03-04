@@ -11,17 +11,24 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
-class NoticeServiceTest {
+class NoticeServiceTests {
 
     @InjectMocks
     private NoticeService noticeService;
@@ -57,6 +64,39 @@ class NoticeServiceTest {
         // then
         assertThat(result).isNotNull();
         verify(noticeRepository, times(1)).save(any(Notice.class));
+    }
+
+    @Test
+    @DisplayName("공지사항 목록 조회")
+    void getNoticeList() {
+
+        // given
+        Pageable pageable = PageRequest.of(0, 10);
+        ReflectionTestUtils.setField(notice, "createdAt", LocalDateTime.now().minusDays(1));
+
+        Notice importantNotice = Notice.builder()
+                .title("중요 공지")
+                .important(true)
+                .authorId(authorId)
+                .build();
+        ReflectionTestUtils.setField(importantNotice, "createdAt", LocalDateTime.now());
+
+        List<Notice> notices = List.of(importantNotice, notice);
+        Page<Notice> noticePage = new PageImpl<>(notices, pageable, notices.size());
+
+        given(noticeRepository.findAllByOrderByImportantDescCreatedAtDesc(pageable)).willReturn(noticePage);
+
+        // when
+        Page<Notice> result = noticeService.getNoticeList(pageable);
+
+        // then
+        assertThat(result.getContent()).hasSize(2);
+        assertThat(result.getContent().get(0).getTitle()).isEqualTo("중요 공지");
+        assertThat(result.getContent().get(0).isImportant()).isTrue();
+        assertThat(result.getContent().get(1).getTitle()).isEqualTo("제목");
+        assertThat(result.getContent().get(1).isImportant()).isFalse();
+
+        verify(noticeRepository, times(1)).findAllByOrderByImportantDescCreatedAtDesc(pageable);
     }
 
     @Test

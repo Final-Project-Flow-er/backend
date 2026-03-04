@@ -32,13 +32,18 @@ public class InternalTransportFacade {
 
         // API용 DTO로 변환
         return domainResponses.stream()
-                .map(res -> new AvailableVehicleResponse(
-                        res.vehicleId(),
-                        res.vehicleNumber(),
-                        res.maxLoad(),
-                        res.currentWeight(),
-                        res.availableWeight()
-                ))
+                .map(res -> {
+                    long safeMaxLoad = res.maxLoad() == null ? 0L : Math.max(0L, res.maxLoad());
+                    long safeCurrentLoad = res.currentWeight() == null ? 0L : Math.max(0L, res.currentWeight());
+                    long safeAvailableLoad = Math.max(0L, safeMaxLoad - safeCurrentLoad);
+                    return new AvailableVehicleResponse(
+                            res.vehicleId(),
+                            res.vehicleNumber(),
+                            safeMaxLoad,
+                            safeCurrentLoad,
+                            safeAvailableLoad
+                    );
+                })
                 .toList();
     }
 

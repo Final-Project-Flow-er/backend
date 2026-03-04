@@ -119,14 +119,15 @@ class NotificationServiceImplTests {
 
         // given
         Long notificationId = 1L;
-        given(notificationRepository.findById(notificationId)).willReturn(Optional.of(notification));
+        given(notificationRepository.findByNotificationIdAndUserId(notificationId, userId))
+                .willReturn(Optional.of(notification));
 
         // when
-        Notification result = notificationService.readNotification(notificationId);
+        Notification result = notificationService.readNotification(notificationId, userId);
 
         // then
         assertThat(result.isRead()).isTrue();
-        verify(notificationRepository).findById(notificationId);
+        verify(notificationRepository).findByNotificationIdAndUserId(notificationId, userId);
     }
 
     @Test

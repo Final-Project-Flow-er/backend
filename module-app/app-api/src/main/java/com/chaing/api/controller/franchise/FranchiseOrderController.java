@@ -4,12 +4,14 @@ import com.chaing.api.dto.franchise.orders.request.FranchiseOrderCreateRequest;
 import com.chaing.api.dto.franchise.orders.response.FranchiseOrderResponse;
 import com.chaing.api.dto.franchise.orders.request.FranchiseOrderUpdateRequest;
 import com.chaing.api.facade.franchise.FranchiseOrderFacade;
+import com.chaing.api.security.principal.UserPrincipal;
 import com.chaing.core.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -31,11 +33,12 @@ public class FranchiseOrderController {
     @Operation(summary = "발주 조회", description = "가맹점 id로 해당 가맹점의 발주 전체 조회")
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'FRANCHISE', 'HQ')")
-    public ResponseEntity<ApiResponse<List<FranchiseOrderResponse>>> getAllOrders() {
-        //TODO: Spring Security Context에서 값 꺼내오는 걸로 수정해야 함
-        String username = "test";
+    public ResponseEntity<ApiResponse<List<FranchiseOrderResponse>>> getAllOrders(
+            @AuthenticationPrincipal UserPrincipal userPrincipal
+            ) {
+        Long userId = userPrincipal.getId();
 
-        return ResponseEntity.ok(ApiResponse.success(franchiseOrderFacade.getAllOrders(username)));
+        return ResponseEntity.ok(ApiResponse.success(franchiseOrderFacade.getAllOrders(userId)));
     }
 
     @Operation(summary = "특정 발주 조회", description = "가맹점 id와 발주 번호로 특정 발주 조회")

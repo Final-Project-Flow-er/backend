@@ -2,12 +2,6 @@ package com.chaing.api.dto.franchise.orders.response;
 
 import com.chaing.domain.orders.entity.FranchiseOrder;
 import com.chaing.domain.orders.enums.FranchiseOrderStatus;
-import jakarta.persistence.Column;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -33,7 +27,7 @@ public record FranchiseOrderResponse(
 
         @NotNull
         @PastOrPresent
-        LocalDateTime createdAt,
+        LocalDateTime requestedDate,
 
         @NotBlank
         String receiver,

@@ -58,7 +58,7 @@ public class Transit extends BaseEntity {
         return Transit.builder()
                 .orderCode(orderCode)
                 .vehicleId(vehicleId)
-                .status(DeliverStatus.PENDING) // 생성 시 기본값은 항상 READY!
+                .status(DeliverStatus.PENDING)
                 .trackingNumber(trackingNumber)
                 .weight(weight)
                 .build();

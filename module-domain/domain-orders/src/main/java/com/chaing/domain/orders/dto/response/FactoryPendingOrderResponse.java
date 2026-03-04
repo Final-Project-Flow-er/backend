@@ -1,9 +1,11 @@
 package com.chaing.domain.orders.dto.response;
 
 import com.chaing.domain.orders.enums.HQOrderStatus;
+import lombok.Builder;
 
 import java.time.LocalDateTime;
 
+@Builder
 public record FactoryPendingOrderResponse(
         String orderCode,
 
@@ -25,6 +27,6 @@ public record FactoryPendingOrderResponse(
 
         LocalDateTime requestedDate,
 
-        LocalDateTime storedDate
+        String storedDate
 ) {
 }

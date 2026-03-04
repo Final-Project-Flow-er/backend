@@ -1,6 +1,7 @@
 package com.chaing.domain.orders.repository;
 
 import com.chaing.domain.orders.entity.HeadOfficeOrderItem;
+import com.chaing.domain.orders.enums.HQOrderStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -14,7 +15,10 @@ public interface HeadOfficeOrderItemRepository extends JpaRepository<HeadOfficeO
 
     List<HeadOfficeOrderItem> findAllByHeadOfficeOrder_HqIdAndHeadOfficeOrder_OrderCodeAndDeletedAtIsNull(Long hqId, String orderCode);
 
-    List<HeadOfficeOrderItem> findByHeadOfficeOrder_HeadOfficeOrderIdIn(List<Long> orderIds);
+    List<HeadOfficeOrderItem> findByHeadOfficeOrder_HeadOfficeOrderIdInAndHeadOfficeOrder_StatusAndDeletedAtIsNull(
+            List<Long> orderIds,
+            HQOrderStatus status
+    );
 
     List<HeadOfficeOrderItem> findAllByHeadOfficeOrder_HeadOfficeOrderIdIn(List<Long> orderIds);
 

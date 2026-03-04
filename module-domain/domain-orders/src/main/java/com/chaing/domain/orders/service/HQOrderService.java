@@ -305,7 +305,11 @@ public class HQOrderService {
 
     public List<HQOrderForTransitResponse> getOrdersForTransit(List<Long> orderIds) {
 
-        List<HeadOfficeOrderItem> allItems = orderItemRepository.findByHeadOfficeOrder_HeadOfficeOrderIdIn(orderIds);
+        List<HeadOfficeOrderItem> allItems = orderItemRepository
+                .findByHeadOfficeOrder_HeadOfficeOrderIdInAndHeadOfficeOrder_StatusAndDeletedAtIsNull(
+                        orderIds,
+                        HQOrderStatus.AWAITING
+                );
 
         if (allItems.isEmpty()) {
             throw new HQOrderException(HQOrderErrorCode.ORDER_ITEM_NOT_FOUND);

@@ -1,6 +1,8 @@
 package com.chaing.domain.notices.entity;
 
 import com.chaing.core.entity.BaseEntity;
+import com.chaing.domain.notices.dto.command.NoticeCreateCommand;
+import com.chaing.domain.notices.dto.command.NoticeUpdateCommand;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -11,12 +13,14 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.SQLRestriction;
 
 @Entity
 @Getter
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
+@SQLRestriction("deleted_at IS NULL")
 public class Notice extends BaseEntity {
 
     @Id
@@ -32,7 +36,25 @@ public class Notice extends BaseEntity {
     @Column(nullable = false)
     private Long authorId;
 
+    private Long updaterId;
+
     @Builder.Default
     @Column(nullable = false)
     private boolean important = false;
+
+    public static Notice createNotice(NoticeCreateCommand command, Long authorId) {
+        return Notice.builder()
+                .title(command.title())
+                .content(command.content())
+                .authorId(authorId)
+                .important(command.important())
+                .build();
+    }
+
+    public void updateNotice(NoticeUpdateCommand command, Long updaterId) {
+        if (command.title() != null) this.title = command.title();
+        if (command.content() != null) this.content = command.content();
+        this.updaterId = updaterId;
+        if (command.important() != null) this.important = command.important();
+    }
 }

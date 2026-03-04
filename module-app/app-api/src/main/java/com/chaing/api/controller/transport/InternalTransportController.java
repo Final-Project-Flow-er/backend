@@ -7,6 +7,7 @@ import com.chaing.api.facade.transport.InternalTransportFacade;
 import com.chaing.core.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -38,7 +39,7 @@ public class InternalTransportController {
     @Operation(summary = "차량 배정", description = "미배정 주문 차량 배정")
     @PostMapping("/assignments")
     public ResponseEntity<ApiResponse<Void>> assignVehicle(
-            @RequestBody VehicleAssignmentRequest request) {
+            @Valid @RequestBody VehicleAssignmentRequest request) {
         // TODO: 배정 로직 작성
         transportFacade.assignVehicle(request);
 

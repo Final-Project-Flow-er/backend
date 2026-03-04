@@ -55,13 +55,13 @@ public class NotificationFacade {
         notificationService.sendNotification(command, targetId);
     }
 
-    // 알림 수정 위임
+    // 알림 수정
     @Transactional
     public void updateNotificationsByTarget(NotificationType type, String message, Long targetId) {
         notificationService.updateNotificationsByTarget(type, message, targetId);
     }
 
-    // 알림 일괄 삭제 위임
+    // 알림 일괄 삭제
     @Transactional
     public void deleteNotificationsByTarget(NotificationType type, Long targetId) {
         notificationService.deleteNotificationsByTarget(type, targetId);

@@ -46,7 +46,7 @@ public class NotificationServiceImpl implements NotificationService {
     // 알림 목록 조회
     @Override
     public Page<Notification> getNotificationList(Long userId, Pageable pageable) {
-        return notificationRepository.findAllByUserIdOrderByNotificationIdDesc(userId, pageable);
+        return notificationRepository.findAllByUserIdOrderByUpdatedAtDesc(userId, pageable);
     }
 
     // 알림 상세 조회

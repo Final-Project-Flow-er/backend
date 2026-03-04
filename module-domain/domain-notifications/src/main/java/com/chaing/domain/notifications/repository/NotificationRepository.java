@@ -12,7 +12,7 @@ import java.util.List;
 @Repository
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
 
-    Page<Notification> findAllByUserIdOrderByNotificationIdDesc(Long userId, Pageable pageable);
+    Page<Notification> findAllByUserIdOrderByUpdatedAtDesc(Long userId, Pageable pageable);
     List<Notification> findAllByUserIdAndIsReadFalse(Long userId);
     List<Notification> findAllByTypeAndTargetId(NotificationType type, Long targetId);
     void deleteAllByTypeAndTargetId(NotificationType type, Long targetId);

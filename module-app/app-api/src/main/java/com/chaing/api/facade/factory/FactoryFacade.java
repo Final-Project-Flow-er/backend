@@ -1,11 +1,13 @@
 package com.chaing.api.facade.factory;
 
-import com.chaing.domain.orders.dto.request.FactoryOrderRequest;
 import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.domain.orders.dto.info.HQOrderInfo;
+import com.chaing.domain.orders.dto.request.FactoryOrderRequest;
 import com.chaing.domain.orders.dto.response.FactoryOrderResponse;
 import com.chaing.domain.orders.dto.response.FactoryOrderUpdateResponse;
 import com.chaing.domain.orders.enums.HQOrderStatus;
+import com.chaing.domain.orders.exception.OrderErrorCode;
+import com.chaing.domain.orders.exception.OrderException;
 import com.chaing.domain.orders.service.HQOrderService;
 import com.chaing.domain.products.service.ProductService;
 import jakarta.validation.Valid;
@@ -88,6 +90,14 @@ public class FactoryFacade {
                     ProductInfo productInfo = productInfoByProductId.get(productId);
 
                     Integer quantity = orderItemIdByOrderId.get(orderId).size();
+
+                    if (orderInfo == null) {
+                        throw new OrderException(OrderErrorCode.ORDER_NOT_FOUND);
+                    }
+
+                    if (productInfo == null) {
+                        throw new OrderException(OrderErrorCode.PRODUCT_NOT_FOUND);
+                    }
 
                     return FactoryOrderResponse.builder()
                             .orderCode(orderInfo.orderCode())

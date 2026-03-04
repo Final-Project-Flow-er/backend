@@ -50,8 +50,8 @@ public class Notice extends BaseEntity {
     }
 
     public void updateNotice(NoticeUpdateCommand command, Long authorId) {
-        this.title = command.title();
-        this.content = command.content();
+        if (command.title() != null) this.title = command.title();
+        if (command.content() != null) this.content = command.content();
         this.authorId = authorId;
         if (command.important() != null) this.important = command.important();
     }

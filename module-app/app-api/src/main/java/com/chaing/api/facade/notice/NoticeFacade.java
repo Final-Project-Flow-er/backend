@@ -44,9 +44,9 @@ public class NoticeFacade {
 
     // 공지사항 수정
     @Transactional
-    public NoticeDetailResponse updateNotice(Long id, UpdateNoticeRequest request, Long authorId) {
+    public NoticeDetailResponse updateNotice(Long id, UpdateNoticeRequest request, Long updaterId) {
         NoticeUpdateCommand command = request.toCommand();
-        Notice notice = noticeService.update(id, command, authorId);
+        Notice notice = noticeService.update(id, command, updaterId);
         // TODO: 공지사항 알림 생성
         return NoticeDetailResponse.from(notice);
     }

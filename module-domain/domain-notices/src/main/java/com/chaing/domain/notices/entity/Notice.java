@@ -36,6 +36,8 @@ public class Notice extends BaseEntity {
     @Column(nullable = false)
     private Long authorId;
 
+    private Long updaterId;
+
     @Builder.Default
     @Column(nullable = false)
     private boolean important = false;
@@ -49,10 +51,10 @@ public class Notice extends BaseEntity {
                 .build();
     }
 
-    public void updateNotice(NoticeUpdateCommand command, Long authorId) {
+    public void updateNotice(NoticeUpdateCommand command, Long updaterId) {
         if (command.title() != null) this.title = command.title();
         if (command.content() != null) this.content = command.content();
-        this.authorId = authorId;
+        this.updaterId = updaterId;
         if (command.important() != null) this.important = command.important();
     }
 }

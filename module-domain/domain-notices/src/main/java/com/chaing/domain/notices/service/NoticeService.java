@@ -35,9 +35,9 @@ public class NoticeService {
     }
 
     // 공지사항 수정
-    public Notice update(Long id, NoticeUpdateCommand command, Long authorId) {
+    public Notice update(Long id, NoticeUpdateCommand command, Long updaterId) {
         Notice notice = getById(id);
-        notice.updateNotice(command, authorId);
+        notice.updateNotice(command, updaterId);
         return notice;
     }
 

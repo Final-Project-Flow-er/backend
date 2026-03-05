@@ -25,7 +25,7 @@ public class VehicleManagementService {
     }
 
     // 운송 차량 목록 조회
-    public Page<Vehicle> getVehicles(Pageable pageable) {
+    public Page<Vehicle> getVehicleList(Pageable pageable) {
         return vehicleRepository.findAll(pageable);
     }
 

@@ -1,4 +1,4 @@
-package com.chaing.api.dto.hq.inventories.request;
+package com.chaing.domain.inventories.dto.request;
 
 import jakarta.validation.constraints.NotNull;
 

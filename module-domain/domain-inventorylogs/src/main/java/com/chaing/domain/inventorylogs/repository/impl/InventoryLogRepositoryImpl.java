@@ -4,18 +4,23 @@ import com.chaing.core.enums.LogType;
 import com.chaing.domain.inventorylogs.dto.request.FactoryLogRequest;
 import com.chaing.domain.inventorylogs.dto.request.FranchiseLogRequest;
 import com.chaing.domain.inventorylogs.dto.request.LogRequest;
+import com.chaing.domain.inventorylogs.dto.response.DailySales;
 import com.chaing.domain.inventorylogs.dto.response.FranchiseInventoryLogListResponse;
 import com.chaing.domain.inventorylogs.dto.response.FranchiseInventoryLogResponse;
+import com.chaing.domain.inventorylogs.dto.response.FranchiseProductSalesResponse;
 import com.chaing.domain.inventorylogs.dto.response.InventoryLogListResponse;
 import com.chaing.domain.inventorylogs.dto.response.InventoryLogResponse;
+import com.chaing.domain.inventorylogs.dto.response.ProductSalesResponse;
 import com.chaing.domain.inventorylogs.entity.QInventoryLog;
 import com.chaing.domain.inventorylogs.enums.ActorType;
 import com.chaing.domain.inventorylogs.exception.InventoryLogException;
 import com.chaing.domain.inventorylogs.exception.InventoryLogtErrorCode;
 import com.chaing.domain.inventorylogs.repository.interfaces.InventoryLogRepositoryCustom;
+import com.querydsl.core.Tuple;
 import com.querydsl.core.types.Expression;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
@@ -23,7 +28,10 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Repository
 @RequiredArgsConstructor
@@ -253,6 +261,83 @@ public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom 
         );
     }
 
+
+    // 판매기록 가져오기
+    @Override
+    public List<FranchiseProductSalesResponse> getProductSales(
+            List<Long> franchiseIds,
+            List<Long> productIds
+    ) {
+
+        LocalDate today = LocalDate.now();
+        LocalDate startDate = today.minusDays(90);
+        LocalDate endDate = today.minusDays(60);
+
+        NumberExpression<Integer> quantity = log.quantity.sum().intValue();
+
+        List<Tuple> result = queryFactory
+                .select(
+                        log.actorId,
+                        log.productId,
+                        log.createdAt,
+                        quantity
+                )
+                .from(log)
+                .where(
+                        betweenDate(startDate, endDate),
+                        log.actorType.eq(ActorType.FRANCHISE),
+                        log.logType.eq(LogType.SALE),
+                        log.actorId.in(franchiseIds),
+                        log.productId.in(productIds)
+                )
+                .groupBy(log.actorId, log.productId, log.createdAt)
+                .fetch();
+
+        Map<Long, Map<Long, List<DailySales>>> grouped = new HashMap<>();
+
+        for (Tuple tuple : result) {
+
+            Long franchiseId = tuple.get(log.actorId);
+            Long productId = tuple.get(log.productId);
+            LocalDate date = tuple.get(log.createdAt).toLocalDate();
+            Integer qty = tuple.get(quantity);
+
+            grouped
+                    .computeIfAbsent(franchiseId, k -> new HashMap<>())
+                    .computeIfAbsent(productId, k -> new ArrayList<>())
+                    .add(new DailySales(date, qty));
+        }
+
+        List<FranchiseProductSalesResponse> responses = new ArrayList<>();
+
+        for (Map.Entry<Long, Map<Long, List<DailySales>>> franchiseEntry : grouped.entrySet()) {
+
+            Long franchiseId = franchiseEntry.getKey();
+            Map<Long, List<DailySales>> productMap = franchiseEntry.getValue();
+
+            List<ProductSalesResponse> productResponses = new ArrayList<>();
+
+            for (Map.Entry<Long, List<DailySales>> productEntry : productMap.entrySet()) {
+
+                Long productId = productEntry.getKey();
+                List<DailySales> sales = productEntry.getValue();
+
+                int totalSales = sales.stream()
+                        .mapToInt(DailySales::quantity)
+                        .sum();
+
+                productResponses.add(
+                        new ProductSalesResponse(productId, sales, totalSales)
+                );
+            }
+
+            responses.add(
+                    new FranchiseProductSalesResponse(franchiseId, productResponses)
+            );
+        }
+
+        return responses;
+    }
 }
 
 

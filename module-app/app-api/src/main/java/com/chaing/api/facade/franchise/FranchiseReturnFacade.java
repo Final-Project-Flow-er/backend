@@ -425,15 +425,15 @@ public class FranchiseReturnFacade {
     }
 
     // 반품 가능 대상 발주 조회
-    public List<FranchiseReturnTargetResponse> getAllTargets(String username) {
-        // franchiseId username으로 조회하는 로직 추가 필요
-        Long franchiseId = 1L;
+    public List<FranchiseReturnTargetResponse> getAllTargets(Long userId) {
+        // franchiseId
+        Long franchiseId = userManagementService.getFranchiseIdByUserId(userId);
 
-        // 발주 조회
-        List<FranchiseReturnTargetResponse> infos = franchiseOrderService.getAllTargetOrders(franchiseId, username);
+        // username
+        String username = userManagementService.getUsernameByUserId(userId);
 
-        // 결과 반환
-        return infos;
+        // 발주 조회 및 반환
+        return franchiseOrderService.getAllTargetOrders(franchiseId, userId, username);
     }
 
     // 발주 정보 조회

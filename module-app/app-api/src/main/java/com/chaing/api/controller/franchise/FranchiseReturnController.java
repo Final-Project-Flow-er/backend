@@ -87,11 +87,13 @@ public class FranchiseReturnController {
 
     @Operation(summary = "반품 대상 조회", description = "가맹점 id로 반품 생성의 대상이 되는 발주 조회")
     @GetMapping("/target")
-    public ResponseEntity<ApiResponse<List<FranchiseReturnTargetResponse>>> getTargets() {
-        //TODO: Spring Security Context에서 값 꺼내오는 걸로 수정해야 함
-        String username = "test";
+    @PreAuthorize("hasAnyRole('ADMIN', 'FRANCHISE')")
+    public ResponseEntity<ApiResponse<List<FranchiseReturnTargetResponse>>> getTargets(
+            @AuthenticationPrincipal UserPrincipal userPrincipal
+    ) {
+        Long userId = userPrincipal.getId();
 
-        return ResponseEntity.ok(ApiResponse.success(franchiseReturnFacade.getAllTargets(username)));
+        return ResponseEntity.ok(ApiResponse.success(franchiseReturnFacade.getAllTargets(userId)));
     }
 
     // 반품 생성 화면에 띄우는 데이터 보내주는 api 필요

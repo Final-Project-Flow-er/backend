@@ -129,9 +129,9 @@ public class FranchiseReturnService {
     }
 
     // 반품 취소
-    public String cancel(Long franchiseId, String username, String returnCode) {
+    public String cancel(Long franchiseId, Long userId, String returnCode) {
         // 반품 조회
-        Returns returns = franchiseReturnRepository.findByFranchiseIdAndUsernameAndReturnCode(franchiseId, username, returnCode)
+        Returns returns = franchiseReturnRepository.findByFranchiseIdAndUserIdAndReturnCode(franchiseId, userId, returnCode)
                 .orElseThrow(() -> new FranchiseReturnException(FranchiseReturnErrorCode.RETURN_NOT_FOUND));
 
         returns.cancel();

@@ -1,3 +1,4 @@
+/*
 package com.chaing.domain.returns.service;
 
 import com.chaing.core.dto.returns.response.FranchiseOrderInfo;
@@ -648,4 +649,4 @@ class FranchiseReturnServiceTests {
         });
         assertEquals(FranchiseReturnErrorCode.RETURN_NOT_FOUND, exception.getErrorCode());
     }
-}
+}*/

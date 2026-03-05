@@ -333,11 +333,11 @@ public class FranchiseReturnFacade {
 
     // 반품 취소
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
-    public String cancel(String username, String returnCode) {
-        // franchiseId username으로 조회하는 로직 추가 필요
-        Long franchiseId = 1L;
+    public String cancel(Long userId, String returnCode) {
+        // franchiseId
+        Long franchiseId = userManagementService.getFranchiseIdByUserId(userId);
 
-        return franchiseReturnService.cancel(franchiseId, username, returnCode);
+        return franchiseReturnService.cancel(franchiseId, userId, returnCode);
     }
 
     // 반품 생성

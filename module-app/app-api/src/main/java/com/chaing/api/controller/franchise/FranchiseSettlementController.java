@@ -76,6 +76,12 @@ public class FranchiseSettlementController {
             @RequestParam("start") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start,
             @RequestParam("end") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end
     ) {
+        if (start.isAfter(end)) {
+            throw new IllegalArgumentException("시작일은 종료일보다 늦을 수 없습니다.");
+        }
+        if (!YearMonth.from(start).equals(month) || !YearMonth.from(end).equals(month)) {
+            throw new IllegalArgumentException("시작일과 종료일은 요청한 월 범위 내에 있어야 합니다.");
+        }
         return ResponseEntity.ok(ApiResponse.success(List.of()));
     }
 

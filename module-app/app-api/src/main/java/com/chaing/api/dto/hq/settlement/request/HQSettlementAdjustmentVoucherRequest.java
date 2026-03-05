@@ -12,6 +12,7 @@ import java.time.LocalDate;
 public record HQSettlementAdjustmentVoucherRequest(
         @Schema(description = "대상 가맹점 ID", example = "1", requiredMode = Schema.RequiredMode.REQUIRED)
         @NotNull
+        @Min(1)
         Long franchiseId,
 
         @Schema(description = "전표 유형", example = "ADJUSTMENT", requiredMode = Schema.RequiredMode.REQUIRED)

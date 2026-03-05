@@ -36,4 +36,9 @@ public record HQSettlementAdjustmentVoucherRequest(
         @NotBlank
         String reason
 ) {
+    public HQSettlementAdjustmentVoucherRequest {
+        if (isMinus == null) {
+            isMinus = false;
+        }
+    }
 }

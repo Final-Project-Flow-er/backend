@@ -17,4 +17,10 @@ public record HQSettlementDailyGraphRequest(
         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
         LocalDate end
 ) {
+    public HQSettlementDailyGraphRequest {
+        if (start != null && end != null && end.isBefore(start)) {
+            throw new IllegalArgumentException("종료일은 시작일보다 빠를 수 없습니다.");
+        }
+    }
+
 }

@@ -22,7 +22,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder
-public class Transits extends BaseEntity {
+public class Transit extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -33,19 +33,34 @@ public class Transits extends BaseEntity {
     @Column(nullable = false)
     private String orderCode;
 
+    // 차량 정보
+    @NotNull
+    @Column(nullable = false)
+    private Long vehicleId;
+
     // 운송 상태
     @NotNull
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private DeliverStatus status;
 
-    // 박스코드
-    @NotBlank
-    @Column(nullable = false)
-    private String boxCode;
-
     // 송장 번호
     @NotBlank
     @Column(nullable = false)
     private String trackingNumber;
+
+    // 적재량
+    @NotNull
+    @Column(nullable = false)
+    private Long weight;
+
+    public static Transit create(Long vehicleId, String orderCode, Long weight, String trackingNumber) {
+        return Transit.builder()
+                .orderCode(orderCode)
+                .vehicleId(vehicleId)
+                .status(DeliverStatus.PENDING)
+                .trackingNumber(trackingNumber)
+                .weight(weight)
+                .build();
+    }
 }

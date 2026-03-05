@@ -155,4 +155,34 @@ class VehicleManagementServiceTests {
         // then
         assertThat(vehicle.getDeletedAt()).isNotNull();
     }
+
+    @Test
+    @DisplayName("운송 업체 비활성화 시 소속 차량 일괄 비활성화")
+    void deactivateVehiclesByTransportId() {
+
+        // given
+        Long transportId = 1L;
+
+        // when
+        vehicleManagementService.deactivateVehiclesByTransportId(transportId);
+
+        // then
+        verify(vehicleRepository, times(1))
+                .updateStatusByTransportId(transportId, UsableStatus.INACTIVE);
+    }
+
+    @Test
+    @DisplayName("운송 업체 삭제 시 소속 차량 일괄 삭제")
+    void deleteVehiclesByTransportId() {
+
+        // given
+        Long transportId = 1L;
+
+        // when
+        vehicleManagementService.deleteVehiclesByTransportId(transportId);
+
+        // then
+        verify(vehicleRepository, times(1))
+                .deleteVehiclesByTransportId(transportId);
+    }
 }

@@ -142,4 +142,26 @@ public class InventoryService {
                                 .build()
                 ));
     }
+
+    // return: Map<orderItemId, FranchiseInventoryCommand>
+    public Map<Long, FranchiseInventoryCommand> getInventoriesByOrderItemIds(List<Long> orderItemIds) {
+        List<FranchiseInventory> inventories = inventoryRepository.findAllByOrderItemIdIn(orderItemIds);
+
+        if (inventories == null || inventories.isEmpty()) {
+            // 예외 추가
+        }
+
+        return inventories.stream()
+                .collect(Collectors.toMap(
+                        FranchiseInventory::getOrderItemId,
+                        inventory -> FranchiseInventoryCommand.builder()
+                                .inventoryId(inventory.getInventoryId())
+                                .orderItemId(inventory.getOrderItemId())
+                                .orderId(inventory.getOrderId())
+                                .productId(inventory.getProductId())
+                                .serialCode(inventory.getSerialCode())
+                                .boxCode(inventory.getBoxCode())
+                                .build()
+                ));
+    }
 }

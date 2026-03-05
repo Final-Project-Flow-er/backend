@@ -19,6 +19,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Getter
@@ -60,4 +61,16 @@ public class FranchiseInventory extends BaseEntity {
     @NotBlank
     @Column(nullable = false)
     private String boxCode;
+
+    // 발주코드
+    private String orderCode;
+
+
+    private String orderItemId;     // 발주를 하면 그 발주 코드 안에 여러 아이템이 있을건데 그거에 대한 각 아이디를 담는 곳
+
+    @Column
+    LocalDateTime shippedAt;        // 배송 완료 일자
+
+    @Column
+    LocalDateTime receivedAt;       // 입고 완료 일자
 }

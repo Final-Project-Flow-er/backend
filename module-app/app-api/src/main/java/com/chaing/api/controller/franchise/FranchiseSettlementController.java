@@ -63,6 +63,9 @@ public class FranchiseSettlementController {
             @RequestParam("month") @DateTimeFormat(pattern = "yyyy-MM") YearMonth month,
             @RequestParam(value = "limit", required = false) Integer limit
     ) {
+        if (limit != null && limit <1) {
+            throw new IllegalArgumentException("limit는 0보다 커야합니다");
+        }
         return ResponseEntity.ok(ApiResponse.success(List.of()));
     }
 
@@ -82,6 +85,9 @@ public class FranchiseSettlementController {
             @RequestParam("month") @DateTimeFormat(pattern = "yyyy-MM") YearMonth month,
             @RequestParam(value = "limit", required = false) Integer limit
     ) {
+        if (limit != null && limit <1) {
+            throw new IllegalArgumentException("limit는 0보다 커야합니다");
+        }
         return ResponseEntity.ok(ApiResponse.success(List.of()));
     }
 

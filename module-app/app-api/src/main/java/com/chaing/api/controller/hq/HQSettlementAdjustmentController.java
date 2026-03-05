@@ -1,24 +1,28 @@
 package com.chaing.api.controller.hq;
 
 
+import com.chaing.api.dto.hq.settlement.request.HQSettlementAdjustmentVoucherRequest;
 import com.chaing.core.dto.ApiResponse;
 import com.chaing.domain.settlements.enums.VoucherType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
 
 @RestController
+@Validated
 @Tag(name = "HQVoucherAdjustment API", description = "본사 조정 전표 관리 API")
 @RequestMapping("/api/v1/hq/settlements/voucher-adjustments")
 @RequiredArgsConstructor
@@ -51,12 +55,9 @@ public class HQSettlementAdjustmentController {
     )
     @PostMapping
     public ResponseEntity<ApiResponse<?>> createAdjustment(
-            @RequestParam Long franchiseId,
-            @RequestParam VoucherType type,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate occurredAt,
-            @RequestParam Long amount,
-            @RequestParam(defaultValue = "false") boolean isMinus,
-            @RequestParam String reason
+            @Valid
+            @RequestBody
+            HQSettlementAdjustmentVoucherRequest request
     ) {
         return ResponseEntity.ok(ApiResponse.success(null));
     }

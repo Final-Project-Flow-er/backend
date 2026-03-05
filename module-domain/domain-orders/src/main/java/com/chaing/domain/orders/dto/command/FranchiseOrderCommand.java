@@ -21,7 +21,9 @@ public record FranchiseOrderCommand(
 
         LocalDateTime requestedDate,
 
-        LocalDateTime deliveryDate
+        LocalDateTime deliveryDate,
+
+        String deliveryTime
 ) {
 
     public static FranchiseOrderCommand from(FranchiseOrder franchiseOrder) {
@@ -32,6 +34,7 @@ public record FranchiseOrderCommand(
                 .quantity(franchiseOrder.getTotalQuantity())
                 .totalPrice(franchiseOrder.getTotalAmount())
                 .requestedDate(franchiseOrder.getCreatedAt())
+                .deliveryDate(franchiseOrder.getDeliveryDate())
                 .build();
     }
 }

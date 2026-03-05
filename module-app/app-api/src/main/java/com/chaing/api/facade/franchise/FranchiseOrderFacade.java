@@ -1,19 +1,22 @@
 package com.chaing.api.facade.franchise;
 
-import com.chaing.api.dto.franchise.orders.request.FranchiseOrderCreateRequest;
-import com.chaing.domain.orders.dto.request.FranchiseOrderUpdateRequest;
+import com.chaing.domain.orders.dto.request.FranchiseOrderCreateRequest;
+import com.chaing.domain.orders.dto.request.FranchiseOrderCreateRequestItem;
 import com.chaing.api.dto.franchise.orders.response.FranchiseOrderResponse;
 import com.chaing.core.dto.info.ProductInfo;
+import com.chaing.domain.businessunits.service.impl.FranchiseServiceImpl;
 import com.chaing.domain.orders.dto.command.FranchiseOrderCommand;
 import com.chaing.domain.orders.dto.command.FranchiseOrderDetailCommand;
 import com.chaing.domain.orders.dto.command.FranchiseOrderItemCommand;
+import com.chaing.domain.orders.dto.request.FranchiseOrderUpdateRequest;
 import com.chaing.domain.orders.dto.response.FranchiseOrderCancelResponse;
+import com.chaing.domain.orders.dto.response.FranchiseOrderCreateResponse;
 import com.chaing.domain.orders.dto.response.FranchiseOrderDetailResponse;
 import com.chaing.domain.orders.dto.response.FranchiseOrderItemDetailResponse;
 import com.chaing.domain.orders.dto.response.FranchiseOrderUpdateResponse;
-import com.chaing.domain.orders.entity.FranchiseOrder;
 import com.chaing.domain.orders.exception.OrderErrorCode;
 import com.chaing.domain.orders.exception.OrderException;
+import com.chaing.domain.orders.service.FranchiseOrderCodeGenerator;
 import com.chaing.domain.orders.service.FranchiseOrderService;
 import com.chaing.domain.products.service.ProductService;
 import com.chaing.domain.users.service.UserManagementService;
@@ -36,6 +39,8 @@ public class FranchiseOrderFacade {
     private final FranchiseOrderService franchiseOrderService;
     private final UserManagementService userManagementService;
     private final ProductService productService;
+    private final FranchiseOrderCodeGenerator generator;
+    private final FranchiseServiceImpl franchiseService;
 
     // 가맹점 발주 조회
     public List<FranchiseOrderResponse> getAllOrders(Long userId) {
@@ -238,23 +243,60 @@ public class FranchiseOrderFacade {
 
     // 가맹점 발주 생성
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
-    public FranchiseOrderResponse createOrder(String username, FranchiseOrderCreateRequest request) {
-        // franchiseId username으로 조회하는 로직 추가 필요
-        Long franchiseId = 1L;
+    public FranchiseOrderCreateResponse createOrder(Long userId, FranchiseOrderCreateRequest request) {
+        // 발주 가능한지 재고 확인
 
-        // 받아온 ProductCode에 따라 제품 정보 가져와서 넘겨줘야 함
-        // 이건 임시임. 나중에 Product 엔티티에서 정보 가져오는 걸로 바꿔줘야 함
-        List<ProductInfo> productInfos = request.items().stream()
-                .map(item -> { return ProductInfo.builder()
-                        .productCode(item.productCode())
-                        .productId(1L)
-                        .unitPrice(BigDecimal.valueOf(5000))
-                        .build(); })
-                .map(item -> { return ProductInfo.builder().productCode(item.productCode()).build(); })
+        // TODO: 부분 접수되는건 어떻게 할거?
+
+        // franchiseId
+        Long franchiseId = userManagementService.getFranchiseIdByUserId(userId);
+
+        // franchiseCode
+        String franchiseCode = franchiseService.getById(franchiseId).businessNumber();
+
+        // username
+        String username = userManagementService.getUsernameByUserId(userId);
+
+        // orderCode
+        String orderCode = generator.generate(franchiseCode);
+
+        // Map<productId, ProductInfo>
+        Map<Long, ProductInfo> productInfoByProductId = productService.getAllProductInfo();
+
+        // Map<productCode, ProductInfo>
+        Map<String, ProductInfo> productInfoByProductCode = productInfoByProductId.values().stream()
+                .collect(Collectors.toMap(
+                        ProductInfo::productCode,
+                        Function.identity()
+                ));
+
+        // FranchiseOrderCommand
+        FranchiseOrderCommand order = franchiseOrderService.createOrder(request, orderCode, franchiseId, userId, productInfoByProductCode);
+
+        // List<productCode>
+        List<String> productCodes = request.items().stream()
+                .map(FranchiseOrderCreateRequestItem::productCode)
                 .toList();
 
-        FranchiseOrder order = franchiseOrderService.createOrder(franchiseId, username, request.toFranchiseOrderCreateCommand(), productInfos);
+        // List<FranchiseOrderItemCommand>
+        List<FranchiseOrderItemDetailResponse> orderItems = franchiseOrderService.createOrderItems(request, productInfoByProductCode, orderCode);
 
-        return FranchiseOrderResponse.from(order);
+        // 필요 값
+        BigDecimal totalPrice = orderItems.stream()
+                .map(FranchiseOrderItemDetailResponse::totalPrice)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // TODO: 정산 생성
+
+        // 반환
+        return FranchiseOrderCreateResponse.builder()
+                .orderCode(orderCode)
+                .orderStatus(order.orderStatus())
+                .totalPrice(totalPrice)
+                .requestedDate(order.requestedDate())
+                .receiver(username)
+                .deliveryDate(order.deliveryDate())
+                .items(orderItems)
+                .build();
     }
 }

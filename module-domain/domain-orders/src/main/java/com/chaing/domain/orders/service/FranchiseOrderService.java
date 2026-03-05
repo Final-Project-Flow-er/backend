@@ -5,9 +5,10 @@ import com.chaing.core.dto.returns.request.OrderItemIdAndSerialCode;
 import com.chaing.core.dto.returns.response.FranchiseOrderInfo;
 import com.chaing.core.dto.returns.response.FranchiseReturnTargetResponse;
 import com.chaing.domain.orders.dto.command.FranchiseOrderCommand;
-import com.chaing.domain.orders.dto.command.FranchiseOrderCreateCommand;
 import com.chaing.domain.orders.dto.command.FranchiseOrderDetailCommand;
 import com.chaing.domain.orders.dto.command.FranchiseOrderItemCommand;
+import com.chaing.domain.orders.dto.request.FranchiseOrderCreateRequest;
+import com.chaing.domain.orders.dto.request.FranchiseOrderCreateRequestItem;
 import com.chaing.domain.orders.dto.request.FranchiseOrderUpdateRequest;
 import com.chaing.domain.orders.dto.request.HQOrderUpdateStatusRequest;
 import com.chaing.domain.orders.dto.response.FranchiseOrderCancelResponse;
@@ -130,28 +131,32 @@ public class FranchiseOrderService {
     }
 
     // 가맹점 발주 생성
-    public FranchiseOrder createOrder(Long franchiseId, String username, FranchiseOrderCreateCommand request, List<ProductInfo> productInfos) {
-        // FranchiseOrder 생성
-        FranchiseOrder order = FranchiseOrder.create(franchiseId, username, request, generateOrderCode(franchiseId));
+    public FranchiseOrderCommand createOrder(FranchiseOrderCreateRequest request, String orderCode, Long franchiseId, Long userId, Map<String, ProductInfo> productInfoByProductCode) {
+        // 필요 값
+        Integer totalQuantity = request.items().stream()
+                .map(FranchiseOrderCreateRequestItem::quantity)
+                .reduce(0, Integer::sum);
+        BigDecimal totalPrice = request.items().stream()
+                .map(item -> productInfoByProductCode.get(item.productCode()).retailPrice().multiply(BigDecimal.valueOf(item.quantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // 발주 생성
+        FranchiseOrder order = FranchiseOrder.builder()
+                .franchiseId(franchiseId)
+                .orderCode(orderCode)
+                .userId(userId)
+                .address(request.address())
+                .requirement(request.requirement())
+                .totalQuantity(totalQuantity)
+                .totalAmount(totalPrice)
+                .deliveryDate(request.deliveryDate())
+                .deliveryTime(request.deliveryTime())
+                .build();
+
+        // 발주 저장
         franchiseOrderRepository.save(order);
 
-        // FranchiseOrderItem 생성
-        List<FranchiseOrderItem> orderItems = request.items().stream().map(item -> {
-            FranchiseOrderItem requestOrderItem = productInfos.stream().filter(info -> item.productCode().equals(info.productCode())).map(info -> {
-                return FranchiseOrderItem.builder().franchiseOrder(order).serialCode(info.serialCode()).quantity(item.quantity()).unitPrice(info.unitPrice()).totalPrice(info.unitPrice().multiply(BigDecimal.valueOf(item.quantity()))).build();
-            }).findAny().orElseThrow(() -> new FranchiseOrderException(FranchiseOrderErrorCode.PRODUCT_NOT_FOUND));
-            return requestOrderItem;
-        }).toList();
-
-        order.addOrderItem(orderItems);
-
-        order.countItems(orderItems);
-
-        order.allocateTotalAmount(orderItems);
-
-        franchiseOrderItemRepository.saveAll(orderItems);
-
-        return order;
+        return FranchiseOrderCommand.from(order);
     }
 
     private String generateOrderCode(Long franchiseId) {
@@ -292,5 +297,65 @@ public class FranchiseOrderService {
         }
 
         return items.stream().collect(Collectors.groupingBy(FranchiseOrderItem::getProductId, Collectors.mapping(FranchiseOrderItem::getFranchiseOrderItemId, Collectors.toList())));
+    }
+
+    // return: List<FranchiseOrderItemDetailResponse>
+    public List<FranchiseOrderItemDetailResponse> createOrderItems(FranchiseOrderCreateRequest request, Map<String, ProductInfo> productInfoByProductCode, String orderCode) {
+        // 발주 조회
+        FranchiseOrder order = franchiseOrderRepository.findByOrderCode(orderCode)
+                .orElseThrow(() -> new OrderException(OrderErrorCode.ORDER_NOT_FOUND));
+
+        // Map<productId, ProductInfo>
+        Map<Long, ProductInfo> productInfoByProductId = productInfoByProductCode.values().stream()
+                .collect(Collectors.toMap(
+                        ProductInfo::productId,
+                        Function.identity()
+                ));
+
+        // 발주 제품 생성
+        List<FranchiseOrderItem> items = request.items().stream()
+                .map(item -> {
+                    ProductInfo productInfo = productInfoByProductCode.get(item.productCode());
+
+                    if (productInfo == null) {
+                        throw new OrderException(OrderErrorCode.PRODUCT_NOT_FOUND);
+                    }
+
+                    Integer quantity = item.quantity();
+                    Long productId = productInfo.productId();
+                    BigDecimal unitPrice = productInfo.retailPrice();
+                    BigDecimal totalPrice = unitPrice.multiply(new BigDecimal(quantity));
+
+                    return FranchiseOrderItem.builder()
+                            .franchiseOrder(order)
+                            .quantity(item.quantity())
+                            .productId(productId)
+                            .unitPrice(unitPrice)
+                            .totalPrice(totalPrice)
+                            .build();
+                })
+                .toList();
+
+        // 발주 제품 저장
+        franchiseOrderItemRepository.saveAll(items);
+
+        // 반환
+        return items.stream()
+                .map(item -> {
+                    ProductInfo productInfo = productInfoByProductId.get(item.getProductId());
+
+                    if (productInfo == null) {
+                        throw new OrderException(OrderErrorCode.PRODUCT_NOT_FOUND);
+                    }
+
+                    return FranchiseOrderItemDetailResponse.builder()
+                            .productCode(productInfo.productCode())
+                            .productName(productInfo.productName())
+                            .quantity(item.getQuantity())
+                            .unitPrice(item.getUnitPrice())
+                            .totalPrice(item.getTotalPrice())
+                            .build();
+                })
+                .toList();
     }
 }

@@ -21,6 +21,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
@@ -169,6 +170,29 @@ public class ProductService {
                                 .retailPrice(entry.getPrice())
                                 .costPrice(entry.getCostPrice())
                                 .tradePrice(entry.getSupplyPrice())
+                                .build()
+                ));
+    }
+
+    // 제품 정보 전체 반환
+    // return: Map<productId, ProductInfo>
+    public Map<Long, ProductInfo> getAllProductInfo() {
+        List<Product> products = productRepository.findAllByProductStatus(ProductStatus.ON_SALE);
+
+        if (products == null || products.isEmpty()) {
+            throw new ProductException(ProductErrorCode.PRODUCT_NOT_FOUND);
+        }
+
+        return products.stream()
+                .collect(Collectors.toMap(
+                        Product::getProductId,
+                        product -> ProductInfo.builder()
+                                .productId(product.getProductId())
+                                .productCode(product.getProductCode())
+                                .productName(product.getName())
+                                .retailPrice(product.getPrice())
+                                .costPrice(product.getSupplyPrice())
+                                .tradePrice(product.getSupplyPrice())
                                 .build()
                 ));
     }

@@ -9,7 +9,7 @@ import java.time.format.DateTimeFormatter;
 @Component
 public class ReturnCodeGenerator implements CodeGenerator {
     @Override
-    public String generate() {
+    public String generate(String businessUnitId) {
         return "RESE01" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")) + (int)(Math.random()*100 + 1);
     }
 }

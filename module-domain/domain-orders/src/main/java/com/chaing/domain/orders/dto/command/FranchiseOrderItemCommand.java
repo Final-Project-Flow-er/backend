@@ -10,8 +10,6 @@ import java.util.List;
 public record FranchiseOrderItemCommand(
         Long orderItemId,
 
-        String serialCode,
-
         Long productId,
 
         BigDecimal unitPrice
@@ -19,7 +17,6 @@ public record FranchiseOrderItemCommand(
     public static FranchiseOrderItemCommand from(FranchiseOrderItem franchiseOrderItem) {
         return FranchiseOrderItemCommand.builder()
                 .orderItemId(franchiseOrderItem.getFranchiseOrderItemId())
-                .serialCode(franchiseOrderItem.getSerialCode())
                 .productId(franchiseOrderItem.getProductId())
                 .unitPrice(franchiseOrderItem.getUnitPrice())
                 .build();

@@ -1,12 +1,13 @@
 package com.chaing.api.controller.franchise;
 
-import com.chaing.api.dto.franchise.orders.request.FranchiseOrderCreateRequest;
+import com.chaing.domain.orders.dto.request.FranchiseOrderCreateRequest;
 import com.chaing.api.dto.franchise.orders.response.FranchiseOrderResponse;
 import com.chaing.domain.orders.dto.request.FranchiseOrderUpdateRequest;
 import com.chaing.api.facade.franchise.FranchiseOrderFacade;
 import com.chaing.api.security.principal.UserPrincipal;
 import com.chaing.core.dto.ApiResponse;
 import com.chaing.domain.orders.dto.response.FranchiseOrderCancelResponse;
+import com.chaing.domain.orders.dto.response.FranchiseOrderCreateResponse;
 import com.chaing.domain.orders.dto.response.FranchiseOrderDetailResponse;
 import com.chaing.domain.orders.dto.response.FranchiseOrderUpdateResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -84,12 +85,12 @@ public class FranchiseOrderController {
     @Operation(summary = "발주 생성", description = "가맹점 id로 발주 생성")
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'FRANCHISE', 'HQ')")
-    public ResponseEntity<ApiResponse<FranchiseOrderResponse>> createOrder(
-            @RequestBody FranchiseOrderCreateRequest request
+    public ResponseEntity<ApiResponse<FranchiseOrderCreateResponse>> createOrder(
+            @RequestBody FranchiseOrderCreateRequest request,
+            @AuthenticationPrincipal UserPrincipal userPrincipal
     ) {
-        //TODO: Spring Security Context에서 값 꺼내오는 걸로 수정해야 함
-        String username = "test";
+        Long userId = userPrincipal.getId();
 
-        return ResponseEntity.ok(ApiResponse.success(franchiseOrderFacade.createOrder(username, request)));
+        return ResponseEntity.ok(ApiResponse.success(franchiseOrderFacade.createOrder(userId, request)));
     }
 }

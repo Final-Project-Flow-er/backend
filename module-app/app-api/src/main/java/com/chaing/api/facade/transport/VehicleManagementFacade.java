@@ -6,6 +6,7 @@ import com.chaing.api.dto.transport.management.request.UpdateVehicleStatusReques
 import com.chaing.api.dto.transport.management.response.VehicleDetailResponse;
 import com.chaing.api.dto.transport.management.response.VehicleSummaryResponse;
 import com.chaing.domain.transports.entity.Vehicle;
+import com.chaing.domain.transports.service.TransportManagementService;
 import com.chaing.domain.transports.service.VehicleManagementService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -19,10 +20,12 @@ import org.springframework.transaction.annotation.Transactional;
 public class VehicleManagementFacade {
 
     private final VehicleManagementService vehicleManagementService;
+    private final TransportManagementService transportManagementService;
 
     // 운송 차량 등록
     @Transactional
     public VehicleDetailResponse createVehicle(CreateVehicleRequest request) {
+        transportManagementService.getById(request.transportId());
         Vehicle vehicle = vehicleManagementService.createVehicle(request.toCommand());
         return VehicleDetailResponse.from(vehicle);
     }

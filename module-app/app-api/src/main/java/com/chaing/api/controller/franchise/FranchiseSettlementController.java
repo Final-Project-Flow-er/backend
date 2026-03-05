@@ -65,7 +65,7 @@ public class FranchiseSettlementController {
     ) {
         if (limit != null && limit <1) {
             throw new IllegalArgumentException("limit는 0보다 커야합니다");
-        }
+        } // TODO: Swagger 테스트용 임시 응답. 추후 서비스 로직 연동 예정
         return ResponseEntity.ok(ApiResponse.success(List.of()));
     }
 
@@ -81,7 +81,7 @@ public class FranchiseSettlementController {
         }
         if (!YearMonth.from(start).equals(month) || !YearMonth.from(end).equals(month)) {
             throw new IllegalArgumentException("시작일과 종료일은 요청한 월 범위 내에 있어야 합니다.");
-        }
+        } // TODO: Swagger 테스트용 임시 응답. 추후 서비스 로직 연동 예정
         return ResponseEntity.ok(ApiResponse.success(List.of()));
     }
 

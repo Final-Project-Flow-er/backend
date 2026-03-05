@@ -2,16 +2,12 @@ package com.chaing.domain.settlements.exception;
 
 import com.chaing.core.exception.ErrorCode;
 import com.chaing.core.exception.GlobalException;
-import lombok.Getter;
 
-@Getter
+import java.util.Objects;
+
 public class SettlementException extends GlobalException {
 
-    private final ErrorCode errorCode;
-
     public SettlementException(ErrorCode errorCode) {
-        super(errorCode);
-        this.errorCode = errorCode;;
-
+        super(Objects.requireNonNull(errorCode, "errorCode 값은 필수입니다."));
     }
 }

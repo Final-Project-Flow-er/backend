@@ -1,4 +1,4 @@
-package com.chaing.api.dto.franchise.settlement.request;
+package com.chaing.api.dto.hq.settlement.request;
 
 import com.chaing.domain.settlements.enums.SettlementLogType;
 import io.swagger.v3.oas.annotations.media.Schema;

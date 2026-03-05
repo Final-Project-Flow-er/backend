@@ -109,6 +109,15 @@ public class SwaggerConfig {
     }
 
     @Bean
+    public GroupedOpenApi internalTransportApi() {
+        return GroupedOpenApi.builder()
+                .group("내부 운송(Internal Transport)")
+                .pathsToMatch("/api/v1/transport/internal/**")
+                .build();
+    }
+
+
+    @Bean
     public GroupedOpenApi hqProductApi() {
         return GroupedOpenApi.builder()
                 .group("본사 상품(HqProduct)")

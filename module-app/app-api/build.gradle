@@ -11,6 +11,7 @@ dependencies {
     implementation project(':domain-notifications')
     implementation project(':domain-inventorylogs')
     implementation project(':domain-products')
+    implementation project(':domain-transports')
 
     // core에 implementation으로 갖고 있으니 여기는 따로 추가해 줘야함
     implementation project(':module-core')

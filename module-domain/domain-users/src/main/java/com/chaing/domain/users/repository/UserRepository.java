@@ -9,6 +9,7 @@
     import org.springframework.data.repository.query.Param;
     import org.springframework.stereotype.Repository;
 
+    import java.util.List;
     import java.util.Optional;
 
     @Repository
@@ -25,4 +26,7 @@
         Optional<String> findMaxLoginIdByRole(@Param("role") UserRole role);
 
         boolean existsByEmail(String email);
+
+        @Query("SELECT u.userId FROM User u WHERE u.status = com.chaing.domain.users.enums.UserStatus.ACTIVE")
+        List<Long> getAllActiveUserIds();
     }

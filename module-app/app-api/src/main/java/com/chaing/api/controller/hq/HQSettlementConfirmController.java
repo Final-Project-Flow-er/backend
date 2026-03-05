@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,6 +22,7 @@ import java.util.List;
 @Tag(name = "HQSettlementConfirm API", description = "본사 정산 확정(작성중 -> 확정요청 -> 최종확정)")
 @RequestMapping("/api/v1/hq/settlements/confirm")
 @RequiredArgsConstructor
+@PreAuthorize("hasAnyRole('HQ', 'ADMIN')")
 public class HQSettlementConfirmController {
 
     //상단 카드: 작성중/확정요청/최종확정 개수

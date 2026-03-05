@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -21,6 +22,7 @@ import java.util.List;
 @Tag(name = "FranchiseSettlement API", description = "가맹점 정산 관련 API")
 @RequestMapping("/api/v1/franchise/settlements")
 @RequiredArgsConstructor
+@PreAuthorize("hasAnyRole('FRANCHISE')")
 public class FranchiseSettlementController {
 
     //일별

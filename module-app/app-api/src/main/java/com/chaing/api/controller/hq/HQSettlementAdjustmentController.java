@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -26,6 +27,7 @@ import java.util.List;
 @Tag(name = "HQVoucherAdjustment API", description = "본사 조정 전표 관리 API")
 @RequestMapping("/api/v1/hq/settlements/voucher-adjustments")
 @RequiredArgsConstructor
+@PreAuthorize("hasAnyRole('HQ', 'ADMIN')")
 public class HQSettlementAdjustmentController {
 
     @Operation(summary = "가맹점 목록 조회(드롭다운)", description = "조정 전표 등록 시 가맹점 선택용 목록")

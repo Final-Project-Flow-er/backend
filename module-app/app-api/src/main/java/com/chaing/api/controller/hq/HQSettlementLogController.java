@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -19,6 +20,7 @@ import java.util.List;
 @Tag(name = "HQSettlementLog API", description = "본사 정산 로그(이력) 조회 API")
 @RequestMapping("/api/v1/hq/settlements/logs")
 @RequiredArgsConstructor
+@PreAuthorize("hasAnyRole('HQ', 'ADMIN')")
 public class HQSettlementLogController {
 
     @Operation(

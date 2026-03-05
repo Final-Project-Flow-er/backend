@@ -18,13 +18,14 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Getter
 @Builder
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class HqInventory extends BaseEntity {
+public class HQInventory extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long inventoryId;
@@ -52,5 +53,11 @@ public class HqInventory extends BaseEntity {
     // 박스코드
     @Column
     private String boxCode;
+
+    @Column
+    LocalDateTime shippedAt;        // 배송 완료 일자
+
+    @Column
+    LocalDateTime receivedAt;       // 입고 완료 일자
 
 }

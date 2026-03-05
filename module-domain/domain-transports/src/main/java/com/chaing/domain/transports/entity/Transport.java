@@ -5,6 +5,8 @@ import com.chaing.core.enums.Region;
 import com.chaing.core.enums.UsableStatus;
 import com.chaing.domain.transports.dto.command.TransportCreateCommand;
 import com.chaing.domain.transports.dto.command.TransportUpdateCommand;
+import com.chaing.domain.transports.exception.TransportErrorCode;
+import com.chaing.domain.transports.exception.TransportException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -90,6 +92,10 @@ public class Transport extends BaseEntity {
         if (command.contractStartDate() != null) this.contractStartDate = command.contractStartDate();
         if (command.contractEndDate() != null) this.contractEndDate = command.contractEndDate();
         if (command.usableRegion() != null) this.usableRegion = command.usableRegion();
+
+        if (this.contractEndDate.isBefore(this.contractStartDate)) {
+            throw new TransportException(TransportErrorCode.INVALID_CONTRACT_PERIOD);
+        }
     }
 
     public void updateStatus(UsableStatus status) {

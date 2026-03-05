@@ -3,16 +3,20 @@ package com.chaing.api.controller.inbound;
 import com.chaing.api.dto.inbound.request.InboundBoxSummaryRequest;
 import com.chaing.api.dto.inbound.request.InboundConfirmRequest;
 import com.chaing.api.dto.inbound.request.InboundDetailRequest;
-import com.chaing.api.dto.inbound.request.InboundScanRequest;
+import com.chaing.api.dto.inbound.request.InboundScanBoxRequest;
+import com.chaing.api.dto.inbound.request.InboundScanItemRequest;
 import com.chaing.api.dto.inbound.response.InboundBoxSummaryResponse;
 import com.chaing.api.dto.inbound.response.InboundDetailResponse;
-import com.chaing.api.dto.inbound.response.InboundScanResponse;
 import com.chaing.api.facade.inbound.InboundFacade;
+import com.chaing.api.security.principal.UserPrincipal;
 import com.chaing.core.dto.ApiResponse;
+import com.chaing.domain.businessunits.entity.Franchise;
+import com.chaing.domain.users.entity.User;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -30,13 +34,23 @@ public class InboundController {
 
     private final InboundFacade inboundFacade;
 
-    // 입고 스캔
-    @PostMapping("/scan")
-    public ResponseEntity<ApiResponse<InboundScanResponse>> scanInbound(
-            @Valid @RequestBody InboundScanRequest request
+    // 입고 스캔(공장)
+    @PostMapping("/scan/item")
+    public ResponseEntity<ApiResponse<Void>> scanInboundItems(
+            @Valid @RequestBody InboundScanItemRequest request
     ) {
-        // 공장/가맹점을 구분할 식별자가 필요 -> 로그인 권한 받아오기
-        return ResponseEntity.ok(ApiResponse.success(InboundScanResponse.builder().build()));
+        inboundFacade.scanInboundItem(request);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    // 입고 스캔(가맹)
+    @PostMapping("/scan/box")
+    public ResponseEntity<ApiResponse<Void>> scanInboundBoxes(
+            @Valid @RequestBody InboundScanBoxRequest request,
+            @AuthenticationPrincipal UserPrincipal userPrincipal
+    ) {
+        inboundFacade.scanInboundBox(request, userPrincipal);
+        return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     // 입고 대기 박스 목록 조회

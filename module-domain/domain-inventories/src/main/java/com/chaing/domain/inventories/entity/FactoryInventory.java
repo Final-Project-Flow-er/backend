@@ -2,6 +2,7 @@ package com.chaing.domain.inventories.entity;
 
 import com.chaing.core.entity.BaseEntity;
 import com.chaing.core.enums.LogType;
+import com.chaing.domain.inventories.dto.command.FactoryInboundCreateCommand;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -53,4 +54,12 @@ public class FactoryInventory extends BaseEntity {
     // 박스코드
     private String boxCode;
 
+    public static FactoryInventory from(FactoryInboundCreateCommand command) {
+        return FactoryInventory.builder()
+                .serialCode(command.serialCode())
+                .productId(command.productId())
+                .manufactureDate(command.manufactureDate())
+                .status(LogType.INBOUND_WAIT) // 입고 스캔 시 '입고 대기' 상태
+                .build();
+    }
 }

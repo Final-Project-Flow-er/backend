@@ -14,7 +14,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
@@ -60,6 +65,24 @@ class TransportManagementServiceTests {
         // then
         assertThat(result.getCompanyName()).isEqualTo("업체");
         verify(transportRepository, times(1)).save(any(Transport.class));
+    }
+
+    @Test
+    @DisplayName("운송 업체 목록 조회")
+    void getTransportList() {
+
+        // given
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<Transport> transportPage = new PageImpl<>(List.of(transport));
+        given(transportRepository.findAll(pageable)).willReturn(transportPage);
+
+        // when
+        Page<Transport> result = transportManagementService.getTransportList(pageable);
+
+        // then
+        assertThat(result.getTotalElements()).isEqualTo(1);
+        assertThat(result.getContent().get(0).getCompanyName()).isEqualTo("업체");
+        verify(transportRepository, times(1)).findAll(pageable);
     }
 
     @Test

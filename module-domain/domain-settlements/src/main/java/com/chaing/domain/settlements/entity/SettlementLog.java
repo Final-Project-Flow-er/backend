@@ -9,11 +9,25 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
-import org.hibernate.annotations.ColumnDefault;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "settlement_log")
+@Getter
+@Builder
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PROTECTED)
+@Table(name = "settlement_log",
+        indexes = {
+                    @Index(name = "idx_log_type", columnList = "type"),
+                    @Index(name = "idx_log_franchise", columnList = "franchise_id")
+        }
+        )
 public class SettlementLog extends BaseEntity {
 
     @Id

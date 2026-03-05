@@ -71,14 +71,14 @@ public class Vehicle extends BaseEntity {
     }
 
     public void updateVehicle(VehicleUpdateCommand command) {
-        this.transportId = command.transportId();
-        this.vehicleNumber = command.vehicleNumber();
-        this.vehicleType = command.vehicleType();
-        this.driverName = command.driverName();
-        this.driverPhone = command.driverPhone();
-        this.maxLoad = command.maxLoad();
-        this.dispatchable = command.dispatchable();
-        this.status = command.usableStatus();
+        if (command.transportId() != null) this.transportId = command.transportId();
+        if (command.vehicleNumber() != null) this.vehicleNumber = command.vehicleNumber();
+        if (command.vehicleType() != null) this.vehicleType = command.vehicleType();
+        if (command.driverName() != null) this.driverName = command.driverName();
+        if (command.driverPhone() != null) this.driverPhone = command.driverPhone();
+        if (command.maxLoad() != null) this.maxLoad = command.maxLoad();
+        if (command.dispatchable() != null) this.dispatchable = command.dispatchable();
+        if (command.usableStatus() != null) this.status = command.usableStatus();
     }
 
     public void updateStatus(UsableStatus status) {

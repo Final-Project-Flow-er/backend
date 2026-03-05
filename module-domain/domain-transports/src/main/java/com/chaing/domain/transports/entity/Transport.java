@@ -81,16 +81,16 @@ public class Transport extends BaseEntity {
     }
 
     public void updateTransport(TransportUpdateCommand command) {
-        this.companyName = command.companyName();
-        this.manager = command.manager();
-        this.officePhone = command.officePhone();
-        this.address = command.address();
-        this.ownedVehicles = command.ownedVehicles();
-        this.unitPrice = command.unitPrice();
-        this.contractStartDate = command.contractStartDate();
-        this.contractEndDate = command.contractEndDate();
-        this.usableRegion = command.usableRegion();
-        this.status = command.usableStatus();
+        if (command.companyName() != null) this.companyName = command.companyName();
+        if (command.manager() != null) this.manager = command.manager();
+        if (command.officePhone() != null) this.officePhone = command.officePhone();
+        if (command.address() != null) this.address = command.address();
+        if (command.ownedVehicles() != null) this.ownedVehicles = command.ownedVehicles();
+        if (command.unitPrice() != null) this.unitPrice = command.unitPrice();
+        if (command.contractStartDate() != null) this.contractStartDate = command.contractStartDate();
+        if (command.contractEndDate() != null) this.contractEndDate = command.contractEndDate();
+        if (command.usableRegion() != null) this.usableRegion = command.usableRegion();
+        if (command.usableStatus() != null) this.status = command.usableStatus();
     }
 
     public void updateStatus(UsableStatus status) {

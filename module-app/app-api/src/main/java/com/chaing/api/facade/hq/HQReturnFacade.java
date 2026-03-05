@@ -169,9 +169,10 @@ public class HQReturnFacade {
         Map<Long, ReturnItemInspection> returnItemInspectionByReturnItemId = franchiseReturnService.getReturnItemInspection(returnItemIds);
 
         // 재고 정보 조회
-        // Map<orderItemId, serialCode>
-        Map<Long, String> serialCodeByOrderItemId = franchiseOrderService.getSerialCodesByOrderItemId(orderItemIds);
-        List<String> serialCodes = serialCodeByOrderItemId.values().stream().toList();
+        // Map<serialCode, orderItemId>
+        Map<String, Long> orderItemIdBySerialCode = inventoryService.getSerialCodesByOrderItemIds(orderItemIds);
+        // List<serialCode>
+        List<String> serialCodes = orderItemIdBySerialCode.keySet().stream().toList();
         // Map<boxCode, serialCode>
         Map<String, String> boxCodeBySerialCode = inventoryService.getBoxCode(serialCodes);
         // Map<serialCode, productId>
@@ -185,13 +186,6 @@ public class HQReturnFacade {
         Map<Long, ProductInfo> productInfoByProductId = productService.getProductInfos(productIds);
         log.info("productInfoByProductId: {}", productInfoByProductId);
 
-        // 역방향 Map
-        // Map<serialCode, orderItemId>
-        Map<String, Long> orderItemIdBySerialCode = serialCodeByOrderItemId.entrySet().stream()
-                .collect(Collectors.toMap(
-                                Map.Entry::getValue, Map.Entry::getKey
-                        )
-                );
         // Map<orderItemId, returnItemId>
         Map<Long, Long> returnItemIdByOrderItemId = orderItemIdByReturnItemId.entrySet().stream()
                 .collect(Collectors.toMap(
@@ -255,10 +249,10 @@ public class HQReturnFacade {
         Map<Long, String> serialCodeByOrderItemId = franchiseOrderService.getSerialCodesByOrderItemId(orderItemIds);
         // Map<returnItemId, serialCode>
         Map<Long, String> serialCodeByReturnItemId = orderItemIdByReturnItemId.entrySet().stream()
-                        .collect(Collectors.toMap(
-                                Map.Entry::getKey,
-                                entry -> serialCodeByOrderItemId.get(entry.getValue())
-                        ));
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        entry -> serialCodeByOrderItemId.get(entry.getValue())
+                ));
         // Map<returnItemId, ReturnItemInspection>
         Map<Long, ReturnItemInspection> inspections = franchiseReturnService.updateReturnItemStatus(serialCodeByReturnItemId, request);
 

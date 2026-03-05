@@ -82,4 +82,19 @@ public class InventoryService {
                         FranchiseInventory::getProductId
                 ));
     }
+
+    // return: Map<serialCode, orderItemId>
+    public Map<String, Long> getSerialCodesByOrderItemIds(List<Long> orderItemIds) {
+        List<FranchiseInventory> inventories = inventoryRepository.findAllByOrderItemIdIn(orderItemIds);
+
+        if (inventories == null || inventories.isEmpty()) {
+            // 예외 처리
+        }
+
+        return inventories.stream()
+                .collect(Collectors.toMap(
+                        FranchiseInventory::getSerialCode,
+                        FranchiseInventory::getOrderItemId
+                ));
+    }
 }

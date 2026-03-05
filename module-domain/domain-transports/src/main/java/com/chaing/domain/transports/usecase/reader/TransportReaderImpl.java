@@ -15,7 +15,7 @@ import java.util.List;
 
 @Component
 @RequiredArgsConstructor
-public class TransportReaderImpl implements TransportReader{
+public class TransportReaderImpl implements TransportReader {
 
     private final VehicleRepository vehicleRepository;
     private final TransitRepository transitRepository;
@@ -30,6 +30,7 @@ public class TransportReaderImpl implements TransportReader{
     public Long getCurrentTransitWeight(Long vehicleId) {
         return transitRepository.findByVehicleId(vehicleId)
                 .stream()
+                .filter(t -> t.getStatus() != DeliverStatus.DELIVERED)
                 .mapToLong(t -> t.getWeight() != null ? t.getWeight() : 0L)
                 .sum();
     }

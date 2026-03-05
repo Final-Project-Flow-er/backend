@@ -7,7 +7,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDateTime;
 
-public record HQSettlementLog(
+public record HQSettlementLogRequest(
         @Schema(description = "탭 필터", example = "ALL", defaultValue = "ALL")
         SettlementLogType type,
 

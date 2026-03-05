@@ -25,7 +25,7 @@ public class TransportManagementService {
     }
 
     // 운송 업체 목록 조회
-    public Page<Transport> getTransports(Pageable pageable) {
+    public Page<Transport> getTransportList(Pageable pageable) {
         return transportRepository.findAll(pageable);
     }
 

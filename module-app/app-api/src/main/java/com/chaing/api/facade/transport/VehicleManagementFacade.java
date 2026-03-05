@@ -45,6 +45,10 @@ public class VehicleManagementFacade {
     // 운송 차량 수정
     @Transactional
     public VehicleDetailResponse updateVehicle(Long id, UpdateVehicleRequest request) {
+        if (request.transportId() != null) {
+            transportManagementService.getById(request.transportId());
+        }
+
         Vehicle vehicle = vehicleManagementService.updateVehicle(id, request.toCommand());
         return VehicleDetailResponse.from(vehicle);
     }

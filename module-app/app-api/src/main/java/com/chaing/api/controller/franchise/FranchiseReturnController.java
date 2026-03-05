@@ -1,6 +1,7 @@
 package com.chaing.api.controller.franchise;
 
 import com.chaing.api.facade.franchise.FranchiseReturnFacade;
+import com.chaing.api.security.principal.UserPrincipal;
 import com.chaing.core.dto.ApiResponse;
 import com.chaing.domain.returns.dto.request.FranchiseReturnCreateRequest;
 import com.chaing.core.dto.request.FranchiseReturnUpdateRequest;
@@ -14,6 +15,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -34,11 +37,13 @@ public class FranchiseReturnController {
 
     @Operation(summary = "반품 조회", description = "가맹점 id로 해당 가맹점의 반품 요청 전체 조회")
     @GetMapping
-    public ResponseEntity<ApiResponse<List<FranchiseReturnResponse>>> getAllReturns() {
-        //TODO: Spring Security Context에서 값 꺼내오는 걸로 수정해야 함
-        String username = "test";
+    @PreAuthorize("hasAnyRole('ADMIN', 'FRANCHISE')")
+    public ResponseEntity<ApiResponse<List<FranchiseReturnResponse>>> getAllReturns(
+            @AuthenticationPrincipal UserPrincipal userPrincipal
+            ) {
+        Long userId = userPrincipal.getId();
 
-        return ResponseEntity.ok(ApiResponse.success(franchiseReturnFacade.getAllReturns(username)));
+        return ResponseEntity.ok(ApiResponse.success(franchiseReturnFacade.getAllReturns(userId)));
     }
 
     @Operation(summary = "특정 반품 조회", description = "가맹점 id와 반품 번호로 특정 반품 조회")

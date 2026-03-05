@@ -11,7 +11,7 @@ import java.util.Optional;
 public interface FranchiseOrderItemRepository extends JpaRepository<FranchiseOrderItem, Long> {
     Optional<FranchiseOrderItem> findByFranchiseOrder_FranchiseOrderIdAndSerialCode(Long franchiseOrderId, String serialCode);
 
-    List<FranchiseOrderItem> findAllByFranchiseOrderItemIdIn(List<Long> orderItemIds);
+    List<FranchiseOrderItem> findAllByFranchiseOrderItemIdInAndDeletedAtIsNull(List<Long> orderItemIds);
 
     Optional<FranchiseOrderItem> findBySerialCode(String serialCode);
 

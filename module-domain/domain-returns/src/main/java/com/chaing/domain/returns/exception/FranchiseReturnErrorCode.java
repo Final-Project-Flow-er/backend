@@ -14,6 +14,7 @@ public enum FranchiseReturnErrorCode implements ErrorCode {
     ORDER_ITEM_NOT_FOUND(404, "RE003", "해당 제품을 찾을 수 없습니다."),
     RETURN_ITEM_NOT_FOUND(404, "RE004", "해당 반품 요청에 속한 제품을 찾을 수 없습니다."),
     INVENTORY_NOT_FOUND(404, "RE005", "해당 반품 요청에 대한 재고가 존재하지 않습니다."),
+    RETURN_ITEM_BOX_CODE_NOT_FOUND(404, "", "해당 반품 제품에 대한 재고가 존재하지 않습니다."),
 
     // 409 CONFLICT
     CANCEL_NOT_ALLOWED(409, "RE004", "반품의 상태가 대기일 때만 취소 가능합니다."),

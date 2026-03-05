@@ -1,6 +1,6 @@
 package com.chaing.domain.returns.repository.impl;
 
-import com.chaing.domain.returns.dto.response.FranchiseReturnAndReturnItemResponse;
+import com.chaing.domain.returns.dto.command.ReturnCommand;
 import com.chaing.domain.returns.dto.response.QFranchiseReturnAndReturnItemResponse;
 import com.chaing.domain.returns.repository.interfaces.FranchiseReturnRepositoryCustom;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -19,20 +19,25 @@ public class FranchiseReturnRepositoryImpl implements FranchiseReturnRepositoryC
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public List<FranchiseReturnAndReturnItemResponse> searchAllReturns(Long franchiseId) {
+    public List<ReturnCommand> searchAllReturns(Long franchiseId) {
         return queryFactory
-                .select(new QFranchiseReturnAndReturnItemResponse(
-                        returns.returnCode,
-                        returns.returnStatus,
+                .select(new QReturnCommand(
+                        returns.returnId,
                         returns.franchiseOrderId,
+                        returns.returnCode,
+                        returns.userid,
                         returns.returnType,
-                        returns.createdAt,
-                        returnItem.franchiseOrderItemId
+                        returns.description,
+                        returns.totalReturnQuantity,
+                        returns.totalReturnAmount,
+                        returns.returnStatus,
+                        returns.createdAt
                 ))
                 .from(returnItem)
                 .join(returnItem.returns, returns)
                 .where(
-                        returns.franchiseId.eq(franchiseId)
+                        returns.franchiseId.eq(franchiseId),
+                        returns.deletedAt.isNull()
                 )
                 .fetch();
     }

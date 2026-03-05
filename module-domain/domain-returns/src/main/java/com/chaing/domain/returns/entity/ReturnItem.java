@@ -43,6 +43,9 @@ public class ReturnItem {
     private Boolean isInspected = false;
 
     @Column(nullable = false)
+    private String boxCode;
+
+    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     @Builder.Default
     private ReturnItemStatus returnItemStatus = ReturnItemStatus.BEFORE_INSPECTION;

@@ -13,26 +13,20 @@ public record FranchiseReturnResponse(
 
         ReturnStatus status,
 
-        BigDecimal unitPrice,
-
-        Long franchiseOrderId,
-
-        Integer quantity,
-
-        ReturnType type,
-
-        LocalDateTime requestedDate,
-
-
-
-        String boxCode,
-
-        String serialCode,
-
         String orderCode,
 
         String productCode,
 
-        String productName
+        String productName,
+
+        BigDecimal unitPrice,
+
+        Integer quantity,
+
+        BigDecimal totalPrice,
+
+        ReturnType type,
+
+        LocalDateTime requestedDate
 ) {
 }

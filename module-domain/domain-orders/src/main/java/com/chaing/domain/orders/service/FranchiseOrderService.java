@@ -175,7 +175,7 @@ public class FranchiseOrderService {
     // orderItemId에 대한 serialCode 반환 - Map
     public List<OrderItemIdAndSerialCode> getSerialCodes(List<Long> orderItemIds) {
         // orderItemId에 해당하는 serialCode 조회
-        List<FranchiseOrderItem> items = franchiseOrderItemRepository.findAllByFranchiseOrderItemIdIn(orderItemIds);
+        List<FranchiseOrderItem> items = franchiseOrderItemRepository.findAllByFranchiseOrderItemIdInAndDeletedAtIsNull(orderItemIds);
         System.out.println("serialCode 포함한 items: " + items.get(0).getSerialCode());
 
         return items.stream().map(item -> {
@@ -186,7 +186,7 @@ public class FranchiseOrderService {
     // orderItemId에 대한 serialCode 반환 - List
     public List<String> getSerialCodeList(List<Long> orderItemIds) {
         // orderItemId에 해당하는 serialCode 조회
-        List<FranchiseOrderItem> items = franchiseOrderItemRepository.findAllByFranchiseOrderItemIdIn(orderItemIds);
+        List<FranchiseOrderItem> items = franchiseOrderItemRepository.findAllByFranchiseOrderItemIdInAndDeletedAtIsNull(orderItemIds);
 
         return items.stream().map(FranchiseOrderItem::getSerialCode).toList();
     }
@@ -242,7 +242,7 @@ public class FranchiseOrderService {
     // 제품 식별 번호 반환
     // return: Map<orderItemId, serialCode>
     public Map<Long, String> getSerialCodesByOrderItemId(List<Long> orderItemIds) {
-        List<FranchiseOrderItem> items = franchiseOrderItemRepository.findAllByFranchiseOrderItemIdIn(orderItemIds);
+        List<FranchiseOrderItem> items = franchiseOrderItemRepository.findAllByFranchiseOrderItemIdInAndDeletedAtIsNull(orderItemIds);
 
         if (items == null || items.isEmpty()) {
             throw new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_ITEM_NOT_FOUND);
@@ -357,5 +357,60 @@ public class FranchiseOrderService {
                             .build();
                 })
                 .toList();
+    }
+
+    // return: Map<orderId, orderCode>
+    public Map<Long, String> getAllOrderCodeByOrderIds(List<Long> orderIds) {
+        List<FranchiseOrder> orders = franchiseOrderRepository.findAllByFranchiseOrderIdInAndDeletedAtIsNull(orderIds);
+
+        if (orders == null || orders.isEmpty()) {
+            throw new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_NOT_FOUND);
+        }
+
+        return orders.stream()
+                .collect(Collectors.toMap(
+                        FranchiseOrder::getFranchiseOrderId,
+                        FranchiseOrder::getOrderCode
+                ));
+    }
+
+    // return: Map<returnItemId, productId>
+    public Map<Long, Long> getProductIdByReturnItemId(Map<Long, Long> orderItemIdByReturnItemId) {
+        // List<orderItemId>
+        List<Long> orderItemIds = orderItemIdByReturnItemId.values().stream().toList();
+
+        // Map<orderItemId, returnItemId>
+        Map<Long, Long> returnItemIdByOrderItemId = orderItemIdByReturnItemId.entrySet().stream()
+                .collect(Collectors.toMap(
+                        Map.Entry::getValue,
+                        Map.Entry::getKey
+                ));
+
+        List<FranchiseOrderItem> items = franchiseOrderItemRepository.findAllByFranchiseOrderItemIdInAndDeletedAtIsNull(orderItemIds);
+
+        if (items == null || items.isEmpty()) {
+            throw new OrderException(OrderErrorCode.ORDER_ITEM_NOT_FOUND);
+        }
+
+        return items.stream()
+                .collect(Collectors.toMap(
+                        item -> returnItemIdByOrderItemId.get(item.getFranchiseOrderItemId()),
+                        FranchiseOrderItem::getProductId
+                ));
+    }
+
+    // return: Map<orderItemId, OrderItemCommand>
+    public Map<Long, FranchiseOrderItemCommand> getOrderItemsByOrderItemIds(List<Long> orderItemIds) {
+        List<FranchiseOrderItem> items = franchiseOrderItemRepository.findAllByFranchiseOrderItemIdInAndDeletedAtIsNull(orderItemIds);
+
+        if (items == null || items.isEmpty()) {
+            throw new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_ITEM_NOT_FOUND);
+        }
+
+        return items.stream()
+                .collect(Collectors.toMap(
+                        FranchiseOrderItem::getFranchiseOrderItemId,
+                        item ->
+                ));
     }
 }

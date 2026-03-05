@@ -78,7 +78,6 @@ public class Vehicle extends BaseEntity {
         if (command.driverPhone() != null) this.driverPhone = command.driverPhone();
         if (command.maxLoad() != null) this.maxLoad = command.maxLoad();
         if (command.dispatchable() != null) this.dispatchable = command.dispatchable();
-        if (command.usableStatus() != null) this.status = command.usableStatus();
     }
 
     public void updateStatus(UsableStatus status) {

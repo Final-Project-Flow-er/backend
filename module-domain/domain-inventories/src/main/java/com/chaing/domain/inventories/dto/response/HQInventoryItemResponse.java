@@ -1,0 +1,13 @@
+package com.chaing.domain.inventories.dto.response;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
+public record HQInventoryItemResponse(
+        String serialCode,
+        String boxCode,
+        LocalDate manufactureDate,
+        LocalDateTime shippedAt,        // 배송 완료 일자
+        LocalDateTime receivedAt        // 입고 완료 일자
+) {
+}

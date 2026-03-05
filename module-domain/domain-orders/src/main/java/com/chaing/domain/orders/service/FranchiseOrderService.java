@@ -48,7 +48,7 @@ public class FranchiseOrderService {
     }
 
     // 발주 번호에 따른 가맹점 특정 발주 조회
-    public FranchiseOrderDetailCommand getOrder(Long franchiseId, Long userId, String orderCode) {
+    public FranchiseOrderDetailCommand getOrderByOrderCode(Long franchiseId, Long userId, String orderCode) {
         FranchiseOrder order = franchiseOrderRepository.findByFranchiseIdAndUserIdAndOrderCodeDeletedAtIsNull(franchiseId, userId, orderCode).orElseThrow(() -> new OrderException(OrderErrorCode.ORDER_NOT_FOUND));
 
         return FranchiseOrderDetailCommand.from(order);
@@ -411,6 +411,29 @@ public class FranchiseOrderService {
                 .collect(Collectors.toMap(
                         FranchiseOrderItem::getFranchiseOrderItemId,
                         item ->
+                ));
+    }
+
+    // return: FranchiseOrderDetailCommand
+    public FranchiseOrderDetailCommand getOrderByOrderId(Long franchiseId, Long userId, Long orderId) {
+        FranchiseOrder order = franchiseOrderRepository.findByFranchiseIdAndUserIdAndFranchiseOrderIdAndDeletedAtIsNull(franchiseId, userId, orderId)
+                .orElseThrow(() -> new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_NOT_FOUND));
+
+        return FranchiseOrderDetailCommand.from(order);
+    }
+
+    // return: Map<orderItemId, productId>
+    public Map<Long, Long> getProductIdByOrderItemId(List<Long> orderItemIds) {
+        List<FranchiseOrderItem> items = franchiseOrderItemRepository.findAllByFranchiseOrderItemIdInAndDeletedAtIsNull(orderItemIds);
+
+        if (items == null || items.isEmpty()) {
+            throw new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_ITEM_NOT_FOUND);
+        }
+
+        return items.stream()
+                .collect(Collectors.toMap(
+                        FranchiseOrderItem::getFranchiseOrderItemId,
+                        FranchiseOrderItem::getProductId
                 ));
     }
 }

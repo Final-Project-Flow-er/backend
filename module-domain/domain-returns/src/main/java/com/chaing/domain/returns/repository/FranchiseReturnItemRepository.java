@@ -18,4 +18,6 @@ public interface FranchiseReturnItemRepository extends JpaRepository<ReturnItem,
     List<ReturnItem> findAllByReturnItemIdIn(List<Long> returnItemIds);
 
     List<ReturnItem> findAllDeletedAtIsNull();
+
+    List<ReturnItem> findByReturns_ReturnIdAndDeletedAtIsNull(Long returnId);
 }

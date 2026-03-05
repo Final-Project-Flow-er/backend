@@ -125,7 +125,7 @@ public class FranchiseOrderFacade {
         String phoneNumber = userManagementService.getPhoneNumberByUserId(userId);
 
         // FranchiseOrderCommand
-        FranchiseOrderDetailCommand order = franchiseOrderService.getOrder(franchiseId, userId, orderCode);
+        FranchiseOrderDetailCommand order = franchiseOrderService.getOrderByOrderCode(franchiseId, userId, orderCode);
 
         // Map<orderId, List<FranchiseOrderItemCommand>>
         Map<Long, List<FranchiseOrderItemCommand>> orderItemsByOrderId = franchiseOrderService.getOrderItemsByOrderId(order.orderId());
@@ -194,7 +194,7 @@ public class FranchiseOrderFacade {
         Long franchiseId = userManagementService.getFranchiseIdByUserId(userId);
 
         // FranchiseOrderDetailCommand
-        FranchiseOrderDetailCommand order = franchiseOrderService.getOrder(franchiseId, userId, orderCode);
+        FranchiseOrderDetailCommand order = franchiseOrderService.getOrderByOrderCode(franchiseId, userId, orderCode);
 
         // Map<orderId, List<FranchiseOrderItemCommand>>
         Map<Long, List<FranchiseOrderItemCommand>> orderItemsByOrderId = franchiseOrderService.getOrderItemsByOrderId(order.orderId());

@@ -20,4 +20,6 @@ public interface FranchiseReturnRepository extends JpaRepository<Returns, Long> 
     List<Returns> findAllByReturnStatusNot(ReturnStatus returnStatus);
 
     List<Returns> findAllByReturnCodeIn(List<@NotBlank String> returnCodes);
+
+    Optional<Returns> findByUserIdAndFranchiseIdAndReturnCodeAndDeletedAtIsNull(Long userId, Long franchiseId, String returnCode);
 }

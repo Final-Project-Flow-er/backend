@@ -26,6 +26,7 @@ import com.chaing.domain.returns.repository.FranchiseReturnRepository;
 import com.chaing.domain.returns.repository.interfaces.FranchiseReturnRepositoryCustom;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
+import org.hibernate.query.NativeQuery;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -63,11 +64,11 @@ public class FranchiseReturnService {
     }
 
     // 반품 세부정보 조회
-    public FranchiseReturnInfo getReturn(String username, Long franchiseId, String returnCode) {
-        Returns returns = franchiseReturnRepository.findByFranchiseIdAndUsernameAndReturnCode(franchiseId, username, returnCode)
+    public ReturnCommand getReturn(Long userId, Long franchiseId, String returnCode) {
+        Returns returns = franchiseReturnRepository.findByUserIdAndFranchiseIdAndReturnCodeAndDeletedAtIsNull(userId, franchiseId, returnCode)
                 .orElseThrow(() -> new FranchiseReturnException(FranchiseReturnErrorCode.RETURN_NOT_FOUND));
 
-        return FranchiseReturnInfo.from(returns);
+        return ReturnCommand.from(returns);
     }
 
     // returnCode로 orderItemId 반환
@@ -371,6 +372,21 @@ public class FranchiseReturnService {
                 .collect(Collectors.groupingBy(
                         boxCode -> boxCode.getReturnItem().getReturnItemId(),
                         Collectors.mapping(ReturnItemBoxCodeCommand::from, Collectors.toList())
+                ));
+    }
+
+    // return: Map<returnItemId, ReturnItemCommand>
+    public Map<Long, ReturnItemCommand> getReturnItemsByReturnId(Long returnId) {
+        List<ReturnItem> items = franchiseReturnItemRepository.findByReturns_ReturnIdAndDeletedAtIsNull(returnId);
+
+        if (items == null || items.isEmpty()) {
+            throw new FranchiseReturnException(FranchiseReturnErrorCode.RETURN_ITEM_NOT_FOUND);
+        }
+
+        return items.stream()
+                .collect(Collectors.toMap(
+                        ReturnItem::getReturnItemId,
+                        ReturnItemCommand::from
                 ));
     }
 }

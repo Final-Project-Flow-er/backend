@@ -1,5 +1,6 @@
 package com.chaing.domain.returns.entity;
 
+import com.chaing.core.entity.BaseEntity;
 import com.chaing.domain.returns.dto.request.HQReturnUpdateRequest;
 import com.chaing.domain.returns.enums.ReturnItemStatus;
 import com.chaing.domain.returns.exception.FranchiseReturnErrorCode;
@@ -25,7 +26,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
-public class ReturnItem {
+public class ReturnItem extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

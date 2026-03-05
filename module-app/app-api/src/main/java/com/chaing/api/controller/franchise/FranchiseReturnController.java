@@ -48,13 +48,14 @@ public class FranchiseReturnController {
 
     @Operation(summary = "특정 반품 조회", description = "가맹점 id와 반품 번호로 특정 반품 조회")
     @GetMapping("/{return-code}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'FRANCHISE')")
     public ResponseEntity<ApiResponse<FranchiseReturnDetailResponse>> getReturn(
-            @PathVariable("return-code") String returnCode
+            @PathVariable("return-code") String returnCode,
+            @AuthenticationPrincipal UserPrincipal userPrincipal
     ) {
-        //TODO: Spring Security Context에서 값 꺼내오는 걸로 수정해야 함
-        String username = "test";
+        Long userId = userPrincipal.getId();
 
-        return ResponseEntity.ok(ApiResponse.success(franchiseReturnFacade.getReturn(username, returnCode)));
+        return ResponseEntity.ok(ApiResponse.success(franchiseReturnFacade.getReturn(userId, returnCode)));
     }
 
     @Operation(summary = "반품 수정", description = "가맹점 id와 반품 번호로 특정 반품 수정")

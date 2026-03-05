@@ -16,7 +16,7 @@ public class UserEventListener {
     private final MailService mailService;
 
     // 회원가입 메일 발송
-    @Async
+    @Async("mailTaskExecutor")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleUserRegisteredEvent(UserRegisteredEvent event) {
         mailService.sendRegisterMail(
@@ -28,7 +28,7 @@ public class UserEventListener {
     }
 
     // 비밀번호 재설정 메일 발송
-    @Async
+    @Async("mailTaskExecutor")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handlePasswordResetEvent(PasswordResetEvent event) {
         mailService.sendTempPassword(

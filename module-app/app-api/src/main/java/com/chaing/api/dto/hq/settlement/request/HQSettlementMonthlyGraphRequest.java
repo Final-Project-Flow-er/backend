@@ -1,6 +1,7 @@
 package com.chaing.api.dto.hq.settlement.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.format.annotation.DateTimeFormat;
 
@@ -17,4 +18,8 @@ public record HQSettlementMonthlyGraphRequest(
         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
         LocalDate end
 ) {
+    @AssertTrue(message = "시작일은 종료일보다 늦을 수 없습니다.")
+    public boolean isDateRangeValid() {
+        return start == null || end == null || !start.isAfter(end);
+    }
 }

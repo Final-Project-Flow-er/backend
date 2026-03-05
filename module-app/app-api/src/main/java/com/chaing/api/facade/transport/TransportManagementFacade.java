@@ -8,6 +8,7 @@ import com.chaing.api.dto.transport.management.response.TransportSummaryResponse
 import com.chaing.core.enums.UsableStatus;
 import com.chaing.domain.transports.entity.Transport;
 import com.chaing.domain.transports.service.TransportManagementService;
+import com.chaing.domain.transports.service.VehicleManagementService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -20,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class TransportManagementFacade {
 
     private final TransportManagementService transportManagementService;
+    private final VehicleManagementService vehicleManagementService;
 
     // 운송 업체 등록
     @Transactional
@@ -51,6 +53,11 @@ public class TransportManagementFacade {
     @Transactional
     public TransportDetailResponse updateTransportStatus(Long id, UpdateTransportStatusRequest request) {
         Transport transport = transportManagementService.updateStatus(id, request.status());
+
+        if (request.status() == UsableStatus.INACTIVE) {
+            vehicleManagementService.deactivateVehiclesByTransportId(id);
+        }
+
         return TransportDetailResponse.from(transport);
     }
 
@@ -58,5 +65,6 @@ public class TransportManagementFacade {
     @Transactional
     public void deleteTransport(Long id) {
         transportManagementService.deleteTransport(id);
+        vehicleManagementService.deleteVehiclesByTransportId(id);
     }
 }

@@ -20,7 +20,7 @@ public record TransportCreateCommand(
         @NotBlank(message = "주소는 필수입니다.")
         String address,
 
-        @NotBlank(message = "보유 차량 개수는 필수입니다.")
+        @NotNull(message = "보유 차량 개수는 필수입니다.")
         Integer ownedVehicles,
 
         @NotNull(message = "운송 단가는 필수입니다.")

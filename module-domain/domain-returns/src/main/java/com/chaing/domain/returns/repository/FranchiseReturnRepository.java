@@ -13,7 +13,7 @@ import java.util.Optional;
 public interface FranchiseReturnRepository extends JpaRepository<Returns, Long> {
     Optional<Returns> findByFranchiseIdAndUsernameAndReturnCode(Long franchiseId, String username, String returnCode);
 
-    Optional<Returns> findByReturnCode(String returnCode);
+    Optional<Returns> findByReturnCodeAndDeletedAtIsNull(String returnCode);
 
     List<Returns> findAllByReturnStatus(ReturnStatus status);
 

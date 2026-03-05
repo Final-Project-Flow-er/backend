@@ -1,6 +1,5 @@
 package com.chaing.domain.returns.dto.command;
 
-import com.chaing.domain.returns.entity.ReturnItemBoxCode;
 import lombok.Builder;
 
 @Builder

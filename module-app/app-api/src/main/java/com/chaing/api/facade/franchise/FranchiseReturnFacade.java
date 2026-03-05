@@ -1,13 +1,14 @@
 package com.chaing.api.facade.franchise;
 
+import com.chaing.core.dto.command.FranchiseInventoryCommand;
 import com.chaing.core.dto.info.ProductInfo;
-import com.chaing.core.dto.request.FranchiseReturnUpdateRequest;
 import com.chaing.core.dto.returns.request.ReturnToInventoryRequest;
 import com.chaing.core.dto.returns.request.ReturnToProductRequest;
 import com.chaing.core.dto.returns.response.FranchiseOrderInfo;
 import com.chaing.core.dto.returns.response.FranchiseReturnTargetResponse;
 import com.chaing.domain.businessunits.service.impl.FranchiseServiceImpl;
 import com.chaing.domain.inventories.service.InventoryService;
+import com.chaing.domain.orders.dto.command.FranchiseOrderCommand;
 import com.chaing.domain.orders.dto.command.FranchiseOrderDetailCommand;
 import com.chaing.domain.orders.dto.command.FranchiseOrderItemCommand;
 import com.chaing.domain.orders.service.FranchiseOrderService;
@@ -30,7 +31,6 @@ import com.chaing.domain.returns.dto.response.ReturnAndOrderInfo;
 import com.chaing.domain.returns.dto.response.ReturnInfo;
 import com.chaing.domain.returns.exception.FranchiseReturnErrorCode;
 import com.chaing.domain.returns.exception.FranchiseReturnException;
-import com.chaing.domain.returns.service.FakeReturnFranchiseService;
 import com.chaing.domain.returns.service.FranchiseReturnService;
 import com.chaing.domain.users.service.UserManagementService;
 import lombok.RequiredArgsConstructor;
@@ -243,33 +243,91 @@ public class FranchiseReturnFacade {
 
     // 반품 수정
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
-    public FranchiseReturnUpdateResponse updateReturn(String username, List<FranchiseReturnUpdateRequest> requests, String returnCode) {
-        // franchiseId username으로 조회하는 로직 추가 필요
-        Long franchiseId = 1L;
+    public FranchiseReturnUpdateResponse updateReturn(Long userId, List<String> boxCodes, String returnCode) {
+        // franchiseId
+        Long franchiseId = userManagementService.getFranchiseIdByUserId(userId);
 
-        // 1. 제품 식별코드, 박스코드로 FranchiseInventory에서 productId 조회
-        List<Long> productIds = inventoryService.getProductsBySerialCodeAndBoxCode(requests);
-        // 2. productId로 Product에서 productCode, productName, unitPrice 조회
-        List<FranchiseReturnProductInfo> productInfos = fakeReturnProductService.getProduct(returnCode);
-        // 3. 조회한 값들로 ReturnItem 수정
-        Map<String, Long> orderItemIds = requests.stream()
+        // ReturnCommand
+        ReturnCommand returnCommand = franchiseReturnService.getReturn(userId, franchiseId, returnCode);
+
+        // FranchiseOrderDetailCommand
+        FranchiseOrderDetailCommand orderCommand = franchiseOrderService.getOrderByOrderId(franchiseId, userId, returnCommand.orderId());
+
+        // Map<boxCode, FranchiseInventoryCommand>
+        Map<String, FranchiseInventoryCommand> inventoryByBoxCode = inventoryService.getInventoriesByBoxCode(boxCodes);
+
+        // Map<returnItemId, ReturnItemCommand>
+        Map<Long, ReturnItemCommand> returnItemByReturnItemId = franchiseReturnService.getReturnItemsByReturnId(returnCommand.returnId());
+
+        // Map<boxCode, orderItemId>
+        Map<String, Long> orderItemIdByBoxCode = returnItemByReturnItemId.values().stream()
                 .collect(Collectors.toMap(
-                        FranchiseReturnUpdateRequest::serialCode,
-                        FranchiseReturnUpdateRequest::orderItemId
+                        ReturnItemCommand::boxCode,
+                        ReturnItemCommand::orderItemId
                 ));
-        List<FranchiseReturnProductInfo> updateInfos = franchiseReturnService.updateReturnItems(productInfos, returnCode, orderItemIds);
 
-        // 4. 반품 정보
-        ReturnInfo returnInfo = franchiseReturnService.getReturnInfo(username, franchiseId, returnCode);
+        // Map<returnItemId, orderItemId>
+        Map<Long, Long> orderItemIdByReturnItemId = returnItemByReturnItemId.values().stream()
+                .collect(Collectors.toMap(
+                        ReturnItemCommand::returnItemId,
+                        ReturnItemCommand::orderItemId
+                ));
 
-        // 5. 필요한 값들 반환
+        // 수정 Map<returnItemId, orderItemId>, boxCodes, Map<boxCode, orderItemId>
+        List<ReturnItemCommand> updatedReturnItems = franchiseReturnService.updateReturnItems(boxCodes, orderItemIdByReturnItemId, returnCode, orderItemIdByBoxCode);
+
+        // List<returnItemId>
+        List<Long> returnItemIds = returnItemByReturnItemId.keySet().stream().toList();
+
+        // Map<returnItemId, List<ReturnItemBoxCodeCommand>>
+        Map<Long, List<ReturnItemBoxCodeCommand>> returnItemBoxCodeByReturnItemId = franchiseReturnService.getReturnItemBoxCodeByReturnItemId(returnItemIds);
+
+        // List<ReturnItemBoxCodeCommand>
+        List<ReturnItemBoxCodeCommand> returnItemBoxCodeCommands = returnItemBoxCodeByReturnItemId.values().stream()
+                .flatMap(List::stream)
+                .toList();
+
+        // List<orderItemId>
+        List<Long> orderItemIds = inventoryByBoxCode.values().stream()
+                .map(FranchiseInventoryCommand::orderItemId)
+                .toList();
+
+        // Map<orderItemId, productId>
+        Map<Long, Long> productIdByOrderItemId = franchiseOrderService.getProductIdByOrderItemId(orderItemIds);
+
+        // List<productId>
+        List<Long> productIds = productIdByOrderItemId.values().stream().toList();
+
+        // Map<productId, ProductInfo>
+        Map<Long, ProductInfo> productInfoByProductId = productService.getProductInfos(productIds);
+
+        // List<FranchiseReturnItemResponse>
+        List<FranchiseReturnItemResponse> itemResponses = returnItemBoxCodeCommands.stream()
+                .map(boxCode -> {
+                    Long returnItemId = boxCode.returnItemId();
+                    Long orderItemId = orderItemIdByReturnItemId.get(returnItemId);
+                    Long productId = productIdByOrderItemId.get(orderItemId);
+
+                    ProductInfo productInfo = productInfoByProductId.get(productId);
+
+                    if (productInfo == null) {
+                        throw new FranchiseReturnException(FranchiseReturnErrorCode.PRODUCT_NOT_FOUND);
+                    }
+
+                    return FranchiseReturnItemResponse.builder()
+                            .boxCode(boxCode.boxCode())
+                            .productCode(productInfo.productCode())
+                            .productName(productInfo.productName())
+                            .unitPrice(productInfo.retailPrice())
+                            .build();
+                })
+                .toList();
+
+        // 반환
         return FranchiseReturnUpdateResponse.builder()
-                .returnCode(returnInfo.returnCode())
-                .status(returnInfo.status())
-                .franchiseOrderId(returnInfo.franchiseOrderId())
-                .type(returnInfo.type())
-                .requestedDate(returnInfo.requestedDate())
-                .items(updateInfos)
+                .returnCode(returnCode)
+                .orderCode(orderCommand.orderCode())
+                .items(itemResponses)
                 .build();
     }
 

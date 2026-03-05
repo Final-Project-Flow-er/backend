@@ -9,7 +9,7 @@ import java.util.List;
 
 @Repository
 public interface FranchiseReturnItemRepository extends JpaRepository<ReturnItem, Long> {
-    List<ReturnItem> findAllByReturns_ReturnCode(String returnCode);
+    List<ReturnItem> findAllByReturns_ReturnCodeAndDeletedAtIsNull(String returnCode);
 
     List<ReturnItem> findAllByReturns_ReturnStatus(ReturnStatus status);
 

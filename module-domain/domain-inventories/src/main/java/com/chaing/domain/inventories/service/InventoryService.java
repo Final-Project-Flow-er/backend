@@ -120,4 +120,26 @@ public class InventoryService {
                                 .build()
                 ));
     }
+
+    // return: Map<boxCode, FranchiseInventoryCommand>
+    public Map<String, FranchiseInventoryCommand> getInventoriesByBoxCode(List<String> boxCodes) {
+        List<FranchiseInventory> inventories = inventoryRepository.findAllByBoxCodeIn(boxCodes);
+
+        if (inventories == null || inventories.isEmpty()) {
+            // 예외 코드 추가
+        }
+
+        return inventories.stream()
+                .collect(Collectors.toMap(
+                        FranchiseInventory::getBoxCode,
+                        inventory -> FranchiseInventoryCommand.builder()
+                                .inventoryId(inventory.getInventoryId())
+                                .orderItemId(inventory.getOrderItemId())
+                                .orderId(inventory.getOrderId())
+                                .productId(inventory.getProductId())
+                                .serialCode(inventory.getSerialCode())
+                                .boxCode(inventory.getBoxCode())
+                                .build()
+                ));
+    }
 }

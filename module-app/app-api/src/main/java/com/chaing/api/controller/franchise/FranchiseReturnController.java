@@ -3,16 +3,17 @@ package com.chaing.api.controller.franchise;
 import com.chaing.api.facade.franchise.FranchiseReturnFacade;
 import com.chaing.api.security.principal.UserPrincipal;
 import com.chaing.core.dto.ApiResponse;
+import com.chaing.core.dto.returns.response.FranchiseReturnTargetResponse;
 import com.chaing.domain.returns.dto.request.FranchiseReturnCreateRequest;
-import com.chaing.core.dto.request.FranchiseReturnUpdateRequest;
 import com.chaing.domain.returns.dto.response.FranchiseReturnAndReturnItemCreateResponse;
 import com.chaing.domain.returns.dto.response.FranchiseReturnCreateResponse;
 import com.chaing.domain.returns.dto.response.FranchiseReturnDetailResponse;
 import com.chaing.domain.returns.dto.response.FranchiseReturnResponse;
-import com.chaing.core.dto.returns.response.FranchiseReturnTargetResponse;
 import com.chaing.domain.returns.dto.response.FranchiseReturnUpdateResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -60,14 +61,16 @@ public class FranchiseReturnController {
 
     @Operation(summary = "반품 수정", description = "가맹점 id와 반품 번호로 특정 반품 수정")
     @PatchMapping("/{return-code}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'FRANCHISE')")
     public ResponseEntity<ApiResponse<FranchiseReturnUpdateResponse>> updateReturn(
             @PathVariable("return-code") String returnCode,
-            @RequestBody List<FranchiseReturnUpdateRequest> requests
-    ) {
-        //TODO: Spring Security Context에서 값 꺼내오는 걸로 수정해야 함
-        String username = "test";
+            @Valid @RequestBody List<@NotBlank String> boxCodes,
+            @AuthenticationPrincipal UserPrincipal userPrincipal
 
-        return ResponseEntity.ok(ApiResponse.success(franchiseReturnFacade.updateReturn(username, requests, returnCode)));
+    ) {
+        Long userId = userPrincipal.getId();
+
+        return ResponseEntity.ok(ApiResponse.success(franchiseReturnFacade.updateReturn(userId, boxCodes, returnCode)));
     }
 
     @Operation(summary = "반품 취소", description = "가맹점 id와 반품 번호로 특정 반품 취소")

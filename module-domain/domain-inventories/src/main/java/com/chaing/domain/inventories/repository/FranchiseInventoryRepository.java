@@ -11,4 +11,6 @@ public interface FranchiseInventoryRepository extends JpaRepository<FranchiseInv
     List<FranchiseInventory> findAllBySerialCodeIn(List<String> serialCodes);
 
     List<FranchiseInventory> findAllByOrderItemIdIn(List<Long> orderItemIds);
+
+    List<FranchiseInventory> findAllByBoxCodeIn(List<String> boxCodes);
 }

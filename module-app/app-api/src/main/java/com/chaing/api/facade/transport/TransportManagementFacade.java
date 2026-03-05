@@ -5,6 +5,7 @@ import com.chaing.api.dto.transport.management.request.UpdateTransportRequest;
 import com.chaing.api.dto.transport.management.request.UpdateTransportStatusRequest;
 import com.chaing.api.dto.transport.management.response.TransportDetailResponse;
 import com.chaing.api.dto.transport.management.response.TransportSummaryResponse;
+import com.chaing.core.enums.UsableStatus;
 import com.chaing.domain.transports.entity.Transport;
 import com.chaing.domain.transports.service.TransportManagementService;
 import lombok.RequiredArgsConstructor;

@@ -1,7 +1,6 @@
 package com.chaing.domain.transports.dto.command;
 
 import com.chaing.core.enums.Region;
-import com.chaing.core.enums.UsableStatus;
 
 import java.time.LocalDate;
 
@@ -15,7 +14,6 @@ public record TransportUpdateCommand(
         Long unitPrice,
         LocalDate contractStartDate,
         LocalDate contractEndDate,
-        Region usableRegion,
-        UsableStatus usableStatus
+        Region usableRegion
 ) {
 }

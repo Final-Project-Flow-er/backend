@@ -1,7 +1,6 @@
 package com.chaing.api.dto.transport.management.request;
 
 import com.chaing.core.enums.Region;
-import com.chaing.core.enums.UsableStatus;
 import com.chaing.domain.transports.dto.command.TransportUpdateCommand;
 import jakarta.validation.constraints.AssertTrue;
 
@@ -17,8 +16,7 @@ public record UpdateTransportRequest(
         Long unitPrice,
         LocalDate contractStartDate,
         LocalDate contractEndDate,
-        Region usableRegion,
-        UsableStatus usableStatus
+        Region usableRegion
 ) {
     @AssertTrue(message = "계약 종료일은 시작일 이후여야 합니다.")
     public boolean isContractPeriodValid() {
@@ -38,8 +36,7 @@ public record UpdateTransportRequest(
                 this.unitPrice,
                 this.contractStartDate,
                 this.contractEndDate,
-                this.usableRegion,
-                this.usableStatus
+                this.usableRegion
         );
     }
 }

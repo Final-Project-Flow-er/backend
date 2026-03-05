@@ -1,6 +1,5 @@
 package com.chaing.api.dto.transport.management.request;
 
-import com.chaing.core.enums.UsableStatus;
 import com.chaing.domain.transports.dto.command.VehicleUpdateCommand;
 import com.chaing.domain.transports.enums.Dispatchable;
 
@@ -12,8 +11,7 @@ public record UpdateVehicleRequest(
         String driverName,
         String driverPhone,
         Long maxLoad,
-        Dispatchable dispatchable,
-        UsableStatus usableStatus
+        Dispatchable dispatchable
 ) {
     public VehicleUpdateCommand toCommand() {
         return new VehicleUpdateCommand(
@@ -23,8 +21,7 @@ public record UpdateVehicleRequest(
                 this.driverName,
                 this.driverPhone,
                 this.maxLoad,
-                this.dispatchable,
-                this.usableStatus
+                this.dispatchable
         );
     }
 }

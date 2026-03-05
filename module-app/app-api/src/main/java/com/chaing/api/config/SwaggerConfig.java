@@ -103,7 +103,7 @@ public class SwaggerConfig {
     @Bean
     public GroupedOpenApi hqInventoryApi() {
         return GroupedOpenApi.builder()
-                .group("본사 재고(HqInventory)")
+                .group("본사 재고(HQInventory)")
                 .pathsToMatch("/api/v1/hq/inventory/**")
                 .build();
     }

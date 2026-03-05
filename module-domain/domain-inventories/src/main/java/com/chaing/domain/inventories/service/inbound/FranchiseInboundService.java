@@ -12,8 +12,8 @@ public class FranchiseInboundService extends InboundService<FranchiseInboundCrea
 
     public FranchiseInboundService(
             @Qualifier("franchise") Reader reader,
-            @Qualifier("franchise") Executor executor,
-            @Qualifier("franchise") Validator validator
+            @Qualifier("franchise") Executor<FranchiseInboundCreateCommand> executor,
+            @Qualifier("franchise") Validator<FranchiseInboundCreateCommand> validator
             ) {
         super(reader, executor, validator);
     }

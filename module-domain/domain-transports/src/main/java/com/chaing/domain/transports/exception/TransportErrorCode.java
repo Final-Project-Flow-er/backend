@@ -15,7 +15,7 @@ public enum TransportErrorCode implements ErrorCode {
     TRANSPORT_TRACKING_NUMBER_MISSING(400, "TP005", "송장 번호가 제대로 매칭되지 않았습니다."),
     TRANSPORT_WEIGHT_IS_NOT_VALID(400, "TP006", "제품의 무게가 유효하지 않습니다."),
     TRANSPORT_VENDOR_NOT_FOUND(404, "TP007", "해당 운송 업체가 존재하지 않습니다."),
-    TRANSPORT_VEHICLE_NOT_FOUND(404, "TP007", "해당 운송 차량이 존재하지 않습니다.");
+    TRANSPORT_VEHICLE_NOT_FOUND(404, "TP008", "해당 운송 차량이 존재하지 않습니다.");
 
     private final Integer status;
     private final String code;

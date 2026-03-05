@@ -66,7 +66,6 @@ public class InventoryLogService {
                 .transactionCode(request.transactionCode())
                 .logType(request.logType())             // 받을 때 스캔하면 INBOUND, 보낼때 스캔하면 OUTBOUND
                 .quantity(request.quantity())
-                .boxQuantity(1) // 현재는 항상 1
                 .supplyPrice(request.supplyPrice())
                 .fromLocationType(request.fromLocationType())
                 .fromLocationId(request.fromLocationId())

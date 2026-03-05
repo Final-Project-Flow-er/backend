@@ -56,13 +56,6 @@ public class InventoryLog extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private LogType logType;
 
-
-    // 박스 수량, 지워야할 듯
-    @NotNull
-    @Positive
-    @Column(nullable = false)
-    private Integer boxQuantity;
-
     // 수량
     @NotNull
     @Column(nullable = false)

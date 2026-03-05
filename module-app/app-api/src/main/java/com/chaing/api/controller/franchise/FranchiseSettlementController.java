@@ -117,6 +117,16 @@ public class FranchiseSettlementController {
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "20") int size
     ) {
+        if (page < 0 || size < 1) {
+            throw new IllegalArgumentException("page는 0 이상, size는 1 이상이어야 합니다");
+        }
+        if (period == PeriodType.DAILY && date == null) {
+            throw new IllegalArgumentException("period=DAILY일때, date는 필수입니다.");
+            }
+       if (period == PeriodType.MONTHLY && month == null) {
+            throw new IllegalArgumentException("period=MONTHLY일때, month는 필수입니다.");
+            }
+
         return ResponseEntity.ok(ApiResponse.success(List.of()));
 
     }

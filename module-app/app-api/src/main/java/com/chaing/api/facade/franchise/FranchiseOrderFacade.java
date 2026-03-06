@@ -1,13 +1,13 @@
 package com.chaing.api.facade.franchise;
 
-import com.chaing.domain.orders.dto.request.FranchiseOrderCreateRequest;
-import com.chaing.domain.orders.dto.request.FranchiseOrderCreateRequestItem;
 import com.chaing.api.dto.franchise.orders.response.FranchiseOrderResponse;
 import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.domain.businessunits.service.impl.FranchiseServiceImpl;
 import com.chaing.domain.orders.dto.command.FranchiseOrderCommand;
 import com.chaing.domain.orders.dto.command.FranchiseOrderDetailCommand;
 import com.chaing.domain.orders.dto.command.FranchiseOrderItemCommand;
+import com.chaing.domain.orders.dto.request.FranchiseOrderCreateRequest;
+import com.chaing.domain.orders.dto.request.FranchiseOrderCreateRequestItem;
 import com.chaing.domain.orders.dto.request.FranchiseOrderUpdateRequest;
 import com.chaing.domain.orders.dto.response.FranchiseOrderCancelResponse;
 import com.chaing.domain.orders.dto.response.FranchiseOrderCreateResponse;
@@ -21,6 +21,7 @@ import com.chaing.domain.orders.service.FranchiseOrderService;
 import com.chaing.domain.products.service.ProductService;
 import com.chaing.domain.users.service.UserManagementService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +32,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -46,69 +48,61 @@ public class FranchiseOrderFacade {
     public List<FranchiseOrderResponse> getAllOrders(Long userId) {
         // franchiseId
         Long franchiseId = userManagementService.getFranchiseIdByUserId(userId);
+        log.info("franchise id: {}", franchiseId);
+        log.info("user id: {}", userId);
 
         // username
         String username = userManagementService.getUsernameByUserId(userId);
 
         // Map<orderId, FranchiseOrderCommand>
         Map<Long, FranchiseOrderCommand> orders = franchiseOrderService.getAllOrders(franchiseId, userId);
+        log.info("orders: {}", orders);
 
         // List<orderId>
         List<Long> orderIds = orders.keySet().stream().toList();
 
         // Map<orderId, List<FranchiseOrderItemCommand>>
         Map<Long, List<FranchiseOrderItemCommand>> orderItemByOrderId = franchiseOrderService.getOrderItemsByOrderIds(orderIds);
-
-        // Map<orderItemId, orderId>
-        Map<Long, Long> orderIdByOrderItemId = orderItemByOrderId.entrySet().stream()
-                .flatMap(entry -> entry.getValue().stream()
-                        .map(item -> Map.entry(entry.getKey(), item.orderItemId())))
-                .collect(Collectors.toMap(
-                        Map.Entry::getValue,
-                        Map.Entry::getKey
-                ));
-
-        // Map<productId, List<orderItemId>>
-        Map<Long, List<Long>> orderItemIdsByProductId = franchiseOrderService.getOrderItemIdsAndProductIdsByOrderIds(orderIds);
+        log.info("orderItemByOrderId: {}", orderItemByOrderId);
 
         // List<productId>
-        List<Long> productIds = orderItemIdsByProductId.keySet().stream().toList();
+        List<Long> productIds = orderItemByOrderId.values().stream()
+                .flatMap(List::stream)
+                .map(FranchiseOrderItemCommand::productId)
+                .distinct()
+                .toList();
 
         // Map<productId, ProductInfo>
         Map<Long, ProductInfo> productInfoByProductId = productService.getProductInfos(productIds);
 
-        return orderItemIdsByProductId.entrySet().stream()
-                .map(entry -> {
-                    Long productId = entry.getKey();
-                    Long orderItemId = entry.getValue().get(0);
-                    Long orderId = orderIdByOrderItemId.get(orderItemId);
+        return orders.entrySet().stream()
+                .flatMap(entry -> {
+                    Long orderId = entry.getKey();
+                    FranchiseOrderCommand orderCommand = entry.getValue();
+                    List<FranchiseOrderItemCommand> items = orderItemByOrderId.get(orderId);
 
-                    FranchiseOrderCommand orderCommand = orders.get(orderId);
-                    FranchiseOrderItemCommand orderItemCommand = orderItemByOrderId.get(orderId).get(0);
-                    ProductInfo productInfo = productInfoByProductId.get(productId);
-
-                    if (orderCommand == null) {
-                        throw new OrderException(OrderErrorCode.ORDER_NOT_FOUND);
-                    }
-
-                    if (orderItemCommand == null) {
+                    if (items == null || items.isEmpty()) {
                         throw new OrderException(OrderErrorCode.ORDER_ITEM_NOT_FOUND);
                     }
 
-                    if (productInfo == null) {
-                        throw new OrderException(OrderErrorCode.PRODUCT_NOT_FOUND);
-                    }
+                    return items.stream().map(item -> {
+                        ProductInfo productInfo = productInfoByProductId.get(item.productId());
 
-                    return FranchiseOrderResponse.builder()
-                            .orderCode(orderCommand.orderCode())
-                            .orderStatus(orderCommand.orderStatus())
-                            .productCode(productInfo.productCode())
-                            .unitPrice(orderItemCommand.unitPrice())
-                            .totalPrice(orderCommand.totalPrice())
-                            .requestedDate(orderCommand.requestedDate())
-                            .receiver(username)
-                            .deliveryDate(orderCommand.deliveryDate())
-                            .build();
+                        if (productInfo == null) {
+                            throw new OrderException(OrderErrorCode.PRODUCT_NOT_FOUND);
+                        }
+
+                        return FranchiseOrderResponse.builder()
+                                .orderCode(orderCommand.orderCode())
+                                .orderStatus(orderCommand.orderStatus())
+                                .productCode(productInfo.productCode())
+                                .unitPrice(item.unitPrice())
+                                .totalPrice(orderCommand.totalPrice())
+                                .requestedDate(orderCommand.requestedDate())
+                                .receiver(username)
+                                .deliveryDate(orderCommand.deliveryDate())
+                                .build();
+                    });
                 })
                 .toList();
     }
@@ -253,8 +247,10 @@ public class FranchiseOrderFacade {
 
         // franchiseCode
         String franchiseCode = franchiseService.getById(franchiseId).businessNumber();
+        log.info("franchiseId: {}", franchiseId);
+        log.info("userId: {}", userId);
 
-        // username
+        // username1, 2
         String username = userManagementService.getUsernameByUserId(userId);
 
         // orderCode

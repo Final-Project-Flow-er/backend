@@ -1,7 +1,7 @@
 package com.chaing.domain.returns.repository.impl;
 
+import com.chaing.domain.returns.dto.command.QReturnCommand;
 import com.chaing.domain.returns.dto.command.ReturnCommand;
-import com.chaing.domain.returns.dto.response.QFranchiseReturnAndReturnItemResponse;
 import com.chaing.domain.returns.repository.interfaces.FranchiseReturnRepositoryCustom;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +25,7 @@ public class FranchiseReturnRepositoryImpl implements FranchiseReturnRepositoryC
                         returns.returnId,
                         returns.franchiseOrderId,
                         returns.returnCode,
-                        returns.userid,
+                        returns.userId,
                         returns.returnType,
                         returns.description,
                         returns.totalReturnQuantity,

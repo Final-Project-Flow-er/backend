@@ -1,23 +1,18 @@
 package com.chaing.domain.returns.service;
 
-import com.chaing.core.dto.returns.response.FranchiseOrderInfo;
 import com.chaing.domain.returns.dto.command.HQReturnCommand;
 import com.chaing.domain.returns.dto.command.HQReturnDetailCommand;
 import com.chaing.domain.returns.dto.command.ReturnCommand;
-import com.chaing.domain.returns.dto.command.ReturnItemBoxCodeCommand;
 import com.chaing.domain.returns.dto.command.ReturnItemCommand;
-import com.chaing.domain.returns.dto.command.ReturnItemCreateCommand;
 import com.chaing.domain.returns.dto.command.ReturnItemInspection;
 import com.chaing.domain.returns.dto.request.FranchiseReturnCreateRequest;
 import com.chaing.domain.returns.dto.request.HQReturnUpdateRequest;
-import com.chaing.domain.returns.dto.response.ReturnAndOrderInfo;
 import com.chaing.domain.returns.dto.response.ReturnInfo;
 import com.chaing.domain.returns.entity.ReturnItem;
 import com.chaing.domain.returns.entity.Returns;
 import com.chaing.domain.returns.enums.ReturnStatus;
 import com.chaing.domain.returns.exception.FranchiseReturnErrorCode;
 import com.chaing.domain.returns.exception.FranchiseReturnException;
-import com.chaing.domain.returns.repository.FranchiseReturnItemBoxCodeRepository;
 import com.chaing.domain.returns.repository.FranchiseReturnItemRepository;
 import com.chaing.domain.returns.repository.FranchiseReturnRepository;
 import com.chaing.domain.returns.repository.interfaces.FranchiseReturnRepositoryCustom;
@@ -37,7 +32,6 @@ public class FranchiseReturnService {
     private final FranchiseReturnRepository franchiseReturnRepository;
     private final FranchiseReturnItemRepository franchiseReturnItemRepository;
     private final FranchiseReturnRepositoryCustom franchiseReturnRepositoryCustom;
-    private final FranchiseReturnItemBoxCodeRepository franchiseReturnItemBoxCodeRepository;
 
     private final ReturnCodeGenerator generator;
 
@@ -120,14 +114,6 @@ public class FranchiseReturnService {
                 .toList();
     }
 
-    // 반품 조회
-    public ReturnInfo getReturnInfo(String username, Long franchiseId, String returnCode) {
-        return ReturnInfo.from(
-                franchiseReturnRepository.findByFranchiseIdAndUsernameAndReturnCode(franchiseId, username, returnCode)
-                        .orElseThrow(() -> new FranchiseReturnException(FranchiseReturnErrorCode.RETURN_NOT_FOUND))
-        );
-    }
-
     // 반품 취소
     public String cancel(Long franchiseId, Long userId, String returnCode) {
         // 반품 조회
@@ -140,19 +126,15 @@ public class FranchiseReturnService {
     }
 
     // 반품 생성
-    public ReturnInfo createReturn(Long franchiseId, FranchiseReturnCreateRequest request, FranchiseOrderInfo orderInfo) {
-        // 반품 코드
-        String returnCode = generator.generate();
-
+    public ReturnCommand createReturn(Long franchiseId, Long orderId, String returnCode, Long userId, FranchiseReturnCreateRequest request) {
         // 반품 생성
         Returns returns = Returns.builder()
                 .franchiseId(franchiseId)
-                .franchiseOrderId(orderInfo.orderId())
+                .franchiseOrderId(orderId)
                 .returnCode(returnCode)
-                .username(orderInfo.username())
-                .phoneNumber(orderInfo.phoneNumber())
+                .userId(userId)
                 .description(request.description())
-                .totalReturnQuantity(request.items().size())
+                .totalReturnQuantity(request.quantity())
                 .totalReturnAmount(request.totalPrice())
                 .build();
 
@@ -160,30 +142,30 @@ public class FranchiseReturnService {
         franchiseReturnRepository.save(returns);
 
         // 결과 반환
-        return ReturnInfo.from(returns);
+        return ReturnCommand.from(returns);
     }
 
     // 반품 제품 생성
-    public List<ReturnAndOrderInfo> createReturnItems(String returnCode, List<ReturnItemCreateCommand> orderItemIds) {
+    public List<ReturnItemCommand> createReturnItems(Long returnId, Map<Long, String> boxCodeByOrderItemId) {
         // 반품 조회
-        Returns returns = franchiseReturnRepository.findByReturnCodeAndDeletedAtIsNull(returnCode)
+        Returns returns = franchiseReturnRepository.findByReturnIdAndDeletedAtIsNull(returnId)
                 .orElseThrow(() -> new FranchiseReturnException(FranchiseReturnErrorCode.RETURN_NOT_FOUND));
 
         // 반품 제품 생성
-        List<ReturnItem> returnItems = orderItemIds.stream()
-                .map(id -> {
-                    return ReturnItem.builder()
-                            .returns(returns)
-                            .franchiseOrderItemId(id.orderItemId())
-                            .build();
-                })
+        List<ReturnItem> returnItems = boxCodeByOrderItemId.entrySet().stream()
+                .map(entry -> ReturnItem.builder()
+                        .returns(returns)
+                        .franchiseOrderItemId(entry.getKey())
+                        .boxCode(entry.getValue())
+                        .build()
+                )
                 .toList();
 
         // 반품 제품 저장
         franchiseReturnItemRepository.saveAll(returnItems);
 
         // 결과 반환
-        return ReturnAndOrderInfo.from(returnItems);
+        return ReturnItemCommand.from(returnItems);
     }
 
     // 대기 상태의 반품 요청 조회
@@ -200,7 +182,7 @@ public class FranchiseReturnService {
 
     // 대기 상태의 반품 제품 조회
     // return: Map<returnId, List<ReturnAndOrderInfo>>
-    public Map<Long, List<ReturnAndOrderInfo>> getAllReturnItemByStatus(ReturnStatus status) {
+    public Map<Long, List<ReturnItemCommand>> getAllReturnItemByStatus(ReturnStatus status) {
         List<ReturnItem> items = franchiseReturnItemRepository.findAllByReturns_ReturnStatus(status);
 
         if (items == null || items.isEmpty()) {
@@ -210,7 +192,7 @@ public class FranchiseReturnService {
         return items.stream()
                 .collect(Collectors.groupingBy(
                         item -> item.getReturns().getReturnId(),
-                        Collectors.mapping(ReturnAndOrderInfo::from, Collectors.toList())
+                        Collectors.mapping(ReturnItemCommand::from, Collectors.toList())
                 ));
     }
 
@@ -228,7 +210,7 @@ public class FranchiseReturnService {
 
     // 대기 상태가 아닌 반품 제품 조회
     // Map<returnId, List<ReturnItemInfo>>
-    public Map<Long, List<ReturnAndOrderInfo>> getAllNotPendingReturnItem() {
+    public Map<Long, List<ReturnItemCommand>> getAllNotPendingReturnItem() {
         List<ReturnItem> items = franchiseReturnItemRepository.findAllByReturns_ReturnStatusNot(ReturnStatus.PENDING);
 
         if (items == null || items.isEmpty()) {
@@ -238,7 +220,7 @@ public class FranchiseReturnService {
         return items.stream()
                 .collect(Collectors.groupingBy(
                         item -> item.getReturns().getReturnId(),
-                        Collectors.mapping(ReturnAndOrderInfo::from, Collectors.toList())
+                        Collectors.mapping(ReturnItemCommand::from, Collectors.toList())
                 ));
     }
 
@@ -324,7 +306,7 @@ public class FranchiseReturnService {
 
     // return: Map<returnId, List<ReturnItemCommand>>
     public Map<Long, List<ReturnItemCommand>> getAllReturnItem() {
-        List<ReturnItem> items = franchiseReturnItemRepository.findAllDeletedAtIsNull();
+        List<ReturnItem> items = franchiseReturnItemRepository.findAllByDeletedAtIsNull();
 
         if (items == null || items.isEmpty()) {
             throw new FranchiseReturnException(FranchiseReturnErrorCode.RETURN_ITEM_NOT_FOUND);
@@ -334,21 +316,6 @@ public class FranchiseReturnService {
                 .collect(Collectors.groupingBy(
                         item -> item.getReturns().getReturnId(),
                         Collectors.mapping(ReturnItemCommand::from, Collectors.toList())
-                ));
-    }
-
-    // return: Map<returnItemId, List<ReturnItemBoxCodeCommand>>
-    public Map<Long, List<ReturnItemBoxCodeCommand>> getReturnItemBoxCodeByReturnItemId(List<Long> returnItemIds) {
-        List<ReturnItemBoxCode> boxCodes = franchiseReturnItemBoxCodeRepository.findAllByReturnItem_ReturnItemIdIn(returnItemIds);
-
-        if (boxCodes == null || boxCodes.isEmpty()) {
-            throw new FranchiseReturnException(FranchiseReturnErrorCode.RETURN_ITEM_BOX_CODE_NOT_FOUND);
-        }
-
-        return boxCodes.stream()
-                .collect(Collectors.groupingBy(
-                        boxCode -> boxCode.getReturnItem().getReturnItemId(),
-                        Collectors.mapping(ReturnItemBoxCodeCommand::from, Collectors.toList())
                 ));
     }
 

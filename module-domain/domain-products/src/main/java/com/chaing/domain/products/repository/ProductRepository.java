@@ -9,8 +9,8 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface ProductRepository extends JpaRepository<Long, Product>, ProductRepositoryCustom {
+public interface ProductRepository extends JpaRepository<Product, Long>, ProductRepositoryCustom {
     List<Product> findAllByProductIdIn(List<Long> productIds);
 
-    List<Product> findAllByProductStatus(ProductStatus productStatus);
+    List<Product> findAllByStatus(ProductStatus productStatus);
 }

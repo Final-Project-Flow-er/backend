@@ -1,8 +1,6 @@
 package com.chaing.domain.orders.service;
 
 import com.chaing.core.dto.info.ProductInfo;
-import com.chaing.core.dto.returns.request.OrderItemIdAndSerialCode;
-import com.chaing.core.dto.returns.response.FranchiseOrderInfo;
 import com.chaing.core.dto.returns.response.FranchiseReturnTargetResponse;
 import com.chaing.domain.orders.dto.command.FranchiseOrderCommand;
 import com.chaing.domain.orders.dto.command.FranchiseOrderDetailCommand;
@@ -44,21 +42,23 @@ public class FranchiseOrderService {
 
     // 가맹점 발주 목록 조회
     public Map<Long, FranchiseOrderCommand> getAllOrders(Long franchiseId, Long userId) {
-        return franchiseOrderRepository.findAllByFranchiseIdAndUserId(franchiseId, userId).stream().collect(Collectors.toMap(FranchiseOrder::getFranchiseOrderId, FranchiseOrderCommand::from));
+        List<FranchiseOrder> orders = franchiseOrderRepository.findAllByFranchiseIdAndUserId(franchiseId, userId);
+
+        if (orders == null || orders.isEmpty()) {
+            throw new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_NOT_FOUND);
+        }
+
+        return orders.stream()
+                .collect(Collectors.toMap(
+                        FranchiseOrder::getFranchiseOrderId, FranchiseOrderCommand::from
+                ));
     }
 
     // 발주 번호에 따른 가맹점 특정 발주 조회
     public FranchiseOrderDetailCommand getOrderByOrderCode(Long franchiseId, Long userId, String orderCode) {
-        FranchiseOrder order = franchiseOrderRepository.findByFranchiseIdAndUserIdAndOrderCodeDeletedAtIsNull(franchiseId, userId, orderCode).orElseThrow(() -> new OrderException(OrderErrorCode.ORDER_NOT_FOUND));
+        FranchiseOrder order = franchiseOrderRepository.findByFranchiseIdAndUserIdAndOrderCodeAndDeletedAtIsNull(franchiseId, userId, orderCode).orElseThrow(() -> new OrderException(OrderErrorCode.ORDER_NOT_FOUND));
 
         return FranchiseOrderDetailCommand.from(order);
-    }
-
-    // 발주 번호에 따른 발주 정보 반환
-    public FranchiseOrderInfo getOrderInfo(Long franchiseId, String username, String orderCode, String franchiseCode) {
-        FranchiseOrder order = franchiseOrderRepository.findByFranchiseIdAndUserIdAndOrderCodeDeletedAtIsNull(franchiseId, username, orderCode).orElseThrow(() -> new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_NOT_FOUND));
-
-        return FranchiseOrderInfo.builder().orderId(order.getFranchiseOrderId()).username(order.getUsername()).phoneNumber(order.getPhoneNumber()).franchiseCode(franchiseCode).build();
     }
 
     // 가맹점의 발주 수정
@@ -122,7 +122,7 @@ public class FranchiseOrderService {
 
     // 가맹점 발주 취소
     public FranchiseOrderCancelResponse cancelOrder(Long userId, Long franchiseId, String orderCode) {
-        FranchiseOrder order = franchiseOrderRepository.findByFranchiseIdAndUserIdAndOrderCodeDeletedAtIsNull(franchiseId, userId, orderCode)
+        FranchiseOrder order = franchiseOrderRepository.findByFranchiseIdAndUserIdAndOrderCodeAndDeletedAtIsNull(franchiseId, userId, orderCode)
                 .orElseThrow(() -> new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_NOT_FOUND));
 
         order.cancel();
@@ -172,33 +172,9 @@ public class FranchiseOrderService {
         return orders.stream().collect(Collectors.toMap(FranchiseOrder::getFranchiseOrderId, FranchiseOrder::getOrderCode));
     }
 
-    // orderItemId에 대한 serialCode 반환 - Map
-    public List<OrderItemIdAndSerialCode> getSerialCodes(List<Long> orderItemIds) {
-        // orderItemId에 해당하는 serialCode 조회
-        List<FranchiseOrderItem> items = franchiseOrderItemRepository.findAllByFranchiseOrderItemIdInAndDeletedAtIsNull(orderItemIds);
-        System.out.println("serialCode 포함한 items: " + items.get(0).getSerialCode());
-
-        return items.stream().map(item -> {
-            return OrderItemIdAndSerialCode.builder().orderItemId(item.getFranchiseOrderItemId()).serialCode(item.getSerialCode()).build();
-        }).toList();
-    }
-
-    // orderItemId에 대한 serialCode 반환 - List
-    public List<String> getSerialCodeList(List<Long> orderItemIds) {
-        // orderItemId에 해당하는 serialCode 조회
-        List<FranchiseOrderItem> items = franchiseOrderItemRepository.findAllByFranchiseOrderItemIdInAndDeletedAtIsNull(orderItemIds);
-
-        return items.stream().map(FranchiseOrderItem::getSerialCode).toList();
-    }
-
     // orderId, franchiseId에 대한 orderCode 반환
     public String getOrderCode(Long franchiseId, Long orderId) {
         return franchiseOrderRepository.findByFranchiseIdAndFranchiseOrderId(franchiseId, orderId).orElseThrow(() -> new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_NOT_FOUND)).getOrderCode();
-    }
-
-    // serialCode에 대한 orderItemId 반환
-    public Long getOrderItemId(String serialCode) {
-        return franchiseOrderItemRepository.findBySerialCode(serialCode).orElseThrow(() -> new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_ITEM_NOT_FOUND)).getFranchiseOrderItemId();
     }
 
     // 반품 대상이 되는 발주 반환
@@ -211,12 +187,6 @@ public class FranchiseOrderService {
         return orderCodes.stream().map(orderCode ->
                 new FranchiseReturnTargetResponse(orderCode, username)
         ).toList();
-    }
-
-    // orderCode로 해당 orderItem serialCode 반환 - List
-    public List<String> getSerialCodesByOrderCode(Long franchiseId, String orderCode) {
-        // 발주 제품 조회
-        return franchiseOrderItemRepository.findAllByFranchiseOrder_FranchiseIdAndFranchiseOrder_OrderCode(franchiseId, orderCode).stream().map(FranchiseOrderItem::getSerialCode).toList();
     }
 
     // 본사에서 가맹점의 발주 상태 수정
@@ -237,18 +207,6 @@ public class FranchiseOrderService {
         }
 
         return HQOrderStatusUpdateResponse.from(orders);
-    }
-
-    // 제품 식별 번호 반환
-    // return: Map<orderItemId, serialCode>
-    public Map<Long, String> getSerialCodesByOrderItemId(List<Long> orderItemIds) {
-        List<FranchiseOrderItem> items = franchiseOrderItemRepository.findAllByFranchiseOrderItemIdInAndDeletedAtIsNull(orderItemIds);
-
-        if (items == null || items.isEmpty()) {
-            throw new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_ITEM_NOT_FOUND);
-        }
-
-        return items.stream().collect(Collectors.toMap(FranchiseOrderItem::getFranchiseOrderItemId, FranchiseOrderItem::getSerialCode));
     }
 
     // OrderCode 조회
@@ -396,21 +354,6 @@ public class FranchiseOrderService {
                 .collect(Collectors.toMap(
                         item -> returnItemIdByOrderItemId.get(item.getFranchiseOrderItemId()),
                         FranchiseOrderItem::getProductId
-                ));
-    }
-
-    // return: Map<orderItemId, OrderItemCommand>
-    public Map<Long, FranchiseOrderItemCommand> getOrderItemsByOrderItemIds(List<Long> orderItemIds) {
-        List<FranchiseOrderItem> items = franchiseOrderItemRepository.findAllByFranchiseOrderItemIdInAndDeletedAtIsNull(orderItemIds);
-
-        if (items == null || items.isEmpty()) {
-            throw new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_ITEM_NOT_FOUND);
-        }
-
-        return items.stream()
-                .collect(Collectors.toMap(
-                        FranchiseOrderItem::getFranchiseOrderItemId,
-                        item ->
                 ));
     }
 

@@ -5,7 +5,7 @@ import com.chaing.api.security.principal.UserPrincipal;
 import com.chaing.core.dto.ApiResponse;
 import com.chaing.core.dto.returns.response.FranchiseReturnTargetResponse;
 import com.chaing.domain.returns.dto.request.FranchiseReturnCreateRequest;
-import com.chaing.domain.returns.dto.response.FranchiseReturnAndReturnItemCreateResponse;
+import com.chaing.domain.returns.dto.response.ReturnCreateResponse;
 import com.chaing.domain.returns.dto.response.FranchiseReturnCreateResponse;
 import com.chaing.domain.returns.dto.response.FranchiseReturnDetailResponse;
 import com.chaing.domain.returns.dto.response.FranchiseReturnResponse;
@@ -96,7 +96,6 @@ public class FranchiseReturnController {
         return ResponseEntity.ok(ApiResponse.success(franchiseReturnFacade.getAllTargets(userId)));
     }
 
-    // 반품 생성 화면에 띄우는 데이터 보내주는 api 필요
     @Operation(summary = "반품 생성 화면 데이터", description = "반품 요청 생성 시 발주 코드에 따라 보여지는 화면에 띄울 데이터 반환")
     @GetMapping("/{order-code}")
     @PreAuthorize("hasAnyRole('ADMIN', 'FRANCHISE')")
@@ -111,12 +110,13 @@ public class FranchiseReturnController {
 
     @Operation(summary = "반품 생성", description = "가맹점 id로 반품 생성")
     @PostMapping
-    public ResponseEntity<ApiResponse<FranchiseReturnAndReturnItemCreateResponse>> createReturn(
-            @RequestBody FranchiseReturnCreateRequest request
+    @PreAuthorize("hasAnyRole('ADMIN', 'FRANCHISE')")
+    public ResponseEntity<ApiResponse<ReturnCreateResponse>> createReturn(
+            @RequestBody FranchiseReturnCreateRequest request,
+            @AuthenticationPrincipal UserPrincipal userPrincipal
     ) {
-        //TODO: Spring Security Context에서 값 꺼내오는 걸로 수정해야 함
-        String username = "test";
+        Long userId = userPrincipal.getId();
 
-        return ResponseEntity.ok(ApiResponse.success(franchiseReturnFacade.create(username, request)));
+        return ResponseEntity.ok(ApiResponse.success(franchiseReturnFacade.create(userId, request)));
     }
 }

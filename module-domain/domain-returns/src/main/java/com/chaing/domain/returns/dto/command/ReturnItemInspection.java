@@ -8,7 +8,9 @@ import lombok.Builder;
 public record ReturnItemInspection(
         Boolean isInspected,
 
-        ReturnItemStatus status
+        ReturnItemStatus status,
+
+        String serialCode
 ) {
     public static ReturnItemInspection from(ReturnItem returnItem) {
         return ReturnItemInspection.builder()

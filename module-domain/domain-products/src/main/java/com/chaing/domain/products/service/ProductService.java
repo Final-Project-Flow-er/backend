@@ -21,7 +21,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
@@ -177,7 +176,7 @@ public class ProductService {
     // 제품 정보 전체 반환
     // return: Map<productId, ProductInfo>
     public Map<Long, ProductInfo> getAllProductInfo() {
-        List<Product> products = productRepository.findAllByProductStatus(ProductStatus.ON_SALE);
+        List<Product> products = productRepository.findAllByStatus(ProductStatus.ON_SALE);
 
         if (products == null || products.isEmpty()) {
             throw new ProductException(ProductErrorCode.PRODUCT_NOT_FOUND);

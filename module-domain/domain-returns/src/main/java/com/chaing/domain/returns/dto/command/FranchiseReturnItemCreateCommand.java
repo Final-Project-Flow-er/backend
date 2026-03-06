@@ -3,12 +3,9 @@ package com.chaing.domain.returns.dto.command;
 import lombok.Builder;
 
 @Builder
-public record ReturnItemBoxCodeCommand(
-        Long returnItemBoxCodeId,
-
+public record FranchiseReturnItemCreateCommand(
         String boxCode,
 
-        Long returnItemId
+        String productCode
 ) {
-
 }

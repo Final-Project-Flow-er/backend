@@ -10,14 +10,16 @@ import java.util.List;
 
 public record InboundScanBoxRequest(
         @NotBlank String boxCode,
-        @NotEmpty List<String> serialCodes,
+        @NotEmpty List<@NotBlank String> serialCodes,
         @NotNull Long productId,
         @NotNull LocalDate manufactureDate
 ) {
     public static FranchiseInboundCreateCommand toCommand(InboundScanBoxRequest request, Long franchiseId) {
         return new FranchiseInboundCreateCommand(
                 request.boxCode(),
-                request.serialCodes,
+                request.serialCodes().stream()
+                        .map(code -> code.trim().toUpperCase())
+                        .toList(),
                 request.productId(),
                 request.manufactureDate(),
                 franchiseId

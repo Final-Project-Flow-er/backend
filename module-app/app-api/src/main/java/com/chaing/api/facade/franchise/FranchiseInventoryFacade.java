@@ -25,6 +25,7 @@ import com.chaing.domain.products.service.ProductService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,6 +33,7 @@ import java.util.Map;
 
 @RequiredArgsConstructor
 @Service
+@Transactional(readOnly = true)
 public class FranchiseInventoryFacade {
     private final InventoryService inventoryService;
     private final ProductService productService;
@@ -43,19 +45,34 @@ public class FranchiseInventoryFacade {
         List<Long> ids = products.stream()
                 .map(ProductInfoResponse::productId)
                 .toList();
-        Map<Long, InventoryProductInfoResponse> productInfos = inventoryService.getFranchiseStock(franchiseId, ids, request.status());
+        Map<Long, InventoryProductInfoResponse> productInfos = inventoryService.getFranchiseStock(franchiseId, ids,
+                request.status());
+
         return products.stream()
-                .map(
-                        p -> new FranchiseInventoryProductResponse(
+                .map(p -> {
+
+                    InventoryProductInfoResponse info = productInfos.get(p.productId());
+
+                    if (info == null) {
+                        return new FranchiseInventoryProductResponse(
                                 p.productId(),
                                 p.productCode(),
                                 p.name(),
-                                productInfos.get(p.productId()).totalQuantity(),
-                                p.productCode().substring(5,7),
-                                productInfos.get(p.productId()).safetyStock(),
-                                productInfos.get(p.productId()).status()
-                        )
-                )
+                                0,
+                                p.productCode().substring(4, 6),
+                                0,
+                                null);
+                    }
+
+                    return new FranchiseInventoryProductResponse(
+                            p.productId(),
+                            p.productCode(),
+                            p.name(),
+                            info.totalQuantity(),
+                            p.productCode().substring(4, 6),
+                            info.safetyStock(),
+                            info.status());
+                })
                 .toList();
     }
 
@@ -65,11 +82,13 @@ public class FranchiseInventoryFacade {
     }
 
     // 특정 가맹점 소분류
-    public List<FranchiseInventoryItemResponse> getFranchiseItems(Long franchiseId, FranchiseInventoryItemsRequest request) {
+    public List<FranchiseInventoryItemResponse> getFranchiseItems(Long franchiseId,
+            FranchiseInventoryItemsRequest request) {
         return inventoryService.getFranchiseItems(franchiseId, request);
     }
 
     // 입고 처리
+    @Transactional
     public Void increaseInventory(@Valid InventoryBatchRequest inventoryBatchRequest) {
         // 재고 증가 로그 기록
         List<InventoryLogCreateRequest> logs = convert(inventoryBatchRequest);
@@ -82,13 +101,12 @@ public class FranchiseInventoryFacade {
         // 해당 재고 삭제
         LocationType fromType = LocationType.valueOf(inventoryBatchRequest.fromLocationType().toUpperCase());
 
-        if(fromType == LocationType.FRANCHISE){
-            inventoryService.deleteFranchiseInventory(inventoryBatchRequest.fromLocationId(), inventoryBatchRequest.boxes());
-        }
-        else if(fromType == LocationType.FACTORY){
+        if (fromType == LocationType.FRANCHISE) {
+            inventoryService.deleteFranchiseInventory(inventoryBatchRequest.fromLocationId(),
+                    inventoryBatchRequest.boxes());
+        } else if (fromType == LocationType.FACTORY) {
             inventoryService.deleteFactoryInventory(inventoryBatchRequest.boxes());
-        }
-        else{
+        } else {
             inventoryService.deleteHqInventory(inventoryBatchRequest.boxes());
         }
 
@@ -96,9 +114,11 @@ public class FranchiseInventoryFacade {
     }
 
     // 출고 처리
+    @Transactional
     public Void decreaseInventory(@Valid InventoryBatchRequest inventoryBatchRequest) {
         // 해당 제품들 다 배송 중 상태로 변경
-        inventoryService.updateFranchiseShippingStatus(inventoryBatchRequest.fromLocationId(), inventoryBatchRequest.boxes());
+        inventoryService.updateFranchiseShippingStatus(inventoryBatchRequest.fromLocationId(),
+                inventoryBatchRequest.boxes());
         // 로그 기록 (출고 로그 기록)
         List<InventoryLogCreateRequest> logs = convert(inventoryBatchRequest);
         inventoryLogService.recordInventoryLog(logs);
@@ -106,12 +126,14 @@ public class FranchiseInventoryFacade {
     }
 
     // 안전재고 유통기한 알림
+    @Transactional(readOnly = true)
     public InventoryAlertResponse getInventoryAlerts(Long franchiseId) {
         // 안전재고 검색
         List<SafetyStockResponse> safetyStockAlert = inventoryService.getLowStockAlerts("FRANCHISE", franchiseId);
 
         // 유통기한 검색
-        List<ExpirationBatchResultResponse> expirationAlerts = inventoryService.getExpirationAlerts("FRNACHISE", franchiseId);
+        List<ExpirationBatchResultResponse> expirationAlerts = inventoryService.getExpirationAlerts("FRANCHISE",
+                franchiseId);
 
         // 안전재고, 유통기한 이름, 코드 매칭을 위해 ID불러옴
         List<Long> ids = productService.getAllProductIds();
@@ -124,8 +146,7 @@ public class FranchiseInventoryFacade {
                         products.get(k.productId()).productCode(),
                         products.get(k.productId()).productName(),
                         k.currentQuantity(),
-                        k.safetyStock()
-                ))
+                        k.safetyStock()))
                 .toList();
 
         // 코드와 이름 조합
@@ -134,8 +155,7 @@ public class FranchiseInventoryFacade {
                         products.get(k.productId()).productName(),
                         k.manufactureDate(),
                         k.quantity(),
-                        k.daysUntilExpiration()
-                ))
+                        k.daysUntilExpiration()))
                 .toList();
 
         return InventoryAlertResponse.builder()
@@ -165,19 +185,18 @@ public class FranchiseInventoryFacade {
                         product.productLogType(),
                         quantity,
                         request.supplyPrice(),
+                        box.price(),
                         fromType,
                         request.fromLocationId(),
                         toType,
                         request.toLocationId(),
                         actorType,
-                        request.fromLocationId()
-                );
+                        request.fromLocationId());
 
                 result.add(log);
             }
         }
         return result;
     }
-
 
 }

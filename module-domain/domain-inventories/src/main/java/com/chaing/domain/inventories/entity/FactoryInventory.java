@@ -42,7 +42,7 @@ public class FactoryInventory extends BaseEntity {
     private Long productId;
 
     // 제조일자
-    @NotBlank
+    @NotNull
     @Column(nullable = false)
     private LocalDate manufactureDate;
 

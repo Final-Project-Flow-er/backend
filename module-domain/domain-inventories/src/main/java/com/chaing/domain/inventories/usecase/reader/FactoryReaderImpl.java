@@ -1,7 +1,7 @@
 package com.chaing.domain.inventories.usecase.reader;
 
+import com.chaing.core.enums.LogType;
 import com.chaing.domain.inventories.dto.raw.FactoryInventoryRawData;
-import com.chaing.domain.inventories.dto.raw.FranchiseInventoryRawData;
 import com.chaing.domain.inventories.entity.FactoryInventory;
 import com.chaing.domain.inventories.repository.FactoryInventoryRepository;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +24,7 @@ public class FactoryReaderImpl implements Reader<FactoryInventoryRawData> {
     @Override
     public List<FactoryInventoryRawData> findAllByStatusWait() {
 
-        List<FactoryInventory> entities = repository.findAllByStatusInboundWait();
+        List<FactoryInventory> entities = repository.findAllByStatus(LogType.INBOUND_WAIT);
 
         return entities.stream()
                 .map(entity -> new FactoryInventoryRawData(
@@ -38,7 +38,7 @@ public class FactoryReaderImpl implements Reader<FactoryInventoryRawData> {
 
     @Override
     public List<FactoryInventoryRawData> findAllByIds(List<Long> selectedList) {
-        List<FactoryInventory> entities = repository.findAllByIdIn(selectedList);
+        List<FactoryInventory> entities = repository.findAllByInventoryIdIn(selectedList);
 
         return entities.stream()
                 .map(entity -> new FactoryInventoryRawData(

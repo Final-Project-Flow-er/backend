@@ -9,6 +9,6 @@ public record PendingBoxInfo(
         LogType status
 ) {
     public static PendingBoxInfo fromBox(InboundRawData raw) {
-        return new PendingBoxInfo(raw.getBoxCode(), raw.getProductId(), raw.get);
+        return new PendingBoxInfo(raw.getBoxCode(), raw.getProductId(), LogType.INBOUND_WAIT);
     }
 }

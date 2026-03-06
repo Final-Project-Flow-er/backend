@@ -65,10 +65,12 @@ public class FranchiseInventory extends BaseEntity {
 
     public static FranchiseInventory from(FranchiseInboundCreateCommand command, String serialCode) {
         return FranchiseInventory.builder()
+                .boxCode(command.boxCode())
                 .serialCode(serialCode)
                 .productId(command.productId())
                 .manufactureDate(command.manufactureDate())
                 .status(LogType.INBOUND_WAIT) // 입고 스캔 시 '입고 대기' 상태
+                .franchiseId(command.franchiseId())
                 .build();
     }
 }

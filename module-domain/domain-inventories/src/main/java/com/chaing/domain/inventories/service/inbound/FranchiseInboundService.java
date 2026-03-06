@@ -3,7 +3,6 @@ package com.chaing.domain.inventories.service.inbound;
 import com.chaing.core.enums.LogType;
 import com.chaing.domain.inventories.dto.command.FranchiseInboundCreateCommand;
 import com.chaing.domain.inventories.dto.raw.FranchiseInventoryRawData;
-import com.chaing.domain.inventories.entity.FranchiseInventory;
 import com.chaing.domain.inventories.usecase.executor.Executor;
 import com.chaing.domain.inventories.usecase.reader.Reader;
 import com.chaing.domain.inventories.usecase.valiator.Validator;

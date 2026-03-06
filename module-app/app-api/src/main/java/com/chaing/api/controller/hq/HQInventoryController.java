@@ -1,6 +1,5 @@
 package com.chaing.api.controller.hq;
 
-
 import com.chaing.api.facade.hq.HQInventoryFacade;
 import com.chaing.core.dto.ApiResponse;
 import com.chaing.domain.inventories.dto.request.FranchiseInventoryItemsRequest;
@@ -42,28 +41,27 @@ public class HQInventoryController {
     public ResponseEntity<ApiResponse<List<HQInventoryProductResponse>>> getStock(
             @RequestParam(required = false) String productCode,
             @RequestParam(required = false) String name,
-            @RequestParam(required = false) String status
-    ) {
+            @RequestParam(required = false) String status) {
         StockSearchRequest request = new StockSearchRequest(productCode, name, status);
         return ResponseEntity.ok(
-                ApiResponse.success(hqInventoryFacade.getStock(request))
-        );
+                ApiResponse.success(hqInventoryFacade.getStock(request)));
     }
 
     @Operation(summary = "재고 증가", description = "재고 증가와 동시에 로그 기록합니다.")
     @PostMapping("/increase")
-    public ResponseEntity<ApiResponse<Void>> increaseInventory(@Valid @RequestBody InventoryBatchRequest inventoryBatchRequest){
+    public ResponseEntity<ApiResponse<Void>> increaseInventory(
+            @Valid @RequestBody InventoryBatchRequest inventoryBatchRequest) {
         return ResponseEntity.ok(ApiResponse.success(hqInventoryFacade.increaseInventory(inventoryBatchRequest)));
     }
 
     @Operation(summary = "재고 감소", description = "재고 감소와 동시에 로그 기록합니다.")
     @PostMapping("/decrease")
-    public ResponseEntity<ApiResponse<Void>> decreaseInventory(@Valid @RequestBody InventoryBatchRequest inventoryBatchRequest){
+    public ResponseEntity<ApiResponse<Void>> decreaseInventory(
+            @Valid @RequestBody InventoryBatchRequest inventoryBatchRequest) {
         return ResponseEntity.ok(ApiResponse.success(hqInventoryFacade.decreaseInventory(inventoryBatchRequest)));
     }
 
-    @Operation(summary = "재고 알림 조회", description = "안전재고 부족 및 유통기한 관련 알림 목록을 조회합니다."
-    )
+    @Operation(summary = "재고 알림 조회", description = "안전재고 부족 및 유통기한 관련 알림 목록을 조회합니다.")
     @GetMapping("/alerts")
     public ResponseEntity<ApiResponse<InventoryAlertResponse>> getInventoryAlerts() {
         return ResponseEntity.ok(ApiResponse.success(hqInventoryFacade.getInventoryAlerts()));
@@ -71,7 +69,8 @@ public class HQInventoryController {
 
     @Operation(summary = "원하는 상품의 중분류", description = "원하는 상품의 제조일자와 해당 수량목록을 가져옵니다.")
     @GetMapping("/batches/{productId}")
-    public ResponseEntity<ApiResponse<List<HQInventoryBatchResponse>>> getBatches(@PathVariable("productId") Long productId){
+    public ResponseEntity<ApiResponse<List<HQInventoryBatchResponse>>> getBatches(
+            @PathVariable("productId") Long productId) {
         return ResponseEntity.ok(ApiResponse.success(hqInventoryFacade.getBatches(productId)));
     }
 
@@ -82,9 +81,9 @@ public class HQInventoryController {
             @RequestParam(required = false) String serialCode,
             @RequestParam LocalDate manufactureDate,
             @RequestParam(required = false) LocalDate shippedAt,
-            @RequestParam(required = false) LocalDate receivedAt
-            ) {
-        HQInventoryItemsRequest request = new HQInventoryItemsRequest(productId, serialCode, manufactureDate, shippedAt, receivedAt);
+            @RequestParam(required = false) LocalDate receivedAt) {
+        HQInventoryItemsRequest request = new HQInventoryItemsRequest(productId, serialCode, manufactureDate, shippedAt,
+                receivedAt);
         return ResponseEntity.ok(ApiResponse.success(hqInventoryFacade.getItems(request)));
     }
 
@@ -94,7 +93,7 @@ public class HQInventoryController {
             @RequestParam(required = false) String productCode,
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String status,
-            @PathVariable Long franchiseId){
+            @PathVariable Long franchiseId) {
         StockSearchRequest request = new StockSearchRequest(productCode, name, status);
         return ResponseEntity.ok(ApiResponse.success(hqInventoryFacade.getFranchiseStock(franchiseId, request)));
     }
@@ -116,16 +115,17 @@ public class HQInventoryController {
             @RequestParam(required = false) String serialCode,
             @RequestParam(required = false) String boxCode,
             @RequestParam(required = false) LocalDate shippedAt,
-            @RequestParam(required = false) LocalDate receivedAt
-    ) {
-        FranchiseInventoryItemsRequest request = new FranchiseInventoryItemsRequest(productId,serialCode,boxCode,manufactureDate,shippedAt,receivedAt);
+            @RequestParam(required = false) LocalDate receivedAt) {
+        FranchiseInventoryItemsRequest request = new FranchiseInventoryItemsRequest(productId, serialCode, boxCode,
+                manufactureDate, shippedAt, receivedAt);
         return ResponseEntity.ok(ApiResponse.success(hqInventoryFacade.getFranchiseItems(franchiseId, request)));
     }
 
-//    @Operation(summary = "안전 재고 계산", description = "가맹점마다 상품 안전재고를 설정합니다.")
-    public ResponseEntity<ApiResponse<Void>> calculateSafetyStock(){
-        return ResponseEntity.ok(ApiResponse.success(hqInventoryFacade.calculateSafetyStock()));
+    @Operation(summary = "안전 재고 계산 상세 갱신", description = "최근 판매 데이터를 기반으로 모든 가맹점의 모든 상품 안전재고를 자동으로 재계산하여 갱신합니다.")
+    @PostMapping("/safety-stock/refresh")
+    public ResponseEntity<ApiResponse<Void>> calculateSafetyStock() {
+        hqInventoryFacade.calculateSafetyStock();
+        return ResponseEntity.ok(ApiResponse.success(null));
     }
-
 
 }

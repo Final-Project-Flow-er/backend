@@ -4,9 +4,10 @@ import com.chaing.core.enums.LogType;
 import com.chaing.domain.inventories.dto.response.SafetyStockResponse;
 import com.chaing.domain.inventories.entity.QFactoryInventory;
 import com.chaing.domain.inventories.entity.QFranchiseInventory;
-import com.chaing.domain.inventories.entity.QHQInventory;
 import com.chaing.domain.inventories.entity.QInventoryPolicy;
 import com.chaing.domain.inventories.enums.LocationType;
+import com.chaing.domain.inventories.exception.InventoryErrorCode;
+import com.chaing.domain.inventories.exception.InventoryException;
 import com.chaing.domain.inventories.repository.interfaces.InventoryPolicyRepositoryCustom;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
@@ -59,7 +60,7 @@ public class InventoryPolicyRepositoryImpl implements InventoryPolicyRepositoryC
             LocationType type =  LocationType.valueOf(locationType.toUpperCase());
             return QInventoryPolicy.inventoryPolicy.locationType.eq(type);
         }catch (IllegalArgumentException e){
-            throw new IllegalArgumentException("유효하지 않은 LocationType입니다: " + locationType);
+            throw new InventoryException(InventoryErrorCode.INVALID_LOCATION_TYPE);
         }
     }
 
@@ -67,7 +68,7 @@ public class InventoryPolicyRepositoryImpl implements InventoryPolicyRepositoryC
         try{
             return QInventoryPolicy.inventoryPolicy.locationId.eq(locationId);
         }catch (IllegalArgumentException e){
-            throw new IllegalArgumentException("유효하지 않은 LocationType입니다: " + locationId);
+            throw new InventoryException(InventoryErrorCode.INVALID_LOCATION_ID);
         }
     }
 

@@ -49,7 +49,7 @@ public class InboundController {
             @Valid @RequestBody InboundScanBoxRequest request,
             @AuthenticationPrincipal UserPrincipal userPrincipal
     ) {
-        inboundFacade.scanInboundBox(request, userPrincipal.getBusinessId());
+        inboundFacade.scanInboundBox(request, userPrincipal.getBusinessUnitId());
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

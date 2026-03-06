@@ -39,10 +39,12 @@ public class InboundFacade {
     private final InboundService<FactoryInboundCreateCommand, FactoryInventoryRawData> factoryInboundService;
     private final ProductService productService;
 
+    @Transactional
     public void scanInboundItem(@Valid InboundScanItemRequest request) {
         factoryInboundService.scanInbound(InboundScanItemRequest.from(request));
     }
 
+    @Transactional
     public void scanInboundBox(@Valid InboundScanBoxRequest request, Long franchiseId) {
         franchiseInboundService.scanInbound(InboundScanBoxRequest.toCommand(request, franchiseId));
     }
@@ -122,6 +124,7 @@ public class InboundFacade {
     }
 
     // 입고 승인
+    @Transactional
     public void confirmInbound(@Valid InboundConfirmRequest request, UserRole role) {
 
         List<Long> selectedList = request.inventoryIds();

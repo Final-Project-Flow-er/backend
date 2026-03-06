@@ -194,5 +194,17 @@ public class ProductService {
                                 .tradePrice(product.getSupplyPrice())
                                 .build()
                 ));
+    public Map<Long, Integer> getWeightsByProductIds(List<Long> productIds) {
+
+        List<Product> products = productRepository.findAllByProductIdIn(productIds);
+
+        Map<Long, Integer> weightMap = products.stream()
+                .collect(Collectors.toMap(Product::getProductId, Product::getWeight));
+
+        if (weightMap.size() != productIds.stream().distinct().count()) {
+                throw new ProductException(ProductErrorCode.PRODUCT_NOT_FOUND);
+        }
+
+        return weightMap;
     }
 }

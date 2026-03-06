@@ -7,6 +7,7 @@ import com.chaing.domain.orders.dto.request.FactoryOrderRequest;
 import com.chaing.domain.orders.dto.request.HQOrderCreateRequest;
 import com.chaing.domain.orders.dto.request.HQOrderItemCreateInfo;
 import com.chaing.domain.orders.dto.request.HQOrderItemUpdateRequest;
+import com.chaing.domain.orders.dto.response.HQOrderForTransitResponse;
 import com.chaing.domain.orders.entity.HeadOfficeOrder;
 import com.chaing.domain.orders.entity.HeadOfficeOrderItem;
 import com.chaing.domain.orders.enums.HQOrderStatus;
@@ -300,5 +301,51 @@ public class HQOrderService {
                         HeadOfficeOrder::getOrderCode,
                         HeadOfficeOrder::getOrderStatus
                 ));
+    }
+
+    public List<HQOrderForTransitResponse> getOrdersForTransit(List<Long> orderIds) {
+
+        if(orderIds == null || orderIds.isEmpty()) {
+            throw new HQOrderException(HQOrderErrorCode.INVALID_INPUT);
+        }
+
+        List<HeadOfficeOrderItem> allItems = orderItemRepository
+                .findByHeadOfficeOrder_HeadOfficeOrderIdInAndHeadOfficeOrder_OrderStatusAndDeletedAtIsNull(
+                        orderIds,
+                        HQOrderStatus.AWAITING
+                );
+
+        if (allItems.isEmpty()) {
+            throw new HQOrderException(HQOrderErrorCode.ORDER_ITEM_NOT_FOUND);
+        }
+
+        Map<HeadOfficeOrder, List<HeadOfficeOrderItem>> itemsByOrder = allItems.stream()
+                .collect(Collectors.groupingBy(HeadOfficeOrderItem::getHeadOfficeOrder));
+
+        long requestedCount = orderIds.stream().distinct().count();
+
+        if (itemsByOrder.size() != requestedCount) {
+            throw new HQOrderException(HQOrderErrorCode.ORDER_NOT_FOUND);
+        }
+
+        return itemsByOrder.entrySet().stream()
+                .map(entry -> {
+                    HeadOfficeOrder order = entry.getKey();
+                    List<HeadOfficeOrderItem> items = entry.getValue();
+
+                    List<HQOrderForTransitResponse.OrderItemForTransit> itemResponses = items.stream()
+                            .map(item -> new HQOrderForTransitResponse.OrderItemForTransit(
+                                    item.getProductId(),
+                                    item.getQuantity()
+                            ))
+                            .toList();
+
+                    return new HQOrderForTransitResponse(
+                            order.getHeadOfficeOrderId(),
+                            order.getOrderCode(),
+                            itemResponses
+                    );
+                })
+                .toList();
     }
 }

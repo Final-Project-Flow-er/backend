@@ -19,6 +19,7 @@ public class UserPrincipal implements UserDetails {
     private final String password;
     private final UserRole role;
     private final UserStatus status;
+    private final Long businessUnitId;
 
     public UserPrincipal(User user) {
         this.id = user.getUserId();
@@ -26,6 +27,7 @@ public class UserPrincipal implements UserDetails {
         this.password = user.getPassword();
         this.role = user.getRole();
         this.status = user.getStatus();
+        this.businessUnitId = user.getBusinessUnitId();
     }
 
     @Override

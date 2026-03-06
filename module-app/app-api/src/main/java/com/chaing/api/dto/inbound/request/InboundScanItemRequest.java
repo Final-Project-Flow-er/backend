@@ -16,7 +16,7 @@ public record InboundScanItemRequest(
         return new FactoryInboundCreateCommand(
                 request.serialCode().trim().toUpperCase(),
                 request.productId(),
-                request.manufactureDate
+                request.manufactureDate()
         );
     }
 }

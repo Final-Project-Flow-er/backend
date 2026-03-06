@@ -7,18 +7,18 @@ import com.chaing.domain.inventorylogs.enums.LocationType;
 import java.math.BigDecimal;
 
 public record InventoryLogCreateRequest(
-        Long productId,
-        String productName,
-        String boxCode,
-        String transactionCode,
-        LogType logType,
-        Integer quantity,
-        BigDecimal supplyPrice,
-        LocationType fromLocationType,
-        Long fromLocationId,
-        LocationType toLocationType,
-        Long toLocationId,
-        ActorType actorType,
-        Long actorId
-) {
+                Long productId,
+                String productName,
+                String boxCode,
+                String transactionCode,
+                LogType logType,
+                Integer quantity,
+                BigDecimal supplyPrice,
+                BigDecimal price,
+                LocationType fromLocationType,
+                Long fromLocationId,
+                LocationType toLocationType,
+                Long toLocationId,
+                ActorType actorType,
+                Long actorId) {
 }

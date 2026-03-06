@@ -2,6 +2,7 @@ package com.chaing.api.controller.franchise;
 
 import com.chaing.api.dto.franchise.sales.response.FranchiseSalesResponse;
 import com.chaing.api.facade.franchise.FranchiseSalesFacade;
+import com.chaing.api.security.principal.UserPrincipal;
 import com.chaing.core.dto.ApiResponse;
 import com.chaing.domain.sales.dto.request.FranchiseSellRequest;
 import com.chaing.domain.sales.dto.response.FranchiseSalesCancellationResponse;
@@ -11,6 +12,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -31,54 +34,57 @@ public class FranchiseSalesController {
 
     @Operation(summary = "미취소 판매 조회", description = "가맹점 id로 해당 가맹점의 판매 전체 조회")
     @GetMapping
-    public ResponseEntity<ApiResponse<List<FranchiseSalesResponse>>> getAllSales() {
-        //TODO: Spring Security Context에서 값 꺼내오는 걸로 수정해야 함
-        String username = "test";
+    @PreAuthorize("hasAnyRole('FRANCHISE', 'ADMIN')")
+    public ResponseEntity<ApiResponse<List<FranchiseSalesResponse>>> getAllSales(
+            @AuthenticationPrincipal UserPrincipal userPrincipal
+            ) {
+        Long userId = userPrincipal.getId();
 
-        return ResponseEntity.ok(ApiResponse.success(franchiseSalesFacade.getAllSales(username)));
+        return ResponseEntity.ok(ApiResponse.success(franchiseSalesFacade.getAllSales(userId)));
     }
 
     @Operation(summary = "취소 판매 조회", description = "가맹점 id로 해당 가맹점의 취소된 판매 전체 조회")
     @GetMapping("/canceled")
-    public ResponseEntity<ApiResponse<List<FranchiseSalesResponse>>> getAllCanceledSales() {
-        //TODO: Spring Security Context에서 값 꺼내오는 걸로 수정해야 함
-        String username = "test";
+    public ResponseEntity<ApiResponse<List<FranchiseSalesResponse>>> getAllCanceledSales(
+            @AuthenticationPrincipal UserPrincipal userPrincipal
+    ) {
+        Long userId = userPrincipal.getId();
 
-        return ResponseEntity.ok(ApiResponse.success(franchiseSalesFacade.getAllCanceledSales(username)));
+        return ResponseEntity.ok(ApiResponse.success(franchiseSalesFacade.getAllCanceledSales(userId)));
     }
 
     @Operation(summary = "판매 세부정보 조회", description = "가맹점 id와 판매 코드로 판매 세부사항 조회")
     @GetMapping("/{sales-code}")
     public ResponseEntity<ApiResponse<FranchiseSalesDetailResponse>> getSalesDetail(
-            @PathVariable("sales-code") String salesCode
+            @PathVariable("sales-code") String salesCode,
+            @AuthenticationPrincipal UserPrincipal userPrincipal
     ) {
-        //TODO: Spring Security Context에서 값 꺼내오는 걸로 수정해야 함
-        String username = "test";
+        Long userId = userPrincipal.getId();
 
-        return ResponseEntity.ok(ApiResponse.success(franchiseSalesFacade.getSalesDetail(username, salesCode)));
+        return ResponseEntity.ok(ApiResponse.success(franchiseSalesFacade.getSalesDetail(userId, salesCode)));
     }
 
     @Operation(summary = "판매 취소", description = "가맹점 id와 판매 코드로 특정 판매 취소")
     @PatchMapping("/{sales-code}")
     public ResponseEntity<ApiResponse<FranchiseSalesCancellationResponse>> cancelSales(
-            @PathVariable("sales-code") String salesCode
+            @PathVariable("sales-code") String salesCode,
+            @AuthenticationPrincipal UserPrincipal userPrincipal
     ) {
-        //TODO: Spring Security Context에서 값 꺼내오는 걸로 수정해야 함
-        String username = "test";
+        Long userId = userPrincipal.getId();
 
-        return ResponseEntity.ok(ApiResponse.success(franchiseSalesFacade.cancel(username, salesCode)));
+        return ResponseEntity.ok(ApiResponse.success(franchiseSalesFacade.cancel(userId, salesCode)));
     }
 
     @Operation(summary = "판매 생성", description = "가맹점 id로 판매 생성")
     @PostMapping
     public ResponseEntity<ApiResponse<FranchiseSellResponse>> createSale(
-            @RequestBody FranchiseSellRequest request
+            @RequestBody FranchiseSellRequest request,
+            @AuthenticationPrincipal UserPrincipal userPrincipal
     ) {
-        //TODO: Spring Security Context에서 값 꺼내오는 걸로 수정해야 함
-        String username = "test";
+        Long userId = userPrincipal.getId();
 
         //TODO: request의 product 검증 -> 해야하나? 잘 모르겠네 아직은
 
-        return ResponseEntity.ok(ApiResponse.success(franchiseSalesFacade.sell(username, request)));
+        return ResponseEntity.ok(ApiResponse.success(franchiseSalesFacade.sell(userId, request)));
     }
 }

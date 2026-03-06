@@ -3,7 +3,7 @@ package com.chaing.domain.returns.dto.response;
 import com.chaing.domain.returns.dto.command.ReturnItemInspection;
 import lombok.Builder;
 
-import java.util.Map;
+import java.util.List;
 
 @Builder
 public record HQReturnUpdateResponse(
@@ -11,6 +11,6 @@ public record HQReturnUpdateResponse(
 
         String returnCode,
 
-        Map<String, ReturnItemInspection> inspectionBySerialCode
+        List<ReturnItemInspection> inspectionBySerialCode
 ) {
 }

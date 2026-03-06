@@ -1,4 +1,4 @@
-package com.chaing.api.dto.franchise.orders.request;
+package com.chaing.domain.orders.dto.request;
 
 import com.chaing.domain.orders.dto.command.FranchiseOrderCreateCommand;
 import com.chaing.domain.orders.dto.info.FranchiseOrderCreateInfo;

@@ -115,4 +115,21 @@ public class UserManagementService {
         User user = getUserById(userId);
         user.delete();
     }
+
+    // franchiseId 조회
+    public Long getFranchiseIdByUserId(Long userId) {
+        User user = getUserById(userId);
+        return user.getFranchiseId();
+    }
+
+    // username 조회
+    public String getUsernameByUserId(Long userId) {
+        User user = getUserById(userId);
+        return user.getUsername();
+    }
+
+    public String getPhoneNumberByUserId(Long userId) {
+        User user = getUserById(userId);
+        return user.getPhone();
+    }
 }

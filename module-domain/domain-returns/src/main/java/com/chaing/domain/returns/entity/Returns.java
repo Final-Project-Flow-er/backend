@@ -41,10 +41,7 @@ public class Returns extends BaseEntity {
     private String returnCode;
 
     @Column(nullable = false)
-    private String username;
-
-    @Column(nullable = false)
-    private String phoneNumber;
+    private Long userId;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)

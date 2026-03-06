@@ -1,8 +1,7 @@
 package com.chaing.api.controller.inbound;
 
-import com.chaing.api.dto.inbound.request.InboundBoxSummaryRequest;
+import com.chaing.api.dto.inbound.request.InboundBoxDetailRequest;
 import com.chaing.api.dto.inbound.request.InboundConfirmRequest;
-import com.chaing.api.dto.inbound.request.InboundDetailRequest;
 import com.chaing.api.dto.inbound.request.InboundScanBoxRequest;
 import com.chaing.api.dto.inbound.request.InboundScanItemRequest;
 import com.chaing.api.dto.inbound.response.InboundBoxSummaryResponse;
@@ -10,8 +9,7 @@ import com.chaing.api.dto.inbound.response.InboundDetailResponse;
 import com.chaing.api.facade.inbound.InboundFacade;
 import com.chaing.api.security.principal.UserPrincipal;
 import com.chaing.core.dto.ApiResponse;
-import com.chaing.domain.businessunits.entity.Franchise;
-import com.chaing.domain.users.entity.User;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +34,7 @@ public class InboundController {
 
     // 입고 스캔(공장)
     @PostMapping("/scan/item")
+    @Operation(summary = "공장 입고 스캔", description = "생산된 제품의 바코드를 스캔하여 정보를 확인합니다.")
     public ResponseEntity<ApiResponse<Void>> scanInboundItems(
             @Valid @RequestBody InboundScanItemRequest request
     ) {
@@ -45,34 +44,46 @@ public class InboundController {
 
     // 입고 스캔(가맹)
     @PostMapping("/scan/box")
+    @Operation(summary = "가맹점 입고 스캔", description = "입고된 박스의 바코드를 스캔하여 정보를 확인합니다.")
     public ResponseEntity<ApiResponse<Void>> scanInboundBoxes(
             @Valid @RequestBody InboundScanBoxRequest request,
             @AuthenticationPrincipal UserPrincipal userPrincipal
     ) {
-        inboundFacade.scanInboundBox(request, userPrincipal);
+        inboundFacade.scanInboundBox(request, userPrincipal.getBusinessId());
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    // 입고 대기 박스 목록 조회
+    // 가맹점 입고 대기 박스 목록 조회
     @GetMapping("/boxes")
+    @Operation(summary = "입고 대기 박스 목록 조회", description = "현재 입고 대기 중인 박스들의 요약 목록을 조회합니다.")
     public ResponseEntity<ApiResponse<List<InboundBoxSummaryResponse>>> getInboundBoxList(
-            @Valid InboundBoxSummaryRequest request
-    ) {
-        List<InboundBoxSummaryResponse> responses = inboundFacade.getPendingBoxes(request);
+            @AuthenticationPrincipal UserPrincipal userPrincipal
+            ) {
+        List<InboundBoxSummaryResponse> responses = inboundFacade.getPendingBoxes(userPrincipal.getBusinessId());
         return ResponseEntity.ok(ApiResponse.success(responses));
     }
 
-    // 입고 대기 세부 목록 조회
-    @GetMapping("/items")
+    // 가맹점 입고 대기 세부 목록 조회
+    @GetMapping("/boxes/{boxCode}")
+    @Operation(summary = "입고 대기 세부 목록 조회", description = "입고 대기 중인 박스나 상세 품목 리스트를 조회합니다.")
     public ResponseEntity<ApiResponse<List<InboundDetailResponse>>> getInboundItemDetails(
-            @Valid InboundDetailRequest request
+            @Valid InboundBoxDetailRequest request
     ) {
-        List<InboundDetailResponse> responses = inboundFacade.getPendingItems(request);
+        List<InboundDetailResponse> responses = inboundFacade.getPendingBoxDetails(request.boxCode());
+        return ResponseEntity.ok(ApiResponse.success(responses));
+    }
+
+    // 공장 입고 대기 세부 목록 조회
+    @GetMapping("/items")
+    @Operation(summary = "입고 대기 세부 목록 조회", description = "현재 입고 대기 중인 상세 품목 리스트를 조회합니다.")
+    public ResponseEntity<ApiResponse<List<InboundDetailResponse>>> getInboundItemDetails() {
+        List<InboundDetailResponse> responses = inboundFacade.getPendingItems();
         return ResponseEntity.ok(ApiResponse.success(responses));
     }
 
     // 입고 승인
     @PatchMapping("/confirm")
+    @Operation(summary = "입고 승인", description = "해당 제품의 입고를 승인합니다.")
     public ResponseEntity<ApiResponse<Void>> updateInboundStatus(
             @Valid @RequestBody InboundConfirmRequest request
     ){

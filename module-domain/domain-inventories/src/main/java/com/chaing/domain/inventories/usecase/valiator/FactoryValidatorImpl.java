@@ -1,6 +1,8 @@
 package com.chaing.domain.inventories.usecase.valiator;
 
 import com.chaing.domain.inventories.dto.command.FactoryInboundCreateCommand;
+import com.chaing.domain.inventories.dto.raw.FactoryInventoryRawData;
+import com.chaing.domain.inventories.dto.raw.FranchiseInventoryRawData;
 import com.chaing.domain.inventories.exception.InventoriesErrorCode;
 import com.chaing.domain.inventories.exception.InventoriesException;
 import com.chaing.domain.inventories.usecase.reader.Reader;
@@ -9,11 +11,12 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Component
 @Qualifier("factory")
 @RequiredArgsConstructor
-public class FactoryValidatorImpl implements Validator<FactoryInboundCreateCommand> {
+public class FactoryValidatorImpl implements Validator<FactoryInboundCreateCommand, FactoryInventoryRawData> {
 
     @Qualifier("factory")
     private final Reader reader;
@@ -54,6 +57,25 @@ public class FactoryValidatorImpl implements Validator<FactoryInboundCreateComma
         // 날짜 유효성 확인
         if(date.isAfter(LocalDate.now())){
             throw new InventoriesException(InventoriesErrorCode.INVALID_MANUFACTURED_DATE);
+        }
+    }
+
+    @Override
+    public void checkPendingDataExistence(List<FactoryInventoryRawData> entities) {
+        if(entities.isEmpty() || entities == null) {
+            throw new InventoriesException(InventoriesErrorCode.INVENTORIES_IS_NULL);
+        }
+
+        for (FactoryInventoryRawData entity : entities) {
+            if(entity.status() == null) {
+                throw new InventoriesException(InventoriesErrorCode.INVENTORIES_IS_INVALID);
+            }
+            if(entity.serialCode() == null) {
+                throw new InventoriesException(InventoriesErrorCode.INVENTORIES_IS_INVALID);
+            }
+            if(entity.manufactureDate() == null) {
+                throw new InventoriesException(InventoriesErrorCode.INVENTORIES_IS_INVALID);
+            }
         }
     }
 }

@@ -9,4 +9,6 @@ import java.util.List;
 @Repository
 public interface FranchiseInventoryRepository extends JpaRepository<FranchiseInventory, Long> {
     List<FranchiseInventory> findAllBySerialCodeIn(List<String> serialCodes);
+
+    List<FranchiseInventory> findAllByStatusInboundWait();
 }

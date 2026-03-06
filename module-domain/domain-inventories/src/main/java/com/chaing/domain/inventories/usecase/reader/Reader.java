@@ -1,5 +1,9 @@
 package com.chaing.domain.inventories.usecase.reader;
 
-public interface Reader {
+import java.util.List;
+
+public interface Reader<R> {
     boolean existsBySerialCode(String serialCode);
+
+    List<R> findAllByStatusWait();
 }

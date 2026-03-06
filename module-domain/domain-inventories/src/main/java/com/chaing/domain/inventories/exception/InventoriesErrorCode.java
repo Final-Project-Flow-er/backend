@@ -12,7 +12,9 @@ public enum InventoriesErrorCode implements ErrorCode {
     INVENTORIES_SERIAL_CODE_IS_NULL(400, "IV002", "제품 식별 코드가 누락되었습니다."),
     INVALID_SERIAL_CODE(400, "IV003", "제품 식별 코드가 유효하지 않습니다."),
     INVENTORIES_MANUFACTURED_DATE_IS_NULL(400, "IV004", "제조일자가 누락되었습니다."),
-    INVALID_MANUFACTURED_DATE(400, "IV005", "제조일자가 유효하지 않습니다.");
+    INVALID_MANUFACTURED_DATE(400, "IV005", "제조일자가 유효하지 않습니다."),
+    INVENTORIES_IS_NULL(400, "IV006", "해당 제품이 존재하지 않습니다."),
+    INVENTORIES_IS_INVALID(400, "IV007", "해당 상품의 정보가 누락되었습니다.");
 
     private final Integer status;
     private final String code;

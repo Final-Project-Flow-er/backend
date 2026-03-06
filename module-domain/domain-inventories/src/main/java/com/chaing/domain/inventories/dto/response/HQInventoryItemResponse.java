@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 public record HQInventoryItemResponse(
         String serialCode,
         String boxCode,
-        LocalDate manufactureDate,
+        String status,
         LocalDateTime shippedAt,        // 배송 완료 일자
         LocalDateTime receivedAt        // 입고 완료 일자
 ) {

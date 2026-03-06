@@ -1,6 +1,6 @@
 package com.chaing.domain.inventorylogs.service;
 
-
+import com.chaing.core.enums.LogType;
 import com.chaing.domain.inventorylogs.dto.request.FactoryLogRequest;
 import com.chaing.domain.inventorylogs.dto.request.FranchiseLogRequest;
 import com.chaing.domain.inventorylogs.dto.request.InventoryLogCreateRequest;
@@ -9,6 +9,7 @@ import com.chaing.domain.inventorylogs.dto.response.FranchiseInventoryLogListRes
 import com.chaing.domain.inventorylogs.dto.response.FranchiseProductSalesResponse;
 import com.chaing.domain.inventorylogs.dto.response.InventoryLogListResponse;
 import com.chaing.domain.inventorylogs.entity.InventoryLog;
+import com.chaing.domain.inventorylogs.enums.ActorType;
 import com.chaing.domain.inventorylogs.repository.InventoryLogRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -33,12 +34,13 @@ public class InventoryLogService {
         return inventoryLogRepository.findDisposalLogs(logRequest);
     }
 
-
-    public FranchiseInventoryLogListResponse findFranchiseInboundOutboundLogs(Long franchiseId, FranchiseLogRequest request) {
+    public FranchiseInventoryLogListResponse findFranchiseInboundOutboundLogs(Long franchiseId,
+            FranchiseLogRequest request) {
         return inventoryLogRepository.findFranchiseInboundOutboundLogs(franchiseId, request);
     }
 
-    public FranchiseInventoryLogListResponse findFranchiseSalesRefundLogs(Long franchiseId, FranchiseLogRequest request) {
+    public FranchiseInventoryLogListResponse findFranchiseSalesRefundLogs(Long franchiseId,
+            FranchiseLogRequest request) {
         return inventoryLogRepository.findFranchiseSalesRefundLogs(franchiseId, request);
     }
 
@@ -46,8 +48,8 @@ public class InventoryLogService {
         return inventoryLogRepository.findFactoryInventoryLogs(factoryId, request);
     }
 
-    public List<FranchiseProductSalesResponse> getProductSales(List<Long> franchiseIds, List<Long> productIds) {
-        return inventoryLogRepository.getProductSales(franchiseIds, productIds);
+    public List<FranchiseProductSalesResponse> getProductSales(List<Long> actorIds, List<Long> productIds, ActorType actorType, LogType logType) {
+        return inventoryLogRepository.getProductSales(actorIds, productIds, actorType, logType);
     }
 
     public void recordInventoryLog(List<InventoryLogCreateRequest> logs) {
@@ -64,9 +66,10 @@ public class InventoryLogService {
                 .productName(request.productName())
                 .boxCode(request.boxCode())
                 .transactionCode(request.transactionCode())
-                .logType(request.logType())             // 받을 때 스캔하면 INBOUND, 보낼때 스캔하면 OUTBOUND
+                .logType(request.logType()) // 받을 때 스캔하면 INBOUND, 보낼때 스캔하면 OUTBOUND
                 .quantity(request.quantity())
                 .supplyPrice(request.supplyPrice())
+                .price(request.price())
                 .fromLocationType(request.fromLocationType())
                 .fromLocationId(request.fromLocationId())
                 .toLocationType(request.toLocationType())

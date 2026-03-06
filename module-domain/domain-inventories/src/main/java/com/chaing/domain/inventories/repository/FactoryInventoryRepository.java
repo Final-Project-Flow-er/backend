@@ -11,7 +11,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface FactoryInventoryRepository extends JpaRepository<FactoryInventory,Integer> {
+public interface FactoryInventoryRepository extends JpaRepository<FactoryInventory,Long> {
 
     List<FactoryInventory> findAllByStatus(LogType status);
 

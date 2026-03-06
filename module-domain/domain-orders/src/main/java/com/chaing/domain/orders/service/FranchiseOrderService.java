@@ -45,7 +45,7 @@ public class FranchiseOrderService {
         List<FranchiseOrder> orders = franchiseOrderRepository.findAllByFranchiseIdAndUserId(franchiseId, userId);
 
         if (orders == null || orders.isEmpty()) {
-            throw new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_NOT_FOUND);
+            throw new OrderException(OrderErrorCode.ORDER_NOT_FOUND);
         }
 
         return orders.stream()
@@ -56,7 +56,8 @@ public class FranchiseOrderService {
 
     // 발주 번호에 따른 가맹점 특정 발주 조회
     public FranchiseOrderDetailCommand getOrderByOrderCode(Long franchiseId, Long userId, String orderCode) {
-        FranchiseOrder order = franchiseOrderRepository.findByFranchiseIdAndUserIdAndOrderCodeAndDeletedAtIsNull(franchiseId, userId, orderCode).orElseThrow(() -> new OrderException(OrderErrorCode.ORDER_NOT_FOUND));
+        FranchiseOrder order = franchiseOrderRepository.findByFranchiseIdAndUserIdAndOrderCodeAndDeletedAtIsNull(franchiseId, userId, orderCode)
+                .orElseThrow(() -> new OrderException(OrderErrorCode.ORDER_NOT_FOUND));
 
         return FranchiseOrderDetailCommand.from(order);
     }
@@ -65,7 +66,11 @@ public class FranchiseOrderService {
     public List<FranchiseOrderItemDetailResponse> updateOrder(Long orderId, Map<Long, FranchiseOrderUpdateRequest> requestByProductId, Map<Long, ProductInfo> productInfoByProductId) {
         // 발주 조회
         FranchiseOrder order = franchiseOrderRepository.findByFranchiseOrderIdAndDeletedAtIsNull(orderId)
-                .orElseThrow(() -> new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_NOT_FOUND));
+                .orElseThrow(() -> new OrderException(OrderErrorCode.ORDER_NOT_FOUND));
+
+        if (!order.getOrderStatus().equals(FranchiseOrderStatus.PENDING)) {
+            throw new OrderException(OrderErrorCode.INVALID_STATUS);
+        }
 
         // 발주 제품 조회
         List<FranchiseOrderItem> items = franchiseOrderItemRepository.findAllByFranchiseOrder_FranchiseOrderIdAndDeletedAtIsNull(orderId);
@@ -123,7 +128,7 @@ public class FranchiseOrderService {
     // 가맹점 발주 취소
     public FranchiseOrderCancelResponse cancelOrder(Long userId, Long franchiseId, String orderCode) {
         FranchiseOrder order = franchiseOrderRepository.findByFranchiseIdAndUserIdAndOrderCodeAndDeletedAtIsNull(franchiseId, userId, orderCode)
-                .orElseThrow(() -> new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_NOT_FOUND));
+                .orElseThrow(() -> new OrderException(OrderErrorCode.ORDER_NOT_FOUND));
 
         order.cancel();
 
@@ -139,6 +144,12 @@ public class FranchiseOrderService {
         BigDecimal totalPrice = request.items().stream()
                 .map(item -> productInfoByProductCode.get(item.productCode()).retailPrice().multiply(BigDecimal.valueOf(item.quantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        request.items().forEach(item -> {
+            if (item.quantity() < 1) {
+                throw new OrderException(OrderErrorCode.INVALID_QUANTITY);
+            }
+        });
 
         // 발주 생성
         FranchiseOrder order = FranchiseOrder.builder()
@@ -164,18 +175,6 @@ public class FranchiseOrderService {
         return UUID.randomUUID().toString();
     }
 
-    // orderId에 대한 발주 코드 반환
-    public Map<Long, String> getAllOrderCode(List<Long> orderIds) {
-        // orderId에 해당하는 발주 조회
-        List<FranchiseOrder> orders = franchiseOrderRepository.findAllByFranchiseOrderIdInAndDeletedAtIsNull(orderIds);
-
-        return orders.stream().collect(Collectors.toMap(FranchiseOrder::getFranchiseOrderId, FranchiseOrder::getOrderCode));
-    }
-
-    // orderId, franchiseId에 대한 orderCode 반환
-    public String getOrderCode(Long franchiseId, Long orderId) {
-        return franchiseOrderRepository.findByFranchiseIdAndFranchiseOrderId(franchiseId, orderId).orElseThrow(() -> new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_NOT_FOUND)).getOrderCode();
-    }
 
     // 반품 대상이 되는 발주 반환
     public List<FranchiseReturnTargetResponse> getAllTargetOrders(Long franchiseId, Long userId, String username) {

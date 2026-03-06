@@ -90,6 +90,7 @@ public class ProductService {
             syncComponents(productId, req.componentIds());
         }
     }
+
     public void createProductTypes(String type, String productName) {
         if (productTypeRepository.existsByProductType(type)) {
             throw new ProductException(ProductErrorCode.DUPLICATE_PRODUCT_CODE);
@@ -157,9 +158,12 @@ public class ProductService {
     }
 
     public Map<Long, ProductInfo> getProductInfos(List<Long> productIds) {
+        List<Product> products = productRepository.findAllByProductIdIn(productIds);
 
-
-        return productRepository.findAllByProductIdIn(productIds).stream()
+        if (products == null || products.isEmpty()) {
+            throw new ProductException(ProductErrorCode.PRODUCT_NOT_FOUND);
+        }
+        return products.stream()
                 .collect(Collectors.toMap(
                         Product::getProductId,
                         entry -> ProductInfo.builder()

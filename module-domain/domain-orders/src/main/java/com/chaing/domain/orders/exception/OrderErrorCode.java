@@ -14,7 +14,8 @@ public enum OrderErrorCode implements ErrorCode {
     ORDER_ITEM_NOT_FOUND(404, "", "해당 발주의 제품을 찾을 수 없습니다."),
 
     // 400 BAD REQUEST
-    INVALID_QUANTITY(404, "", "수량이 올바르지 않습니다.");
+    INVALID_QUANTITY(404, "", "수량이 올바르지 않습니다."),
+    INVALID_STATUS(404, "", "발주의 상태가 올바르지 않습니다.");
 
     private final Integer status;
     private final String code;

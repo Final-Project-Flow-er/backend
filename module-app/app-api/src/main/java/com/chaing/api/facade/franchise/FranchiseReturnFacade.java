@@ -331,7 +331,10 @@ public class FranchiseReturnFacade {
         Map<Long, List<FranchiseOrderItemCommand>> orderItems = franchiseOrderService.getOrderItemsByOrderId(order.orderId());
 
         // List<orderItemId>
-        List<Long> orderItemIds = orderItems.keySet().stream().toList();
+        List<Long> orderItemIds = orderItems.values().stream()
+                .flatMap(List::stream)
+                .map(FranchiseOrderItemCommand::orderItemId)
+                .toList();
 
         // Map<orderItemId, FranchiseInventoryCommand>
         Map<Long, FranchiseInventoryCommand> inventoryByOrderItemId = inventoryService.getInventoriesByOrderItemIds(orderItemIds);

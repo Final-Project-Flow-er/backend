@@ -20,8 +20,10 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -87,26 +89,27 @@ public class FranchiseReturnService {
                         Function.identity()
                 ));
 
-        // 수정
-        boxCodes.forEach(boxCode -> {
-            if (!originalItems.containsKey(boxCode)) {
-                // 추가
-                ReturnItem returnItem = franchiseReturnItemRepository.save(
-                        ReturnItem.builder()
-                                .returns(returns)
-                                .franchiseOrderItemId(orderItemIdByBoxCode.get(boxCode))
-                                .boxCode(boxCode)
-                                .build()
-                );
-                originalItems.put(boxCode, returnItem);
-            } else {
-                // 삭제
-                originalItems.remove(boxCode);
-            }
-        });
+        Set<String> requestedBoxCodes = new HashSet<>(boxCodes);
 
-        // 수정사항 반영
-        franchiseReturnItemRepository.saveAll(originalItems.values());
+        // 삭제: DB에 있지만 요청에 없는 것
+        List<ReturnItem> itemsToDelete = items.stream()
+                .filter(item -> !requestedBoxCodes.contains(item.getBoxCode()))
+                .toList();
+
+        // 추가: 요청에 있지만 DB에 없는 것
+        List<ReturnItem> itemsToAdd = boxCodes.stream()
+                .filter(boxCode -> !originalItems.containsKey(boxCode))
+                .map(boxCode -> ReturnItem.builder()
+                        .returns(returns)
+                        .franchiseOrderItemId(orderItemIdByBoxCode.get(boxCode))
+                        .boxCode(boxCode)
+                        .build())
+                .toList();
+
+        // 유지: 양쪽에 다 있는 것 → 아무것도 안 함
+
+        franchiseReturnItemRepository.deleteAll(itemsToDelete);
+        franchiseReturnItemRepository.saveAll(itemsToAdd);
 
         // 반환
         return originalItems.values().stream()

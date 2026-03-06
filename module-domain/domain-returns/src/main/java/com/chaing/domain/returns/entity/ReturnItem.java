@@ -41,7 +41,7 @@ public class ReturnItem extends BaseEntity {
 
     @Column(nullable = false)
     @Builder.Default
-    private Boolean isInspected = false;
+    private Boolean isInspected = false;    // 삭제 예정
 
     @Column(nullable = false)
     private String boxCode;

@@ -21,14 +21,11 @@ public record InventoryLogResponse(
         // 유형 (반품입고 / 반품출고 / 폐기)
         LogType logType,
 
-        // 수량 (박스)
-        Integer boxQuantity,
-
         // 보낸 곳
-        String fromLocationCode,
+        Long fromLocationId,
 
         // 받는 곳
-        String toLocationCode,
+        Long toLocationId,
 
         // 공급가
         BigDecimal supplyPrice,

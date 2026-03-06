@@ -1,6 +1,5 @@
 package com.chaing.api.controller.inbound;
 
-import com.chaing.api.dto.inbound.request.InboundBoxDetailRequest;
 import com.chaing.api.dto.inbound.request.InboundConfirmRequest;
 import com.chaing.api.dto.inbound.request.InboundScanBoxRequest;
 import com.chaing.api.dto.inbound.request.InboundScanItemRequest;
@@ -17,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -67,9 +67,10 @@ public class InboundController {
     @GetMapping("/boxes/{boxCode}")
     @Operation(summary = "입고 대기 세부 목록 조회", description = "입고 대기 중인 박스나 상세 품목 리스트를 조회합니다.")
     public ResponseEntity<ApiResponse<List<InboundDetailResponse>>> getInboundItemDetails(
-            @Valid InboundBoxDetailRequest request
+//            @Valid @RequestBody InboundBoxDetailRequest request
+            @PathVariable String boxCode
     ) {
-        List<InboundDetailResponse> responses = inboundFacade.getPendingBoxDetails(request.boxCode());
+        List<InboundDetailResponse> responses = inboundFacade.getPendingBoxDetails(boxCode);
         return ResponseEntity.ok(ApiResponse.success(responses));
     }
 

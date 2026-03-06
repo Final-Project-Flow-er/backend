@@ -62,14 +62,6 @@ public class FranchiseReturnService {
         return ReturnCommand.from(returns);
     }
 
-    // returnCode로 orderItemId 반환
-    public List<Long> getAllReturnItemOrderItemId(String returnCode) {
-        return franchiseReturnItemRepository.findAllByReturns_ReturnCodeAndDeletedAtIsNull(returnCode)
-                .stream()
-                .map(ReturnItem::getFranchiseOrderItemId)
-                .toList();
-    }
-
     // 반품 제품 수정
     public List<ReturnItemCommand> updateReturnItems(List<String> boxCodes, String returnCode, Map<Long, FranchiseInventoryCommand> inventoryByBoxCode) {
         // 반품 조회
@@ -198,22 +190,6 @@ public class FranchiseReturnService {
                 ));
     }
 
-    // 대기 상태의 반품 제품 조회
-    // return: Map<returnId, List<ReturnAndOrderInfo>>
-    public Map<Long, List<ReturnItemCommand>> getAllReturnItemByStatus(ReturnStatus status) {
-        List<ReturnItem> items = franchiseReturnItemRepository.findAllByReturns_ReturnStatus(status);
-
-        if (items == null || items.isEmpty()) {
-            throw new FranchiseReturnException(FranchiseReturnErrorCode.RETURN_ITEM_NOT_FOUND);
-        }
-
-        return items.stream()
-                .collect(Collectors.groupingBy(
-                        item -> item.getReturns().getReturnId(),
-                        Collectors.mapping(ReturnItemCommand::from, Collectors.toList())
-                ));
-    }
-
     // 대기 상태가 아닌 반품 요청 조회
     // return: Map<returnId, HQReturnCommand>
     public Map<Long, HQReturnCommand> getAllNotPendingReturn() {
@@ -223,22 +199,6 @@ public class FranchiseReturnService {
                 .collect(Collectors.toMap(
                         Returns::getReturnId,
                         HQReturnCommand::from
-                ));
-    }
-
-    // 대기 상태가 아닌 반품 제품 조회
-    // Map<returnId, List<ReturnItemInfo>>
-    public Map<Long, List<ReturnItemCommand>> getAllNotPendingReturnItem() {
-        List<ReturnItem> items = franchiseReturnItemRepository.findAllByReturns_ReturnStatusNot(ReturnStatus.PENDING);
-
-        if (items == null || items.isEmpty()) {
-            throw new FranchiseReturnException(FranchiseReturnErrorCode.RETURN_ITEM_NOT_FOUND);
-        }
-
-        return items.stream()
-                .collect(Collectors.groupingBy(
-                        item -> item.getReturns().getReturnId(),
-                        Collectors.mapping(ReturnItemCommand::from, Collectors.toList())
                 ));
     }
 

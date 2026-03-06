@@ -39,7 +39,7 @@ public class InventoryService {
 
     // 대분류
     public Map<Long, InventoryProductInfoResponse> getStock(List<Long> ids, String status) {
-        return factoryInventoryRepository.getStock(ids,status);
+        return factoryInventoryRepository.getStock(ids, status);
     }
 
     // 중분류
@@ -59,11 +59,12 @@ public class InventoryService {
 
     // 가맹점 중분류
     public List<FranchiseInventoryBatchResponse> getFranchiseBatches(Long franchiseId, Long productId) {
-        return franchiseInventoryRepository.getFranchiseBatches(franchiseId,productId);
+        return franchiseInventoryRepository.getFranchiseBatches(franchiseId, productId);
     }
 
     // 가맹점 소분류
-    public List<FranchiseInventoryItemResponse> getFranchiseItems(Long franchiseId, FranchiseInventoryItemsRequest request) {
+    public List<FranchiseInventoryItemResponse> getFranchiseItems(Long franchiseId,
+            FranchiseInventoryItemsRequest request) {
         return franchiseInventoryRepository.getFranchiseItems(franchiseId, request);
     }
 
@@ -72,17 +73,16 @@ public class InventoryService {
     }
 
     // 안전재고 업데이트
-    public void updateSafetyStock(Long franchiseId, Long productId, int safetyStock) {
+    public void updateSafetyStock(LocationType locationType, Long locationId, Long productId, int safetyStock) {
 
         InventoryPolicy policy = inventoryPolicyRepository
                 .findByLocationTypeAndLocationIdAndProductId(
-                        LocationType.FRANCHISE,
-                        franchiseId,
-                        productId
-                )
+                        locationType,
+                        locationId,
+                        productId)
                 .orElseGet(() -> InventoryPolicy.builder()
-                        .locationType(LocationType.FRANCHISE)
-                        .locationId(franchiseId)
+                        .locationType(locationType)
+                        .locationId(locationId)
                         .productId(productId)
                         .build());
 
@@ -105,7 +105,7 @@ public class InventoryService {
 
     // 유통기한
     public List<ExpirationBatchResultResponse> getExpirationAlerts(String locationType, Long locationId) {
-        return factoryInventoryRepository.getExpirationAlerts(locationType,locationId);
+        return factoryInventoryRepository.getExpirationAlerts(locationType, locationId);
     }
 
     // 배송 중 상태 변경
@@ -123,58 +123,49 @@ public class InventoryService {
 
     // 가맹점 상품 증가
     public void franchiseIncreaseInventory(@Valid InventoryBatchRequest request) {
-        List<FranchiseInventory> inventories =
-                request.boxes().stream()
-                        .flatMap(box -> box.productList().stream()
-                                .map(product ->
-                                        FranchiseInventory.builder()
-                                                .serialCode(product.serialCode())
-                                                .productId(product.productId())
-                                                .manufactureDate(product.manufactureDate())
-                                                .franchiseId(request.fromLocationId())
-                                                .status(product.productLogType())
-                                                .boxCode(box.boxCode())
-                                                .orderCode(request.transactionCode())
-                                                .shippedAt(request.shippedAt()) // 배송 완료 시간 추가
-                                                .build()
-                                ))
-                        .toList();
+        List<FranchiseInventory> inventories = request.boxes().stream()
+                .flatMap(box -> box.productList().stream()
+                        .map(product -> FranchiseInventory.builder()
+                                .serialCode(product.serialCode())
+                                .productId(product.productId())
+                                .manufactureDate(product.manufactureDate())
+                                .franchiseId(request.toLocationId()) // 목적지로 재고가 추가되어야 함
+                                .status(product.productLogType())
+                                .boxCode(box.boxCode())
+                                .orderCode(request.transactionCode())
+                                .shippedAt(request.shippedAt()) // 배송 완료 시간 추가
+                                .build()))
+                .toList();
         franchiseInventoryRepository.saveAll(inventories);
     }
 
     public void factoryIncreaseInventory(@Valid InventoryBatchRequest request) {
-        List<FactoryInventory> inventories =
-                request.boxes().stream()
-                        .flatMap(box -> box.productList().stream()
-                                .map(product ->
-                                        FactoryInventory.builder()
-                                                .serialCode(product.serialCode())
-                                                .productId(product.productId())
-                                                .manufactureDate(product.manufactureDate())
-                                                .status(product.productLogType())
-                                                .boxCode(box.boxCode())
-                                                .shippedAt(request.shippedAt()) // 배송 완료 시간 추가
-                                                .build()
-                                ))
-                        .toList();
+        List<FactoryInventory> inventories = request.boxes().stream()
+                .flatMap(box -> box.productList().stream()
+                        .map(product -> FactoryInventory.builder()
+                                .serialCode(product.serialCode())
+                                .productId(product.productId())
+                                .manufactureDate(product.manufactureDate())
+                                .status(product.productLogType())
+                                .boxCode(box.boxCode())
+                                .shippedAt(request.shippedAt()) // 배송 완료 시간 추가
+                                .build()))
+                .toList();
         factoryInventoryRepository.saveAll(inventories);
     }
 
     public void hqIncreaseInventory(@Valid InventoryBatchRequest request) {
-        List<HQInventory> inventories =
-                request.boxes().stream()
-                        .flatMap(box -> box.productList().stream()
-                                .map(product ->
-                                        HQInventory.builder()
-                                                .serialCode(product.serialCode())
-                                                .productId(product.productId())
-                                                .manufactureDate(product.manufactureDate())
-                                                .status(product.productLogType())
-                                                .boxCode(box.boxCode())
-                                                .shippedAt(request.shippedAt()) // 배송 완료 시간 추가
-                                                .build()
-                                ))
-                        .toList();
+        List<HQInventory> inventories = request.boxes().stream()
+                .flatMap(box -> box.productList().stream()
+                        .map(product -> HQInventory.builder()
+                                .serialCode(product.serialCode())
+                                .productId(product.productId())
+                                .manufactureDate(product.manufactureDate())
+                                .status(product.productLogType())
+                                .boxCode(box.boxCode())
+                                .shippedAt(request.shippedAt()) // 배송 완료 시간 추가
+                                .build()))
+                .toList();
         hqInventoryRepository.saveAll(inventories);
     }
 
@@ -201,6 +192,4 @@ public class InventoryService {
                 .toList();
     }
 
-
 }
-

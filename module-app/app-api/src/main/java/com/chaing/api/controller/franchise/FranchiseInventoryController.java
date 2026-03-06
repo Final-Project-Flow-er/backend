@@ -63,7 +63,7 @@ public class FranchiseInventoryController {
 
     @Operation(summary = "재고 알림 조회", description = "안전재고 부족 및 유통기한 관련 알림 목록을 조회합니다."
     )
-    @GetMapping("/alerts")
+    @GetMapping("/alerts/{franchiseId}")
     public ResponseEntity<ApiResponse<InventoryAlertResponse>> getInventoryAlerts(
             @PathVariable Long franchiseId
     ) {

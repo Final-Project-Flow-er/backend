@@ -15,7 +15,7 @@ import com.chaing.domain.inventories.dto.response.InventoryAlertResponse;
 import com.chaing.domain.inventories.dto.response.InventoryProductInfoResponse;
 import com.chaing.domain.inventories.dto.response.SafetyStockAlertResponse;
 import com.chaing.domain.inventories.dto.response.SafetyStockResponse;
-import com.chaing.domain.inventories.servie.InventoryService;
+import com.chaing.domain.inventories.service.InventoryService;
 import com.chaing.domain.inventorylogs.dto.request.InventoryLogCreateRequest;
 import com.chaing.domain.inventorylogs.enums.ActorType;
 import com.chaing.domain.inventorylogs.enums.LocationType;

@@ -1,4 +1,4 @@
-package com.chaing.domain.inventories.servie;
+package com.chaing.domain.inventories.service;
 
 import com.chaing.core.enums.LogType;
 import com.chaing.domain.inventories.dto.request.FranchiseInventoryItemsRequest;

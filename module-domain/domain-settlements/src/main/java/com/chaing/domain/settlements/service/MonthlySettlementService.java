@@ -1,4 +1,4 @@
-package com.chaing.domain.settlements.repository.service;
+package com.chaing.domain.settlements.service;
 
 import com.chaing.domain.settlements.entity.MonthlySettlement;
 

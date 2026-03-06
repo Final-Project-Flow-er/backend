@@ -64,6 +64,9 @@ public class InboundFacade {
         return boxInfos.stream()
                 .map(box -> {
                     ProductInfo product = productMap.get(box.productId());
+                    if(product == null) {
+                        throw new InventoriesException(InventoriesErrorCode.INVENTORIES_IS_NULL);
+                    }
                     return InboundBoxSummaryResponse.of(
                             box.boxCode(),
                             product.productName(),

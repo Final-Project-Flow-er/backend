@@ -16,7 +16,7 @@ public enum InventoriesErrorCode implements ErrorCode {
     INVENTORIES_IS_NULL(400, "IV006", "해당 제품이 존재하지 않습니다."),
     INVENTORIES_IS_INVALID(400, "IV007", "해당 상품의 정보가 누락되었습니다."),
     INBOUND_ROLE_INVALID(400, "IV008", "권한이 허용되지 않은 계정입니다."),
-    INVALID_INBOUND_STATUS(400, "IV009", "입고 승인이 가능한 상태가 아닙니다.");
+    INVALID_INBOUND_STATUS(400, "IV009", "입고 승인이 가능한 상태가 아닙니다."),
 
     private final Integer status;
     private final String code;

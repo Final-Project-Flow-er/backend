@@ -13,6 +13,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class UserManagementService {
@@ -51,7 +53,7 @@ public class UserManagementService {
         String prefix = switch (role) {
             case HQ -> "hq";
             case FRANCHISE -> "fr";
-            case FACTORY -> "fc";
+            case FACTORY -> "fa";
             default -> throw new UserException(UserErrorCode.INVALID_ROLE);
         };
 
@@ -72,6 +74,10 @@ public class UserManagementService {
     public User getUserById(Long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
+    }
+
+    public List<Long> getAllActiveUserIds() {
+        return userRepository.getAllActiveUserIds();
     }
 
     // 로그인 아이디로 회원 조회
@@ -108,5 +114,22 @@ public class UserManagementService {
     public void deleteUser(Long userId) {
         User user = getUserById(userId);
         user.delete();
+    }
+
+    // franchiseId 조회
+    public Long getFranchiseIdByUserId(Long userId) {
+        User user = getUserById(userId);
+        return user.getFranchiseId();
+    }
+
+    // username 조회
+    public String getUsernameByUserId(Long userId) {
+        User user = getUserById(userId);
+        return user.getUsername();
+    }
+
+    public String getPhoneNumberByUserId(Long userId) {
+        User user = getUserById(userId);
+        return user.getPhone();
     }
 }

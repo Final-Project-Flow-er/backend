@@ -7,6 +7,8 @@ import com.chaing.domain.orders.dto.info.FranchiseOrderCreateInfo;
 import com.chaing.domain.orders.enums.FranchiseOrderStatus;
 import com.chaing.domain.orders.exception.FranchiseOrderErrorCode;
 import com.chaing.domain.orders.exception.FranchiseOrderException;
+import com.chaing.domain.orders.exception.OrderErrorCode;
+import com.chaing.domain.orders.exception.OrderException;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -45,10 +47,7 @@ public class FranchiseOrder extends BaseEntity {
     private String orderCode;
 
     @Column(nullable = false)
-    private String username;
-
-    @Column(nullable = false)
-    private String phoneNumber;
+    private Long userId;
 
     @Column(nullable = false)
     private String address;
@@ -81,8 +80,6 @@ public class FranchiseOrder extends BaseEntity {
         return FranchiseOrder.builder()
                 .franchiseId(franchiseId)
                 .orderCode(orderCode)
-                .username(username)
-                .phoneNumber(request.phoneNumber())
                 .address(request.address())
                 .requirement(request.requirement())
                 .deliveryDate(request.deliveryDate())
@@ -102,8 +99,6 @@ public class FranchiseOrder extends BaseEntity {
     }
 
     public void update(FranchiseOrderUpdateCommand request) {
-        this.username = request.username();
-        this.phoneNumber = request.phoneNumber();
         this.address = request.address();
         this.requirement = request.requirement();
         this.deliveryTime = request.deliveryTime();
@@ -119,7 +114,7 @@ public class FranchiseOrder extends BaseEntity {
 
     public void cancel() {
         if (this.orderStatus != FranchiseOrderStatus.PENDING) {
-            throw new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_INVALID_STATUS);
+            throw new OrderException(OrderErrorCode.INVALID_STATUS);
         }
 
         this.orderStatus = FranchiseOrderStatus.CANCELED;

@@ -10,15 +10,23 @@ import java.util.Optional;
 
 @Repository
 public interface FranchiseOrderRepository extends JpaRepository<FranchiseOrder, Long> {
-    List<FranchiseOrder> findAllByFranchiseIdAndUsername(Long franchiseId, String username);
+    List<FranchiseOrder> findAllByFranchiseIdAndUserId(Long franchiseId, Long username);
 
-    Optional<FranchiseOrder> findByFranchiseIdAndUsernameAndOrderCode(Long franchiseId, String username, String orderCode);
+    Optional<FranchiseOrder> findByFranchiseIdAndUserIdAndOrderCodeAndDeletedAtIsNull(Long franchiseId, Long userId, String orderCode);
 
-    List<FranchiseOrder> findAllByFranchiseOrderIdIn(List<Long> orderIds);
+    List<FranchiseOrder> findAllByFranchiseOrderIdInAndDeletedAtIsNull(List<Long> orderIds);
 
     Optional<FranchiseOrder> findByFranchiseIdAndFranchiseOrderId(Long franchiseId, Long orderId);
 
     List<FranchiseOrder> findAllByFranchiseIdAndOrderStatus(Long franchiseId, FranchiseOrderStatus orderStatus);
 
     List<FranchiseOrder> findAllByOrderCodeIn(List<String> orderCodes);
+
+    Optional<FranchiseOrder> findByFranchiseOrderIdAndDeletedAtIsNull(Long orderId);
+
+    Optional<FranchiseOrder> findByOrderCode(String orderCode);
+
+    Optional<FranchiseOrder> findByFranchiseIdAndUserIdAndFranchiseOrderIdAndDeletedAtIsNull(Long franchiseId, Long userId, Long orderId);
+
+    List<FranchiseOrder> findAllByFranchiseIdAndUserIdAndOrderStatus(Long franchiseId, Long userId, FranchiseOrderStatus franchiseOrderStatus);
 }

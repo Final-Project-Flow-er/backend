@@ -1,6 +1,10 @@
 package com.chaing.domain.returns.entity;
 
+import com.chaing.core.entity.BaseEntity;
+import com.chaing.domain.returns.dto.request.HQReturnUpdateRequest;
 import com.chaing.domain.returns.enums.ReturnItemStatus;
+import com.chaing.domain.returns.exception.FranchiseReturnErrorCode;
+import com.chaing.domain.returns.exception.FranchiseReturnException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -22,7 +26,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
-public class ReturnItem {
+public class ReturnItem extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -37,10 +41,23 @@ public class ReturnItem {
 
     @Column(nullable = false)
     @Builder.Default
-    private Boolean isInspected = false;
+    private Boolean isInspected = false;    // 삭제 예정
+
+    @Column(nullable = false)
+    private String boxCode;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     @Builder.Default
     private ReturnItemStatus returnItemStatus = ReturnItemStatus.BEFORE_INSPECTION;
+
+    // 반품 제품 검수 상태 업데이트
+    public void update(HQReturnUpdateRequest hqReturnUpdateRequest) {
+        if (hqReturnUpdateRequest == null) {
+            throw new FranchiseReturnException(FranchiseReturnErrorCode.INVALID_REQUEST);
+        }
+
+        this.isInspected = hqReturnUpdateRequest.isInspected();
+        this.returnItemStatus = hqReturnUpdateRequest.status();
+    }
 }

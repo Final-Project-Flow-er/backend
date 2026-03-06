@@ -1,34 +1,33 @@
 package com.chaing.api.facade.franchise;
 
-import com.chaing.core.dto.returns.request.OrderItemIdAndSerialCode;
-import com.chaing.core.dto.returns.request.ReturnToInventoryRequest;
-import com.chaing.core.dto.returns.request.ReturnToProductRequest;
+import com.chaing.core.dto.command.FranchiseInventoryCommand;
+import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.core.dto.returns.response.FranchiseOrderInfo;
 import com.chaing.core.dto.returns.response.FranchiseReturnTargetResponse;
+import com.chaing.domain.businessunits.service.impl.FranchiseServiceImpl;
+import com.chaing.domain.inventories.service.InventoryService;
+import com.chaing.domain.orders.dto.command.FranchiseOrderDetailCommand;
+import com.chaing.domain.orders.dto.command.FranchiseOrderItemCommand;
 import com.chaing.domain.orders.service.FranchiseOrderService;
-import com.chaing.domain.returns.dto.command.ReturnItemCreateCommand;
+import com.chaing.domain.products.service.ProductService;
+import com.chaing.domain.returns.dto.command.FranchiseReturnItemCreateCommand;
+import com.chaing.domain.returns.dto.command.ReturnCommand;
+import com.chaing.domain.returns.dto.command.ReturnItemCommand;
 import com.chaing.domain.returns.dto.request.FranchiseReturnCreateRequest;
-import com.chaing.domain.returns.dto.request.FranchiseReturnItemCreateRequest;
-import com.chaing.domain.returns.dto.request.FranchiseReturnUpdateRequest;
-import com.chaing.domain.returns.dto.response.FranchiseReturnAndReturnItemCreateResponse;
-import com.chaing.domain.returns.dto.response.FranchiseReturnAndReturnItemResponse;
 import com.chaing.domain.returns.dto.response.FranchiseReturnCreateResponse;
 import com.chaing.domain.returns.dto.response.FranchiseReturnDetailResponse;
-import com.chaing.domain.returns.dto.response.FranchiseReturnInfo;
 import com.chaing.domain.returns.dto.response.FranchiseReturnItemResponse;
-import com.chaing.domain.returns.dto.response.FranchiseReturnProductInfo;
 import com.chaing.domain.returns.dto.response.FranchiseReturnResponse;
 import com.chaing.domain.returns.dto.response.FranchiseReturnTargetOrderItem;
 import com.chaing.domain.returns.dto.response.FranchiseReturnUpdateResponse;
-import com.chaing.domain.returns.dto.response.ReturnInfo;
-import com.chaing.domain.returns.dto.response.ReturnItemInfo;
+import com.chaing.domain.returns.dto.response.ReturnCreateResponse;
 import com.chaing.domain.returns.exception.FranchiseReturnErrorCode;
 import com.chaing.domain.returns.exception.FranchiseReturnException;
 import com.chaing.domain.returns.service.FranchiseReturnService;
-import com.chaing.domain.returns.service.FakeReturnFranchiseService;
-import com.chaing.domain.returns.service.FakeInventoryService;
-import com.chaing.domain.returns.service.FakeReturnProductService;
+import com.chaing.domain.returns.service.ReturnCodeGenerator;
+import com.chaing.domain.users.service.UserManagementService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,10 +35,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -47,355 +45,430 @@ public class FranchiseReturnFacade {
 
     private final FranchiseReturnService franchiseReturnService;
     private final FranchiseOrderService franchiseOrderService;
-
-    // 가짜
-    private final FakeInventoryService fakeInventoryService;
-    private final FakeReturnProductService fakeReturnProductService;
-    private final FakeReturnFranchiseService fakeReturnFranchiseService;
+    private final UserManagementService userManagementService;
+    private final ProductService productService;
+    private final ReturnCodeGenerator generator;
+    private final InventoryService inventoryService;
+    private final FranchiseServiceImpl franchiseService;
 
     // 반품 전체 조회
-    public List<FranchiseReturnResponse> getAllReturns(String username) {
-        // franchiseId username으로 조회하는 로직 추가 필요
-        Long franchiseId = 1L;
+    public List<FranchiseReturnResponse> getAllReturns(Long userId) {
+        // franchiseId
+        Long franchiseId = userManagementService.getFranchiseIdByUserId(userId);
 
-        // 반품 정보 조회
-        List<FranchiseReturnAndReturnItemResponse> returnInfos = franchiseReturnService.getAllReturns(franchiseId);
+        // Map<returnId, ReturnCommand>
+        Map<Long, ReturnCommand> returns = franchiseReturnService.getAllReturns(franchiseId);
+
+        // List<returnId>
+        List<Long> returnIds = returns.keySet().stream().toList();
+
+        // Map<returnId, List<ReturnItemCommand>>
+        Map<Long, List<ReturnItemCommand>> returnItemByReturnId = franchiseReturnService.getAllReturnItemByReturnIds(returnIds);
+
+        // Map<returnItemId, returnId>
+        Map<Long, Long> returnIdByReturnItemId = returnItemByReturnId.values().stream()
+                .flatMap(List::stream)
+                .collect(Collectors.toMap(
+                        ReturnItemCommand::returnItemId,
+                        ReturnItemCommand::returnId
+                ));
+
+        // Map<returnItemId, orderItemId>
+        Map<Long, Long> orderItemIdByReturnItemId = returnItemByReturnId.values().stream()
+                .flatMap(List::stream)
+                .collect(Collectors.toMap(
+                        ReturnItemCommand::returnItemId,
+                        ReturnItemCommand::orderItemId
+                ));
+
+        // List<orderItemId>
+        List<Long> orderItemIds = orderItemIdByReturnItemId.values().stream().toList();
+
+        // Map<returnItemId, productId>
+        Map<Long, Long> productIdByReturnItemId = franchiseOrderService.getProductIdByReturnItemId(orderItemIdByReturnItemId);
+
+        // Map<productId, List<returnItemId>>
+        Map<Long, List<Long>> returnItemIdsByProductId = productIdByReturnItemId.entrySet().stream()
+                .collect(Collectors.groupingBy(
+                        Map.Entry::getValue,
+                        Collectors.mapping(Map.Entry::getKey, Collectors.toList())
+                ));
+
+        // List<returnItemId>
+        List<Long> returnItemIds = productIdByReturnItemId.keySet().stream().toList();
 
         // 발주 코드 조회
-        List<Long> orderIds = returnInfos.stream()
-                .map(FranchiseReturnAndReturnItemResponse::franchiseOrderId)
+        // List<orderId>
+        List<Long> orderIds = returns.values().stream()
+                .map(ReturnCommand::orderId)
                 .toList();
-        Map<Long, String> orderIdAndCode = franchiseOrderService.getAllOrderCode(orderIds);
+        // Map<orderId, orderCode>
+        Map<Long, String> orderCodeByOrderId = franchiseOrderService.getAllOrderCodeByOrderIds(orderIds);
 
-        // 제품 코드 조회
-        List<Long> orderItemIds = returnInfos.stream()
-                .map(FranchiseReturnAndReturnItemResponse::franchiseOrderItemId)
-                .toList();
+        // Map<productId, List<orderItemId>>
+        Map<Long, List<Long>> orderItemIdsByProductId = franchiseOrderService.getOrderItemIdsAndProductIdsByOrderIds(orderIds);
 
-        // 1. orderItem에서 orderItemId로 serialCode 가져옴
-        List<OrderItemIdAndSerialCode> orderItemIdAndSerialCodes = franchiseOrderService.getSerialCodes(orderItemIds);
-        System.out.println("facade에서: " + orderItemIdAndSerialCodes.get(0).toString());
-        Map<Long, String> orderItemIdAndSerialCodesMap = orderItemIdAndSerialCodes.stream()
-                .collect(Collectors.toMap(
-                        OrderItemIdAndSerialCode::orderItemId,
-                        OrderItemIdAndSerialCode::serialCode
-                ));
+        // List<productId>
+        List<Long> productIds = orderItemIdsByProductId.keySet().stream().toList();
 
-        // 2. inventory에서 serialCode로 productId, boxCode 가져옴
-        List<String> serialCodes = orderItemIdAndSerialCodes.stream()
-                .map(OrderItemIdAndSerialCode::serialCode)
-                .toList();
+        // Map<productId, ProductInfo>
+        Map<Long, ProductInfo> productInfoByProductId = productService.getProductInfos(productIds);
 
-        List<ReturnToInventoryRequest> inventoryRequests = fakeInventoryService.getProducts(serialCodes);
-        Map<String, ReturnToInventoryRequest> serialCodeAndInventoryMap = inventoryRequests.stream()
-                .collect(Collectors.toMap(
-                        ReturnToInventoryRequest::serialCode,
-                        Function.identity()
-                ));
+        return returnItemIdsByProductId.entrySet().stream()
+                .map(entry -> {
+                    Long productId = entry.getKey();
+                    List<Long> returnItemIdList = entry.getValue();
+                    Long returnId = returnIdByReturnItemId.get(returnItemIdList.get(0));
 
-        List<Long> productIds = inventoryRequests.stream()
-                .map(ReturnToInventoryRequest::productId)
-                .toList();
-
-        // 3. product에서 productId로 productName, productCode 가져옴
-        List<ReturnToProductRequest> productRequests = fakeReturnProductService.getProducts(productIds);
-        Map<Long, ReturnToProductRequest> productIdAndProductMap = productRequests.stream()
-                .collect(Collectors.toMap(
-                        ReturnToProductRequest::productId,
-                        Function.identity()
-                ));
-
-        return returnInfos.stream()
-                .map(info -> {
-                    Long orderId = info.franchiseOrderId();
-                    Long orderItemId = info.franchiseOrderItemId();
-
-                    String orderCode = orderIdAndCode.get(orderId);
-                    String serialCode = orderItemIdAndSerialCodesMap.get(orderItemId);
-
-                    ReturnToInventoryRequest inventory = serialCodeAndInventoryMap.get(serialCode);
-
-                    Long productId = inventory.productId();
-                    String boxCode = inventory.boxCode();
-
-                    ReturnToProductRequest product = productIdAndProductMap.get(productId);
-
-                    String productName = product.productName();
-                    String productCode = product.productCode();
-                    BigDecimal unitPrice = product.unitPrice();
+                    ReturnCommand returnCommand = returns.get(returnId);
+                    ProductInfo productInfo = productInfoByProductId.get(productId);
 
                     return FranchiseReturnResponse.builder()
-                            .returnCode(info.returnCode())
-                            .status(info.status())
-                            .unitPrice(unitPrice)
-                            .franchiseOrderId(info.franchiseOrderId())
-                            .type(info.type())
-                            .requestedDate(info.requestedDate())
-                            .boxCode(boxCode)
-                            .serialCode(serialCode)
-                            .orderCode(orderCode)
-                            .productCode(productCode)
-                            .productName(productName)
+                            .returnCode(returnCommand.returnCode())
+                            .status(returnCommand.status())
+                            .productCode(productInfo.productCode())
+                            .productName(productInfo.productName())
+                            .unitPrice(productInfo.tradePrice())
+                            .quantity(returnItemIdList.size())
+                            .totalPrice(productInfo.tradePrice().multiply(BigDecimal.valueOf(returnItemIdList.size())))
+                            .type(returnCommand.type())
+                            .requestedDate(returnCommand.requestedAt())
                             .build();
                 })
                 .toList();
     }
 
     // 반품 상세조회
-    public FranchiseReturnDetailResponse getReturn(String username, String returnCode) {
-        // franchiseId username으로 조회하는 로직 추가 필요
-        Long franchiseId = 1L;
+    public FranchiseReturnDetailResponse getReturn(Long userId, String returnCode) {
+        // franchiseId
+        Long franchiseId = userManagementService.getFranchiseIdByUserId(userId);
 
-        // 반품 정보
-        FranchiseReturnInfo returnInfo = franchiseReturnService.getReturn(username, franchiseId, returnCode);
+        // franchiseCode
+        String franchiseCode = franchiseService.getById(franchiseId).businessNumber();
 
-        // 발주 정보
-        String orderCode = franchiseOrderService.getOrderCode(franchiseId, returnInfo.orderId());
+        // UserInfo
+        String username = userManagementService.getUsernameByUserId(userId);
+        String phoneNumber = userManagementService.getPhoneNumberByUserId(userId);
 
-        // 반품 제품 정보
-        List<Long> orderItemIds = franchiseReturnService.getAllReturnItemOrderItemId(returnCode);
+        // ReturnCommand
+        ReturnCommand returnCommand = franchiseReturnService.getReturn(userId, franchiseId, returnCode);
 
-        // SerialCode
-        List<String> serialCodes = franchiseOrderService.getSerialCodeList(orderItemIds);
+        // FranchiseOrderDetailCommand
+        FranchiseOrderDetailCommand orderCommand = franchiseOrderService.getOrderByOrderId(franchiseId, userId, returnCommand.orderId());
 
-        // 제품 정보
-        List<ReturnToInventoryRequest> inventoryRequests = fakeInventoryService.getProducts(serialCodes);
-        List<FranchiseReturnProductInfo> productInfos = fakeReturnProductService.getProduct(returnCode);
+        // Map<returnItemId, ReturnItemCommand>
+        Map<Long, ReturnItemCommand> returnItemByReturnItemId = franchiseReturnService.getReturnItemsByReturnId(returnCommand.returnId());
 
-        // 가맹점 코드
-        String franchiseCode = fakeReturnFranchiseService.getFranchise(franchiseId);
+        // Map<returnItemId, orderItemId>
+        Map<Long, Long> orderItemIdByReturnItemId = returnItemByReturnItemId.values().stream()
+                .collect(Collectors.toMap(
+                        ReturnItemCommand::returnItemId,
+                        ReturnItemCommand::orderItemId
+                ));
 
+        // List<returnItemId>
+        List<Long> returnItemIds = returnItemByReturnItemId.keySet().stream().toList();
+
+        // List<orderItemId>
+        List<Long> orderItemIds = returnItemByReturnItemId.values().stream()
+                .map(ReturnItemCommand::orderItemId)
+                .toList();
+
+        // Map<orderItemId, productId>
+        Map<Long, Long> productIdByOrderItemId = franchiseOrderService.getProductIdByOrderItemId(orderItemIds);
+
+        // Map<returnItemId, productId>
+        Map<Long, Long> productIdByReturnItemId = franchiseOrderService.getProductIdByReturnItemId(orderItemIdByReturnItemId);
+
+        // List<productId>
+        List<Long> productIds = productIdByOrderItemId.values().stream().toList();
+
+        // Map<productId, ProductInfo>
+        Map<Long, ProductInfo> productInfoByProductId = productService.getProductInfos(productIds);
+
+        // List<FranchiseReturnItemResponse>
+        List<FranchiseReturnItemResponse> itemResponses = returnItemByReturnItemId.entrySet().stream()
+                .map(entry -> {
+                    Long returnItemId = entry.getKey();
+                    Long productId = productIdByReturnItemId.get(returnItemId);
+
+                    ReturnItemCommand returnItemcommand = entry.getValue();
+                    ProductInfo productInfo = productInfoByProductId.get(productId);
+
+                    if (productInfo == null) {
+                        throw new FranchiseReturnException(FranchiseReturnErrorCode.PRODUCT_NOT_FOUND);
+                    }
+
+                    return FranchiseReturnItemResponse.builder()
+                            .boxCode(returnItemcommand.boxCode())
+                            .productCode(productInfo.productCode())
+                            .productName(productInfo.productName())
+                            .unitPrice(productInfo.retailPrice())
+                            .build();
+                })
+                .toList();
+
+        // 반환
         return FranchiseReturnDetailResponse.builder()
-                .returnCode(returnCode)
-                .orderCode(orderCode)
+                .returnCode(returnCommand.returnCode())
+                .orderCode(orderCommand.orderCode())
                 .franchiseCode(franchiseCode)
-                .requestedDate(returnInfo.requestedDate())
-                .status(returnInfo.status())
+                .requestedDate(returnCommand.requestedAt())
+                .status(returnCommand.status())
                 .username(username)
-                .phoneNumber(returnInfo.phoneNumber())
-                .returnType(returnInfo.type())
-                .description(returnInfo.description())
-                .items(
-                        inventoryRequests.stream()
-                                .map(request -> {
-                                    String serialCode = request.serialCode();
-                                    Long productId = request.productId();
-                                    String boxCode = request.boxCode();
-
-                                    FranchiseReturnProductInfo product = productInfos.stream()
-                                            .filter(productInfo -> productInfo.serialCode().equals(serialCode))
-                                            .findFirst()
-                                            .orElseThrow(() -> new FranchiseReturnException(FranchiseReturnErrorCode.PRODUCT_NOT_FOUND));
-
-                                    String productCode = product.productCode();
-                                    String productName = product.productName();
-                                    BigDecimal unitPrice = product.unitPrice();
-
-                                    return FranchiseReturnItemResponse.builder()
-                                            .boxCode(boxCode)
-                                            .serialCode(serialCode)
-                                            .productCode(productCode)
-                                            .productName(productName)
-                                            .unitPrice(unitPrice)
-                                            .build();
-                                })
-                                .toList()
-                )
+                .phoneNumber(phoneNumber)
+                .returnType(returnCommand.type())
+                .description(returnCommand.description())
+                .items(itemResponses)
                 .build();
     }
 
     // 반품 수정
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
-    public FranchiseReturnUpdateResponse updateReturn(String username, List<FranchiseReturnUpdateRequest> requests, String returnCode) {
-        // franchiseId username으로 조회하는 로직 추가 필요
-        Long franchiseId = 1L;
+    public FranchiseReturnUpdateResponse updateReturn(Long userId, List<String> boxCodes, String returnCode) {
+        // franchiseId
+        Long franchiseId = userManagementService.getFranchiseIdByUserId(userId);
 
-        // 1. 제품 식별코드, 박스코드로 FranchiseInventory에서 productId 조회
-        List<Long> productIds = fakeInventoryService.getProductsBySerialCodeAndBoxCode(requests);
-        // 2. productId로 Product에서 productCode, productName, unitPrice 조회
-        List<FranchiseReturnProductInfo> productInfos = fakeReturnProductService.getProduct(returnCode);
-        // 3. 조회한 값들로 ReturnItem 수정
-        Map<String, Long> orderItemIds = requests.stream()
+        // ReturnCommand
+        ReturnCommand returnCommand = franchiseReturnService.getReturn(userId, franchiseId, returnCode);
+
+        // FranchiseOrderDetailCommand
+        FranchiseOrderDetailCommand orderCommand = franchiseOrderService.getOrderByOrderId(franchiseId, userId, returnCommand.orderId());
+
+        // Map<boxCode, FranchiseInventoryCommand>
+        Map<String, FranchiseInventoryCommand> inventoryByBoxCode = inventoryService.getInventoriesByBoxCode(boxCodes);
+
+        // Map<returnItemId, ReturnItemCommand>
+        Map<Long, ReturnItemCommand> returnItemByReturnItemId = franchiseReturnService.getReturnItemsByReturnId(returnCommand.returnId());
+
+        // Map<boxCode, orderItemId>
+        Map<String, Long> orderItemIdByBoxCode = returnItemByReturnItemId.values().stream()
                 .collect(Collectors.toMap(
-                        FranchiseReturnUpdateRequest::serialCode,
-                        FranchiseReturnUpdateRequest::orderItemId
+                        ReturnItemCommand::boxCode,
+                        ReturnItemCommand::orderItemId
                 ));
-        List<FranchiseReturnProductInfo> updateInfos = franchiseReturnService.updateReturnItems(productInfos, returnCode, orderItemIds);
 
-        // 4. 반품 정보
-        ReturnInfo returnInfo = franchiseReturnService.getReturnInfo(username, franchiseId, returnCode);
+        // Map<returnItemId, orderItemId>
+        Map<Long, Long> orderItemIdByReturnItemId = returnItemByReturnItemId.values().stream()
+                .collect(Collectors.toMap(
+                        ReturnItemCommand::returnItemId,
+                        ReturnItemCommand::orderItemId
+                ));
 
-        // 5. 필요한 값들 반환
+        // 수정 반영. input: Map<returnItemId, orderItemId>, boxCodes, Map<boxCode, orderItemId>
+        List<ReturnItemCommand> updatedReturnItems = franchiseReturnService.updateReturnItems(boxCodes, orderItemIdByReturnItemId, returnCode, orderItemIdByBoxCode);
+
+        // List<returnItemId>
+        List<Long> returnItemIds = returnItemByReturnItemId.keySet().stream().toList();
+
+        // List<orderItemId>
+        List<Long> orderItemIds = inventoryByBoxCode.values().stream()
+                .map(FranchiseInventoryCommand::orderItemId)
+                .toList();
+
+        // Map<orderItemId, productId>
+        Map<Long, Long> productIdByOrderItemId = franchiseOrderService.getProductIdByOrderItemId(orderItemIds);
+
+        // List<productId>
+        List<Long> productIds = productIdByOrderItemId.values().stream().toList();
+
+        // Map<productId, ProductInfo>
+        Map<Long, ProductInfo> productInfoByProductId = productService.getProductInfos(productIds);
+
+        // List<FranchiseReturnItemResponse>
+        List<FranchiseReturnItemResponse> itemResponses = updatedReturnItems.stream()
+                .map(item -> {
+                            Long orderItemId = item.orderItemId();
+                            Long productId = productIdByOrderItemId.get(orderItemId);
+
+                            ProductInfo productInfo = productInfoByProductId.get(productId);
+
+                            if (productInfo == null) {
+                                throw new FranchiseReturnException(FranchiseReturnErrorCode.PRODUCT_NOT_FOUND);
+                            }
+
+                            return FranchiseReturnItemResponse.builder()
+                                    .boxCode(item.boxCode())
+                                    .productCode(productInfo.productCode())
+                                    .productName(productInfo.productName())
+                                    .unitPrice(productInfo.retailPrice())
+                                    .build();
+                        }
+                )
+                .toList();
+
+        // 반환
         return FranchiseReturnUpdateResponse.builder()
-                .returnCode(returnInfo.returnCode())
-                .status(returnInfo.status())
-                .franchiseOrderId(returnInfo.franchiseOrderId())
-                .type(returnInfo.type())
-                .requestedDate(returnInfo.requestedDate())
-                .items(updateInfos)
+                .returnCode(returnCode)
+                .orderCode(orderCommand.orderCode())
+                .items(itemResponses)
                 .build();
     }
 
     // 반품 취소
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
-    public String cancel(String username, String returnCode) {
-        // franchiseId username으로 조회하는 로직 추가 필요
-        Long franchiseId = 1L;
+    public String cancel(Long userId, String returnCode) {
+        // franchiseId
+        Long franchiseId = userManagementService.getFranchiseIdByUserId(userId);
 
-        return franchiseReturnService.cancel(franchiseId, username, returnCode);
+        return franchiseReturnService.cancel(franchiseId, userId, returnCode);
     }
 
     // 반품 생성
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
-    public FranchiseReturnAndReturnItemCreateResponse create(String username, FranchiseReturnCreateRequest request) {
-        // franchiseId username으로 조회하는 로직 추가 필요
-        Long franchiseId = 1L;
+    public ReturnCreateResponse create(Long userId, FranchiseReturnCreateRequest request) {
+        // franchiseId
+        Long franchiseId = userManagementService.getFranchiseIdByUserId(userId);
 
-        // request의 product에 대한 내용 검증
-        // 1. productInfo 중 productCode에 해당하는 데이터 조회
-        Set<String> productCodes = request.items().stream()
-                .map(FranchiseReturnItemCreateRequest::productCode)
-                .collect(Collectors.toSet());
-        // 2. 실제 제품 정보
-        List<FranchiseReturnProductInfo> productInfos = fakeReturnProductService.getProducts(productCodes);
-        // 3. 실제 제품 정보와 productCode Map으로
-        Map<String, FranchiseReturnProductInfo> productInfoByProductCode = productInfos.stream()
-                        .collect(Collectors.toMap(
-                                FranchiseReturnProductInfo::productCode,
-                                Function.identity()
-                        ));
-        // 4. 검증
-        request.items().forEach(item -> {
-                    FranchiseReturnProductInfo productInfo = productInfoByProductCode.get(item.productCode());
-                    if (productInfo == null) {
-                        throw new FranchiseReturnException(FranchiseReturnErrorCode.INVALID_PRODUCT_INFO);
-                    }
+        // franchiseCode
+        String franchiseCode = franchiseService.getById(franchiseId).businessNumber();
 
-                    if (!productInfo.productName().equals(item.productName()) || !productInfo.unitPrice().equals(item.unitPrice())) {
-                        throw new FranchiseReturnException(FranchiseReturnErrorCode.INVALID_PRODUCT_INFO);
-                    }
-                });
+        // FranchiseOrderDetailCommand
+        FranchiseOrderDetailCommand order = franchiseOrderService.getOrderByOrderCode(franchiseId, userId, request.orderCode());
 
-        // 반품 생성
-        // 1.1. 발주 정보 조회
-        String franchiseCode = fakeReturnFranchiseService.getFranchise(franchiseId);
-        FranchiseOrderInfo orderInfo = franchiseOrderService.getOrderInfo(franchiseId, username, request.orderCode(), franchiseCode);
-        // 1.2. 반품 생성
-        ReturnInfo returnInfo = franchiseReturnService.createReturn(franchiseId, request, orderInfo);
+        // returnCode
+        String returnCode = generator.generate(franchiseCode);
 
-        // 반품 제품 생성
-        // 1. franchiseInventory에서 boxCode에 해당되는 serialCode 조회
-        // 1.1. Map<boxCode, List<serialCode>>
-        Map<String, List<String>> serialCodeListByBoxCode = request.items().stream()
-                .map(FranchiseReturnItemCreateRequest::boxCode)
-                .collect(Collectors.toMap(
-                        Function.identity(),
-                        boxCode -> {
-                            List<String> serialCodes = fakeInventoryService.getSerialCodes(franchiseId, boxCode);
+        // ReturnCommand 생성
+        ReturnCommand returnCommand = franchiseReturnService.createReturn(franchiseId, order.orderId(), returnCode, userId, request);
 
-                            if (serialCodes == null || serialCodes.isEmpty()) {
-                                throw new FranchiseReturnException(FranchiseReturnErrorCode.INVALID_BOX_CODE);
-                            }
+        // Map<orderId, List<FranchiseOrderItemCommand>>
+        Map<Long, List<FranchiseOrderItemCommand>> orderItems = franchiseOrderService.getOrderItemsByOrderId(order.orderId());
 
-                            return serialCodes;
-                        }
-                ));
-        // 2. franchiseOrderItem에서 serialCode에 해당되는 orderItemId 조회
-        // Map<serialCode, orderItemId>
-        Map<String, Long> orderItemIdBySerialCode = serialCodeListByBoxCode.values().stream()
+        // List<orderItemId>
+        List<Long> orderItemIds = orderItems.values().stream()
                 .flatMap(List::stream)
-                .collect(Collectors.toMap(
-                        Function.identity(),
-                        serialCode -> {
-                            Long orderItemId = franchiseOrderService.getOrderItemId(serialCode);
-
-                            if (orderItemId == null) {
-                                throw new FranchiseReturnException(FranchiseReturnErrorCode.ORDER_ITEM_NOT_FOUND);
-                            }
-
-                            return orderItemId;
-                        }
-                ));
-        // 3. 필요 값 전달해 반품 제품 생성
-        List<ReturnItemCreateCommand> orderItemIds = orderItemIdBySerialCode.entrySet().stream()
-                .map(entry -> new ReturnItemCreateCommand(entry.getKey(), entry.getValue()))
+                .map(FranchiseOrderItemCommand::orderItemId)
                 .toList();
-        List<ReturnItemInfo> returnItemInfos = franchiseReturnService.createReturnItems(returnInfo.returnCode(), orderItemIds);
 
-        // 결과 반환
-        return new FranchiseReturnAndReturnItemCreateResponse(
-                returnInfo,
-                returnItemInfos
-        );
+        // Map<orderItemId, FranchiseInventoryCommand>
+        Map<Long, FranchiseInventoryCommand> inventoryByOrderItemId = inventoryService.getInventoriesByOrderItemIds(orderItemIds);
+
+        // Map<orderItemId, boxCode>
+        Map<Long, String> boxCodeByOrderItemId = inventoryByOrderItemId.values().stream()
+                .collect(Collectors.toMap(
+                        FranchiseInventoryCommand::orderItemId,
+                        FranchiseInventoryCommand::boxCode
+                ));
+
+        // List<ReturnItemCommand> 생성
+        List<ReturnItemCommand> createdItems = franchiseReturnService.createReturnItems(returnCommand.returnId(), boxCodeByOrderItemId);
+
+        // Map<orderItemId, productId>
+        Map<Long, Long> productIdByOrderItemId = franchiseOrderService.getProductIdByOrderItemId(orderItemIds);
+
+        // List<productId>
+        List<Long> productIds = productIdByOrderItemId.values().stream().toList();
+
+        // Map<productId, ProductInfo>
+        Map<Long, ProductInfo> productInfoByProductId = productService.getProductInfos(productIds);
+
+        // List<FranchiseReturnItemCreateCommand>
+        List<FranchiseReturnItemCreateCommand> itemResponses = createdItems.stream()
+                .map(item -> {
+                    Long orderItemId = item.orderItemId();
+                    Long productId = productIdByOrderItemId.get(orderItemId);
+                    ProductInfo productInfo = productInfoByProductId.get(productId);
+
+                    return FranchiseReturnItemCreateCommand.builder()
+                            .boxCode(item.boxCode())
+                            .productCode(productInfo.productCode())
+                            .build();
+                })
+                .toList();
+
+        // 반환
+        return ReturnCreateResponse.builder()
+                .returnCode(returnCommand.returnCode())
+                .items(itemResponses)
+                .build();
     }
 
     // 반품 가능 대상 발주 조회
-    public List<FranchiseReturnTargetResponse> getAllTargets(String username) {
-        // franchiseId username으로 조회하는 로직 추가 필요
-        Long franchiseId = 1L;
+    public List<FranchiseReturnTargetResponse> getAllTargets(Long userId) {
+        // franchiseId
+        Long franchiseId = userManagementService.getFranchiseIdByUserId(userId);
 
-        // 발주 조회
-        List<FranchiseReturnTargetResponse> infos = franchiseOrderService.getAllTargetOrders(franchiseId, username);
+        // username
+        String username = userManagementService.getUsernameByUserId(userId);
 
-        // 결과 반환
-        return infos;
+        // 발주 조회 및 반환
+        return franchiseOrderService.getAllTargetOrders(franchiseId, userId, username);
     }
 
     // 발주 정보 조회
-    public FranchiseReturnCreateResponse getReturnCreateInfo(String username, String requestedUsername, String orderCode) {
-        if (!username.equals(requestedUsername)) {
-            throw new FranchiseReturnException(FranchiseReturnErrorCode.USER_FORBIDDEN);
-        }
+    public FranchiseReturnCreateResponse getReturnCreateInfo(Long userId, String orderCode) {
+        // franchiseId
+        Long franchiseId = userManagementService.getFranchiseIdByUserId(userId);
 
-        // franchiseId username으로 조회하는 로직 추가 필요
-        Long franchiseId = 1L;
+        // username
+        String username = userManagementService.getUsernameByUserId(userId);
 
-        // 발주 정보 조회
-        String franchiseCode = fakeReturnFranchiseService.getFranchise(franchiseId);
-        FranchiseOrderInfo orderInfo = franchiseOrderService.getOrderInfo(franchiseId, username, orderCode, franchiseCode);
+        // phoneNumber
+        String phoneNumber = userManagementService.getPhoneNumberByUserId(userId);
 
-        // 발주 제품 정보 조회
-        // 1. orderCode로 orderItem serialCode 조회
-        List<String> serialCodes = franchiseOrderService.getSerialCodesByOrderCode(franchiseId, orderCode);
-        // 2. orderItem serialCode로 franchiseInventory boxCode, productId 조회
-        List<ReturnToInventoryRequest> inventoryInfo = fakeInventoryService.getProducts(serialCodes);
-        // 3. productId로 product 조회
-        List<Long> productIds = inventoryInfo.stream()
-                .map(ReturnToInventoryRequest::productId)
+        // franchiseCode
+        String franchiseCode = franchiseService.getById(franchiseId).businessNumber();
+
+        // FranchiseOrderDetailCommand
+        FranchiseOrderDetailCommand order = franchiseOrderService.getOrderByOrderCode(franchiseId, userId, orderCode);
+
+        // Map<orderId, List<FranchiseOrderItemCommand>>
+        Map<Long, List<FranchiseOrderItemCommand>> orderItemsByOrderId = franchiseOrderService.getOrderItemsByOrderId(order.orderId());
+
+        // List<FranchiseOrderItemCommand>
+        List<FranchiseOrderItemCommand> orderItems = orderItemsByOrderId.values().stream()
+                .flatMap(List::stream)
                 .toList();
-        List<ReturnToProductRequest> productInfos = fakeReturnProductService.getProducts(productIds);
-        // 3.1. Map<productId, productCode>
-        Map<Long, String> productCodeByproductId = productInfos.stream()
-                .collect(Collectors.toMap(
-                        ReturnToProductRequest::productId,
-                        ReturnToProductRequest::productCode
-                ));
-        // 3.2. Map<productId, productName>
-        Map<Long, String> productNameByproductId = productInfos.stream()
-                .collect(Collectors.toMap(
-                        ReturnToProductRequest::productId,
-                        ReturnToProductRequest::productName
-                ));
-        // 3.3. Map<productId, unitPrice>
-        Map<Long, BigDecimal> unitPriceByproductId = productInfos.stream()
-                .collect(Collectors.toMap(
-                        ReturnToProductRequest::productId,
-                        ReturnToProductRequest::unitPrice
-                ));
 
-        // 결과 반환
-        return new FranchiseReturnCreateResponse(
-                orderInfo,
-                inventoryInfo.stream()
-                        .map(info -> {
-                            return new FranchiseReturnTargetOrderItem(
-                                    info.boxCode(),
-                                    productCodeByproductId.get(info.productId()),
-                                    productNameByproductId.get(info.productId()),
-                                    unitPriceByproductId.get(info.productId())
-                            );
-                        })
-                        .toList()
-        );
+        // List<orderItemId>
+        List<Long> orderItemIds = orderItems.stream()
+                .map(FranchiseOrderItemCommand::orderItemId)
+                .toList();
+
+        // Map<orderItemId, FranchiseInventoryCommand>
+        Map<Long, FranchiseInventoryCommand> inventoryByOrderItemId = inventoryService.getInventoriesByOrderItemIds(orderItemIds);
+
+        // List<productId>
+        List<Long> productIds = orderItems.stream()
+                .map(FranchiseOrderItemCommand::productId)
+                .toList();
+
+        // Map<productId, ProductInfo>
+        Map<Long, ProductInfo> productInfoByProductId = productService.getProductInfos(productIds);
+
+        // FranchiseOrderInfo
+        FranchiseOrderInfo orderInfo = FranchiseOrderInfo.builder()
+                .orderCode(order.orderCode())
+                .username(username)
+                .phoneNumber(phoneNumber)
+                .franchiseCode(franchiseCode)
+                .build();
+
+        // List<FranchiseReturnTargetOrderItem>
+        List<FranchiseReturnTargetOrderItem> items = orderItems.stream()
+                .map(item -> {
+                    Long orderItemId = item.orderItemId();
+                    FranchiseInventoryCommand inventory = inventoryByOrderItemId.get(orderItemId);
+                    Long productId = inventory.productId();
+                    ProductInfo productInfo = productInfoByProductId.get(productId);
+
+                    if (productInfo == null) {
+                        throw new FranchiseReturnException(FranchiseReturnErrorCode.PRODUCT_NOT_FOUND);
+                    }
+
+                    return FranchiseReturnTargetOrderItem.builder()
+                            .boxCode(inventory.boxCode())
+                            .productCode(productInfo.productCode())
+                            .productName(productInfo.productName())
+                            .unitPrice(productInfo.retailPrice())
+                            .build();
+                })
+                .toList();
+
+        return FranchiseReturnCreateResponse.builder()
+                .orderInfo(orderInfo)
+                .items(items)
+                .build();
     }
 }

@@ -37,10 +37,18 @@ public class SwaggerConfig {
     }
 
     @Bean
-    public GroupedOpenApi returnApi() {
+    public GroupedOpenApi franchiseReturnApi() {
         return GroupedOpenApi.builder()
-                .group("반품(Return)")
+                .group("가맹점 반품(Return)")
                 .pathsToMatch("/api/v1/franchise/returns/**")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi hqReturnApi() {
+        return GroupedOpenApi.builder()
+                .group("본사 반품(Return)")
+                .pathsToMatch("/api/v1/hq/returns/**")
                 .build();
     }
 
@@ -77,26 +85,10 @@ public class SwaggerConfig {
     }
 
     @Bean
-    public GroupedOpenApi hqManagementApi() {
+    public GroupedOpenApi businessUnitManagementApi() {
         return GroupedOpenApi.builder()
-                .group("본사 관리(HQ Management)")
-                .pathsToMatch("/api/v1/hq/management/**")
-                .build();
-    }
-
-    @Bean
-    public GroupedOpenApi franchiseManagementApi() {
-        return GroupedOpenApi.builder()
-                .group("가맹점 관리(Franchise Management)")
-                .pathsToMatch("/api/v1/franchise/management/**")
-                .build();
-    }
-
-    @Bean
-    public GroupedOpenApi factoryManagementApi() {
-        return GroupedOpenApi.builder()
-                .group("공장 관리(Factory Management)")
-                .pathsToMatch("/api/v1/factory/management/**")
+                .group("사업장 관리(Business Unit Management)")
+                .pathsToMatch("/api/v1/hq/business-units/**")
                 .build();
     }
 
@@ -115,6 +107,15 @@ public class SwaggerConfig {
                 .pathsToMatch("/api/v1/franchise/inventory/**")
                 .build();
     }
+
+    @Bean
+    public GroupedOpenApi internalTransportApi() {
+        return GroupedOpenApi.builder()
+                .group("내부 운송(Internal Transport)")
+                .pathsToMatch("/api/v1/transport/internal/**")
+                .build();
+    }
+
 
     @Bean
     public GroupedOpenApi hqProductApi() {
@@ -207,7 +208,23 @@ public class SwaggerConfig {
                         .addSecuritySchemes(jwtSchemeName, securityScheme))
                 .addSecurityItem(securityRequirement)
                 .info(new Info()
-                        .title("AccountBookForMoms API")
+                        .title("CHAING-G")
                         .version("v1"));
+    }
+
+    @Bean
+    public GroupedOpenApi hqSettlementApi() {
+        return GroupedOpenApi.builder()
+                .group("본사 정산(HqSettlement)")
+                .pathsToMatch("/api/v1/hq/settlements/**")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi franchiseSettlementApi() {
+        return GroupedOpenApi.builder()
+                .group("가맹점 정산(FranchiseSettlement)")
+                .pathsToMatch("/api/v1/franchise/settlements/**")
+                .build();
     }
 }

@@ -31,6 +31,16 @@ public class FranchiseInventory extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long inventoryId;
 
+    // orderId
+    @NotNull
+    @Column(nullable = false)
+    private Long orderId;
+
+    // orderItemId
+    @NotNull
+    @Column(nullable = false)
+    private Long orderItemId;
+
     // 제품 식별 코드
     @NotBlank
     @Column(nullable = false)
@@ -64,9 +74,6 @@ public class FranchiseInventory extends BaseEntity {
 
     // 발주코드
     private String orderCode;
-
-
-    private String orderItemId;     // 발주를 하면 그 발주 코드 안에 여러 아이템이 있을건데 그거에 대한 각 아이디를 담는 곳
 
     @Column
     LocalDateTime shippedAt;        // 배송 완료 일자

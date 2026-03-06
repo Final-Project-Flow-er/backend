@@ -41,10 +41,7 @@ public class Returns extends BaseEntity {
     private String returnCode;
 
     @Column(nullable = false)
-    private String username;
-
-    @Column(nullable = false)
-    private String phoneNumber;
+    private Long userId;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
@@ -72,5 +69,13 @@ public class Returns extends BaseEntity {
         }
 
         this.returnStatus = ReturnStatus.CANCELED;
+    }
+
+    public void updateStatus() {
+        if (!this.returnStatus.equals(ReturnStatus.PENDING)) {
+            throw new FranchiseReturnException(FranchiseReturnErrorCode.ALREADY_ACCEPTED);
+        }
+
+        this.returnStatus = ReturnStatus.ACCEPTED;
     }
 }

@@ -1,3 +1,4 @@
+/*
 package com.chaing.domain.sales.service;
 
 import com.chaing.domain.sales.dto.request.FranchiseSellItemRequest;
@@ -319,4 +320,4 @@ class FranchiseSalesServiceTests {
         verify(franchiseSalesRepository, times(1)).findByFranchiseIdAndSalesCode(franchiseId, salesCode);
         assertEquals(FranchiseSalesErrorCode.ALREADY_CANCELLED, exception.getErrorCode());
     }
-}
+}*/

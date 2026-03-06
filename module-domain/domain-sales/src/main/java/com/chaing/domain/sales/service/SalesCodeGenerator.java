@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 @Component
 public class SalesCodeGenerator implements CodeGenerator {
     @Override
-    public String generate() {
+    public String generate(String businessUnitId) {
         return LocalDateTime.now() + String.valueOf(Math.random()*100 + 1);
     }
 }

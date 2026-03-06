@@ -49,13 +49,4 @@ public class MyPageService {
         user.updatePassword(encodedPassword);
         return user;
     }
-
-    // 내 사업장 정보 조회
-    public Long getMyBusinessUnitId(Long userId) {
-        User user = getMyInfo(userId);
-        if (user.getBusinessUnitId() == null) {
-            throw new UserException(UserErrorCode.BUSINESS_UNIT_NOT_FOUND);
-        }
-        return user.getBusinessUnitId();
-    }
 }

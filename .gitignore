@@ -48,3 +48,13 @@ GEMINI.md
 
 ### SQL ###
 src/main/resources/dml
+
+### API Document ###
+docs
+
+### Generated / Build Outputs ###
+**/bin/
+**/generated/
+**/generated-sources/
+**/build/
+**/out/

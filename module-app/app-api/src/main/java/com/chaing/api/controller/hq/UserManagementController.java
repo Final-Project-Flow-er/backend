@@ -71,7 +71,7 @@ public class UserManagementController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
-    @Operation(summary = "회원 상태 변경", description = "회원의 상태를 활성화, 비활성화, 또는 탈퇴 상태로 변경")
+    @Operation(summary = "회원 상태 변경", description = "회원의 상태를 활성화 또는 비활성화 상태로 변경")
     @PatchMapping("/{id}/status")
     public ResponseEntity<ApiResponse<UserDetailResponse>> updateUserStatus(
             @PathVariable Long id,
@@ -90,7 +90,7 @@ public class UserManagementController {
         return ResponseEntity.ok(ApiResponse.success(userManagementFacade.getUserLogs(pageable)));
     }
 
-    @Operation(summary = "회원 삭제", description = "본사 관리자가 등록되어 있는 회원 정보 삭제")
+    @Operation(summary = "회원 삭제", description = "회원 삭제 (soft delete)")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteUser(
             @PathVariable Long id,

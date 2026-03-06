@@ -9,6 +9,7 @@ public enum HQOrderStatus {
 
     PENDING("PENDING", "대기"),
     ACCEPTED("ACCEPTED", "접수"),
+    AWAITING("AWAITING", "배송 대기"),
     SHIPPING("SHIPPING", "배송중"),
     COMPLETED("COMPLETED", "배송완료"),
     CANCELED("CANCELED", "취소"),

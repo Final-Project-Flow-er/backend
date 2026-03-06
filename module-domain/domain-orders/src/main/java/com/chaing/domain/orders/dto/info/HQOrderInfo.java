@@ -24,7 +24,9 @@ public record HQOrderInfo(
 
         String storedDate,
 
-        String description
+        String description,
+
+        Boolean isRegular
 ) {
     public static HQOrderInfo from(HeadOfficeOrder order) {
         return HQOrderInfo.builder()
@@ -37,6 +39,7 @@ public record HQOrderInfo(
                 .manufacturedDate(order.getManufactureDate())
                 .storedDate(order.getStoredDate())
                 .description(order.getDescription())
+                .isRegular(order.getIsRegular())
                 .build();
     }
 }

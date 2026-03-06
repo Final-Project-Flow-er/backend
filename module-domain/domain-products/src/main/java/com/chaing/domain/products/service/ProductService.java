@@ -21,8 +21,6 @@ import org.springframework.stereotype.Service;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -161,7 +159,12 @@ public class ProductService {
     }
 
     public Map<Long, ProductInfo> getProductInfos(List<Long> productIds) {
-        return productRepository.findAllByProductIdIn(productIds).stream()
+        List<Product> products = productRepository.findAllByProductIdIn(productIds);
+
+        if (products == null || products.isEmpty()) {
+            throw new ProductException(ProductErrorCode.PRODUCT_NOT_FOUND);
+        }
+        return products.stream()
                 .collect(Collectors.toMap(
                         Product::getProductId,
                         entry -> ProductInfo.builder()
@@ -173,6 +176,43 @@ public class ProductService {
                                 .tradePrice(entry.getSupplyPrice())
                                 .build()
                 ));
+    }
+
+    // 제품 정보 전체 반환
+    // return: Map<productId, ProductInfo>
+    public Map<Long, ProductInfo> getAllProductInfo() {
+        List<Product> products = productRepository.findAllByStatus(ProductStatus.ON_SALE);
+
+        if (products == null || products.isEmpty()) {
+            throw new ProductException(ProductErrorCode.PRODUCT_NOT_FOUND);
+        }
+
+        return products.stream()
+                .collect(Collectors.toMap(
+                        Product::getProductId,
+                        product -> ProductInfo.builder()
+                                .productId(product.getProductId())
+                                .productCode(product.getProductCode())
+                                .productName(product.getName())
+                                .retailPrice(product.getPrice())
+                                .costPrice(product.getCostPrice())
+                                .tradePrice(product.getSupplyPrice())
+                                .build()
+                ));
+    }
+
+    public Map<Long, Integer> getWeightsByProductIds(List<Long> productIds) {
+
+        List<Product> products = productRepository.findAllByProductIdIn(productIds);
+
+        Map<Long, Integer> weightMap = products.stream()
+                .collect(Collectors.toMap(Product::getProductId, Product::getWeight));
+
+        if (weightMap.size() != productIds.stream().distinct().count()) {
+            throw new ProductException(ProductErrorCode.PRODUCT_NOT_FOUND);
+        }
+
+        return weightMap;
     }
 
     // 모든 상품 Id 조회

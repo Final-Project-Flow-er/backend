@@ -1,5 +1,6 @@
 package com.chaing.domain.inventories.usecase.reader;
 
+import com.chaing.domain.inventories.dto.raw.FactoryInventoryRawData;
 import com.chaing.domain.inventories.dto.raw.FranchiseInventoryRawData;
 import com.chaing.domain.inventories.entity.FranchiseInventory;
 import com.chaing.domain.inventories.repository.FranchiseInventoryRepository;
@@ -25,6 +26,22 @@ public class FranchiseReaderImpl implements Reader<FranchiseInventoryRawData> {
     public List<FranchiseInventoryRawData> findAllByStatusWait() {
 
         List<FranchiseInventory> entities = repository.findAllByStatusInboundWait();
+
+        return entities.stream()
+                .map(entity -> new FranchiseInventoryRawData(
+                        entity.getBoxCode(),
+                        entity.getProductId(),
+                        entity.getSerialCode(),
+                        entity.getManufactureDate(),
+                        entity.getFranchiseId(),
+                        entity.getStatus()
+                ))
+                .toList();
+    }
+
+    @Override
+    public List<FranchiseInventoryRawData> findAllByIds(List<Long> selectedList) {
+        List<FranchiseInventory> entities = repository.findAllByIdIn(selectedList);
 
         return entities.stream()
                 .map(entity -> new FranchiseInventoryRawData(

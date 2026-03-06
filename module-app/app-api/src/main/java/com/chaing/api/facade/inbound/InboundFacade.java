@@ -1,5 +1,6 @@
 package com.chaing.api.facade.inbound;
 
+import com.chaing.api.dto.inbound.request.InboundConfirmRequest;
 import com.chaing.api.dto.inbound.request.InboundScanBoxRequest;
 import com.chaing.api.dto.inbound.request.InboundScanItemRequest;
 import com.chaing.api.dto.inbound.response.InboundBoxSummaryResponse;
@@ -12,8 +13,11 @@ import com.chaing.domain.inventories.dto.info.PendingBoxInfo;
 import com.chaing.domain.inventories.dto.info.PendingItemInfo;
 import com.chaing.domain.inventories.dto.raw.FactoryInventoryRawData;
 import com.chaing.domain.inventories.dto.raw.FranchiseInventoryRawData;
+import com.chaing.domain.inventories.exception.InventoriesErrorCode;
+import com.chaing.domain.inventories.exception.InventoriesException;
 import com.chaing.domain.inventories.service.inbound.InboundService;
 import com.chaing.domain.products.service.ProductService;
+import com.chaing.domain.users.enums.UserRole;
 import jakarta.validation.Valid;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -115,5 +119,20 @@ public class InboundFacade {
                     );
                 })
                 .toList();
+    }
+
+    // 입고 승인
+    public void confirmInbound(@Valid InboundConfirmRequest request, UserRole role) {
+
+        List<Long> selectedList = request.inventoryIds();
+
+        // 역할에 따른 입고 승인 로직
+        if (role == UserRole.FACTORY) {
+            factoryInboundService.confirmInbound(selectedList);
+        } else if (role == UserRole.FRANCHISE) {
+            franchiseInboundService.confirmInbound(selectedList);
+        } else {
+            throw new InventoriesException(InventoriesErrorCode.INBOUND_ROLE_INVALID);
+        }
     }
 }

@@ -9,6 +9,7 @@ import com.chaing.api.dto.inbound.response.InboundDetailResponse;
 import com.chaing.api.facade.inbound.InboundFacade;
 import com.chaing.api.security.principal.UserPrincipal;
 import com.chaing.core.dto.ApiResponse;
+import com.chaing.domain.users.enums.UserRole;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -59,7 +60,7 @@ public class InboundController {
     public ResponseEntity<ApiResponse<List<InboundBoxSummaryResponse>>> getInboundBoxList(
             @AuthenticationPrincipal UserPrincipal userPrincipal
             ) {
-        List<InboundBoxSummaryResponse> responses = inboundFacade.getPendingBoxes(userPrincipal.getBusinessId());
+        List<InboundBoxSummaryResponse> responses = inboundFacade.getPendingBoxes(userPrincipal.getBusinessUnitId());
         return ResponseEntity.ok(ApiResponse.success(responses));
     }
 
@@ -85,8 +86,11 @@ public class InboundController {
     @PatchMapping("/confirm")
     @Operation(summary = "입고 승인", description = "해당 제품의 입고를 승인합니다.")
     public ResponseEntity<ApiResponse<Void>> updateInboundStatus(
-            @Valid @RequestBody InboundConfirmRequest request
+            @Valid @RequestBody InboundConfirmRequest request,
+            @AuthenticationPrincipal UserPrincipal userPrincipal
     ){
+        inboundFacade.confirmInbound(request, userPrincipal.getRole());
+
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

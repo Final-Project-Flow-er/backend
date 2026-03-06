@@ -93,4 +93,15 @@ public class FranchiseValidatorImpl implements Validator<FranchiseInboundCreateC
             }
         }
     }
+
+    @Override
+    public void checkValidStatus(List<LogType> statuses) {
+
+        boolean hasInvalidStatus = statuses.stream()
+                .anyMatch(status -> status != LogType.INBOUND_WAIT);
+
+        if(hasInvalidStatus) {
+            throw new InventoriesException(InventoriesErrorCode.INVALID_INBOUND_STATUS);
+        }
+    }
 }

@@ -6,4 +6,6 @@ public interface Reader<R> {
     boolean existsBySerialCode(String serialCode);
 
     List<R> findAllByStatusWait();
+
+    List<R> findAllByIds(List<Long> selectedList);
 }

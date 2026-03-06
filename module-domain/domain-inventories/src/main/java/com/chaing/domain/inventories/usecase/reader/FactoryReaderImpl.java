@@ -33,7 +33,20 @@ public class FactoryReaderImpl implements Reader<FactoryInventoryRawData> {
                         entity.getManufactureDate(),
                         entity.getStatus()
                 ))
-                .toList();    }
+                .toList();
+    }
 
+    @Override
+    public List<FactoryInventoryRawData> findAllByIds(List<Long> selectedList) {
+        List<FactoryInventory> entities = repository.findAllByIdIn(selectedList);
 
+        return entities.stream()
+                .map(entity -> new FactoryInventoryRawData(
+                        entity.getProductId(),
+                        entity.getSerialCode(),
+                        entity.getManufactureDate(),
+                        entity.getStatus()
+                ))
+                .toList();
+    }
 }

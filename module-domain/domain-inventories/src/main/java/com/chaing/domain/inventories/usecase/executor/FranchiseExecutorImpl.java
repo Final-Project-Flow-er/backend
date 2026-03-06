@@ -27,4 +27,9 @@ public class FranchiseExecutorImpl implements Executor<FranchiseInboundCreateCom
 
         repository.saveAll(inventories);
     }
+
+    @Override
+    public void confirmAll(List<String> confirmedIds) {
+        repository.updateAllStatusInboundBySerialCode(confirmedIds);
+    }
 }

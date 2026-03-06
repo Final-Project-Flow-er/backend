@@ -8,6 +8,8 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Component
 @Qualifier("factory")
 @RequiredArgsConstructor
@@ -22,5 +24,10 @@ public class FactoryExecutorImpl implements Executor<FactoryInboundCreateCommand
         FactoryInventory factoryInbound = FactoryInventory.from(command);
 
         repository.save(factoryInbound);
+    }
+
+    @Override
+    public void confirmAll(List<String> confirmedIds) {
+        repository.updateAllStatusInboundBySerialCode(confirmedIds);
     }
 }

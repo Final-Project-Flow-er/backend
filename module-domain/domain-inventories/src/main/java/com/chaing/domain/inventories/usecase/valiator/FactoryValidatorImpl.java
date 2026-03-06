@@ -1,8 +1,8 @@
 package com.chaing.domain.inventories.usecase.valiator;
 
+import com.chaing.core.enums.LogType;
 import com.chaing.domain.inventories.dto.command.FactoryInboundCreateCommand;
 import com.chaing.domain.inventories.dto.raw.FactoryInventoryRawData;
-import com.chaing.domain.inventories.dto.raw.FranchiseInventoryRawData;
 import com.chaing.domain.inventories.exception.InventoriesErrorCode;
 import com.chaing.domain.inventories.exception.InventoriesException;
 import com.chaing.domain.inventories.usecase.reader.Reader;
@@ -19,7 +19,7 @@ import java.util.List;
 public class FactoryValidatorImpl implements Validator<FactoryInboundCreateCommand, FactoryInventoryRawData> {
 
     @Qualifier("factory")
-    private final Reader reader;
+    private final Reader<FactoryInventoryRawData> reader;
 
     public final int SERIAL_CODE_LENGTH = 10;
 
@@ -76,6 +76,17 @@ public class FactoryValidatorImpl implements Validator<FactoryInboundCreateComma
             if(entity.manufactureDate() == null) {
                 throw new InventoriesException(InventoriesErrorCode.INVENTORIES_IS_INVALID);
             }
+        }
+    }
+
+    @Override
+    public void checkValidStatus(List<LogType> statuses) {
+
+        boolean hasInvalidStatus = statuses.stream()
+                .anyMatch(status -> status != LogType.INBOUND_WAIT);
+
+        if(hasInvalidStatus) {
+            throw new InventoriesException(InventoriesErrorCode.INVALID_INBOUND_STATUS);
         }
     }
 }

@@ -1,9 +1,7 @@
 package com.chaing.domain.inventories.service.inbound;
 
-import com.chaing.domain.inventories.dto.command.FranchiseInboundCreateCommand;
 import com.chaing.domain.inventories.dto.info.PendingBoxInfo;
 import com.chaing.domain.inventories.dto.info.PendingItemInfo;
-import com.chaing.domain.inventories.dto.raw.FranchiseInventoryRawData;
 import com.chaing.domain.inventories.dto.raw.InboundRawData;
 import com.chaing.domain.inventories.usecase.executor.Executor;
 import com.chaing.domain.inventories.usecase.reader.Reader;
@@ -71,4 +69,6 @@ public abstract class InboundService<T, R extends InboundRawData> {
     protected abstract List<R> getRawPendingData();
 
     protected abstract boolean isFranchise(R d, Long id);
+
+    public abstract void confirmInbound(List<Long> selectedList);
 }

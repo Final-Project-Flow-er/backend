@@ -23,4 +23,6 @@ public interface FranchiseReturnRepository extends JpaRepository<Returns, Long> 
     Optional<Returns> findByFranchiseIdAndUserIdAndReturnCode(Long franchiseId, Long userId, String returnCode);
 
     Optional<Returns> findByReturnIdAndDeletedAtIsNull(Long returnId);
+
+    List<Returns> findAllByFranchiseIdAndDeletedAtIsNull(Long franchiseId);
 }

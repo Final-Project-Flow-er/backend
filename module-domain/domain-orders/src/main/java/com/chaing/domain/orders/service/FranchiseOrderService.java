@@ -336,23 +336,31 @@ public class FranchiseOrderService {
         // List<orderItemId>
         List<Long> orderItemIds = orderItemIdByReturnItemId.values().stream().toList();
 
-        // Map<orderItemId, returnItemId>
-        Map<Long, Long> returnItemIdByOrderItemId = orderItemIdByReturnItemId.entrySet().stream()
-                .collect(Collectors.toMap(
+        // Map<orderItemId, List<returnItemId>>
+        Map<Long, List<Long>> returnItemIdsByOrderItemId = orderItemIdByReturnItemId.entrySet().stream()
+                .collect(Collectors.groupingBy(
                         Map.Entry::getValue,
-                        Map.Entry::getKey
+                        Collectors.mapping(Map.Entry::getKey, Collectors.toList())
                 ));
 
+        // List<FranchiseOrderItem>
         List<FranchiseOrderItem> items = franchiseOrderItemRepository.findAllByFranchiseOrderItemIdInAndDeletedAtIsNull(orderItemIds);
 
-        if (items == null || items.isEmpty()) {
+        // Map<orderItemId, productId>
+        Map<Long, Long> productIdByOrderItemId = items.stream()
+                .collect(Collectors.toMap(
+                        FranchiseOrderItem::getFranchiseOrderItemId,
+                        FranchiseOrderItem::getProductId
+                ));
+
+        if (items.isEmpty()) {
             throw new OrderException(OrderErrorCode.ORDER_ITEM_NOT_FOUND);
         }
 
-        return items.stream()
+        return orderItemIdByReturnItemId.entrySet().stream()
                 .collect(Collectors.toMap(
-                        item -> returnItemIdByOrderItemId.get(item.getFranchiseOrderItemId()),
-                        FranchiseOrderItem::getProductId
+                        Map.Entry::getKey,
+                        entry -> productIdByOrderItemId.get(entry.getValue())
                 ));
     }
 

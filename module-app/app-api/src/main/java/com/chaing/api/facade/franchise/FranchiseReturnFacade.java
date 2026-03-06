@@ -27,6 +27,7 @@ import com.chaing.domain.returns.service.FranchiseReturnService;
 import com.chaing.domain.returns.service.ReturnCodeGenerator;
 import com.chaing.domain.users.service.UserManagementService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -57,8 +59,11 @@ public class FranchiseReturnFacade {
         // Map<returnId, ReturnCommand>
         Map<Long, ReturnCommand> returns = franchiseReturnService.getAllReturns(franchiseId);
 
+        // List<returnId>
+        List<Long> returnIds = returns.keySet().stream().toList();
+
         // Map<returnId, List<ReturnItemCommand>>
-        Map<Long, List<ReturnItemCommand>> returnItemByReturnId = franchiseReturnService.getAllReturnItem();
+        Map<Long, List<ReturnItemCommand>> returnItemByReturnId = franchiseReturnService.getAllReturnItemByReturnIds(returnIds);
 
         // Map<returnItemId, returnId>
         Map<Long, Long> returnIdByReturnItemId = returnItemByReturnId.values().stream()
@@ -82,6 +87,13 @@ public class FranchiseReturnFacade {
         // Map<returnItemId, productId>
         Map<Long, Long> productIdByReturnItemId = franchiseOrderService.getProductIdByReturnItemId(orderItemIdByReturnItemId);
 
+        // Map<productId, List<returnItemId>>
+        Map<Long, List<Long>> returnItemIdsByProductId = productIdByReturnItemId.entrySet().stream()
+                .collect(Collectors.groupingBy(
+                        Map.Entry::getValue,
+                        Collectors.mapping(Map.Entry::getKey, Collectors.toList())
+                ));
+
         // List<returnItemId>
         List<Long> returnItemIds = productIdByReturnItemId.keySet().stream().toList();
 
@@ -102,30 +114,23 @@ public class FranchiseReturnFacade {
         // Map<productId, ProductInfo>
         Map<Long, ProductInfo> productInfoByProductId = productService.getProductInfos(productIds);
 
-        return orderItemIdsByProductId.entrySet().stream()
+        return returnItemIdsByProductId.entrySet().stream()
                 .map(entry -> {
                     Long productId = entry.getKey();
-                    List<Long> targetOrderItemIds = entry.getValue();
-                    Long returnId = returnIdByReturnItemId.get(targetOrderItemIds.get(0));
+                    List<Long> returnItemIdList = entry.getValue();
+                    Long returnId = returnIdByReturnItemId.get(returnItemIdList.get(0));
 
                     ReturnCommand returnCommand = returns.get(returnId);
                     ProductInfo productInfo = productInfoByProductId.get(productId);
 
-                    Long orderId = returnCommand.orderId();
-                    String orderCode = orderCodeByOrderId.get(orderId);
-
-                    int quantity = targetOrderItemIds.size();
-                    BigDecimal unitPrice = productInfo.retailPrice();
-
                     return FranchiseReturnResponse.builder()
                             .returnCode(returnCommand.returnCode())
                             .status(returnCommand.status())
-                            .orderCode(orderCode)
                             .productCode(productInfo.productCode())
                             .productName(productInfo.productName())
-                            .unitPrice(unitPrice)
-                            .quantity(quantity)
-                            .totalPrice(unitPrice.multiply(BigDecimal.valueOf(quantity)))
+                            .unitPrice(productInfo.tradePrice())
+                            .quantity(returnItemIdList.size())
+                            .totalPrice(productInfo.tradePrice().multiply(BigDecimal.valueOf(returnItemIdList.size())))
                             .type(returnCommand.type())
                             .requestedDate(returnCommand.requestedAt())
                             .build();

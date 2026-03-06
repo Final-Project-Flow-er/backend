@@ -15,7 +15,6 @@ import com.chaing.domain.returns.exception.FranchiseReturnErrorCode;
 import com.chaing.domain.returns.exception.FranchiseReturnException;
 import com.chaing.domain.returns.repository.FranchiseReturnItemRepository;
 import com.chaing.domain.returns.repository.FranchiseReturnRepository;
-import com.chaing.domain.returns.repository.interfaces.FranchiseReturnRepositoryCustom;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -33,14 +32,13 @@ public class FranchiseReturnService {
 
     private final FranchiseReturnRepository franchiseReturnRepository;
     private final FranchiseReturnItemRepository franchiseReturnItemRepository;
-    private final FranchiseReturnRepositoryCustom franchiseReturnRepositoryCustom;
 
     private final ReturnCodeGenerator generator;
 
     // 반품 전체 조회
     // return: Map<Long, ReturnCommand>
     public Map<Long, ReturnCommand> getAllReturns(Long franchiseId) {
-        List<ReturnCommand> returns = franchiseReturnRepositoryCustom.searchAllReturns(franchiseId);
+        List<Returns> returns = franchiseReturnRepository.findAllByFranchiseIdAndDeletedAtIsNull(franchiseId);
 
         if (returns == null || returns.isEmpty()) {
             throw new FranchiseReturnException(FranchiseReturnErrorCode.RETURN_NOT_FOUND);
@@ -48,8 +46,8 @@ public class FranchiseReturnService {
 
         return returns.stream()
                 .collect(Collectors.toMap(
-                        ReturnCommand::returnId,
-                        Function.identity()
+                        Returns::getReturnId,
+                        ReturnCommand::from
                 ));
     }
 
@@ -308,8 +306,8 @@ public class FranchiseReturnService {
     }
 
     // return: Map<returnId, List<ReturnItemCommand>>
-    public Map<Long, List<ReturnItemCommand>> getAllReturnItem() {
-        List<ReturnItem> items = franchiseReturnItemRepository.findAllByDeletedAtIsNull();
+    public Map<Long, List<ReturnItemCommand>> getAllReturnItemByReturnIds(List<Long> returnIds) {
+        List<ReturnItem> items = franchiseReturnItemRepository.findAllByReturns_ReturnIdInAndDeletedAtIsNull(returnIds);
 
         if (items == null || items.isEmpty()) {
             throw new FranchiseReturnException(FranchiseReturnErrorCode.RETURN_ITEM_NOT_FOUND);

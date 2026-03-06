@@ -8,12 +8,14 @@ import com.chaing.domain.inventories.entity.FranchiseInventory;
 import com.chaing.domain.inventories.repository.FranchiseInventoryRepository;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class InventoryService {
@@ -148,8 +150,9 @@ public class InventoryService {
         List<FranchiseInventory> inventories = inventoryRepository.findAllByOrderItemIdIn(orderItemIds);
 
         if (inventories == null || inventories.isEmpty()) {
-            // 예외 추가
+            // 예외 처리 추가
         }
+        log.info("inventories={}", inventories);
 
         return inventories.stream()
                 .collect(Collectors.toMap(

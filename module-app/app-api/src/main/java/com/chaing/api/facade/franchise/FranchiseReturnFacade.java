@@ -409,9 +409,11 @@ public class FranchiseReturnFacade {
 
         // FranchiseOrderDetailCommand
         FranchiseOrderDetailCommand order = franchiseOrderService.getOrderByOrderCode(franchiseId, userId, orderCode);
+        log.info("order: {}", order);
 
         // Map<orderId, List<FranchiseOrderItemCommand>>
         Map<Long, List<FranchiseOrderItemCommand>> orderItemsByOrderId = franchiseOrderService.getOrderItemsByOrderId(order.orderId());
+        log.info("orderItemsByOrderId: {}", orderItemsByOrderId);
 
         // List<FranchiseOrderItemCommand>
         List<FranchiseOrderItemCommand> orderItems = orderItemsByOrderId.values().stream()
@@ -422,6 +424,7 @@ public class FranchiseReturnFacade {
         List<Long> orderItemIds = orderItems.stream()
                 .map(FranchiseOrderItemCommand::orderItemId)
                 .toList();
+        log.info("orderItemIds={}", orderItemIds);
 
         // Map<orderItemId, FranchiseInventoryCommand>
         Map<Long, FranchiseInventoryCommand> inventoryByOrderItemId = inventoryService.getInventoriesByOrderItemIds(orderItemIds);
@@ -446,7 +449,10 @@ public class FranchiseReturnFacade {
         List<FranchiseReturnTargetOrderItem> items = orderItems.stream()
                 .map(item -> {
                     Long orderItemId = item.orderItemId();
+                    log.info("orderItemId: {}", orderItemId);
                     FranchiseInventoryCommand inventory = inventoryByOrderItemId.get(orderItemId);
+                    log.info("inventoryByOrderItemId: {}", inventoryByOrderItemId);
+                    log.info("inventory: {}", inventory);
                     Long productId = inventory.productId();
                     ProductInfo productInfo = productInfoByProductId.get(productId);
 

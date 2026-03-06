@@ -14,6 +14,10 @@ import java.util.List;
 public interface FranchiseInventoryRepository extends JpaRepository<FranchiseInventory, Long> {
     List<FranchiseInventory> findAllBySerialCodeIn(List<String> serialCodes);
 
+    List<FranchiseInventory> findAllByOrderItemIdIn(List<Long> orderItemIds);
+
+    List<FranchiseInventory> findAllByBoxCodeIn(List<String> boxCodes);
+
     List<FranchiseInventory> findAllByStatus(LogType status);
 
     List<FranchiseInventory> findAllByInventoryIdIn(List<Long> selectedList);

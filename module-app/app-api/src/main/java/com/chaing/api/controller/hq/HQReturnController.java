@@ -53,9 +53,9 @@ public class HQReturnController {
             @PathVariable("return-code") String returnCode,
             @AuthenticationPrincipal UserPrincipal userPrincipal
     ) {
-        String username = userPrincipal.getUsername();
+        Long userId = userPrincipal.getId();
 
-        return ResponseEntity.ok(ApiResponse.success(hqReturnFacade.getReturn(username, returnCode)));
+        return ResponseEntity.ok(ApiResponse.success(hqReturnFacade.getReturn(userId, returnCode)));
     }
 
     @Operation(summary = "반품 요청 상태 접수", description = "가맹점의 반품 요청 상태 접수")

@@ -188,7 +188,7 @@ public class HQOrderService {
     public HQOrderInfo createOrder(Long hqId, HQOrderCreateRequest request, Integer totalQuantity, BigDecimal totalAmount) {
         // 발주 생성
         HeadOfficeOrder order = HeadOfficeOrder.builder()
-                .orderCode(generator.generate())
+                .orderCode(generator.generate("수정요망"))
                 .hqId(hqId)
                 .username(request.username())
                 .phoneNumber(request.phoneNumber())

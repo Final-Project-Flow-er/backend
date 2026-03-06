@@ -1,20 +1,17 @@
-package com.chaing.api.dto.franchise.orders.response;
+package com.chaing.domain.orders.dto.response;
 
 import com.chaing.domain.orders.enums.FranchiseOrderStatus;
 import lombok.Builder;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Builder
-public record FranchiseOrderResponse(
+public record FranchiseOrderCreateResponse(
         String orderCode,
 
         FranchiseOrderStatus orderStatus,
-
-        String productCode,
-
-        BigDecimal unitPrice,
 
         BigDecimal totalPrice,
 
@@ -22,6 +19,8 @@ public record FranchiseOrderResponse(
 
         String receiver,
 
-        LocalDateTime deliveryDate
+        LocalDateTime deliveryDate,
+
+        List<FranchiseOrderItemDetailResponse> items
 ) {
 }

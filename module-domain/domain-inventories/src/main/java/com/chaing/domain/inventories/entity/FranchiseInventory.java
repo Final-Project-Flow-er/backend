@@ -32,6 +32,16 @@ public class FranchiseInventory extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long inventoryId;
 
+    // orderId
+    @NotNull
+    @Column(nullable = false)
+    private Long orderId;
+
+    // orderItemId
+    @NotNull
+    @Column(nullable = false)
+    private Long orderItemId;
+
     // 제품 식별 코드
     @NotBlank
     @Column(nullable = false)

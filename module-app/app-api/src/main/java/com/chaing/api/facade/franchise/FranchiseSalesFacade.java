@@ -1,12 +1,14 @@
 package com.chaing.api.facade.franchise;
 
 import com.chaing.api.dto.franchise.sales.response.FranchiseSalesResponse;
+import com.chaing.domain.businessunits.service.impl.FranchiseServiceImpl;
 import com.chaing.domain.sales.dto.request.FranchiseSellRequest;
 import com.chaing.domain.sales.dto.response.FranchiseSalesCancellationResponse;
 import com.chaing.domain.sales.dto.response.FranchiseSalesDetailResponse;
 import com.chaing.domain.sales.dto.response.FranchiseSalesInfoResponse;
 import com.chaing.domain.sales.dto.response.FranchiseSellResponse;
 import com.chaing.domain.sales.service.FranchiseSalesService;
+import com.chaing.domain.users.service.UserManagementService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -20,11 +22,13 @@ import java.util.List;
 public class FranchiseSalesFacade {
 
     private final FranchiseSalesService franchiseSalesService;
+    private final UserManagementService userManagementService;
+    private final FranchiseServiceImpl franchiseService;
 
     // 미취소 판매 기록 조회
-    public List<FranchiseSalesResponse> getAllSales(String username) {
-        // franchiseId username으로 조회하는 로직 추가 필요
-        Long franchiseId = 1L;
+    public List<FranchiseSalesResponse> getAllSales(Long userId) {
+        // franchiseId
+        Long franchiseId = userManagementService.getFranchiseIdByUserId(userId);
 
         List<FranchiseSalesInfoResponse> sales = franchiseSalesService.getAllSales(franchiseId);
 
@@ -32,9 +36,9 @@ public class FranchiseSalesFacade {
     }
 
     // 취소 판매 기록 조회
-    public List<FranchiseSalesResponse> getAllCanceledSales(String username) {
-        // franchiseId username으로 조회하는 로직 추가 필요
-        Long franchiseId = 1L;
+    public List<FranchiseSalesResponse> getAllCanceledSales(Long userId) {
+        // franchiseId
+        Long franchiseId = userManagementService.getFranchiseIdByUserId(userId);
 
         List<FranchiseSalesInfoResponse> canceledSales = franchiseSalesService.getAllCanceledSales(franchiseId);
 
@@ -42,29 +46,32 @@ public class FranchiseSalesFacade {
     }
 
     // 판매 기록 세부 조회
-    public FranchiseSalesDetailResponse getSalesDetail(String username, String salesCode) {
-        // franchiseId username으로 조회하는 로직 추가 필요
-        Long franchiseId = 1L;
+    public FranchiseSalesDetailResponse getSalesDetail(Long userId, String salesCode) {
+        // franchiseId
+        Long franchiseId = userManagementService.getFranchiseIdByUserId(userId);
 
         return franchiseSalesService.getSalesDetail(franchiseId, salesCode);
     }
 
     // 판매 취소
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public FranchiseSalesCancellationResponse cancel(String username, String salesCode) {
-        // franchiseId username으로 조회하는 로직 추가 필요
-        Long franchiseId = 1L;
+    public FranchiseSalesCancellationResponse cancel(Long userId, String salesCode) {
+        // franchiseId
+        Long franchiseId = userManagementService.getFranchiseIdByUserId(userId);
 
         return franchiseSalesService.cancel(franchiseId, salesCode);
     }
 
     // 판매 생성
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
-    public FranchiseSellResponse sell(String username, FranchiseSellRequest request) {
-        // franchiseId username으로 조회하는 로직 추가 필요
-        Long franchiseId = 1L;
+    public FranchiseSellResponse sell(Long userId, FranchiseSellRequest request) {
+        // franchiseId
+        Long franchiseId = userManagementService.getFranchiseIdByUserId(userId);
 
-        FranchiseSellResponse response = franchiseSalesService.sell(franchiseId, request);
+        // franchiseCode
+        String franchiseCode = franchiseService.getById(franchiseId).businessNumber();
+
+        FranchiseSellResponse response = franchiseSalesService.sell(franchiseId, franchiseCode, request);
 
         //TODO: 재고 차감 로직 추가
 

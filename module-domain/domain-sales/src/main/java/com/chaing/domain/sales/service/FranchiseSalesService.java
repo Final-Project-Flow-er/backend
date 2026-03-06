@@ -61,7 +61,7 @@ public class FranchiseSalesService {
     }
 
     // 판매 생성
-    public FranchiseSellResponse sell(Long franchiseId, FranchiseSellRequest request) {
+    public FranchiseSellResponse sell(Long franchiseId, String franchiseCode, FranchiseSellRequest request) {
         Sales sales = null;
         SalesItem salesItem = null;
         List<SalesItem> salesItems = new ArrayList<>();
@@ -70,7 +70,7 @@ public class FranchiseSalesService {
             // 판매 생성
             sales = Sales.builder()
                     .franchiseId(franchiseId)
-                    .salesCode(salesCodeGenerator.generate())
+                    .salesCode(salesCodeGenerator.generate(franchiseCode))
                     .quantity(request.totalQuantity())
                     .totalAmount(request.totalAmount())
                     .build();

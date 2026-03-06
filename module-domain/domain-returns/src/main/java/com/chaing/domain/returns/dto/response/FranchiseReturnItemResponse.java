@@ -8,8 +8,6 @@ import java.math.BigDecimal;
 public record FranchiseReturnItemResponse(
         String boxCode,
 
-        String serialCode,
-
         String productCode,
 
         String productName,

@@ -1,5 +1,5 @@
 package com.chaing.core.util;
 
 public interface CodeGenerator {
-    public String generate();
+    public String generate(String businessUnitId);
 }

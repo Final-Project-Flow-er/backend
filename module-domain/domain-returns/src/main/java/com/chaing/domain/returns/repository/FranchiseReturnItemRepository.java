@@ -9,11 +9,15 @@ import java.util.List;
 
 @Repository
 public interface FranchiseReturnItemRepository extends JpaRepository<ReturnItem, Long> {
-    List<ReturnItem> findAllByReturns_ReturnCode(String returnCode);
+    List<ReturnItem> findAllByReturns_ReturnCodeAndDeletedAtIsNull(String returnCode);
 
     List<ReturnItem> findAllByReturns_ReturnStatus(ReturnStatus status);
 
     List<ReturnItem> findAllByReturns_ReturnStatusNot(ReturnStatus returnStatus);
 
     List<ReturnItem> findAllByReturnItemIdIn(List<Long> returnItemIds);
+
+    List<ReturnItem> findAllByReturns_ReturnIdInAndDeletedAtIsNull(List<Long> returnIds);
+
+    List<ReturnItem> findByReturns_ReturnIdAndDeletedAtIsNull(Long returnId);
 }

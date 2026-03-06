@@ -9,7 +9,7 @@ import java.time.format.DateTimeFormatter;
 @Component
 public class HQOrderCodeGenerator implements CodeGenerator {
     @Override
-    public String generate() {
+    public String generate(String businessUnitId) {
         return "HEAD" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")) + (int)(Math.random()*100 + 1);
     }
 }

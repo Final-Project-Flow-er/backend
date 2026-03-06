@@ -208,7 +208,7 @@ public class SwaggerConfig {
                         .addSecuritySchemes(jwtSchemeName, securityScheme))
                 .addSecurityItem(securityRequirement)
                 .info(new Info()
-                        .title("AccountBookForMoms API")
+                        .title("CHAING-G")
                         .version("v1"));
     }
 

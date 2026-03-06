@@ -91,12 +91,12 @@ public class FranchiseReturnService {
 
         Set<String> requestedBoxCodes = new HashSet<>(boxCodes);
 
-        // 삭제: DB에 있지만 요청에 없는 것
+        // 삭제
         List<ReturnItem> itemsToDelete = items.stream()
                 .filter(item -> !requestedBoxCodes.contains(item.getBoxCode()))
                 .toList();
 
-        // 추가: 요청에 있지만 DB에 없는 것
+        // 추가
         List<ReturnItem> itemsToAdd = boxCodes.stream()
                 .filter(boxCode -> !originalItems.containsKey(boxCode))
                 .map(boxCode -> ReturnItem.builder()
@@ -106,13 +106,13 @@ public class FranchiseReturnService {
                         .build())
                 .toList();
 
-        // 유지: 양쪽에 다 있는 것 → 아무것도 안 함
-
         franchiseReturnItemRepository.deleteAll(itemsToDelete);
         franchiseReturnItemRepository.saveAll(itemsToAdd);
 
+        List<ReturnItem> response = franchiseReturnItemRepository.findAllByReturns_ReturnCodeAndDeletedAtIsNull(returnCode);
+
         // 반환
-        return originalItems.values().stream()
+        return response.stream()
                 .map(ReturnItemCommand::from)
                 .toList();
     }

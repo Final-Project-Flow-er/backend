@@ -121,8 +121,8 @@ public class InventoryService {
                 ));
     }
 
-    // return: Map<boxCode, FranchiseInventoryCommand>
-    public Map<String, FranchiseInventoryCommand> getInventoriesByBoxCode(List<String> boxCodes) {
+    // return: Map<inventoryId, FranchiseInventoryCommand>
+    public Map<Long, FranchiseInventoryCommand> getInventoriesByBoxCode(List<String> boxCodes) {
         List<FranchiseInventory> inventories = inventoryRepository.findAllByBoxCodeIn(boxCodes);
 
         if (inventories == null || inventories.isEmpty()) {
@@ -131,7 +131,7 @@ public class InventoryService {
 
         return inventories.stream()
                 .collect(Collectors.toMap(
-                        FranchiseInventory::getBoxCode,
+                        FranchiseInventory::getInventoryId,
                         inventory -> FranchiseInventoryCommand.builder()
                                 .inventoryId(inventory.getInventoryId())
                                 .orderItemId(inventory.getOrderItemId())

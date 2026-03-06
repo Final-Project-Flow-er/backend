@@ -2,6 +2,7 @@ package com.chaing.api.facade.franchise;
 
 import com.chaing.core.dto.command.FranchiseInventoryCommand;
 import com.chaing.core.dto.info.ProductInfo;
+import com.chaing.core.dto.request.FranchiseReturnUpdateRequest;
 import com.chaing.core.dto.returns.response.FranchiseOrderInfo;
 import com.chaing.core.dto.returns.response.FranchiseReturnTargetResponse;
 import com.chaing.domain.businessunits.service.impl.FranchiseServiceImpl;
@@ -225,7 +226,7 @@ public class FranchiseReturnFacade {
 
     // 반품 수정
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
-    public FranchiseReturnUpdateResponse updateReturn(Long userId, List<String> boxCodes, String returnCode) {
+    public FranchiseReturnUpdateResponse updateReturn(Long userId, List<FranchiseReturnUpdateRequest> requests, String returnCode) {
         // franchiseId
         Long franchiseId = userManagementService.getFranchiseIdByUserId(userId);
 
@@ -235,18 +236,14 @@ public class FranchiseReturnFacade {
         // FranchiseOrderDetailCommand
         FranchiseOrderDetailCommand orderCommand = franchiseOrderService.getOrderByOrderId(franchiseId, userId, returnCommand.orderId());
 
-        // Map<boxCode, FranchiseInventoryCommand>
-        Map<String, FranchiseInventoryCommand> inventoryByBoxCode = inventoryService.getInventoriesByBoxCode(boxCodes);
+        // List<boxCode>
+        List<String> boxCodes = requests.stream().map(FranchiseReturnUpdateRequest::boxCode).toList();
 
+        // Map<inventoryId, FranchiseInventoryCommand>
+        Map<Long, FranchiseInventoryCommand> inventoryByBoxCode = inventoryService.getInventoriesByBoxCode(boxCodes);
+        log.info("inventoryByBoxCode: {}" , inventoryByBoxCode);
         // Map<returnItemId, ReturnItemCommand>
         Map<Long, ReturnItemCommand> returnItemByReturnItemId = franchiseReturnService.getReturnItemsByReturnId(returnCommand.returnId());
-
-        // Map<boxCode, orderItemId>
-        Map<String, Long> orderItemIdByBoxCode = returnItemByReturnItemId.values().stream()
-                .collect(Collectors.toMap(
-                        ReturnItemCommand::boxCode,
-                        ReturnItemCommand::orderItemId
-                ));
 
         // Map<returnItemId, orderItemId>
         Map<Long, Long> orderItemIdByReturnItemId = returnItemByReturnItemId.values().stream()
@@ -255,8 +252,8 @@ public class FranchiseReturnFacade {
                         ReturnItemCommand::orderItemId
                 ));
 
-        // 수정 반영. input: Map<returnItemId, orderItemId>, boxCodes, Map<boxCode, orderItemId>
-        List<ReturnItemCommand> updatedReturnItems = franchiseReturnService.updateReturnItems(boxCodes, orderItemIdByReturnItemId, returnCode, orderItemIdByBoxCode);
+        // 수정
+        List<ReturnItemCommand> updatedReturnItems = franchiseReturnService.updateReturnItems(boxCodes, returnCode, inventoryByBoxCode);
 
         // List<returnItemId>
         List<Long> returnItemIds = returnItemByReturnItemId.keySet().stream().toList();

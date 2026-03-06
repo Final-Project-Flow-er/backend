@@ -1,10 +1,9 @@
-package com.chaing.api.dto.transport.management.request;
+package com.chaing.domain.transports.dto.command;
 
-import com.chaing.domain.transports.dto.command.VehicleCreateCommand;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
-public record CreateVehicleRequest(
+public record VehicleCreateCommand(
 
         @NotNull(message = "소속 업체는 필수입니다.")
         Long transportId,
@@ -24,14 +23,4 @@ public record CreateVehicleRequest(
         @NotNull(message = "최대 적재량은 필수입니다.")
         Long maxLoad
 ) {
-    public VehicleCreateCommand toCommand() {
-        return new VehicleCreateCommand(
-                this.transportId,
-                this.vehicleNumber,
-                this.vehicleType,
-                this.driverName,
-                this.driverPhone,
-                this.maxLoad
-        );
-    }
 }

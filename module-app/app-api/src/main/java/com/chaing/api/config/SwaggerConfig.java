@@ -211,4 +211,20 @@ public class SwaggerConfig {
                         .title("AccountBookForMoms API")
                         .version("v1"));
     }
+
+    @Bean
+    public GroupedOpenApi hqSettlementApi() {
+        return GroupedOpenApi.builder()
+                .group("본사 정산(HqSettlement)")
+                .pathsToMatch("/api/v1/hq/settlements/**")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi franchiseSettlementApi() {
+        return GroupedOpenApi.builder()
+                .group("가맹점 정산(FranchiseSettlement)")
+                .pathsToMatch("/api/v1/franchise/settlements/**")
+                .build();
+    }
 }

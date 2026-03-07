@@ -12,6 +12,7 @@ import com.chaing.domain.inventories.enums.LocationType;
 import com.chaing.domain.inventories.exception.InventoryErrorCode;
 import com.chaing.domain.inventories.exception.InventoryException;
 import com.chaing.domain.inventories.repository.interfaces.FactoryInventoryRepositoryCustom;
+import com.querydsl.core.Tuple;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.CaseBuilder;
@@ -105,7 +106,7 @@ public class FactoryInventoryRepositoryImpl implements FactoryInventoryRepositor
                                 .where(
                                                 factoryInventory.productId.eq(request.productId()),
                                                 containsSerialCode(request.serialCode()),
-                                                factoryInventory.manufactureDate.eq(request.manufactureDate()),
+                                                containsManufactureDate(request.manufactureDate()),
                                                 containsShippedAt(request.shippedAt()),
                                                 containsReceivedAt(request.receivedAt()))
                                 .fetch();
@@ -123,7 +124,7 @@ public class FactoryInventoryRepositoryImpl implements FactoryInventoryRepositor
 
                 NumberExpression<Integer> quantity = factoryInventory.count().intValue();
 
-                List<com.querydsl.core.Tuple> results = queryFactory
+                List<Tuple> results = queryFactory
                                 .select(
                                                 factoryInventory.productId,
                                                 factoryInventory.manufactureDate,
@@ -212,6 +213,9 @@ public class FactoryInventoryRepositoryImpl implements FactoryInventoryRepositor
         }
 
         private BooleanExpression containsLocationType(String locationType) {
+            if(locationType == null || locationType.isBlank()){
+                throw new InventoryException(InventoryErrorCode.INVALID_LOCATION_TYPE);
+            }
                 try {
                         LocationType type = LocationType.valueOf(locationType.toUpperCase());
                         return QInventoryPolicy.inventoryPolicy.locationType.eq(type);

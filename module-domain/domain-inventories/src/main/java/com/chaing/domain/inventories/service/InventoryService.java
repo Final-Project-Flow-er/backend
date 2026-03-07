@@ -1,5 +1,9 @@
 package com.chaing.domain.inventories.service;
 
+import com.chaing.core.dto.command.FranchiseInventoryCommand;
+import com.chaing.core.dto.info.ReturnItemInfo;
+import com.chaing.core.dto.request.FranchiseReturnUpdateRequest;
+import com.chaing.core.dto.returns.request.ReturnToInventoryRequest;
 import com.chaing.core.enums.LogType;
 import com.chaing.domain.inventories.dto.request.FranchiseInventoryItemsRequest;
 import com.chaing.domain.inventories.dto.request.HQInventoryItemsRequest;
@@ -14,10 +18,6 @@ import com.chaing.domain.inventories.dto.response.HQInventoryItemResponse;
 import com.chaing.domain.inventories.dto.response.InventoryProductInfoResponse;
 import com.chaing.domain.inventories.dto.response.SafetyStockResponse;
 import com.chaing.domain.inventories.entity.FactoryInventory;
-import com.chaing.core.dto.command.FranchiseInventoryCommand;
-import com.chaing.core.dto.info.ReturnItemInfo;
-import com.chaing.core.dto.request.FranchiseReturnUpdateRequest;
-import com.chaing.core.dto.returns.request.ReturnToInventoryRequest;
 import com.chaing.domain.inventories.entity.FranchiseInventory;
 import com.chaing.domain.inventories.entity.HQInventory;
 import com.chaing.domain.inventories.entity.InventoryPolicy;
@@ -26,7 +26,6 @@ import com.chaing.domain.inventories.repository.FactoryInventoryRepository;
 import com.chaing.domain.inventories.repository.FranchiseInventoryRepository;
 import com.chaing.domain.inventories.repository.HQInventoryRepository;
 import com.chaing.domain.inventories.repository.InventoryPolicyRepository;
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -128,7 +127,7 @@ public class InventoryService {
     }
 
     // 가맹점 상품 증가
-    public void franchiseIncreaseInventory(@Valid InventoryBatchRequest request) {
+    public void franchiseIncreaseInventory(InventoryBatchRequest request) {
         List<FranchiseInventory> inventories = request.boxes().stream()
                 .flatMap(box -> box.productList().stream()
                         .map(product -> FranchiseInventory.builder()
@@ -145,7 +144,7 @@ public class InventoryService {
         franchiseInventoryRepository.saveAll(inventories);
     }
 
-    public void factoryIncreaseInventory(@Valid InventoryBatchRequest request) {
+    public void factoryIncreaseInventory(InventoryBatchRequest request) {
         List<FactoryInventory> inventories = request.boxes().stream()
                 .flatMap(box -> box.productList().stream()
                         .map(product -> FactoryInventory.builder()
@@ -160,7 +159,7 @@ public class InventoryService {
         factoryInventoryRepository.saveAll(inventories);
     }
 
-    public void hqIncreaseInventory(@Valid InventoryBatchRequest request) {
+    public void hqIncreaseInventory(InventoryBatchRequest request) {
         List<HQInventory> inventories = request.boxes().stream()
                 .flatMap(box -> box.productList().stream()
                         .map(product -> HQInventory.builder()

@@ -2,6 +2,7 @@ package com.chaing.api.facade.hq;
 
 import com.chaing.api.dto.hq.user.request.CreateUserRequest;
 import com.chaing.api.dto.hq.user.request.UpdateUserRequest;
+import com.chaing.api.dto.hq.user.request.UserLogSearchRequest;
 import com.chaing.api.dto.hq.user.request.UserSearchRequest;
 import com.chaing.api.dto.hq.user.response.CreateUserResponse;
 import com.chaing.api.dto.hq.user.response.UserDetailResponse;
@@ -9,9 +10,9 @@ import com.chaing.api.dto.hq.user.response.UserLogResponse;
 import com.chaing.api.dto.hq.user.response.UserSummaryResponse;
 import com.chaing.api.dto.user.event.UserInfoResendEvent;
 import com.chaing.api.dto.user.event.UserRegisteredEvent;
+import com.chaing.domain.users.dto.condition.UserLogSearchCondition;
 import com.chaing.domain.users.dto.condition.UserSearchCondition;
 import com.chaing.domain.users.entity.User;
-import com.chaing.domain.users.entity.UserLog;
 import com.chaing.domain.users.enums.UserAction;
 import com.chaing.domain.users.enums.UserStatus;
 import com.chaing.domain.users.exception.UserErrorCode;
@@ -119,9 +120,9 @@ public class UserManagementFacade {
     }
 
     // 회원 로그 조회
-    public Page<UserLogResponse> getUserLogs(Pageable pageable) {
-        Page<UserLog> logs = userLogService.getAllUserLogs(pageable);
-        return logs.map(UserLogResponse::from);
+    public Page<UserLogResponse> getUserLogs(UserLogSearchRequest request, Pageable pageable) {
+        UserLogSearchCondition condition = request.toCondition();
+        return userLogService.getUserLogList(condition, pageable).map(UserLogResponse::from);
     }
 
     // 회원 삭제

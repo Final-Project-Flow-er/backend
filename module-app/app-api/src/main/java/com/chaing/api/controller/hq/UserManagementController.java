@@ -3,6 +3,7 @@ package com.chaing.api.controller.hq;
 import com.chaing.api.dto.hq.user.request.CreateUserRequest;
 import com.chaing.api.dto.hq.user.request.UpdateUserRequest;
 import com.chaing.api.dto.hq.user.request.UpdateUserStatusRequest;
+import com.chaing.api.dto.hq.user.request.UserLogSearchRequest;
 import com.chaing.api.dto.hq.user.request.UserSearchRequest;
 import com.chaing.api.dto.hq.user.response.CreateUserResponse;
 import com.chaing.api.dto.hq.user.response.UserDetailResponse;
@@ -100,9 +101,10 @@ public class UserManagementController {
     @Operation(summary = "회원 로그 조회", description = "회원의 등록, 수정, 상태 변경 이력 조회")
     @GetMapping("/logs")
     public ResponseEntity<ApiResponse<Page<UserLogResponse>>> getUserLog(
-            Pageable pageable
+            UserLogSearchRequest request,
+            @PageableDefault(size = 20) Pageable pageable
     ) {
-        return ResponseEntity.ok(ApiResponse.success(userManagementFacade.getUserLogs(pageable)));
+        return ResponseEntity.ok(ApiResponse.success(userManagementFacade.getUserLogs(request, pageable)));
     }
 
     @Operation(summary = "회원 삭제", description = "회원 삭제 (soft delete)")

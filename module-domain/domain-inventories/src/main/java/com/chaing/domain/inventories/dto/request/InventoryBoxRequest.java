@@ -1,6 +1,7 @@
 package com.chaing.domain.inventories.dto.request;
 
 import com.chaing.core.enums.LogType;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -25,6 +26,7 @@ public record InventoryBoxRequest(
         @DecimalMin(value = "0", inclusive = true)
         BigDecimal price,
 
+        @Valid
         List<InventoryRequest> productList
 ) {
 }

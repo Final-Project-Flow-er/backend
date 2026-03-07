@@ -46,9 +46,10 @@ public class AuthController {
     @Operation(summary = "토큰 재발급", description = "만료된 Access Token을 Refresh Token을 사용하여 갱신")
     @PostMapping("/reissue")
     public ResponseEntity<ApiResponse<LoginResponse>> reissue(
+            @AuthenticationPrincipal UserPrincipal principal,
             @RequestHeader("Authorization-Refresh") String refreshToken
     ) {
-        return ResponseEntity.ok(ApiResponse.success(authFacade.reissue(refreshToken)));
+        return ResponseEntity.ok(ApiResponse.success(authFacade.reissue(refreshToken, principal.getRole())));
     }
 
     @Operation(summary = "로그아웃", description = "토큰을 무효화 시켜 로그아웃 처리")

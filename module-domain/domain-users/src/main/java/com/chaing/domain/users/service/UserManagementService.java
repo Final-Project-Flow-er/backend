@@ -13,6 +13,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Service
@@ -57,12 +59,15 @@ public class UserManagementService {
             default -> throw new UserException(UserErrorCode.INVALID_ROLE);
         };
 
-        return userRepository.findMaxLoginIdByRole(role)
+        String currentYearMonth = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMM"));
+        String searchPattern = prefix + currentYearMonth;
+
+        return userRepository.findMaxLoginIdByPattern(searchPattern)
                 .map(maxId -> {
-                    int nextNum = Integer.parseInt(maxId.substring(2)) + 1;
-                    return prefix + String.format("%04d", nextNum);
+                    int nextNum = Integer.parseInt(maxId.substring(searchPattern.length())) + 1;
+                    return searchPattern + String.format("%03d", nextNum);
                 })
-                .orElse(prefix + "0001");
+                .orElse(searchPattern + "001");
     }
 
     // 회원 목록 조회

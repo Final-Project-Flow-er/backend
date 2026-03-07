@@ -7,6 +7,7 @@ import com.chaing.api.dto.hq.user.response.CreateUserResponse;
 import com.chaing.api.dto.hq.user.response.UserDetailResponse;
 import com.chaing.api.dto.hq.user.response.UserLogResponse;
 import com.chaing.api.dto.hq.user.response.UserSummaryResponse;
+import com.chaing.api.dto.user.request.ResetPasswordRequest;
 import com.chaing.api.facade.hq.UserManagementFacade;
 import com.chaing.api.security.principal.UserPrincipal;
 import com.chaing.core.dto.ApiResponse;
@@ -69,6 +70,15 @@ public class UserManagementController {
     ) {
         UserDetailResponse response = userManagementFacade.updateUser(id, request, principal.getId());
         return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @Operation(summary = "회원 정보 재전송", description = "특정 회원의 아이디와 사원번호를 메일로 재전송")
+    @PostMapping("/{id}/resend-info")
+    public ResponseEntity<ApiResponse<String>> resendUserInfo(
+            @PathVariable Long id
+    ) {
+        userManagementFacade.sendUserInfo(id);
+        return ResponseEntity.ok(ApiResponse.success("회원 정보가 메일로 발송되었습니다."));
     }
 
     @Operation(summary = "회원 상태 변경", description = "회원의 상태를 활성화 또는 비활성화 상태로 변경")

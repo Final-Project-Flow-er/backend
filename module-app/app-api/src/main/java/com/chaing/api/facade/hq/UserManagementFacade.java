@@ -6,6 +6,7 @@ import com.chaing.api.dto.hq.user.response.CreateUserResponse;
 import com.chaing.api.dto.hq.user.response.UserDetailResponse;
 import com.chaing.api.dto.hq.user.response.UserLogResponse;
 import com.chaing.api.dto.hq.user.response.UserSummaryResponse;
+import com.chaing.api.dto.user.event.UserInfoResendEvent;
 import com.chaing.api.dto.user.event.UserRegisteredEvent;
 import com.chaing.domain.users.entity.User;
 import com.chaing.domain.users.entity.UserLog;
@@ -64,6 +65,17 @@ public class UserManagementFacade {
         eventPublisher.publishEvent(new UserRegisteredEvent(user.getEmail(), loginId, tempPassword, employeeNumber));
 
         return CreateUserResponse.from(user);
+    }
+
+    // 회원 정보 재발송
+    public void sendUserInfo(Long userId) {
+        User user = userManagementService.getUserById(userId);
+
+        if (user.getEmail() == null || user.getEmail().isBlank()) {
+            throw new UserException(UserErrorCode.EMAIL_NOT_FOUND);
+        }
+
+        eventPublisher.publishEvent(new UserInfoResendEvent(user.getEmail(), user.getLoginId(), user.getEmployeeNumber()));
     }
 
     // 회원 목록 조회

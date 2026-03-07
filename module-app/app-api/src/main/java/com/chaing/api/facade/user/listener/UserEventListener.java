@@ -1,6 +1,7 @@
 package com.chaing.api.facade.user.listener;
 
 import com.chaing.api.dto.user.event.PasswordResetEvent;
+import com.chaing.api.dto.user.event.UserInfoResendEvent;
 import com.chaing.api.dto.user.event.UserRegisteredEvent;
 import com.chaing.domain.users.service.MailService;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +35,17 @@ public class UserEventListener {
         mailService.sendTempPassword(
                 event.email(),
                 event.tempPassword()
+        );
+    }
+
+    // 비밀번호 재설정 메일 발송
+    @Async("mailTaskExecutor")
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void handleUserInfoResendEvent(UserInfoResendEvent event) {
+        mailService.sendUserInfo(
+                event.email(),
+                event.loginId(),
+                event.employeeNumber()
         );
     }
 }

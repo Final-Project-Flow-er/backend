@@ -33,7 +33,7 @@ public class MailServiceImpl implements MailService {
         context.setVariable("loginUrl", loginUrl);
 
         String htmlContent = templateEngine.process("mail/register", context);
-        sendHtmlMail(email, "[CHAING] 회원 등록을 축하합니다.", htmlContent);
+        sendHtmlMail(email, "[CHAIN-G] 회원 등록을 축하합니다.", htmlContent);
     }
 
     // 임시 비밀번호 메일
@@ -44,7 +44,19 @@ public class MailServiceImpl implements MailService {
         context.setVariable("loginUrl", loginUrl);
 
         String htmlContent = templateEngine.process("mail/temp-password", context);
-        sendHtmlMail(email, "[CHAING] 임시 비밀번호 발급 안내", htmlContent);
+        sendHtmlMail(email, "[CHAIN-G] 임시 비밀번호 발급 안내", htmlContent);
+    }
+
+    // 회원 정보 재발송 메일 (비밀번호 제외)
+    @Override
+    public void sendUserInfo(String email, String loginId, String employeeNumber) {
+        Context context = new Context();
+        context.setVariable("loginId", loginId);
+        context.setVariable("employeeNumber", employeeNumber);
+        context.setVariable("loginUrl", loginUrl);
+
+        String htmlContent = templateEngine.process("mail/user-info", context);
+        sendHtmlMail(email, "[CHAIN-G] 회원 계정 정보 안내", htmlContent);
     }
 
     // 메일 발송 공통 로직
@@ -54,6 +66,7 @@ public class MailServiceImpl implements MailService {
 
         try {
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setFrom(new jakarta.mail.internet.InternetAddress("rlatjddms030@gmail.com", "CHAIN-G", "UTF-8"));
             helper.setTo(to);
             helper.setSubject(subject);
             helper.setText(content, true);

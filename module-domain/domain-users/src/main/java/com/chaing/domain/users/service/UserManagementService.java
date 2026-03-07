@@ -76,6 +76,7 @@ public class UserManagementService {
                 .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
     }
 
+    // 활성화 상태인 유저 아이디 전체 조회
     public List<Long> getAllActiveUserIds() {
         return userRepository.getAllActiveUserIds();
     }
@@ -128,6 +129,7 @@ public class UserManagementService {
         return user.getUsername();
     }
 
+    // 유저 아이디로 전화번호 조회
     public String getPhoneNumberByUserId(Long userId) {
         User user = getUserById(userId);
         return user.getPhone();

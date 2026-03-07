@@ -115,7 +115,6 @@ public class InventoryService {
     }
 
     // 배송 중 상태 변경
-    @Transactional
     public void updateShippingStatus(List<InventoryBoxRequest> boxes) {
         // boxes에 있는 모든 seralCode 조회
         List<String> serialCode = convertsSerialCode(boxes);
@@ -123,7 +122,6 @@ public class InventoryService {
         factoryInventoryRepository.updateStatus(serialCode, LogType.SHIPPING);
     }
 
-    @Transactional
     public void updateFranchiseShippingStatus(Long franchiseId, List<InventoryBoxRequest> boxes) {
         List<String> serialCode = convertsSerialCode(boxes);
         franchiseInventoryRepository.updateFranchiseStatus(franchiseId, serialCode, LogType.SHIPPING);

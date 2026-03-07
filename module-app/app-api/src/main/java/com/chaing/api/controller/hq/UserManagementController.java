@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -46,7 +47,7 @@ public class UserManagementController {
             @Valid @RequestBody CreateUserRequest request,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
-        return ResponseEntity.ok(ApiResponse.success(userManagementFacade.registerUser(request, principal.getId())));
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(userManagementFacade.registerUser(request, principal.getId())));
     }
 
     @Operation(summary = "회원 목록 조회", description = "전체 회원 목록 조회")
@@ -108,11 +109,11 @@ public class UserManagementController {
 
     @Operation(summary = "회원 삭제", description = "회원 삭제 (soft delete)")
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteUser(
+    public ResponseEntity<Void> deleteUser(
             @PathVariable Long id,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
         userManagementFacade.deleteUser(id, principal.getId());
-        return ResponseEntity.ok(ApiResponse.success(null));
+        return ResponseEntity.noContent().build();
     }
 }

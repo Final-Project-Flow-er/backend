@@ -30,14 +30,13 @@ public class MyPageFacade {
     private final BusinessUnitManagementFacade businessUnitManagementFacade;
 
     // 내 정보 조회
-    @Transactional(readOnly = true)
     public MyInfoResponse getMyInfo(Long userId) {
         User user = myPageService.getMyInfo(userId);
         return MyInfoResponse.from(user);
     }
 
     // 내 정보 수정
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public MyInfoResponse updateMyProfile(Long userId, UpdateMyInfoRequest request) {
         User updatedUser = myPageService.updateMyProfile(userId, request.toCommand());
         userLogService.saveLog(updatedUser, userId, UserAction.INFO_UPDATE);
@@ -45,14 +44,13 @@ public class MyPageFacade {
     }
 
     // 비밀번호 변경
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void updatePassword(Long userId, ChangePasswordRequest request) {
         User user = myPageService.updatePassword(userId, request.toCommand());
         userLogService.saveLog(user, userId, UserAction.PASSWORD_UPDATE);
     }
 
     // 내 사업장 정보 조회
-    @Transactional(readOnly = true)
     public BusinessUnitDetailResponse getMyBusinessUnitInfo(Long userId) {
         User user = myPageService.getMyInfo(userId);
         BusinessUnitType unitType = validateAndGetUnitType(user);
@@ -60,7 +58,7 @@ public class MyPageFacade {
     }
 
     // 내 사업장 정보 수정
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public BusinessUnitDetailResponse updateMyBusinessUnitInfo(Long userId, UpdateMyBusinessUnitInfoRequest request) {
         User user = myPageService.getMyInfo(userId);
         BusinessUnitType unitType = validateAndGetUnitType(user);

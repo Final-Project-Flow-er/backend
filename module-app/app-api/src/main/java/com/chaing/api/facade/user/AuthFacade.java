@@ -35,7 +35,7 @@ public class AuthFacade {
     private final JwtProvider jwtProvider;
 
     // 로그인
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public LoginResponse login(LoginRequest request) {
 
         UserPrincipal principal = (UserPrincipal) userDetailsService.loadUserByUsername(request.loginId());
@@ -55,7 +55,7 @@ public class AuthFacade {
     }
 
     // 비밀번호 재설정 (이메일 전송)
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void resetPassword(ResetPasswordRequest request) {
 
         User user = userManagementService.getUserByLoginId(request.loginId());
@@ -71,7 +71,7 @@ public class AuthFacade {
     }
 
     // 토큰 재발급
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public LoginResponse reissue(String refreshToken, UserRole userRole) {
 
         if (!jwtProvider.validateToken(refreshToken)) {
@@ -96,7 +96,7 @@ public class AuthFacade {
     }
 
     // 로그아웃
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void logout(Long userId) {
         authService.deleteRefreshToken(userId);
     }

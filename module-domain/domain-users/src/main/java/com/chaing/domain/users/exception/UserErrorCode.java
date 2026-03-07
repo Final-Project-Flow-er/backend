@@ -20,6 +20,7 @@ public enum UserErrorCode implements ErrorCode {
     REFRESH_TOKEN_NOT_FOUND(401, "A001", "세션이 만료되었습니다. 다시 로그인해 주세요."),
     INVALID_TOKEN(401, "A002", "유효하지 않은 토큰입니다."),
     TOKEN_MISMATCH(401, "A003", "토큰 정보가 일치하지 않습니다."),
+    INVALID_LOGIN_CREDENTIALS(401, "A008", "아이디 또는 비밀번호가 일치하지 않습니다."),
 
     // 403 FORBIDDEN
     ACCESS_DENIED(403, "A004", "접근 권한이 없습니다."),

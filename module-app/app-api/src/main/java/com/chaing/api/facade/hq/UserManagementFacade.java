@@ -35,7 +35,7 @@ public class UserManagementFacade {
     private final ApplicationEventPublisher eventPublisher;
 
     // 회원 등록
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public CreateUserResponse registerUser(CreateUserRequest request, Long actorId) {
 
         if (!request.position().isAvailableFor(request.role())) {
@@ -90,7 +90,7 @@ public class UserManagementFacade {
     }
 
     // 회원 정보 수정
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public UserDetailResponse updateUser(Long userId, UpdateUserRequest request, Long actorId) {
 
         User updatedUser = userManagementService.updateUser(userId, request.toCommand());
@@ -100,7 +100,7 @@ public class UserManagementFacade {
     }
 
     // 회원 상태 변경
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public UserDetailResponse updateUserStatus(Long userId, UserStatus status, Long actorId) {
         userManagementService.updateStatus(userId, status);
 
@@ -121,8 +121,8 @@ public class UserManagementFacade {
         return logs.map(UserLogResponse::from);
     }
 
-    // 회원 탈퇴
-    @Transactional
+    // 회원 삭제
+    @Transactional(rollbackFor = Exception.class)
     public void deleteUser(Long userId, Long actorId) {
         User user = userManagementService.getUserById(userId);
         userLogService.saveLog(user, actorId, UserAction.DELETE);

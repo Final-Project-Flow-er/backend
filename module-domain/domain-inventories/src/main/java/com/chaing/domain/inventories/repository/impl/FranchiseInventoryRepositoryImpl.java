@@ -178,7 +178,7 @@ public class FranchiseInventoryRepositoryImpl implements FranchiseInventoryRepos
                 LocalDateTime startOfDay = date.atStartOfDay(); // 2026-03-04T00:00
                 LocalDateTime endOfDay = date.plusDays(1).atStartOfDay(); // 2026-03-05T00:00
 
-                return franchiseInventory.shippedAt.goe(startOfDay) // >= 2026-03-04T00:00
-                                .and(franchiseInventory.shippedAt.lt(endOfDay)); // < 2026-03-05T00:00
+                return franchiseInventory.receivedAt.goe(startOfDay) // >= 2026-03-04T00:00
+                                .and(franchiseInventory.receivedAt.lt(endOfDay)); // < 2026-03-05T00:00
         }
 }

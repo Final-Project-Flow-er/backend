@@ -207,8 +207,8 @@ public class FactoryInventoryRepositoryImpl implements FactoryInventoryRepositor
                 LocalDateTime startOfDay = date.atStartOfDay(); // 2026-03-04T00:00
                 LocalDateTime endOfDay = date.plusDays(1).atStartOfDay(); // 2026-03-05T00:00
 
-                return factoryInventory.shippedAt.goe(startOfDay) // >= 2026-03-04T00:00
-                                .and(factoryInventory.shippedAt.lt(endOfDay)); // < 2026-03-05T00:00
+                return factoryInventory.receivedAt.goe(startOfDay) // >= 2026-03-04T00:00
+                                .and(factoryInventory.receivedAt.lt(endOfDay)); // < 2026-03-05T00:00
         }
 
         private BooleanExpression containsLocationType(String locationType) {

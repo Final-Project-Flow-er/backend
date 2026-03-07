@@ -225,10 +225,9 @@ public class FactoryInventoryRepositoryImpl implements FactoryInventoryRepositor
         }
 
         private BooleanExpression containsLocationId(Long locationId) {
-                try {
-                        return QInventoryPolicy.inventoryPolicy.locationId.eq(locationId);
-                } catch (IllegalArgumentException e) {
-                        throw new InventoryException(InventoryErrorCode.INVALID_LOCATION_ID);
-                }
+            if(locationId == null){
+                throw new InventoryException(InventoryErrorCode.INVALID_LOCATION_ID);
+            }
+            return QInventoryPolicy.inventoryPolicy.locationId.eq(locationId);
         }
 }

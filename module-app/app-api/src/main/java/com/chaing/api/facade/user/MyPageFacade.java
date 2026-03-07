@@ -51,18 +51,16 @@ public class MyPageFacade {
     }
 
     // 내 사업장 정보 조회
-    public BusinessUnitDetailResponse getMyBusinessUnitInfo(Long userId) {
-        User user = myPageService.getMyInfo(userId);
-        BusinessUnitType unitType = validateAndGetUnitType(user);
-        return businessUnitManagementFacade.getDetail(unitType, user.getBusinessUnitId());
+    public BusinessUnitDetailResponse getMyBusinessUnitInfo(UserRole role, Long businessUnitId) {
+        BusinessUnitType unitType = validateAndGetUnitType(role, businessUnitId);
+        return businessUnitManagementFacade.getDetail(unitType, businessUnitId);
     }
 
     // 내 사업장 정보 수정
     @Transactional(rollbackFor = Exception.class)
-    public BusinessUnitDetailResponse updateMyBusinessUnitInfo(Long userId, UpdateMyBusinessUnitInfoRequest request) {
-        User user = myPageService.getMyInfo(userId);
-        BusinessUnitType unitType = validateAndGetUnitType(user);
-        return businessUnitManagementFacade.updateInfo(unitType, user.getBusinessUnitId(), request.toManagementRequest());
+    public BusinessUnitDetailResponse updateMyBusinessUnitInfo(UserRole role, Long businessUnitId, UpdateMyBusinessUnitInfoRequest request) {
+        BusinessUnitType unitType = validateAndGetUnitType(role, businessUnitId);
+        return businessUnitManagementFacade.updateInfo(unitType, businessUnitId, request.toManagementRequest());
     }
 
     // Role과 BusinessUnitType 매핑
@@ -73,9 +71,9 @@ public class MyPageFacade {
     );
 
     // 역할과 사업장 존재 검증
-    private BusinessUnitType validateAndGetUnitType(User user) {
-        BusinessUnitType unitType = ROLE_TYPE_MAP.get(user.getRole());
-        if (unitType == null || user.getBusinessUnitId() == null) {
+    private BusinessUnitType validateAndGetUnitType(UserRole role, Long businessUnitId) {
+        BusinessUnitType unitType = ROLE_TYPE_MAP.get(role);
+        if (unitType == null || businessUnitId == null) {
             throw new UserException(UserErrorCode.INVALID_BUSINESS_UNIT_ACCESS);
         }
         return unitType;

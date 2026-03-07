@@ -1,6 +1,7 @@
 package com.chaing.domain.users.service;
 
 import com.chaing.domain.users.dto.command.UserUpdateCommand;
+import com.chaing.domain.users.dto.condition.UserSearchCondition;
 import com.chaing.domain.users.entity.User;
 import com.chaing.domain.users.enums.UserRole;
 import com.chaing.domain.users.enums.UserStatus;
@@ -71,8 +72,8 @@ public class UserManagementService {
     }
 
     // 회원 목록 조회
-    public Page<User> getUserList(Pageable pageable) {
-        return userRepository.findAll(pageable);
+    public Page<User> getUserList(UserSearchCondition condition, Pageable pageable) {
+        return userRepository.searchUsers(condition, pageable);
     }
 
     // 회원 아이디로 회원 조회

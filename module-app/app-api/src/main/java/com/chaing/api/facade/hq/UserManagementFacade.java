@@ -2,12 +2,14 @@ package com.chaing.api.facade.hq;
 
 import com.chaing.api.dto.hq.user.request.CreateUserRequest;
 import com.chaing.api.dto.hq.user.request.UpdateUserRequest;
+import com.chaing.api.dto.hq.user.request.UserSearchRequest;
 import com.chaing.api.dto.hq.user.response.CreateUserResponse;
 import com.chaing.api.dto.hq.user.response.UserDetailResponse;
 import com.chaing.api.dto.hq.user.response.UserLogResponse;
 import com.chaing.api.dto.hq.user.response.UserSummaryResponse;
 import com.chaing.api.dto.user.event.UserInfoResendEvent;
 import com.chaing.api.dto.user.event.UserRegisteredEvent;
+import com.chaing.domain.users.dto.condition.UserSearchCondition;
 import com.chaing.domain.users.entity.User;
 import com.chaing.domain.users.entity.UserLog;
 import com.chaing.domain.users.enums.UserAction;
@@ -79,8 +81,9 @@ public class UserManagementFacade {
     }
 
     // 회원 목록 조회
-    public Page<UserSummaryResponse> getUserList(Pageable pageable) {
-        return userManagementService.getUserList(pageable).map(UserSummaryResponse::from);
+    public Page<UserSummaryResponse> getUserList(UserSearchRequest request, Pageable pageable) {
+        UserSearchCondition condition = request.toCondition();
+        return userManagementService.getUserList(condition, pageable).map(UserSummaryResponse::from);
     }
 
     // 회원 상세 조회

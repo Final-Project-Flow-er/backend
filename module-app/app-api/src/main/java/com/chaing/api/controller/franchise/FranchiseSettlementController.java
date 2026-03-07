@@ -1,11 +1,14 @@
 package com.chaing.api.controller.franchise;
 
+import com.chaing.api.facade.settlement.FranchiseSettlementFacade;
 import com.chaing.core.dto.ApiResponse;
 import com.chaing.domain.settlements.enums.PeriodType;
 import com.chaing.domain.settlements.enums.VoucherType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -16,7 +19,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
-import java.util.List;
 
 @RestController
 @Tag(name = "FranchiseSettlement API", description = "가맹점 정산 관련 API")
@@ -25,13 +27,17 @@ import java.util.List;
 @PreAuthorize("hasAnyRole('FRANCHISE')")
 public class FranchiseSettlementController {
 
+    private final FranchiseSettlementFacade facade;
+
     //일별
     @Operation(summary = "일별 정산 요약 조회", description = "일별 정산 요약(최총정산금액, 총매출, 반품환급, 발주대금, ,배송비, 손실, 수수료)")
     @GetMapping("/daily/summary")
     public ResponseEntity<ApiResponse<?>> getDailySummary(
             @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
     ) {
-        return ResponseEntity.ok(ApiResponse.success(null));
+        Long franchiseId = 1L;
+        return ResponseEntity.ok(ApiResponse.success(
+                facade.getDailySummary(franchiseId, date)));
     }
 
     @Operation(summary = "일별 매출 현황 조회", description = "매출 현황 리스트(상품명, 수량, 단가, 총매출)")
@@ -39,7 +45,9 @@ public class FranchiseSettlementController {
     public ResponseEntity<ApiResponse<?>> getDailySalesItems(
             @RequestParam("date") @DateTimeFormat(iso =  DateTimeFormat.ISO.DATE) LocalDate date
     ) {
-        return ResponseEntity.ok(ApiResponse.success(null));
+        Long franchiseId = 1L;
+        return ResponseEntity.ok(ApiResponse.success(
+                facade.getDailySalesItems(franchiseId, date, 5))); //top5
     }
 
     @Operation(summary = "일별 발주 내역 조회", description = "발주 내역 리스트(상품명/수량/단가/총금액)")
@@ -47,7 +55,9 @@ public class FranchiseSettlementController {
     public ResponseEntity<ApiResponse<?>> getDailyOrdersItems(
             @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
     ) {
-        return ResponseEntity.ok(ApiResponse.success(null));
+        Long franchiseId = 1L;
+        return ResponseEntity.ok(ApiResponse.success(
+                facade.getDailyOrderItems(franchiseId, date, 5)));
     }
 
     //월별
@@ -56,7 +66,9 @@ public class FranchiseSettlementController {
     public ResponseEntity<ApiResponse<?>> getMonthlySummary(
             @RequestParam("month") @DateTimeFormat(pattern = "yyyy-MM") YearMonth month
     ) {
-        return ResponseEntity.ok(ApiResponse.success(null));
+        Long franchiseId = 1L;
+        return ResponseEntity.ok(ApiResponse.success(
+                facade.getMonthlySummary(franchiseId, month)));
     }
 
     @Operation(summary = "월별 매출 상위 조회", description = "월별 상품별 매출 전체조회, limit있으면 매출기준 상위 5개 조회")
@@ -67,8 +79,11 @@ public class FranchiseSettlementController {
     ) {
         if (limit != null && limit <1) {
             throw new IllegalArgumentException("limit는 0보다 커야합니다");
-        } // TODO: Swagger 테스트용 임시 응답. 추후 서비스 로직 연동 예정
-        return ResponseEntity.ok(ApiResponse.success(List.of()));
+        }
+        Long franchiseId = 1L;
+        // TODO: Swagger 테스트용 임시 응답. 추후 서비스 로직 연동 예정
+        return ResponseEntity.ok(ApiResponse.success(
+                facade.getMonthlySalesItems(franchiseId, month, limit)));
     }
 
     @Operation(summary = "월별 일자 매출 추이 조회 그래프", description = "기간 선택 후 매출 추이 그래프 조회")
@@ -83,8 +98,11 @@ public class FranchiseSettlementController {
         }
         if (!YearMonth.from(start).equals(month) || !YearMonth.from(end).equals(month)) {
             throw new IllegalArgumentException("시작일과 종료일은 요청한 월 범위 내에 있어야 합니다.");
-        } // TODO: Swagger 테스트용 임시 응답. 추후 서비스 로직 연동 예정
-        return ResponseEntity.ok(ApiResponse.success(List.of()));
+        }
+        Long franchiseId = 1L;
+        // TODO: Swagger 테스트용 임시 응답. 추후 서비스 로직 연동 예정
+        return ResponseEntity.ok(ApiResponse.success(
+                facade.getMonthlyDailyGraph(franchiseId, start, end)));
     }
 
     @Operation(summary = "월별 발주 내역 상위 조회", description = "월별 발주 상품별 전체조회, limit있으면 수량기준 상위 5개 조회")
@@ -96,7 +114,9 @@ public class FranchiseSettlementController {
         if (limit != null && limit <1) {
             throw new IllegalArgumentException("limit는 0보다 커야합니다");
         }
-        return ResponseEntity.ok(ApiResponse.success(List.of()));
+        Long franchiseId = 1L;
+        return ResponseEntity.ok(ApiResponse.success(
+                facade.getMonthlyOrderItems(franchiseId, month, limit)));
     }
 
     // 전표 상세 목록 조회, 일/월 공통
@@ -128,8 +148,10 @@ public class FranchiseSettlementController {
        if (period == PeriodType.MONTHLY && month == null) {
             throw new IllegalArgumentException("period=MONTHLY일때, month는 필수입니다.");
             }
-
-        return ResponseEntity.ok(ApiResponse.success(List.of()));
+        Long franchiseId = 1L;
+        Pageable pageable = PageRequest.of(page, size);
+        return ResponseEntity.ok(ApiResponse.success(
+                facade.getVouchers(franchiseId, period, date, month, type, pageable)));
 
     }
 
@@ -139,7 +161,9 @@ public class FranchiseSettlementController {
     public ResponseEntity<ApiResponse<?>> getDailyReceiptPdf(
             @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
     ) {
-        return ResponseEntity.ok(ApiResponse.success(List.of()));
+        Long franchiseId = 1L;
+        return ResponseEntity.ok(ApiResponse.success(
+                facade.getDailyReceiptPdf(franchiseId, date)));
     }
 
     @Operation(summary = "월별 정산 영수증 PDF 조회", description = "월별 정산 영수증 pdf 조회")
@@ -147,7 +171,9 @@ public class FranchiseSettlementController {
     public ResponseEntity<ApiResponse<?>> getMonthlyReceiptPdf(
             @RequestParam("month") @DateTimeFormat(pattern = "yyyy-MM") YearMonth month
     ) {
-        return ResponseEntity.ok(ApiResponse.success(List.of()));
+        Long franchiseId = 1L;
+        return ResponseEntity.ok(ApiResponse.success(
+                facade.getMonthlyReceiptPdf(franchiseId, month)));
     }
 
     @Operation(summary = "월별 전표 Excel 조회", description = "월별 전표 Excel 조회")
@@ -156,7 +182,9 @@ public class FranchiseSettlementController {
             @RequestParam("month") @DateTimeFormat(pattern = "yyyy-MM") YearMonth month,
             @RequestParam(value = "type", required = false) VoucherType type
     ) {
-        return ResponseEntity.ok(ApiResponse.success(List.of()));
+        Long franchiseId = 1L;
+        return ResponseEntity.ok(ApiResponse.success(
+                facade.getMonthlyVouchersExcel(franchiseId, month, type)));
     }
 
 }

@@ -2,6 +2,7 @@ package com.chaing.domain.inventories.repository.interfaces;
 
 import com.chaing.core.enums.LogType;
 import com.chaing.domain.inventories.dto.request.FranchiseInventoryItemsRequest;
+import com.chaing.domain.inventories.dto.response.ExpirationBatchResultResponse;
 import com.chaing.domain.inventories.dto.response.FranchiseInventoryBatchResponse;
 import com.chaing.domain.inventories.dto.response.FranchiseInventoryItemResponse;
 import com.chaing.domain.inventories.dto.response.InventoryProductInfoResponse;
@@ -19,4 +20,6 @@ public interface FranchiseInventoryRepositoryCustom {
     void deleteFranchiseInventory(Long franchiseId, List<String> serialCode);
 
     void updateFranchiseStatus(Long franchiseId, List<String> serialCode, LogType logType);
+
+    List<ExpirationBatchResultResponse> getExpirationAlerts(String locationType, Long locationId);
 }

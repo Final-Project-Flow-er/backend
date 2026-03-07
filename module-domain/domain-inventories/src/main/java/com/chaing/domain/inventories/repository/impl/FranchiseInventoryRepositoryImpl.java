@@ -2,13 +2,17 @@ package com.chaing.domain.inventories.repository.impl;
 
 import com.chaing.core.enums.LogType;
 import com.chaing.domain.inventories.dto.request.FranchiseInventoryItemsRequest;
+import com.chaing.domain.inventories.dto.response.ExpirationBatchResultResponse;
 import com.chaing.domain.inventories.dto.response.FranchiseInventoryBatchResponse;
 import com.chaing.domain.inventories.dto.response.FranchiseInventoryItemResponse;
 import com.chaing.domain.inventories.dto.response.InventoryProductInfoResponse;
 import com.chaing.domain.inventories.entity.QFranchiseInventory;
 import com.chaing.domain.inventories.entity.QInventoryPolicy;
 import com.chaing.domain.inventories.enums.LocationType;
+import com.chaing.domain.inventories.exception.InventoryErrorCode;
+import com.chaing.domain.inventories.exception.InventoryException;
 import com.chaing.domain.inventories.repository.interfaces.FranchiseInventoryRepositoryCustom;
+import com.querydsl.core.Tuple;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.CaseBuilder;
@@ -152,7 +156,51 @@ public class FranchiseInventoryRepositoryImpl implements FranchiseInventoryRepos
                 em.clear();
         }
 
-        private BooleanExpression containsSerialCode(String serialCode) {
+    @Override
+    public List<ExpirationBatchResultResponse> getExpirationAlerts(String locationType, Long locationId) {
+        LocalDate today = LocalDate.now();
+        // 유통기한 = 제조일자 + 1년
+        // 0~5일 남은 제조일자의 범위 (오늘 - 1년 <= 제조일자 <= 오늘 + 5일 - 1년)
+        LocalDate startManufactureDate = today.minusYears(1);
+        LocalDate endManufactureDate = today.plusDays(5).minusYears(1);
+
+        NumberExpression<Integer> quantity = franchiseInventory.count().intValue();
+
+        List<Tuple> results = queryFactory
+                .select(
+                        franchiseInventory.productId,
+                        franchiseInventory.manufactureDate,
+                        quantity)
+                .from(franchiseInventory)
+                // QInventoryPolicy가 where절에서 사용되므로 join 필요
+                .join(inventoryPolicy).on(franchiseInventory.productId.eq(inventoryPolicy.productId))
+                .where(
+                        containsLocationType(locationType),
+                        containsLocationId(locationId),
+                        franchiseInventory.manufactureDate.between(startManufactureDate,
+                                endManufactureDate))
+                .groupBy(franchiseInventory.productId, franchiseInventory.manufactureDate)
+                .fetch();
+
+        return results.stream().map(tuple -> {
+            Long productId = tuple.get(franchiseInventory.productId);
+            LocalDate manufactureDate = tuple.get(franchiseInventory.manufactureDate);
+            Integer qty = tuple.get(quantity);
+
+            // 자바 코드로 유통기한 및 남은 일수 계산
+            LocalDate expirationDate = manufactureDate.plusYears(1);
+            int daysUntilExpiration = (int) java.time.temporal.ChronoUnit.DAYS.between(today,
+                    expirationDate);
+
+            return new ExpirationBatchResultResponse(
+                    productId,
+                    manufactureDate,
+                    qty,
+                    daysUntilExpiration);
+        }).collect(Collectors.toList());
+    }
+
+    private BooleanExpression containsSerialCode(String serialCode) {
                 return serialCode != null ? franchiseInventory.serialCode.eq(serialCode) : null;
         }
 
@@ -181,4 +229,23 @@ public class FranchiseInventoryRepositoryImpl implements FranchiseInventoryRepos
                 return franchiseInventory.receivedAt.goe(startOfDay) // >= 2026-03-04T00:00
                                 .and(franchiseInventory.receivedAt.lt(endOfDay)); // < 2026-03-05T00:00
         }
+
+    private BooleanExpression containsLocationType(String locationType) {
+        if(locationType == null || locationType.isBlank()){
+            throw new InventoryException(InventoryErrorCode.INVALID_LOCATION_TYPE);
+        }
+        try {
+            LocationType type = LocationType.valueOf(locationType.toUpperCase());
+            return QInventoryPolicy.inventoryPolicy.locationType.eq(type);
+        } catch (IllegalArgumentException e) {
+            throw new InventoryException(InventoryErrorCode.INVALID_LOCATION_TYPE);
+        }
+    }
+
+    private BooleanExpression containsLocationId(Long locationId) {
+        if(locationId == null){
+            throw new InventoryException(InventoryErrorCode.INVALID_LOCATION_ID);
+        }
+        return QInventoryPolicy.inventoryPolicy.locationId.eq(locationId);
+    }
 }

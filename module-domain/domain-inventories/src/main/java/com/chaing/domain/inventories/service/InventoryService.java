@@ -111,7 +111,12 @@ public class InventoryService {
 
     // 유통기한
     public List<ExpirationBatchResultResponse> getExpirationAlerts(String locationType, Long locationId) {
-        return factoryInventoryRepository.getExpirationAlerts(locationType, locationId);
+        if(locationType.equals("FRANCHISE")) {
+            return franchiseInventoryRepository.getExpirationAlerts(locationType, locationId);
+        }
+        else{
+            return factoryInventoryRepository.getExpirationAlerts(locationType, locationId);
+        }
     }
 
     // 배송 중 상태 변경

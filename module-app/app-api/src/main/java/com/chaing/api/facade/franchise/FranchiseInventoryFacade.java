@@ -95,7 +95,6 @@ public class FranchiseInventoryFacade {
         inventoryLogService.recordInventoryLog(logs);
 
         // 재고 증가
-        LocationType toType = LocationType.valueOf(inventoryBatchRequest.toLocationType().toUpperCase());
         inventoryService.franchiseIncreaseInventory(inventoryBatchRequest);
 
         // 해당 재고 삭제
@@ -142,6 +141,7 @@ public class FranchiseInventoryFacade {
 
         // 코드와 이름 조합
         List<SafetyStockAlertResponse> safetyStockAlerts = safetyStockAlert.stream()
+                .filter(k -> products.containsKey(k.productId()))
                 .map(k -> new SafetyStockAlertResponse(
                         products.get(k.productId()).productCode(),
                         products.get(k.productId()).productName(),
@@ -151,6 +151,7 @@ public class FranchiseInventoryFacade {
 
         // 코드와 이름 조합
         List<ExpirationAlertResponse> expirationAlert = expirationAlerts.stream()
+                .filter(k -> products.containsKey(k.productId()))
                 .map(k -> new ExpirationAlertResponse(
                         products.get(k.productId()).productName(),
                         k.manufactureDate(),

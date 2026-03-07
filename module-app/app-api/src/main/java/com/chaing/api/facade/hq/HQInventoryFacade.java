@@ -212,6 +212,7 @@ public class HQInventoryFacade {
 
         // 코드와 이름 조합
         List<SafetyStockAlertResponse> safetyStockAlerts = safetyStockAlert.stream()
+                .filter(k -> products.containsKey(k.productId()))
                 .map(k -> new SafetyStockAlertResponse(
                         products.get(k.productId()).productCode(),
                         products.get(k.productId()).productName(),
@@ -221,6 +222,7 @@ public class HQInventoryFacade {
 
         // 코드와 이름 조합
         List<ExpirationAlertResponse> expirationAlert = expirationAlerts.stream()
+                .filter(k -> products.containsKey(k.productId()))
                 .map(k -> new ExpirationAlertResponse(
                         products.get(k.productId()).productName(),
                         k.manufactureDate(),

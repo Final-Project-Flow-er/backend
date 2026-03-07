@@ -9,16 +9,21 @@ import com.chaing.api.facade.user.MyPageFacade;
 import com.chaing.api.security.principal.UserPrincipal;
 import com.chaing.core.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequiredArgsConstructor
@@ -38,12 +43,14 @@ public class MyPageController {
     }
 
     @Operation(summary = "내 정보 수정", description = "로그인된 사용자의 정보 수정")
-    @PatchMapping
+    @PatchMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<MyInfoResponse>> updateMyInfo(
             @AuthenticationPrincipal UserPrincipal principal,
-            @Valid @RequestBody UpdateMyInfoRequest request
+            @Parameter(content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE))
+            @RequestPart("request") @Valid UpdateMyInfoRequest request,
+            @RequestPart(value = "profileImage", required = false) MultipartFile profileImage
     ) {
-        MyInfoResponse response = myPageFacade.updateMyProfile(principal.getId(), request);
+        MyInfoResponse response = myPageFacade.updateMyProfile(principal.getId(), request, profileImage);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 

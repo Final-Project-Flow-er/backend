@@ -16,6 +16,6 @@ public interface FranchiseInventoryRepository extends JpaRepository<FranchiseInv
 
     List<FranchiseInventory> findAllByBoxCodeIn(List<String> boxCodes);
 
-    @Query("SELECT fi.franchiseId FROM FranchiseInventory fi")
+    @Query("SELECT DISTINCT fi.franchiseId FROM FranchiseInventory fi")
     List<Long> getAllFranchiseIds();
 }

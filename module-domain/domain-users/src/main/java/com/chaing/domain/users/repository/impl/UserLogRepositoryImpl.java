@@ -98,7 +98,7 @@ public class UserLogRepositoryImpl implements UserLogRepositoryCustom {
     private BooleanExpression createdAtEq(LocalDateTime createdAt) {
         if (createdAt == null) return null;
         LocalDateTime startOfDay = createdAt.toLocalDate().atStartOfDay();
-        LocalDateTime endOfDay = createdAt.toLocalDate().atTime(23, 59, 59);
-        return QUserLog.userLog.createdAt.between(startOfDay, endOfDay);
+        LocalDateTime startOfNextDay = createdAt.toLocalDate().plusDays(1).atStartOfDay();
+        return QUserLog.userLog.createdAt.goe(startOfDay).and(QUserLog.userLog.createdAt.lt(startOfNextDay));
     }
 }

@@ -17,6 +17,7 @@ import com.chaing.domain.users.exception.UserErrorCode;
 import com.chaing.domain.users.exception.UserException;
 import com.chaing.domain.users.service.MyPageService;
 import com.chaing.domain.users.service.UserLogService;
+import com.chaing.domain.users.service.UserManagementService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -66,16 +67,18 @@ public class MyPageFacade {
     }
 
     // 내 사업장 정보 조회
-    public BusinessUnitDetailResponse getMyBusinessUnitInfo(UserRole role, Long businessUnitId) {
-        BusinessUnitType unitType = validateAndGetUnitType(role, businessUnitId);
-        return businessUnitManagementFacade.getDetail(unitType, businessUnitId);
+    public BusinessUnitDetailResponse getMyBusinessUnitInfo(Long userId) {
+        User user = myPageService.getMyInfo(userId);
+        BusinessUnitType unitType = validateAndGetUnitType(user.getRole(), user.getBusinessUnitId());
+        return businessUnitManagementFacade.getDetail(unitType, user.getBusinessUnitId());
     }
 
     // 내 사업장 정보 수정
     @Transactional(rollbackFor = Exception.class)
-    public BusinessUnitDetailResponse updateMyBusinessUnitInfo(UserRole role, Long businessUnitId, UpdateMyBusinessUnitInfoRequest request) {
-        BusinessUnitType unitType = validateAndGetUnitType(role, businessUnitId);
-        return businessUnitManagementFacade.updateInfo(unitType, businessUnitId, request.toManagementRequest());
+    public BusinessUnitDetailResponse updateMyBusinessUnitInfo(Long userId, UpdateMyBusinessUnitInfoRequest request) {
+        User user = myPageService.getMyInfo(userId);
+        BusinessUnitType unitType = validateAndGetUnitType(user.getRole(), user.getBusinessUnitId());
+        return businessUnitManagementFacade.updateInfo(unitType, user.getBusinessUnitId(), request.toManagementRequest());
     }
 
     // Role과 BusinessUnitType 매핑

@@ -69,7 +69,7 @@ public class MyPageController {
     public ResponseEntity<ApiResponse<BusinessUnitDetailResponse>> getMyWorkplaceInfo(
             @AuthenticationPrincipal UserPrincipal principal
     ) {
-        BusinessUnitDetailResponse response = myPageFacade.getMyBusinessUnitInfo(principal.getRole(), principal.getBusinessUnitId());
+        BusinessUnitDetailResponse response = myPageFacade.getMyBusinessUnitInfo(principal.getId());
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
@@ -79,7 +79,7 @@ public class MyPageController {
             @AuthenticationPrincipal UserPrincipal principal,
             @Valid @RequestBody UpdateMyBusinessUnitInfoRequest request
     ) {
-        BusinessUnitDetailResponse response = myPageFacade.updateMyBusinessUnitInfo(principal.getRole(), principal.getBusinessUnitId(), request);
+        BusinessUnitDetailResponse response = myPageFacade.updateMyBusinessUnitInfo(principal.getId(), request);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 }

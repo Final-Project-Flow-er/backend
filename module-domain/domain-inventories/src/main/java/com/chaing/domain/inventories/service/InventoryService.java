@@ -133,6 +133,14 @@ public class InventoryService {
         List<String> serialCode = convertsSerialCode(boxes);
         franchiseInventoryRepository.updateFranchiseStatus(franchiseId, serialCode, LogType.SHIPPING);
     }
+    // 제품 식별코드 반환
+    public List<String> convertsSerialCode(List<InventoryBoxRequest> boxes) {
+        return boxes.stream()
+                .flatMap(box -> box.productList().stream())
+                .map(InventoryRequest::serialCode)
+                .toList();
+    }
+
 
     // 가맹점 상품 증가
     public void franchiseIncreaseInventory(InventoryBatchRequest request) {
@@ -184,28 +192,18 @@ public class InventoryService {
         hqInventoryRepository.saveAll(inventories);
     }
 
-    public void deleteFranchiseInventory(Long franchiseId, List<InventoryBoxRequest> boxes) {
-        List<String> serialCode = convertsSerialCode(boxes);
-        franchiseInventoryRepository.deleteFranchiseInventory(franchiseId, serialCode);
+    public void deleteFranchiseInventory(Long franchiseId, List<String> serialCodes) {
+        franchiseInventoryRepository.deleteFranchiseInventory(franchiseId, serialCodes);
     }
 
-    public void deleteFactoryInventory(List<InventoryBoxRequest> boxes) {
-        List<String> serialCode = convertsSerialCode(boxes);
-        factoryInventoryRepository.deleteFactoryInventory(serialCode);
+    public void deleteFactoryInventory(List<String> serialCodes) {
+        factoryInventoryRepository.deleteFactoryInventory(serialCodes);
     }
 
-    public void deleteHqInventory(List<InventoryBoxRequest> boxes) {
-        List<String> serialCode = convertsSerialCode(boxes);
-        hqInventoryRepository.deleteHQInventory(serialCode);
+    public void deleteHqInventory(List<String> serialCodes) {
+        hqInventoryRepository.deleteHQInventory(serialCodes);
     }
 
-    // 제품 식별코드 반환
-    public List<String> convertsSerialCode(List<InventoryBoxRequest> boxes) {
-        return boxes.stream()
-                .flatMap(box -> box.productList().stream())
-                .map(InventoryRequest::serialCode)
-                .toList();
-    }
     // 수정 예정
     public List<ReturnToInventoryRequest> getProducts(List<String> serialCodes) {
         return List.of(

@@ -245,6 +245,7 @@ public class HQInventoryFacade {
 
         LocationType toType = LocationType.valueOf(inventoryBatchRequest.toLocationType().toUpperCase());
 
+        // 재고 감소 인벤토리Ids로 받음
         if (toType == LocationType.FRANCHISE) {
             inventoryService.franchiseIncreaseInventory(inventoryBatchRequest);
         } else if (toType == LocationType.FACTORY) {
@@ -256,16 +257,23 @@ public class HQInventoryFacade {
         // 해당 재고 삭제
         LocationType fromType = LocationType.valueOf(inventoryBatchRequest.fromLocationType().toUpperCase());
 
-        if (fromType == LocationType.FRANCHISE) {
-            inventoryService.deleteFranchiseInventory(inventoryBatchRequest.fromLocationId(),
-                    inventoryBatchRequest.boxes());
-        } else if (fromType == LocationType.FACTORY) {
-            inventoryService.deleteFactoryInventory(inventoryBatchRequest.boxes());
-        } else {
-            inventoryService.deleteHqInventory(inventoryBatchRequest.boxes());
-        }
+        List<String> serialCodes = convertsSerialCode(inventoryBatchRequest.boxes());
 
+        if (fromType == LocationType.FRANCHISE) {
+            inventoryService.deleteFranchiseInventory(inventoryBatchRequest.fromLocationId(), serialCodes);
+        } else if (fromType == LocationType.FACTORY) {
+            inventoryService.deleteFactoryInventory(serialCodes);
+        } else {
+            inventoryService.deleteHqInventory(serialCodes);
+        }
         return null;
+    }
+    // 제품 식별코드 반환
+    public List<String> convertsSerialCode(List<InventoryBoxRequest> boxes) {
+        return boxes.stream()
+                .flatMap(box -> box.productList().stream())
+                .map(InventoryRequest::serialCode)
+                .toList();
     }
 
     // 재고 상태 변환 및 로그 기록

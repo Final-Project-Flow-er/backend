@@ -100,16 +100,24 @@ public class FranchiseInventoryFacade {
         // 해당 재고 삭제
         LocationType fromType = LocationType.valueOf(inventoryBatchRequest.fromLocationType().toUpperCase());
 
+
+        List<String> serialCode = convertsSerialCode(inventoryBatchRequest.boxes());
         if (fromType == LocationType.FRANCHISE) {
-            inventoryService.deleteFranchiseInventory(inventoryBatchRequest.fromLocationId(),
-                    inventoryBatchRequest.boxes());
+            inventoryService.deleteFranchiseInventory(inventoryBatchRequest.fromLocationId(), serialCode);
         } else if (fromType == LocationType.FACTORY) {
-            inventoryService.deleteFactoryInventory(inventoryBatchRequest.boxes());
+            inventoryService.deleteFactoryInventory(serialCode);
         } else {
-            inventoryService.deleteHqInventory(inventoryBatchRequest.boxes());
+            inventoryService.deleteHqInventory(serialCode);
         }
 
         return null;
+    }
+    // 제품 식별코드 반환
+    public List<String> convertsSerialCode(List<InventoryBoxRequest> boxes) {
+        return boxes.stream()
+                .flatMap(box -> box.productList().stream())
+                .map(InventoryRequest::serialCode)
+                .toList();
     }
 
     // 출고 처리

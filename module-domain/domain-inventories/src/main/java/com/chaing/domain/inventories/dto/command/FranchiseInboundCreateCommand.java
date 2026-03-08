@@ -8,6 +8,8 @@ public record FranchiseInboundCreateCommand(
         List<String> serialCodes,
         Long productId,
         LocalDate manufactureDate,
-        Long franchiseId
+        Long franchiseId,
+        Long orderId,
+        List<Long> orderItemIds
 ) {
 }

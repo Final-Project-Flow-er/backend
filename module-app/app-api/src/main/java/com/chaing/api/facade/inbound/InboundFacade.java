@@ -5,7 +5,6 @@ import com.chaing.api.dto.inbound.request.InboundScanBoxRequest;
 import com.chaing.api.dto.inbound.request.InboundScanItemRequest;
 import com.chaing.api.dto.inbound.response.InboundBoxSummaryResponse;
 import com.chaing.api.dto.inbound.response.InboundDetailResponse;
-import com.chaing.api.security.principal.UserPrincipal;
 import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.domain.inventories.dto.command.FactoryInboundCreateCommand;
 import com.chaing.domain.inventories.dto.command.FranchiseInboundCreateCommand;

@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.IntStream;
 
 @Component
 @Qualifier("franchise")
@@ -21,8 +22,14 @@ public class FranchiseExecutorImpl implements Executor<FranchiseInboundCreateCom
     @Transactional
     public void create(FranchiseInboundCreateCommand command) {
 
-        List<FranchiseInventory> inventories = command.serialCodes().stream()
-                .map(serial -> FranchiseInventory.from(command, serial))
+        List<FranchiseInventory> inventories = IntStream.range(0, command.serialCodes().size())
+                .mapToObj(i -> {
+                    String serial = command.serialCodes().get(i);
+                    Long orderItemId = command.orderItemIds().get(i); // i번째 아이템 ID 추출!
+
+                    // 2. from 메서드에 orderItemId도 같이 넘겨주기
+                    return FranchiseInventory.from(command, serial, orderItemId);
+                })
                 .toList();
 
         repository.saveAll(inventories);

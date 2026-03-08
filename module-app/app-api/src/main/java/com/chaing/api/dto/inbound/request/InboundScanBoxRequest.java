@@ -12,7 +12,9 @@ public record InboundScanBoxRequest(
         @NotBlank String boxCode,
         @NotEmpty List<@NotBlank String> serialCodes,
         @NotNull Long productId,
-        @NotNull LocalDate manufactureDate
+        @NotNull LocalDate manufactureDate,
+        @NotNull Long orderId,
+        @NotEmpty List<@NotNull Long> orderItemIds
 ) {
     public static FranchiseInboundCreateCommand toCommand(InboundScanBoxRequest request, Long franchiseId) {
         return new FranchiseInboundCreateCommand(
@@ -22,7 +24,9 @@ public record InboundScanBoxRequest(
                         .toList(),
                 request.productId(),
                 request.manufactureDate(),
-                franchiseId
+                franchiseId,
+                request.orderId(),
+                request.orderItemIds()
         );
     }
 }

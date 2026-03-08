@@ -9,7 +9,6 @@ import com.chaing.api.dto.hq.user.response.UserDetailResponse;
 import com.chaing.api.dto.hq.user.response.UserLogResponse;
 import com.chaing.api.dto.hq.user.response.UserSummaryResponse;
 import com.chaing.api.dto.user.event.ProfileImageDeleteEvent;
-import com.chaing.api.dto.user.event.ProfileImageUploadEvent;
 import com.chaing.api.dto.user.event.UserInfoResendEvent;
 import com.chaing.api.dto.user.event.UserRegisteredEvent;
 import com.chaing.core.enums.BucketName;
@@ -57,29 +56,36 @@ public class UserManagementFacade {
             minioService.uploadFile(profileImage, savedFileName, BucketName.PROFILES);
         }
 
-        String loginId = userManagementService.generateLoginId(request.role());
-        String employeeNumber = userManagementService.generateEmployeeNumber(request.role());
-        String tempPassword = authService.generateTempPassword();
+        try {
+            String loginId = userManagementService.generateLoginId(request.role());
+            String employeeNumber = userManagementService.generateEmployeeNumber(request.role());
+            String tempPassword = authService.generateTempPassword();
 
-        User user = User.builder()
-                .loginId(loginId)
-                .employeeNumber(employeeNumber)
-                .username(request.username())
-                .email(request.email())
-                .phone(request.phone())
-                .birthDate(request.birthDate())
-                .role(request.role())
-                .position(request.position())
-                .profileImageUrl(savedFileName)
-                .businessUnitId(request.businessUnitId())
-                .status(UserStatus.ACTIVE)
-                .build();
+            User user = User.builder()
+                    .loginId(loginId)
+                    .employeeNumber(employeeNumber)
+                    .username(request.username())
+                    .email(request.email())
+                    .phone(request.phone())
+                    .birthDate(request.birthDate())
+                    .role(request.role())
+                    .position(request.position())
+                    .profileImageUrl(savedFileName)
+                    .businessUnitId(request.businessUnitId())
+                    .status(UserStatus.ACTIVE)
+                    .build();
 
-        userManagementService.registerUser(user, tempPassword);
-        userLogService.saveLog(user, actorId, UserAction.REGISTER);
-        eventPublisher.publishEvent(new UserRegisteredEvent(user.getEmail(), loginId, tempPassword, employeeNumber));
+            userManagementService.registerUser(user, tempPassword);
+            userLogService.saveLog(user, actorId, UserAction.REGISTER);
+            eventPublisher.publishEvent(new UserRegisteredEvent(user.getEmail(), loginId, tempPassword, employeeNumber));
+            return CreateUserResponse.from(user);
 
-        return CreateUserResponse.from(user);
+        } catch (Exception e) {
+            if (savedFileName != null) {
+                minioService.deleteFile(savedFileName, BucketName.PROFILES);
+            }
+            throw e;
+        }
     }
 
     // 회원 정보 재발송
@@ -118,15 +124,22 @@ public class UserManagementFacade {
             minioService.uploadFile(profileImage, savedFileName, BucketName.PROFILES);
         }
 
-        userManagementService.updateUser(userId, request.toCommand(savedFileName));
-        userLogService.saveLog(user, actorId, UserAction.INFO_UPDATE);
+        try {
+            userManagementService.updateUser(userId, request.toCommand(savedFileName));
+            userLogService.saveLog(user, actorId, UserAction.INFO_UPDATE);
 
-        if (savedFileName != null && oldFileName != null) {
-            eventPublisher.publishEvent(new ProfileImageDeleteEvent(oldFileName, BucketName.PROFILES));
+            if (savedFileName != null && oldFileName != null) {
+                eventPublisher.publishEvent(new ProfileImageDeleteEvent(oldFileName, BucketName.PROFILES));
+            }
+        } catch (Exception e) {
+            if (savedFileName != null) {
+                minioService.deleteFile(savedFileName, BucketName.PROFILES);
+            }
+            throw e;
         }
-
-        String profileImageUrl = minioService.getFileUrl(user.getProfileImageUrl(), BucketName.PROFILES);
-        return UserDetailResponse.from(user, profileImageUrl);
+        User updatedUser = userManagementService.getUserById(userId);
+        String profileImageUrl = minioService.getFileUrl(updatedUser.getProfileImageUrl(), BucketName.PROFILES);
+        return UserDetailResponse.from(updatedUser, profileImageUrl);
     }
 
     // 회원 상태 변경

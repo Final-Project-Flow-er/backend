@@ -2,7 +2,6 @@ package com.chaing.api.facade.user;
 
 import com.chaing.api.dto.hq.businessunit.response.BusinessUnitDetailResponse;
 import com.chaing.api.dto.user.event.ProfileImageDeleteEvent;
-import com.chaing.api.dto.user.event.ProfileImageUploadEvent;
 import com.chaing.api.dto.user.request.ChangePasswordRequest;
 import com.chaing.api.dto.user.request.UpdateMyBusinessUnitInfoRequest;
 import com.chaing.api.dto.user.request.UpdateMyInfoRequest;
@@ -57,16 +56,24 @@ public class MyPageFacade {
             minioService.uploadFile(profileImage, savedFileName, BucketName.PROFILES);
         }
 
-        MyInfoUpdateCommand command = request.toCommand(savedFileName);
-        User updatedUser = myPageService.updateMyProfile(userId, command);
-        userLogService.saveLog(updatedUser, userId, UserAction.INFO_UPDATE);
+        try {
+            MyInfoUpdateCommand command = request.toCommand(savedFileName);
+            User updatedUser = myPageService.updateMyProfile(userId, command);
+            userLogService.saveLog(updatedUser, userId, UserAction.INFO_UPDATE);
 
-        if (savedFileName != null && oldFileName != null) {
-            eventPublisher.publishEvent(new ProfileImageDeleteEvent(oldFileName, BucketName.PROFILES));
+            if (savedFileName != null && oldFileName != null) {
+                eventPublisher.publishEvent(new ProfileImageDeleteEvent(oldFileName, BucketName.PROFILES));
+            }
+
+            String profileImageUrl = minioService.getFileUrl(updatedUser.getProfileImageUrl(), BucketName.PROFILES);
+            return MyInfoResponse.from(updatedUser, profileImageUrl);
+
+        } catch (Exception e) {
+            if (savedFileName != null) {
+                minioService.deleteFile(savedFileName, BucketName.PROFILES);
+            }
+            throw e;
         }
-
-        String profileImageUrl = minioService.getFileUrl(updatedUser.getProfileImageUrl(), BucketName.PROFILES);
-        return MyInfoResponse.from(updatedUser, profileImageUrl);
     }
 
     // 비밀번호 변경

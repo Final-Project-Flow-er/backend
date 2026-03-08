@@ -22,6 +22,8 @@ import com.chaing.domain.inventories.entity.FranchiseInventory;
 import com.chaing.domain.inventories.entity.HQInventory;
 import com.chaing.domain.inventories.entity.InventoryPolicy;
 import com.chaing.domain.inventories.enums.LocationType;
+import com.chaing.domain.inventories.exception.InventoryErrorCode;
+import com.chaing.domain.inventories.exception.InventoryException;
 import com.chaing.domain.inventories.repository.FactoryInventoryRepository;
 import com.chaing.domain.inventories.repository.FranchiseInventoryRepository;
 import com.chaing.domain.inventories.repository.HQInventoryRepository;
@@ -242,7 +244,7 @@ public class InventoryService {
         List<FranchiseInventory> inventories = franchiseInventoryRepository.findAllBySerialCodeIn(serialCodes);
 
         if (inventories == null || inventories.isEmpty()) {
-            // ErrorCode 추가해주세요
+            throw new InventoryException(InventoryErrorCode.INVENTORY_NOT_FOUND);
         }
 
         return inventories.stream()
@@ -258,7 +260,7 @@ public class InventoryService {
         List<FranchiseInventory> inventories = franchiseInventoryRepository.findAllBySerialCodeIn(serialCodes);
 
         if (inventories == null || inventories.isEmpty()) {
-            // ErrorCode 추가해 주세요
+            throw new InventoryException(InventoryErrorCode.INVENTORY_NOT_FOUND);
         }
 
         return inventories.stream()
@@ -273,7 +275,7 @@ public class InventoryService {
         List<FranchiseInventory> inventories = franchiseInventoryRepository.findAllByOrderItemIdIn(orderItemIds);
 
         if (inventories == null || inventories.isEmpty()) {
-            // 예외 처리
+            throw new InventoryException(InventoryErrorCode.INVENTORY_NOT_FOUND);
         }
 
         return inventories.stream()
@@ -288,7 +290,7 @@ public class InventoryService {
         List<FranchiseInventory> inventories = franchiseInventoryRepository.findAllBySerialCodeIn(serialCodes);
 
         if (inventories == null || inventories.isEmpty()) {
-            // 예외 처리
+            throw new InventoryException(InventoryErrorCode.INVENTORY_NOT_FOUND);
         }
 
         return inventories.stream()
@@ -310,7 +312,7 @@ public class InventoryService {
         List<FranchiseInventory> inventories = franchiseInventoryRepository.findAllByBoxCodeIn(boxCodes);
 
         if (inventories == null || inventories.isEmpty()) {
-            // 예외 코드 추가
+            throw new InventoryException(InventoryErrorCode.INVENTORY_NOT_FOUND);
         }
 
         return inventories.stream()
@@ -332,7 +334,7 @@ public class InventoryService {
         List<FranchiseInventory> inventories = franchiseInventoryRepository.findAllByOrderItemIdIn(orderItemIds);
 
         if (inventories == null || inventories.isEmpty()) {
-            // 예외 추가
+            throw new InventoryException(InventoryErrorCode.INVENTORY_NOT_FOUND);
         }
 
         return inventories.stream()

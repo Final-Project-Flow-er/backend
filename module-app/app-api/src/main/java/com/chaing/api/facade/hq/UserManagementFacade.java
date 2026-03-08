@@ -10,6 +10,7 @@ import com.chaing.api.dto.hq.user.response.UserLogResponse;
 import com.chaing.api.dto.hq.user.response.UserSummaryResponse;
 import com.chaing.api.dto.user.event.UserInfoResendEvent;
 import com.chaing.api.dto.user.event.UserRegisteredEvent;
+import com.chaing.core.enums.BucketName;
 import com.chaing.core.service.MinioService;
 import com.chaing.domain.users.dto.condition.UserLogSearchCondition;
 import com.chaing.domain.users.dto.condition.UserSearchCondition;
@@ -50,7 +51,7 @@ public class UserManagementFacade {
 
         String savedFileName = null;
         if (profileImage != null && !profileImage.isEmpty()) {
-            savedFileName = minioService.uploadFile(profileImage, "chaing-profiles");
+            savedFileName = minioService.uploadFile(profileImage, BucketName.PROFILES);
         }
 
         String loginId = userManagementService.generateLoginId(request.role());
@@ -98,7 +99,7 @@ public class UserManagementFacade {
     // 회원 상세 조회
     public UserDetailResponse getUserById(Long userId) {
         User user = userManagementService.getUserById(userId);
-        String profileImageUrl = minioService.getFileUrl(user.getProfileImageUrl(), "chaing-profiles");
+        String profileImageUrl = minioService.getFileUrl(user.getProfileImageUrl(), BucketName.PROFILES);
         return UserDetailResponse.from(user, profileImageUrl);
     }
 
@@ -108,13 +109,13 @@ public class UserManagementFacade {
 
         String savedFileName = null;
         if (profileImage != null && !profileImage.isEmpty()) {
-            savedFileName = minioService.uploadFile(profileImage, "chaing-profiles");
+            savedFileName = minioService.uploadFile(profileImage, BucketName.PROFILES);
         }
 
         User user = userManagementService.updateUser(userId, request.toCommand(savedFileName));
         userLogService.saveLog(user, actorId, UserAction.INFO_UPDATE);
 
-        String profileImageUrl = minioService.getFileUrl(user.getProfileImageUrl(), "chaing-profiles");
+        String profileImageUrl = minioService.getFileUrl(user.getProfileImageUrl(), BucketName.PROFILES);
         return UserDetailResponse.from(user, profileImageUrl);
     }
 
@@ -131,7 +132,7 @@ public class UserManagementFacade {
         UserAction action = (status == UserStatus.ACTIVE) ? UserAction.RESTORE : UserAction.DEACTIVATE;
         userLogService.saveLog(user, actorId, action);
 
-        String profileImageUrl = minioService.getFileUrl(user.getProfileImageUrl(), "chaing-profiles");
+        String profileImageUrl = minioService.getFileUrl(user.getProfileImageUrl(), BucketName.PROFILES);
         return UserDetailResponse.from(user, profileImageUrl);
     }
 

@@ -98,14 +98,18 @@ public class User extends BaseEntity {
         if (request.phone() != null) this.phone = request.phone();
         if (request.birthDate() != null) this.birthDate = request.birthDate();
         if (request.profileImageUrl() != null) this.profileImageUrl = request.profileImageUrl();
-        if (request.role() != null) {
-            this.role = request.role();
+        if (request.position() != null) this.position = request.position();
+        if (request.role() != null && this.role != request.role()) {
             if (request.businessUnitId() == null) {
-                this.businessUnitId = null;
+                throw new UserException(UserErrorCode.INVALID_BUSINESS_UNIT_ACCESS);
+            }
+            this.role = request.role();
+            this.businessUnitId = request.businessUnitId();
+        } else {
+            if (request.businessUnitId() != null) {
+                this.businessUnitId = request.businessUnitId();
             }
         }
-        if (request.position() != null) this.position = request.position();
-        if (request.businessUnitId() != null) this.businessUnitId = request.businessUnitId();
     }
 
     public void updateMyProfile(MyInfoUpdateCommand command) {

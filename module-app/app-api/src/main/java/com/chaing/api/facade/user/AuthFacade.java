@@ -1,6 +1,6 @@
 package com.chaing.api.facade.user;
 
-import com.chaing.api.dto.user.event.PasswordResetEvent;
+import com.chaing.domain.users.event.PasswordResetEvent;
 import com.chaing.api.dto.user.request.LoginRequest;
 import com.chaing.api.dto.user.request.ResetPasswordRequest;
 import com.chaing.api.dto.user.response.LoginResponse;

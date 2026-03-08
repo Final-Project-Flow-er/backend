@@ -1,9 +1,9 @@
-package com.chaing.api.facade.user.listener;
+package com.chaing.domain.users.event.listener;
 
-import com.chaing.api.dto.user.event.PasswordResetEvent;
-import com.chaing.api.dto.user.event.ProfileImageDeleteEvent;
-import com.chaing.api.dto.user.event.UserInfoResendEvent;
-import com.chaing.api.dto.user.event.UserRegisteredEvent;
+import com.chaing.domain.users.event.PasswordResetEvent;
+import com.chaing.domain.users.event.ProfileImageDeleteEvent;
+import com.chaing.domain.users.event.UserInfoResendEvent;
+import com.chaing.domain.users.event.UserRegisteredEvent;
 import com.chaing.core.service.MinioService;
 import com.chaing.domain.users.service.MailService;
 import lombok.RequiredArgsConstructor;

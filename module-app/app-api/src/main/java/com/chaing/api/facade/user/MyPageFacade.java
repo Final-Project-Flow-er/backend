@@ -1,7 +1,7 @@
 package com.chaing.api.facade.user;
 
 import com.chaing.api.dto.hq.businessunit.response.BusinessUnitDetailResponse;
-import com.chaing.api.dto.user.event.ProfileImageDeleteEvent;
+import com.chaing.domain.users.event.ProfileImageDeleteEvent;
 import com.chaing.api.dto.user.request.ChangePasswordRequest;
 import com.chaing.api.dto.user.request.UpdateMyBusinessUnitInfoRequest;
 import com.chaing.api.dto.user.request.UpdateMyInfoRequest;

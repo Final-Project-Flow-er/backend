@@ -77,8 +77,8 @@ public class FranchiseReturnService {
 
         // List<boxCode>
         List<String> originalBoxCodes = items.stream()
-                .distinct()
                 .map(ReturnItem::getBoxCode)
+                .distinct()
                 .toList();
 
         log.info("inventoryByBoxCode={}", inventoryByBoxCode);

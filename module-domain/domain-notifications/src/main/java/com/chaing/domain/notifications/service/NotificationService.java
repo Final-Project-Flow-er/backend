@@ -1,15 +1,17 @@
 package com.chaing.domain.notifications.service;
 
-import com.chaing.domain.notifications.dto.command.NotificationCreateCommand;
+import com.chaing.domain.notifications.event.NotificationEvent;
 import com.chaing.domain.notifications.entity.Notification;
 import com.chaing.domain.notifications.enums.NotificationType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 public interface NotificationService {
 
-    void sendNotification(NotificationCreateCommand command);
-    void updateNotificationsByTarget(NotificationType type, String message, Long targetId);
+    SseEmitter subscribe(Long userId);
+    void sendToAll(NotificationEvent event);
+    void sendToUser(NotificationEvent event);
     void deleteNotificationsByTarget(NotificationType type, Long targetId);
     Page<Notification> getNotificationList(Long userId, Pageable pageable);
     Notification readNotification(Long notificationId, Long userId);

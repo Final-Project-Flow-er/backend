@@ -4,11 +4,13 @@ import com.chaing.api.dto.notice.request.CreateNoticeRequest;
 import com.chaing.api.dto.notice.request.UpdateNoticeRequest;
 import com.chaing.api.dto.notice.response.NoticeDetailResponse;
 import com.chaing.api.dto.notice.response.NoticeSummaryResponse;
+import com.chaing.domain.notifications.event.NotificationEvent;
 import com.chaing.api.facade.notification.NotificationFacade;
 import com.chaing.domain.notices.entity.Notice;
 import com.chaing.domain.notices.service.NoticeService;
 import com.chaing.domain.notifications.enums.NotificationType;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -22,6 +24,7 @@ public class NoticeFacade {
 
     private final NoticeService noticeService;
     private final NotificationFacade notificationFacade;
+    private final ApplicationEventPublisher eventPublisher;
 
     // 공지사항 상세 조회
     public NoticeDetailResponse getNoticeDetail(Long id) {
@@ -36,31 +39,29 @@ public class NoticeFacade {
     }
 
     // 공지사항 등록
-    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
+    @Transactional(rollbackFor = Exception.class)
     public NoticeDetailResponse createNotice(CreateNoticeRequest request, Long authorId) {
         Notice notice = noticeService.create(request.toCommand(), authorId);
 
         // 공지사항 알림 생성
-        notificationFacade.sendNotificationToAll(
-                NotificationType.NOTICE,
+        eventPublisher.publishEvent(NotificationEvent.forNotice(
                 "[공지] " + notice.getTitle(),
                 notice.getNoticeId()
-        );
+        ));
 
         return NoticeDetailResponse.from(notice);
     }
 
     // 공지사항 수정
-    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
+    @Transactional(rollbackFor = Exception.class)
     public NoticeDetailResponse updateNotice(Long id, UpdateNoticeRequest request, Long updaterId) {
         Notice notice = noticeService.update(id, request.toCommand(), updaterId);
 
         // 공지사항 알림 수정
-        notificationFacade.updateNotificationsByTarget(
-                NotificationType.NOTICE,
+        eventPublisher.publishEvent(NotificationEvent.forNotice(
                 "[수정된 공지] " + notice.getTitle(),
                 notice.getNoticeId()
-        );
+        ));
 
         return NoticeDetailResponse.from(notice);
     }

@@ -42,7 +42,7 @@ public class UserEventListener {
         );
     }
 
-    // 비밀번호 재설정 메일 발송
+    // 회원 정보 재발송 메일 발송
     @Async("mailTaskExecutor")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleUserInfoResendEvent(UserInfoResendEvent event) {

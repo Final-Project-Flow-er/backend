@@ -74,6 +74,24 @@ class MailServiceImplTests {
     }
 
     @Test
+    @DisplayName("회원 정보 재발송 메일 발송")
+    void sendUserInfo() {
+
+        // given
+        MimeMessage mimeMessage = mock(MimeMessage.class);
+        when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
+        when(templateEngine.process(eq("mail/user-info"), any(Context.class)))
+                .thenReturn("<html>User Info Content</html>");
+
+        // when
+        mailService.sendUserInfo("test@example.com", "loginId", "empNo");
+
+        // then
+        verify(templateEngine, times(1)).process(eq("mail/user-info"), any(Context.class));
+        verify(mailSender, times(1)).send(any(MimeMessage.class));
+    }
+
+    @Test
     @DisplayName("메일 발송 실패 시 UserException 발생")
     void sendMail_Failure_ThrowsException() {
         // given

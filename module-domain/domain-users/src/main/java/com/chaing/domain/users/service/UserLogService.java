@@ -1,5 +1,6 @@
 package com.chaing.domain.users.service;
 
+import com.chaing.domain.users.dto.condition.UserLogSearchCondition;
 import com.chaing.domain.users.entity.User;
 import com.chaing.domain.users.entity.UserLog;
 import com.chaing.domain.users.enums.UserAction;
@@ -34,7 +35,7 @@ public class UserLogService {
     }
 
     // 회원 로그 조회
-    public Page<UserLog> getAllUserLogs(Pageable pageable) {
-        return userLogRepository.findAllByOrderByCreatedAtDesc(pageable);
+    public Page<UserLog> getUserLogList(UserLogSearchCondition condition, Pageable pageable) {
+        return userLogRepository.searchUserLogs(condition, pageable);
     }
 }

@@ -4,6 +4,7 @@ import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.domain.products.dto.request.ProductRequest;
 import com.chaing.domain.products.dto.request.ProductSearchRequest;
 import com.chaing.domain.products.dto.request.ProductUpdateRequest;
+import com.chaing.domain.products.dto.response.ProductInfoResponse;
 import com.chaing.domain.products.dto.response.ProductListResponse;
 import com.chaing.domain.products.entity.Product;
 import com.chaing.domain.products.entity.ProductComponent;
@@ -212,5 +213,14 @@ public class ProductService {
         }
 
         return weightMap;
+    }
+
+    // 모든 상품 Id 조회
+    public List<Long> getAllProductIds() {
+        return productRepository.findAllProductIds();
+    }
+
+    public List<ProductInfoResponse> getInventoryProducts(String productCode, String name) {
+        return productRepository.getInventoryProducts(productCode, name);
     }
 }

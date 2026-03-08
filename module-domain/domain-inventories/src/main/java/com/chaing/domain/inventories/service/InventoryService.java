@@ -137,6 +137,8 @@ public class InventoryService {
         List<FranchiseInventory> inventories = request.boxes().stream()
                 .flatMap(box -> box.productList().stream()
                         .map(product -> FranchiseInventory.builder()
+                                .orderId(request.orderId())
+                                .orderItemId(request.orderItemId())
                                 .serialCode(product.serialCode())
                                 .productId(product.productId())
                                 .manufactureDate(product.manufactureDate())

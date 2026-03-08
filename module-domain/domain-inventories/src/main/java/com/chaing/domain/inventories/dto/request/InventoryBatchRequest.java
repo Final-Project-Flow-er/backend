@@ -14,6 +14,10 @@ public record InventoryBatchRequest(
         @NotBlank
         String transactionCode,   // 참조 번호 (발주 번호: HEAD2026..., 반품 번호 등)
 
+        Long orderId,
+
+        Long orderItemId,
+
         LocalDateTime recordTime,
 
         @NotNull

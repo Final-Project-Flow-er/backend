@@ -1,8 +1,11 @@
 package com.chaing.api.facade.user.listener;
 
 import com.chaing.api.dto.user.event.PasswordResetEvent;
+import com.chaing.api.dto.user.event.ProfileImageUploadEvent;
 import com.chaing.api.dto.user.event.UserInfoResendEvent;
 import com.chaing.api.dto.user.event.UserRegisteredEvent;
+import com.chaing.core.enums.BucketName;
+import com.chaing.core.service.MinioService;
 import com.chaing.domain.users.service.MailService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Async;
@@ -15,6 +18,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 public class UserEventListener {
 
     private final MailService mailService;
+    private final MinioService minioService;
 
     // 회원가입 메일 발송
     @Async("mailTaskExecutor")
@@ -47,5 +51,11 @@ public class UserEventListener {
                 event.loginId(),
                 event.employeeNumber()
         );
+    }
+
+    // 프로필 이미지 업로드
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void handleFileUpload(ProfileImageUploadEvent event) {
+        minioService.uploadFile(event.file(), event.fileName(), BucketName.PROFILES);
     }
 }

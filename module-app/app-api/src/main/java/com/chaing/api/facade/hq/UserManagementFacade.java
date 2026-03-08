@@ -8,6 +8,7 @@ import com.chaing.api.dto.hq.user.response.CreateUserResponse;
 import com.chaing.api.dto.hq.user.response.UserDetailResponse;
 import com.chaing.api.dto.hq.user.response.UserLogResponse;
 import com.chaing.api.dto.hq.user.response.UserSummaryResponse;
+import com.chaing.api.dto.user.event.ProfileImageUploadEvent;
 import com.chaing.api.dto.user.event.UserInfoResendEvent;
 import com.chaing.api.dto.user.event.UserRegisteredEvent;
 import com.chaing.core.enums.BucketName;
@@ -51,7 +52,7 @@ public class UserManagementFacade {
 
         String savedFileName = null;
         if (profileImage != null && !profileImage.isEmpty()) {
-            savedFileName = minioService.uploadFile(profileImage, BucketName.PROFILES);
+            savedFileName = minioService.generateFileName(profileImage);
         }
 
         String loginId = userManagementService.generateLoginId(request.role());
@@ -74,6 +75,10 @@ public class UserManagementFacade {
 
         userManagementService.registerUser(user, tempPassword);
         userLogService.saveLog(user, actorId, UserAction.REGISTER);
+
+        if (savedFileName != null) {
+            eventPublisher.publishEvent(new ProfileImageUploadEvent(profileImage, savedFileName, BucketName.PROFILES));
+        }
         eventPublisher.publishEvent(new UserRegisteredEvent(user.getEmail(), loginId, tempPassword, employeeNumber));
 
         return CreateUserResponse.from(user);
@@ -109,11 +114,15 @@ public class UserManagementFacade {
 
         String savedFileName = null;
         if (profileImage != null && !profileImage.isEmpty()) {
-            savedFileName = minioService.uploadFile(profileImage, BucketName.PROFILES);
+            savedFileName = minioService.generateFileName(profileImage);
         }
 
         User user = userManagementService.updateUser(userId, request.toCommand(savedFileName));
         userLogService.saveLog(user, actorId, UserAction.INFO_UPDATE);
+
+        if (savedFileName != null) {
+            eventPublisher.publishEvent(new ProfileImageUploadEvent(profileImage, savedFileName, BucketName.PROFILES));
+        }
 
         String profileImageUrl = minioService.getFileUrl(user.getProfileImageUrl(), BucketName.PROFILES);
         return UserDetailResponse.from(user, profileImageUrl);

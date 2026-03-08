@@ -20,10 +20,13 @@ public class MinioService {
 
     private final MinioClient minioClient;
 
-    // 파일 업로드 로직
-    public String uploadFile(MultipartFile file, BucketName bucket) {
-        String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
+    // 파일명 생성
+    public String generateFileName(MultipartFile file) {
+        return UUID.randomUUID() + "_" + file.getOriginalFilename();
+    }
 
+    // 파일 업로드 로직
+    public void uploadFile(MultipartFile file, String fileName, BucketName bucket) {
         try {
             minioClient.putObject(
                     PutObjectArgs.builder()
@@ -33,7 +36,6 @@ public class MinioService {
                             .contentType(file.getContentType())
                             .build()
             );
-            return fileName;
         } catch (Exception e) {
             log.error("MinIO upload error: ", e);
             throw new RuntimeException("파일 업로드 중 오류가 발생했습니다.");

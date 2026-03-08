@@ -1,6 +1,7 @@
 package com.chaing.api.facade.user;
 
 import com.chaing.api.dto.hq.businessunit.response.BusinessUnitDetailResponse;
+import com.chaing.api.dto.user.event.ProfileImageUploadEvent;
 import com.chaing.api.dto.user.request.ChangePasswordRequest;
 import com.chaing.api.dto.user.request.UpdateMyBusinessUnitInfoRequest;
 import com.chaing.api.dto.user.request.UpdateMyInfoRequest;
@@ -17,8 +18,8 @@ import com.chaing.domain.users.exception.UserErrorCode;
 import com.chaing.domain.users.exception.UserException;
 import com.chaing.domain.users.service.MyPageService;
 import com.chaing.domain.users.service.UserLogService;
-import com.chaing.domain.users.service.UserManagementService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -33,6 +34,7 @@ public class MyPageFacade {
     private final MyPageService myPageService;
     private final UserLogService userLogService;
     private final BusinessUnitManagementFacade businessUnitManagementFacade;
+    private final ApplicationEventPublisher eventPublisher;
     private final MinioService minioService;
 
     // 내 정보 조회
@@ -48,12 +50,16 @@ public class MyPageFacade {
         String savedFileName = null;
 
         if (profileImage != null && !profileImage.isEmpty()) {
-            savedFileName = minioService.uploadFile(profileImage, BucketName.PROFILES);
+            savedFileName = minioService.generateFileName(profileImage);
         }
 
         MyInfoUpdateCommand command = request.toCommand(savedFileName);
         User updatedUser = myPageService.updateMyProfile(userId, command);
         userLogService.saveLog(updatedUser, userId, UserAction.INFO_UPDATE);
+
+        if (savedFileName != null) {
+            eventPublisher.publishEvent(new ProfileImageUploadEvent(profileImage, savedFileName, BucketName.PROFILES));
+        }
 
         String profileImageUrl = minioService.getFileUrl(updatedUser.getProfileImageUrl(), BucketName.PROFILES);
         return MyInfoResponse.from(updatedUser, profileImageUrl);

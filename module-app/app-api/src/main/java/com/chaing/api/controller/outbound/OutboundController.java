@@ -12,6 +12,7 @@ import com.chaing.api.dto.outbound.response.OutboundBoxSummaryResponse;
 import com.chaing.api.dto.outbound.response.OutboundItemResponse;
 import com.chaing.api.facade.outbound.OutboundFacade;
 import com.chaing.core.dto.ApiResponse;
+import com.chaing.core.enums.LogType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -39,7 +40,8 @@ public class OutboundController {
     public ResponseEntity<ApiResponse<Void>> scanOutbound(
         @Valid @RequestBody OutboundUpdateRequest request
     ) {
-        outboundFacade.updateOutboundStatus(request);
+        LogType currentStatus = LogType.AVAILABLE;
+        outboundFacade.updateOutboundStatus(request, currentStatus);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
@@ -59,7 +61,8 @@ public class OutboundController {
     public ResponseEntity<ApiResponse<Void>> pickOutbound(
         @Valid @RequestBody OutboundUpdateRequest request
     ){
-        outboundFacade.updateOutboundStatus(request);
+        LogType currentStatus = LogType.PICKING_WAIT;
+        outboundFacade.updateOutboundStatus(request, currentStatus);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
@@ -69,7 +72,8 @@ public class OutboundController {
     public ResponseEntity<ApiResponse<Void>> confirmOutbound(
             @Valid @RequestBody OutboundUpdateRequest request
     ) {
-        outboundFacade.updateOutboundStatus(request);
+        LogType currentStatus = LogType.PICKING;
+        outboundFacade.updateOutboundStatus(request, currentStatus);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

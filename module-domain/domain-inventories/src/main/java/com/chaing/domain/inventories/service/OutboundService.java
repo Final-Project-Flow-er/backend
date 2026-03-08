@@ -24,19 +24,19 @@ public class OutboundService {
     private final OutboundExecutor outboundExecutor;
 
     @Transactional
-    public void updateStatus(List<String> selectedList) {
+    public void updateStatus(List<String> selectedList, LogType currentStatus) {
 
         // 조회
-        List<FactoryInventory> targets = outboundReader.getAllBySerialCode(selectedList);
-
-        // 누락된 값 존재 여부 검증
-        outboundValidator.checkPendingDataExistence(targets);
+        List<FactoryInventory> targets = getListAndValidate(selectedList);
 
         AtomicReference<LogType> targetStatus = new AtomicReference<>(LogType.AVAILABLE);
 
         // 상태 분기 및 검증
         targets.forEach(target -> {
             LogType status = target.getStatus();
+            if (status != currentStatus) {
+                throw new InventoriesException(InventoriesErrorCode.INVALID_OUTBOUND_STATUS);
+            }
             switch (status) {
                 case AVAILABLE:
                     outboundValidator.checkValidStatus(status, LogType.AVAILABLE);
@@ -64,5 +64,25 @@ public class OutboundService {
 
         // 상태 변경 실행
         outboundExecutor.updateAll(confirmedIds, targetStatus.get());
+    }
+
+    public void assignBox(String boxCode, List<String> serialCodes) {
+        List<FactoryInventory> selectedList = getListAndValidate(serialCodes);
+
+        List<String> confirmedIds = selectedList.stream()
+                .map(FactoryInventory::getSerialCode)
+                .toList();
+
+        outboundExecutor.assignBoxCode(boxCode, confirmedIds);
+    }
+
+    public List<FactoryInventory> getListAndValidate(List<String> serialCodes) {
+        // 조회
+        List<FactoryInventory> targets = outboundReader.getAllBySerialCode(serialCodes);
+
+        // 누락된 값 존재 여부 검증
+        outboundValidator.checkPendingDataExistence(targets);
+
+        return targets;
     }
 }

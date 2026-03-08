@@ -26,4 +26,10 @@ public interface FactoryInventoryRepository extends JpaRepository<FactoryInvento
     void setTargetStatusBySerialCodeIn(
             @Param("ids") List<String> confirmedIds,
             @Param("targetStatus") LogType targetStatus);
+
+    @Modifying
+    @Query("update FactoryInventory f set f.boxCode = :boxCode where f.serialCode in :ids")
+    void setBoxCode(
+            @Param("boxCode") String boxCode,
+            @Param("ids") List<String> selectedList);
 }

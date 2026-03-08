@@ -64,7 +64,10 @@ public class FactoryInventoryRepositoryImpl implements FactoryInventoryRepositor
                                 .on(
                                                 factoryInventory.productId.eq(inventoryPolicy.productId)
                                                                 .and(inventoryPolicy.locationType.eq(LocationType.HQ)))
-                                .where(factoryInventory.productId.in(products))
+                                .where(
+                                        factoryInventory.productId.in(products),
+                                        factoryInventory.status.eq(LogType.AVAILABLE)
+                                )
                                 .groupBy(factoryInventory.productId, inventoryPolicy.safetyStock)
                                 .having(status == null ? null : safetyResult.eq(status))
                                 .fetch();

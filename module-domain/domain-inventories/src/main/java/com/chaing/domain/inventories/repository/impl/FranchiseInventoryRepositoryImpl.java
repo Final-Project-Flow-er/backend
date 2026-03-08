@@ -68,7 +68,8 @@ public class FranchiseInventoryRepositoryImpl implements FranchiseInventoryRepos
                                                                                                 .eq(franchiseId))))
                                 .where(
                                                 franchiseInventory.franchiseId.eq(franchiseId),
-                                                franchiseInventory.productId.in(ids))
+                                                franchiseInventory.productId.in(ids),
+                                        franchiseInventory.status.eq(LogType.AVAILABLE))
                                 .groupBy(franchiseInventory.productId, inventoryPolicy.safetyStock)
                                 .having(status == null ? null : safetyResult.eq(status))
                                 .fetch();

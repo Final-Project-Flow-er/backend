@@ -2,6 +2,8 @@ package com.chaing.domain.inventories.usecase.executor;
 
 import com.chaing.domain.inventories.dto.command.FranchiseInboundCreateCommand;
 import com.chaing.domain.inventories.entity.FranchiseInventory;
+import com.chaing.domain.inventories.exception.InventoriesErrorCode;
+import com.chaing.domain.inventories.exception.InventoriesException;
 import com.chaing.domain.inventories.repository.FranchiseInventoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -21,6 +23,10 @@ public class FranchiseExecutorImpl implements Executor<FranchiseInboundCreateCom
     @Override
     @Transactional
     public void create(FranchiseInboundCreateCommand command) {
+
+        if (command.serialCodes().size() != command.orderItemIds().size()) {
+            throw new InventoriesException(InventoriesErrorCode.INVENTORIES_UNMATCHED);
+        }
 
         List<FranchiseInventory> inventories = IntStream.range(0, command.serialCodes().size())
                 .mapToObj(i -> {

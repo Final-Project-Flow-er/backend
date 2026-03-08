@@ -95,7 +95,7 @@ public class AuthServiceImpl implements AuthService {
         passwordBuilder.append(digits.charAt(random.nextInt(digits.length())));
         passwordBuilder.append(specialChars.charAt(random.nextInt(specialChars.length())));
 
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < 6; i++) {
             passwordBuilder.append(allChars.charAt(random.nextInt(allChars.length())));
         }
 

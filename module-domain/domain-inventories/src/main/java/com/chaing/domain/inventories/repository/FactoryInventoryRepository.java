@@ -40,4 +40,13 @@ public interface FactoryInventoryRepository extends JpaRepository<FactoryInvento
             "    f.status = com.chaing.core.enums.LogType.AVAILABLE " + // Enum 경로를 맞춰주세요!
             "where f.serialCode in :ids")
     void cancelOutboundBySerialCodeIn(@Param("ids") List<String> confirmedIds);
+
+    @Query("select f from FactoryInventory f " +
+            "where f.status in (:status1, :status2) " +
+            "and (:boxCode is null or f.boxCode = :boxCode)")
+    List<FactoryInventory> findAllByBoxCodeAndStatuses(
+            @Param("boxCode") String boxCode,
+            @Param("status1") LogType status1,
+            @Param("status2") LogType status2
+    );
 }

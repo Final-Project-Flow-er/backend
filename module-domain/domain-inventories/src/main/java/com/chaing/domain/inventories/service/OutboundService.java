@@ -1,6 +1,8 @@
 package com.chaing.domain.inventories.service;
 
 import com.chaing.core.enums.LogType;
+import com.chaing.domain.inventories.dto.info.OutboundGetBoxInfo;
+import com.chaing.domain.inventories.dto.info.OutboundGetItemsInfo;
 import com.chaing.domain.inventories.entity.FactoryInventory;
 import com.chaing.domain.inventories.exception.InventoriesErrorCode;
 import com.chaing.domain.inventories.exception.InventoriesException;
@@ -114,5 +116,27 @@ public class OutboundService {
         outboundValidator.checkPendingDataExistence(targets);
 
         return targets;
+    }
+
+    public List<OutboundGetBoxInfo> getBoxInfos() {
+        List<FactoryInventory> pendingList = outboundReader.getAllByBoxCodeAndStatus(null);
+        return pendingList.stream()
+                .map(inventory -> new OutboundGetBoxInfo(
+                        inventory.getBoxCode(),     // 박스 코드
+                        inventory.getProductId() // 제품 id
+                ))
+                .toList();
+    }
+
+    public List<OutboundGetItemsInfo> getItemsInfo(String boxCode) {
+        List<FactoryInventory> pendingList = outboundReader.getAllByBoxCodeAndStatus(boxCode);
+
+        return pendingList.stream()
+                .map(inventory -> new OutboundGetItemsInfo(
+                        inventory.getProductId(), // 제품 id
+                        inventory.getSerialCode(),
+                        inventory.getManufactureDate()
+                ))
+                .toList();
     }
 }

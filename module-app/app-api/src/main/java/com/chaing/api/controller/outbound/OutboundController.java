@@ -1,12 +1,8 @@
 package com.chaing.api.controller.outbound;
 
 import com.chaing.api.dto.outbound.request.OutboundAssignRequest;
-import com.chaing.api.dto.outbound.request.OutboundBoxSummaryRequest;
 import com.chaing.api.dto.outbound.request.OutboundCancelRequest;
-import com.chaing.api.dto.outbound.request.OutboundConfirmRequest;
 import com.chaing.api.dto.outbound.request.OutboundItemRequest;
-import com.chaing.api.dto.outbound.request.OutboundPickingRequest;
-import com.chaing.api.dto.outbound.request.OutboundReadyRequest;
 import com.chaing.api.dto.outbound.request.OutboundUpdateRequest;
 import com.chaing.api.dto.outbound.response.OutboundBoxSummaryResponse;
 import com.chaing.api.dto.outbound.response.OutboundItemResponse;
@@ -91,9 +87,8 @@ public class OutboundController {
     @GetMapping("/boxes")
     @Operation(summary = "출고 스캔 박스 목록 조회", description = "스캔된 박스 단위 목록을 조회합니다.")
     public ResponseEntity<ApiResponse<List<OutboundBoxSummaryResponse>>> getBoxDetail(
-            @Valid OutboundBoxSummaryRequest request
     ) {
-        List<OutboundBoxSummaryResponse> responses = List.of();
+        List<OutboundBoxSummaryResponse> responses = outboundFacade.getPendingBoxes();
         return ResponseEntity.ok(ApiResponse.success(responses));
     }
 
@@ -103,7 +98,7 @@ public class OutboundController {
     public ResponseEntity<ApiResponse<List<OutboundItemResponse>>> getItemDetail(
             @Valid OutboundItemRequest request
     ) {
-        List<OutboundItemResponse> responses = List.of();
+        List<OutboundItemResponse> responses = outboundFacade.getPendingItems(request.boxCode());
         return ResponseEntity.ok(ApiResponse.success(responses));
     }
 }

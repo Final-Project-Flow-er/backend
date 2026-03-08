@@ -3,9 +3,9 @@ package com.chaing.domain.inventories.service.inbound;
 import com.chaing.domain.inventories.dto.info.PendingBoxInfo;
 import com.chaing.domain.inventories.dto.info.PendingItemInfo;
 import com.chaing.domain.inventories.dto.raw.InboundRawData;
-import com.chaing.domain.inventories.usecase.executor.Executor;
-import com.chaing.domain.inventories.usecase.reader.Reader;
-import com.chaing.domain.inventories.usecase.valiator.Validator;
+import com.chaing.domain.inventories.usecase.inbound.executor.InboundExecutor;
+import com.chaing.domain.inventories.usecase.inbound.reader.InboundReader;
+import com.chaing.domain.inventories.usecase.inbound.valiator.InboundValidator;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
@@ -13,9 +13,9 @@ import java.util.List;
 @RequiredArgsConstructor
 public abstract class InboundService<T, R extends InboundRawData> {
 
-    protected final Reader<R> reader;
-    protected final Executor<T> executor;
-    protected final Validator<T, R> validator;
+    protected final InboundReader<R> inboundReader;
+    protected final InboundExecutor<T> inboundExecutor;
+    protected final InboundValidator<T, R> inboundValidator;
 
     // 입고 스캔
     public void scanInbound(T command) {
@@ -27,7 +27,7 @@ public abstract class InboundService<T, R extends InboundRawData> {
         verifyValidity(command);
 
         // 실제 제품 등록 및 입고 실행
-        executor.create(command);
+        inboundExecutor.create(command);
     }
 
     // 가맹점 박스 목록
@@ -70,5 +70,5 @@ public abstract class InboundService<T, R extends InboundRawData> {
 
     protected abstract boolean isFranchise(R d, Long id);
 
-    public abstract void confirmInbound(List<Long> selectedList);
+    public abstract void confirmInbound(List<String> selectedList);
 }

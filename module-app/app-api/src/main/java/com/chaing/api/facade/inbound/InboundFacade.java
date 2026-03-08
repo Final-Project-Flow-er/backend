@@ -129,13 +129,14 @@ public class InboundFacade {
     @Transactional
     public void confirmInbound(@Valid InboundConfirmRequest request, UserRole role) {
 
-        List<Long> selectedList = request.inventoryIds();
+        List<String> selectedList = request.serialCodes();
 
         // 역할에 따른 입고 승인 로직
         if (role == UserRole.FACTORY) {
             factoryInboundService.confirmInbound(selectedList);
         } else if (role == UserRole.FRANCHISE) {
             franchiseInboundService.confirmInbound(selectedList);
+
         } else {
             throw new InventoriesException(InventoriesErrorCode.INBOUND_ROLE_INVALID);
         }

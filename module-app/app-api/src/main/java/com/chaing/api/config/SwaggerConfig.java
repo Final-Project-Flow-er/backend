@@ -235,4 +235,12 @@ public class SwaggerConfig {
                 .pathsToMatch("/api/v1/inbounds/**")
                 .build();
     }
+
+    @Bean
+    public GroupedOpenApi outboundProcessApi() {
+        return GroupedOpenApi.builder()
+                .group("출고(OutboundProcess)")
+                .pathsToMatch("/api/v1/outbounds/**")
+                .build();
+    }
 }

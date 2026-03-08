@@ -1,4 +1,9 @@
 package com.chaing.api.dto.outbound.request;
 
-public record OutboundAssignRequest() {
+import java.util.List;
+
+public record OutboundAssignRequest(
+        String boxCode,
+        List<String> serialCodes
+) {
 }

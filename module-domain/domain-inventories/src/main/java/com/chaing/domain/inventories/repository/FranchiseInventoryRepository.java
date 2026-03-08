@@ -20,8 +20,6 @@ public interface FranchiseInventoryRepository extends JpaRepository<FranchiseInv
 
     List<FranchiseInventory> findAllByStatus(LogType status);
 
-    List<FranchiseInventory> findAllByInventoryIdIn(List<Long> selectedList);
-
     @Modifying
     @Query("UPDATE FranchiseInventory i SET i.status = 'INBOUND' WHERE i.serialCode IN :serials")
     void updateAllStatusInboundBySerialCode(@Param("serials") List<String> serials);

@@ -1,8 +1,8 @@
-package com.chaing.domain.inventories.usecase.executor;
+package com.chaing.domain.inventories.usecase.inbound.executor;
 
 import java.util.List;
 
-public interface Executor<T> {
+public interface InboundExecutor<T> {
     void create(T command);
 
     void confirmAll(List<String> confirmedIds);

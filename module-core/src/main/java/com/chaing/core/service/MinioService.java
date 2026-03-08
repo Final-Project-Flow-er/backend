@@ -45,6 +45,10 @@ public class MinioService {
 
     // 이미지 조회 URL 생성
     public String getFileUrl(String fileName, BucketName bucket) {
+        if (fileName == null || fileName.isBlank()) {
+            return null;
+        }
+
         try {
             return minioClient.getPresignedObjectUrl(
                     GetPresignedObjectUrlArgs.builder()

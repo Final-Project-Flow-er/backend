@@ -177,6 +177,7 @@ public class FranchiseInventoryRepositoryImpl implements FranchiseInventoryRepos
                 .where(
                         containsLocationType(locationType),
                         containsLocationId(locationId),
+                        franchiseInventory.franchiseId.eq(locationId),
                         franchiseInventory.manufactureDate.between(startManufactureDate,
                                 endManufactureDate))
                 .groupBy(franchiseInventory.productId, franchiseInventory.manufactureDate)

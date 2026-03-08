@@ -66,6 +66,8 @@ public class OutboundService {
         outboundExecutor.updateAll(confirmedIds, targetStatus.get());
     }
 
+    // 박스 할당
+    @Transactional
     public void assignBox(String boxCode, List<String> serialCodes) {
         List<FactoryInventory> selectedList = getListAndValidate(serialCodes);
 
@@ -74,6 +76,34 @@ public class OutboundService {
                 .toList();
 
         outboundExecutor.assignBoxCode(boxCode, confirmedIds);
+    }
+
+    // 할당 취소 및 출고 취소
+    @Transactional
+    public void cancelOutbound(String boxCode, List<String> serialCodes) {
+        List<FactoryInventory> selectedList = getListAndValidate(serialCodes);
+
+        // 타겟 리스트가 가용 상태가 아닌지 확인
+        selectedList.forEach(target -> {
+            LogType status = target.getStatus();
+
+            switch (status) {
+                case PICKING_WAIT:
+                case PICKING:
+                case OUTBOUND:
+                    break;
+                default:
+                    throw new  InventoriesException(InventoriesErrorCode.INVALID_OUTBOUND_CANCEL_STATUS);
+            }
+        });
+
+        // 검증된 값 시리얼 코드 추출
+        List<String> confirmedIds = selectedList.stream()
+                .map(FactoryInventory::getSerialCode)
+                .toList();
+
+        // 박스 코드 할당 취소 및 상태 변경
+        outboundExecutor.cancelOutbound(confirmedIds);
     }
 
     public List<FactoryInventory> getListAndValidate(List<String> serialCodes) {

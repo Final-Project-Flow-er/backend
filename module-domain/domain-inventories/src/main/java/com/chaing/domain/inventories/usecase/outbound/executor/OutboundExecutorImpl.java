@@ -1,7 +1,6 @@
 package com.chaing.domain.inventories.usecase.outbound.executor;
 
 import com.chaing.core.enums.LogType;
-import com.chaing.domain.inventories.entity.FactoryInventory;
 import com.chaing.domain.inventories.repository.FactoryInventoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -22,5 +21,10 @@ public class OutboundExecutorImpl implements  OutboundExecutor {
     @Override
     public void assignBoxCode(String boxCode, List<String> confirmedIds) {
         repository.setBoxCode(boxCode, confirmedIds);
+    }
+
+    @Override
+    public void cancelOutbound(List<String> confirmedIds) {
+        repository.cancelOutboundBySerialCodeIn(confirmedIds);
     }
 }

@@ -83,6 +83,7 @@ public class OutboundController {
     public ResponseEntity<ApiResponse<Void>> cancelOutbound(
             @Valid @RequestBody OutboundCancelRequest request
     ) {
+        outboundFacade.cancelOutbound(request.boxCode(), request.serialCodes());
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

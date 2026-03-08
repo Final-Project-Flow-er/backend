@@ -31,4 +31,8 @@ public class OutboundFacade {
     public void assignBoxToInventories(String boxCode, List<String> serialCodes) {
         outboundService.assignBox(boxCode, serialCodes);
     }
+
+    public void cancelOutbound(String boxCode, List<String> serialCodes) {
+        outboundService.cancelOutbound(boxCode, serialCodes);
+    }
 }

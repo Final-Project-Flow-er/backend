@@ -33,4 +33,11 @@ public interface FactoryInventoryRepository extends JpaRepository<FactoryInvento
     void setBoxCode(
             @Param("boxCode") String boxCode,
             @Param("ids") List<String> selectedList);
+
+    @Modifying(clearAutomatically = true)
+    @Query("update FactoryInventory f " +
+            "set f.boxCode = null, " +
+            "    f.status = com.chaing.core.enums.LogType.AVAILABLE " + // Enum 경로를 맞춰주세요!
+            "where f.serialCode in :ids")
+    void cancelOutboundBySerialCodeIn(@Param("ids") List<String> confirmedIds);
 }

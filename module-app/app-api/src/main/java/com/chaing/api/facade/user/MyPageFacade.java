@@ -37,7 +37,8 @@ public class MyPageFacade {
     // 내 정보 조회
     public MyInfoResponse getMyInfo(Long userId) {
         User user = myPageService.getMyInfo(userId);
-        return MyInfoResponse.from(user);
+        String profileImageUrl = minioService.getFileUrl(user.getProfileImageUrl(), "chaing-profiles");
+        return MyInfoResponse.from(user, profileImageUrl);
     }
 
     // 내 정보 수정
@@ -52,7 +53,9 @@ public class MyPageFacade {
         MyInfoUpdateCommand command = request.toCommand(savedFileName);
         User updatedUser = myPageService.updateMyProfile(userId, command);
         userLogService.saveLog(updatedUser, userId, UserAction.INFO_UPDATE);
-        return MyInfoResponse.from(updatedUser);
+
+        String profileImageUrl = minioService.getFileUrl(updatedUser.getProfileImageUrl(), "chaing-profiles");
+        return MyInfoResponse.from(updatedUser, profileImageUrl);
     }
 
     // 비밀번호 변경

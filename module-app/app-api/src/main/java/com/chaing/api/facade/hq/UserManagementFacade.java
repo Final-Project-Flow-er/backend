@@ -10,6 +10,7 @@ import com.chaing.api.dto.hq.user.response.UserLogResponse;
 import com.chaing.api.dto.hq.user.response.UserSummaryResponse;
 import com.chaing.api.dto.user.event.UserInfoResendEvent;
 import com.chaing.api.dto.user.event.UserRegisteredEvent;
+import com.chaing.core.service.MinioService;
 import com.chaing.domain.users.dto.condition.UserLogSearchCondition;
 import com.chaing.domain.users.dto.condition.UserSearchCondition;
 import com.chaing.domain.users.entity.User;
@@ -36,6 +37,7 @@ public class UserManagementFacade {
     private final AuthService authService;
     private final UserLogService userLogService;
     private final ApplicationEventPublisher eventPublisher;
+    private final MinioService minioService;
 
     // 회원 등록
     @Transactional(rollbackFor = Exception.class)
@@ -90,17 +92,19 @@ public class UserManagementFacade {
     // 회원 상세 조회
     public UserDetailResponse getUserById(Long userId) {
         User user = userManagementService.getUserById(userId);
-        return UserDetailResponse.from(user);
+        String profileImageUrl = minioService.getFileUrl(user.getProfileImageUrl(), "chaing-profiles");
+        return UserDetailResponse.from(user, profileImageUrl);
     }
 
     // 회원 정보 수정
     @Transactional(rollbackFor = Exception.class)
     public UserDetailResponse updateUser(Long userId, UpdateUserRequest request, Long actorId) {
 
-        User updatedUser = userManagementService.updateUser(userId, request.toCommand());
+        User user = userManagementService.updateUser(userId, request.toCommand());
+        userLogService.saveLog(user, actorId, UserAction.INFO_UPDATE);
 
-        userLogService.saveLog(updatedUser, actorId, UserAction.INFO_UPDATE);
-        return UserDetailResponse.from(updatedUser);
+        String profileImageUrl = minioService.getFileUrl(user.getProfileImageUrl(), "chaing-profiles");
+        return UserDetailResponse.from(user, profileImageUrl);
     }
 
     // 회원 상태 변경
@@ -116,7 +120,8 @@ public class UserManagementFacade {
         UserAction action = (status == UserStatus.ACTIVE) ? UserAction.RESTORE : UserAction.DEACTIVATE;
         userLogService.saveLog(user, actorId, action);
 
-        return UserDetailResponse.from(user);
+        String profileImageUrl = minioService.getFileUrl(user.getProfileImageUrl(), "chaing-profiles");
+        return UserDetailResponse.from(user, profileImageUrl);
     }
 
     // 회원 로그 조회

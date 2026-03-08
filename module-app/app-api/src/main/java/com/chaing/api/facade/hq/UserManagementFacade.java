@@ -8,6 +8,7 @@ import com.chaing.api.dto.hq.user.response.CreateUserResponse;
 import com.chaing.api.dto.hq.user.response.UserDetailResponse;
 import com.chaing.api.dto.hq.user.response.UserLogResponse;
 import com.chaing.api.dto.hq.user.response.UserSummaryResponse;
+import com.chaing.api.dto.user.event.ProfileImageDeleteEvent;
 import com.chaing.api.dto.user.event.ProfileImageUploadEvent;
 import com.chaing.api.dto.user.event.UserInfoResendEvent;
 import com.chaing.api.dto.user.event.UserRegisteredEvent;
@@ -155,9 +156,14 @@ public class UserManagementFacade {
     @Transactional(rollbackFor = Exception.class)
     public void deleteUser(Long userId, Long actorId) {
         User user = userManagementService.getUserById(userId);
+        String fileName = user.getProfileImageUrl();
         userLogService.saveLog(user, actorId, UserAction.DELETE);
 
         authService.deleteRefreshToken(userId);
         userManagementService.deleteUser(userId);
+
+        if (fileName != null) {
+            eventPublisher.publishEvent(new ProfileImageDeleteEvent(fileName, BucketName.PROFILES));
+        }
     }
 }

@@ -1,6 +1,7 @@
 package com.chaing.api.facade.user.listener;
 
 import com.chaing.api.dto.user.event.PasswordResetEvent;
+import com.chaing.api.dto.user.event.ProfileImageDeleteEvent;
 import com.chaing.api.dto.user.event.ProfileImageUploadEvent;
 import com.chaing.api.dto.user.event.UserInfoResendEvent;
 import com.chaing.api.dto.user.event.UserRegisteredEvent;
@@ -57,5 +58,11 @@ public class UserEventListener {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleFileUpload(ProfileImageUploadEvent event) {
         minioService.uploadFile(event.file(), event.fileName(), BucketName.PROFILES);
+    }
+
+    // 프로필 이미지 삭제
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void handleFileDelete(ProfileImageDeleteEvent event) {
+        minioService.deleteFile(event.fileName(), event.bucketName());
     }
 }

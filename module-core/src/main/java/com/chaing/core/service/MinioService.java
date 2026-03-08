@@ -4,6 +4,7 @@ import com.chaing.core.enums.BucketName;
 import io.minio.GetPresignedObjectUrlArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
+import io.minio.RemoveObjectArgs;
 import io.minio.http.Method;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -56,6 +57,20 @@ public class MinioService {
         } catch (Exception e) {
             log.error("MinIO get URL error: ", e);
             return null;
+        }
+    }
+
+    // 이미지 삭제
+    public void deleteFile(String fileName, BucketName bucket) {
+        try {
+            minioClient.removeObject(
+                    RemoveObjectArgs.builder()
+                            .bucket(bucket.getBucketName())
+                            .object(fileName)
+                            .build()
+            );
+        } catch (Exception e) {
+            log.error("MinIO delete error: ", e);
         }
     }
 }

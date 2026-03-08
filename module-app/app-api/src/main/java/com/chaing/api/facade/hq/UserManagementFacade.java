@@ -54,6 +54,7 @@ public class UserManagementFacade {
         String savedFileName = null;
         if (profileImage != null && !profileImage.isEmpty()) {
             savedFileName = minioService.generateFileName(profileImage);
+            minioService.uploadFile(profileImage, savedFileName, BucketName.PROFILES);
         }
 
         String loginId = userManagementService.generateLoginId(request.role());
@@ -76,10 +77,6 @@ public class UserManagementFacade {
 
         userManagementService.registerUser(user, tempPassword);
         userLogService.saveLog(user, actorId, UserAction.REGISTER);
-
-        if (savedFileName != null) {
-            eventPublisher.publishEvent(new ProfileImageUploadEvent(profileImage, savedFileName, BucketName.PROFILES));
-        }
         eventPublisher.publishEvent(new UserRegisteredEvent(user.getEmail(), loginId, tempPassword, employeeNumber));
 
         return CreateUserResponse.from(user);
@@ -118,16 +115,14 @@ public class UserManagementFacade {
         String savedFileName = null;
         if (profileImage != null && !profileImage.isEmpty()) {
             savedFileName = minioService.generateFileName(profileImage);
+            minioService.uploadFile(profileImage, savedFileName, BucketName.PROFILES);
         }
 
         userManagementService.updateUser(userId, request.toCommand(savedFileName));
         userLogService.saveLog(user, actorId, UserAction.INFO_UPDATE);
 
-        if (savedFileName != null) {
-            eventPublisher.publishEvent(new ProfileImageUploadEvent(profileImage, savedFileName, BucketName.PROFILES));
-            if (oldFileName != null) {
-                eventPublisher.publishEvent(new ProfileImageDeleteEvent(oldFileName, BucketName.PROFILES));
-            }
+        if (savedFileName != null && oldFileName != null) {
+            eventPublisher.publishEvent(new ProfileImageDeleteEvent(oldFileName, BucketName.PROFILES));
         }
 
         String profileImageUrl = minioService.getFileUrl(user.getProfileImageUrl(), BucketName.PROFILES);

@@ -54,17 +54,15 @@ public class MyPageFacade {
 
         if (profileImage != null && !profileImage.isEmpty()) {
             savedFileName = minioService.generateFileName(profileImage);
+            minioService.uploadFile(profileImage, savedFileName, BucketName.PROFILES);
         }
 
         MyInfoUpdateCommand command = request.toCommand(savedFileName);
         User updatedUser = myPageService.updateMyProfile(userId, command);
         userLogService.saveLog(updatedUser, userId, UserAction.INFO_UPDATE);
 
-        if (savedFileName != null) {
-            eventPublisher.publishEvent(new ProfileImageUploadEvent(profileImage, savedFileName, BucketName.PROFILES));
-            if (oldFileName != null) {
-                eventPublisher.publishEvent(new ProfileImageDeleteEvent(oldFileName, BucketName.PROFILES));
-            }
+        if (savedFileName != null && oldFileName != null) {
+            eventPublisher.publishEvent(new ProfileImageDeleteEvent(oldFileName, BucketName.PROFILES));
         }
 
         String profileImageUrl = minioService.getFileUrl(updatedUser.getProfileImageUrl(), BucketName.PROFILES);

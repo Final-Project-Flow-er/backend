@@ -23,6 +23,12 @@ public class MailServiceImpl implements MailService {
     @Value("${app.url.login}")
     private String loginUrl;
 
+    @Value("${app.mail.from}")
+    private String fromAddress;
+
+    @Value("${app.mail.from-name:CHAIN-G}")
+    private String fromName;
+
     // 회원 등록 메일
     @Override
     public void sendRegisterMail(String email, String loginId, String tempPassword, String employeeNumber) {
@@ -66,7 +72,7 @@ public class MailServiceImpl implements MailService {
 
         try {
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-            helper.setFrom(new jakarta.mail.internet.InternetAddress("rlatjddms030@gmail.com", "CHAIN-G", "UTF-8"));
+            helper.setFrom(new jakarta.mail.internet.InternetAddress(fromAddress, fromName, "UTF-8"));
             helper.setTo(to);
             helper.setSubject(subject);
             helper.setText(content, true);

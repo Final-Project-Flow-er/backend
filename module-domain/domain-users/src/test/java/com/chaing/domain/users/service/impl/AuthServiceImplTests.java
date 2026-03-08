@@ -88,8 +88,19 @@ class AuthServiceImplTests {
 
         // then
         assertNotNull(password);
-        assertTrue(password.length() >= 8);
-        System.out.println("생성된 임시 비밀번호: " + password);
+        assertEquals(10, password.length(), "임시 비밀번호는 10자리여야 합니다.");
+
+        boolean hasUpper = password.matches(".*[A-Z].*");
+        boolean hasLower = password.matches(".*[a-z].*");
+        boolean hasDigits = password.matches(".*[0-9].*");
+        boolean hasSpecial = password.matches(".*[!@#$%^&*()\\-_=+].*");
+
+        assertTrue(hasUpper, "대문자가 포함되어야 합니다.");
+        assertTrue(hasLower, "소문자가 포함되어야 합니다.");
+        assertTrue(hasDigits, "숫자가 포함되어야 합니다.");
+        assertTrue(hasSpecial, "특수문자가 포함되어야 합니다.");
+
+        System.out.println("생성된 10자리 임시 비밀번호: " + password);
     }
 
     @Test

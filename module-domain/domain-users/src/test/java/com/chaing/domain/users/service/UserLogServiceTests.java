@@ -1,5 +1,6 @@
 package com.chaing.domain.users.service;
 
+import com.chaing.domain.users.dto.condition.UserLogSearchCondition;
 import com.chaing.domain.users.entity.User;
 import com.chaing.domain.users.entity.UserLog;
 import com.chaing.domain.users.enums.UserAction;
@@ -38,7 +39,7 @@ class UserLogServiceTests {
 
         // given
         User targetUser = User.builder().userId(1L).username("유저").employeeNumber("10001").email("test@example.com").build();
-        Long actorId = 1L;
+        Long actorId = 2L;
         UserAction action = UserAction.REGISTER;
 
         ArgumentCaptor<UserLog> logCaptor = ArgumentCaptor.forClass(UserLog.class);
@@ -62,17 +63,19 @@ class UserLogServiceTests {
 
         // given
         Pageable pageable = PageRequest.of(0, 10);
+        UserLogSearchCondition condition = new UserLogSearchCondition(null, null, null, null, null, null, null, null);
+
         List<UserLog> logs = List.of(UserLog.builder().build(), UserLog.builder().build());
         Page<UserLog> expectedPage = new PageImpl<>(logs);
 
-        when(userLogRepository.findAllByOrderByCreatedAtDesc(pageable)).thenReturn(expectedPage);
+        when(userLogRepository.searchUserLogs(condition, pageable)).thenReturn(expectedPage);
 
         // when
-        Page<UserLog> result = userLogService.getAllUserLogs(pageable);
+        Page<UserLog> result = userLogService.getUserLogList(condition, pageable);
 
         // then
         assertNotNull(result);
         assertEquals(2, result.getContent().size());
-        verify(userLogRepository, times(1)).findAllByOrderByCreatedAtDesc(pageable);
+        verify(userLogRepository, times(1)).searchUserLogs(condition, pageable);
     }
 }

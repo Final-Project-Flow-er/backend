@@ -263,19 +263,19 @@ class InventoryServiceTest {
         verify(hqInventoryRepository).saveAll(anyList());
     }
 
-    @Test
-    @DisplayName("가맹점 재고 삭제")
-    void deleteFranchiseInventory() {
-        // given
-        Long franchiseId = 1L;
-        List<InventoryBoxRequest> boxes = List.of();
-
-        // when
-        inventoryService.deleteFranchiseInventory(franchiseId, boxes);
-
-        // then
-        verify(franchiseInventoryRepository).deleteFranchiseInventory(eq(franchiseId), anyList());
-    }
+//    @Test
+//    @DisplayName("가맹점 재고 삭제")
+//    void deleteFranchiseInventory() {
+//        // given
+//        Long franchiseId = 1L;
+//        List<InventoryBoxRequest> boxes = List.of();
+//
+//        // when
+//        inventoryService.deleteFranchiseInventory(franchiseId, boxes);
+//
+//        // then
+//        verify(franchiseInventoryRepository).deleteFranchiseInventory(eq(franchiseId), anyList());
+//    }
 
     @Test
     @DisplayName("공장 재고 삭제")

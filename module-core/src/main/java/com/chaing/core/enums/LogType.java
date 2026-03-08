@@ -8,6 +8,7 @@ public enum LogType {
     SALE,             // 판매
     REFUND,            // 환불
     DISPOSAL,           // 폐기
+    SHIPPING,         // 배송중
 
     PICKING,            // 피킹
     PICKING_WAIT,       // 피킹대기

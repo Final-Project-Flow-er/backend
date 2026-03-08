@@ -20,6 +20,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Getter
@@ -71,6 +72,15 @@ public class FranchiseInventory extends BaseEntity {
     @NotBlank
     @Column(nullable = false)
     private String boxCode;
+
+    // 발주코드
+    private String orderCode;
+
+    @Column
+    LocalDateTime shippedAt;        // 배송 완료 일자
+
+    @Column
+    LocalDateTime receivedAt;       // 입고 완료 일자
 
     public static FranchiseInventory from(FranchiseInboundCreateCommand command, String serialCode, Long orderItemId) {
         return FranchiseInventory.builder()

@@ -2,6 +2,7 @@ package com.chaing.domain.products.repository.impl;
 
 
 import com.chaing.domain.products.dto.request.ProductSearchRequest;
+import com.chaing.domain.products.dto.response.ProductInfoResponse;
 import com.chaing.domain.products.dto.response.ProductListResponse;
 import com.chaing.domain.products.dto.response.ProductResponse;
 import com.chaing.domain.products.entity.Component;
@@ -13,6 +14,7 @@ import com.chaing.domain.products.enums.ProductStatus;
 import com.chaing.domain.products.exception.ProductErrorCode;
 import com.chaing.domain.products.exception.ProductException;
 import com.chaing.domain.products.repository.interfaces.ProductRepositoryCustom;
+import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
@@ -26,13 +28,12 @@ import java.util.List;
 public class ProductRepositoryImpl implements ProductRepositoryCustom {
 
     private final JPAQueryFactory queryFactory;
+    private final QProduct product = QProduct.product;
+    private final QComponent component = QComponent.component;
+    private final QProductComponent pc = QProductComponent.productComponent;
 
     @Override
     public ProductListResponse getProducts(ProductSearchRequest req) {
-
-        QProduct product = QProduct.product;
-        QComponent component = QComponent.component;
-        QProductComponent pc = QProductComponent.productComponent;
 
         // 1. Product만 fetch
         List<Product> productList = queryFactory
@@ -63,6 +64,24 @@ public class ProductRepositoryImpl implements ProductRepositoryCustom {
         return ProductListResponse.builder()
                 .products(products)
                 .build();
+    }
+
+    @Override
+    public List<ProductInfoResponse> getInventoryProducts(String productCode, String name) {
+
+        return queryFactory
+                .select(Projections.constructor(
+                        ProductInfoResponse.class,
+                        product.productId,
+                        product.productCode,
+                        product.name
+                ))
+                .from(product)
+                .where(
+                        containsProductCode(productCode),
+                        containsName(name)
+                )
+                .fetch();
     }
 
     // productCode 존재 여부 확인

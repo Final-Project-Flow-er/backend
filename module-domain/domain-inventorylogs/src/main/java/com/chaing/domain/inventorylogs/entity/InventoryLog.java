@@ -62,8 +62,6 @@ public class InventoryLog extends BaseEntity {
     private Integer quantity;
 
     // 당시 공급가
-    @NotNull
-    @Column(nullable = false)
     private BigDecimal supplyPrice;
 
     // 당시 판매가

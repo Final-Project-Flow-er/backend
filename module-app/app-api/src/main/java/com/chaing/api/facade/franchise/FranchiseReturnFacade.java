@@ -120,6 +120,10 @@ public class FranchiseReturnFacade {
                                 List<ReturnItemCommand> productItems = productEntry.getValue();
                                 ProductInfo productInfo = productInfoByProductId.get(productId);
 
+                                if (productInfo == null) {
+                                    throw new FranchiseReturnException(FranchiseReturnErrorCode.PRODUCT_NOT_FOUND);
+                                }
+
                                 return FranchiseReturnResponse.builder()
                                         .returnCode(returnCommand.returnCode())
                                         .status(returnCommand.status())

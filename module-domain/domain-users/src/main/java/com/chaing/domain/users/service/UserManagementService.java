@@ -3,6 +3,7 @@ package com.chaing.domain.users.service;
 import com.chaing.domain.users.dto.command.UserUpdateCommand;
 import com.chaing.domain.users.dto.condition.UserSearchCondition;
 import com.chaing.domain.users.entity.User;
+import com.chaing.domain.users.enums.UserPosition;
 import com.chaing.domain.users.enums.UserRole;
 import com.chaing.domain.users.enums.UserStatus;
 import com.chaing.domain.users.exception.UserErrorCode;
@@ -97,13 +98,16 @@ public class UserManagementService {
     public User updateUser(Long userId, UserUpdateCommand command) {
         User user = getUserById(userId);
 
-        if (!user.getEmail().equals(command.email())) {
+        if (command.email() != null && !user.getEmail().equals(command.email())) {
             if (userRepository.existsByEmail(command.email())) {
                 throw new UserException(UserErrorCode.DUPLICATE_EMAIL);
             }
         }
 
-        if (!command.position().isAvailableFor(command.role())) {
+        UserPosition positionToValidate = (command.position() != null) ? command.position() : user.getPosition();
+        UserRole roleToValidate = (command.role() != null) ? command.role() : user.getRole();
+
+        if (!positionToValidate.isAvailableFor(roleToValidate)) {
             throw new UserException(UserErrorCode.INVALID_POSITION_FOR_ROLE);
         }
 

@@ -27,6 +27,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @RequiredArgsConstructor
@@ -41,10 +42,15 @@ public class UserManagementFacade {
 
     // 회원 등록
     @Transactional(rollbackFor = Exception.class)
-    public CreateUserResponse registerUser(CreateUserRequest request, Long actorId) {
+    public CreateUserResponse registerUser(CreateUserRequest request, MultipartFile profileImage, Long actorId) {
 
         if (!request.position().isAvailableFor(request.role())) {
             throw new UserException(UserErrorCode.INVALID_POSITION_FOR_ROLE);
+        }
+
+        String savedFileName = null;
+        if (profileImage != null && !profileImage.isEmpty()) {
+            savedFileName = minioService.uploadFile(profileImage, "chaing-profiles");
         }
 
         String loginId = userManagementService.generateLoginId(request.role());
@@ -60,7 +66,7 @@ public class UserManagementFacade {
                 .birthDate(request.birthDate())
                 .role(request.role())
                 .position(request.position())
-                .profileImageUrl(request.profileImageUrl())
+                .profileImageUrl(savedFileName)
                 .businessUnitId(request.businessUnitId())
                 .status(UserStatus.ACTIVE)
                 .build();
@@ -98,9 +104,14 @@ public class UserManagementFacade {
 
     // 회원 정보 수정
     @Transactional(rollbackFor = Exception.class)
-    public UserDetailResponse updateUser(Long userId, UpdateUserRequest request, Long actorId) {
+    public UserDetailResponse updateUser(Long userId, UpdateUserRequest request, MultipartFile profileImage, Long actorId) {
 
-        User user = userManagementService.updateUser(userId, request.toCommand());
+        String savedFileName = null;
+        if (profileImage != null && !profileImage.isEmpty()) {
+            savedFileName = minioService.uploadFile(profileImage, "chaing-profiles");
+        }
+
+        User user = userManagementService.updateUser(userId, request.toCommand(savedFileName));
         userLogService.saveLog(user, actorId, UserAction.INFO_UPDATE);
 
         String profileImageUrl = minioService.getFileUrl(user.getProfileImageUrl(), "chaing-profiles");

@@ -227,4 +227,12 @@ public class SwaggerConfig {
                 .pathsToMatch("/api/v1/franchise/settlements/**")
                 .build();
     }
+
+    @Bean
+    public GroupedOpenApi inboundProcessApi() {
+        return GroupedOpenApi.builder()
+                .group("입고(InboundProcess)")
+                .pathsToMatch("/api/v1/inbounds/**")
+                .build();
+    }
 }

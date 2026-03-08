@@ -51,7 +51,7 @@ public class Transport extends BaseEntity {
     private Integer ownedVehicles;         // 보유 차량 대수
 
     @Column(nullable = false)
-    private Long unitPrice;             // 운송 단가(박스 + km 당)
+    private Long unitPrice;               // 운송 단가(박스 + km 당)
 
     @Column(nullable = false)
     private LocalDate contractStartDate;  // 계약 시작일

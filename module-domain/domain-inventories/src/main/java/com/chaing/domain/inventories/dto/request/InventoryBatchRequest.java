@@ -16,8 +16,6 @@ public record InventoryBatchRequest(
 
         Long orderId,
 
-        Long orderItemId,
-
         LocalDateTime recordTime,
 
         @NotNull

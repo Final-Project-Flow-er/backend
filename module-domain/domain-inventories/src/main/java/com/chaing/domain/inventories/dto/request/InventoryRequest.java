@@ -16,6 +16,8 @@ public record InventoryRequest(
         @NotBlank
         String serialCode,       // 제품 식별코드
 
+        Long orderItemId,
+
         @NotNull
         LogType productLogType,         // 로그 유형 (가용, 반품, 반품 예정 등)
 

@@ -18,6 +18,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Getter
@@ -49,6 +50,12 @@ public class FactoryInventory extends BaseEntity {
     @NotNull
     @Enumerated(EnumType.STRING)
     private LogType status;
+
+    // 배송 완료 시간
+    private LocalDateTime shippedAt;
+
+    // 입고 완료 시간
+    LocalDateTime receivedAt;
 
     // 박스코드
     private String boxCode;

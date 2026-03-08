@@ -22,6 +22,7 @@
         @Query("SELECT MAX(u.employeeNumber) FROM User u WHERE u.role = :role")
         Optional<String> findMaxEmployeeNumberByRole(@Param("role") UserRole role);
 
+        @Lock(LockModeType.PESSIMISTIC_WRITE)
         @Query("SELECT MAX(u.loginId) FROM User u WHERE u.loginId LIKE :pattern%")
         Optional<String> findMaxLoginIdByPattern(@Param("pattern") String pattern);
 

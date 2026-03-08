@@ -97,7 +97,7 @@ public class FranchiseReturnController {
     }
 
     @Operation(summary = "반품 생성 화면 데이터", description = "반품 요청 생성 시 발주 코드에 따라 보여지는 화면에 띄울 데이터 반환")
-    @GetMapping("/{order-code}/create-info")
+    @GetMapping("/{order-code}/target-info")
     @PreAuthorize("hasAnyRole('ADMIN', 'FRANCHISE')")
     public ResponseEntity<ApiResponse<FranchiseReturnCreateResponse>> getReturnCreateInfo(
             @PathVariable("order-code") String orderCode,

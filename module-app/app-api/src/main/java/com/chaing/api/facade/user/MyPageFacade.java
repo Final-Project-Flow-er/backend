@@ -1,6 +1,7 @@
 package com.chaing.api.facade.user;
 
 import com.chaing.api.dto.hq.businessunit.response.BusinessUnitDetailResponse;
+import com.chaing.api.dto.user.event.ProfileImageDeleteEvent;
 import com.chaing.api.dto.user.event.ProfileImageUploadEvent;
 import com.chaing.api.dto.user.request.ChangePasswordRequest;
 import com.chaing.api.dto.user.request.UpdateMyBusinessUnitInfoRequest;
@@ -47,6 +48,8 @@ public class MyPageFacade {
     // 내 정보 수정
     @Transactional(rollbackFor = Exception.class)
     public MyInfoResponse updateMyProfile(Long userId, UpdateMyInfoRequest request, MultipartFile profileImage) {
+        User user = myPageService.getMyInfo(userId);
+        String oldFileName = user.getProfileImageUrl();
         String savedFileName = null;
 
         if (profileImage != null && !profileImage.isEmpty()) {
@@ -59,6 +62,9 @@ public class MyPageFacade {
 
         if (savedFileName != null) {
             eventPublisher.publishEvent(new ProfileImageUploadEvent(profileImage, savedFileName, BucketName.PROFILES));
+            if (oldFileName != null) {
+                eventPublisher.publishEvent(new ProfileImageDeleteEvent(oldFileName, BucketName.PROFILES));
+            }
         }
 
         String profileImageUrl = minioService.getFileUrl(updatedUser.getProfileImageUrl(), BucketName.PROFILES);

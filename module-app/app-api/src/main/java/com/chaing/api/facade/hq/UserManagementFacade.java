@@ -112,17 +112,22 @@ public class UserManagementFacade {
     // 회원 정보 수정
     @Transactional(rollbackFor = Exception.class)
     public UserDetailResponse updateUser(Long userId, UpdateUserRequest request, MultipartFile profileImage, Long actorId) {
+        User user = userManagementService.getUserById(userId);
+        String oldFileName = user.getProfileImageUrl();
 
         String savedFileName = null;
         if (profileImage != null && !profileImage.isEmpty()) {
             savedFileName = minioService.generateFileName(profileImage);
         }
 
-        User user = userManagementService.updateUser(userId, request.toCommand(savedFileName));
+        userManagementService.updateUser(userId, request.toCommand(savedFileName));
         userLogService.saveLog(user, actorId, UserAction.INFO_UPDATE);
 
         if (savedFileName != null) {
             eventPublisher.publishEvent(new ProfileImageUploadEvent(profileImage, savedFileName, BucketName.PROFILES));
+            if (oldFileName != null) {
+                eventPublisher.publishEvent(new ProfileImageDeleteEvent(oldFileName, BucketName.PROFILES));
+            }
         }
 
         String profileImageUrl = minioService.getFileUrl(user.getProfileImageUrl(), BucketName.PROFILES);

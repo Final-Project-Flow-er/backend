@@ -75,6 +75,7 @@ public class MinioService {
             );
         } catch (Exception e) {
             log.error("MinIO delete error: ", e);
+            throw new RuntimeException("파일 삭제 중 오류가 발생했습니다.");
         }
     }
 }

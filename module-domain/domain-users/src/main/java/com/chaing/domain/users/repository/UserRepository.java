@@ -2,6 +2,7 @@
 
     import com.chaing.domain.users.entity.User;
     import com.chaing.domain.users.enums.UserRole;
+    import com.chaing.domain.users.repository.interfaces.UserRepositoryCustom;
     import jakarta.persistence.LockModeType;
     import org.springframework.data.jpa.repository.JpaRepository;
     import org.springframework.data.jpa.repository.Lock;
@@ -13,7 +14,7 @@
     import java.util.Optional;
 
     @Repository
-    public interface UserRepository extends JpaRepository<User, Long> {
+    public interface UserRepository extends JpaRepository<User, Long>, UserRepositoryCustom {
 
         Optional<User> findByLoginId(String loginId);
 
@@ -22,8 +23,8 @@
         Optional<String> findMaxEmployeeNumberByRole(@Param("role") UserRole role);
 
         @Lock(LockModeType.PESSIMISTIC_WRITE)
-        @Query("SELECT MAX(u.loginId) FROM User u WHERE u.role = :role")
-        Optional<String> findMaxLoginIdByRole(@Param("role") UserRole role);
+        @Query("SELECT MAX(u.loginId) FROM User u WHERE u.loginId LIKE :pattern%")
+        Optional<String> findMaxLoginIdByPattern(@Param("pattern") String pattern);
 
         boolean existsByEmail(String email);
 

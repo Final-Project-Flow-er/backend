@@ -1,6 +1,7 @@
 package com.chaing.domain.users.service;
 
 import com.chaing.domain.users.dto.command.UserUpdateCommand;
+import com.chaing.domain.users.dto.condition.UserSearchCondition;
 import com.chaing.domain.users.entity.User;
 import com.chaing.domain.users.enums.UserPosition;
 import com.chaing.domain.users.enums.UserRole;
@@ -20,6 +21,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 
@@ -106,14 +109,16 @@ class UserManagementServiceTests {
     void generateLoginId() {
 
         // given
-        UserRole role = UserRole.FRANCHISE;
-        when(userRepository.findMaxLoginIdByRole(role)).thenReturn(Optional.of("fr0001"));
+        UserRole role = UserRole.HQ;
+        String currentYearMonth = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMM"));
+        String pattern = "hq" + currentYearMonth;
+        when(userRepository.findMaxLoginIdByPattern(anyString())).thenReturn(Optional.of(pattern + "005"));
 
         // when
         String result = userManagementService.generateLoginId(role);
 
         // then
-        assertEquals("fr0002", result);
+        assertEquals(pattern + "006", result);
     }
 
     @Test
@@ -122,20 +127,19 @@ class UserManagementServiceTests {
 
         // given
         Pageable pageable = PageRequest.of(0, 10);
-        List<User> users = List.of(
-                User.builder().userId(1L).build(),
-                User.builder().userId(2L).build()
-        );
+        UserSearchCondition condition = new UserSearchCondition(null, null, null, null, null, null, null);
+
+        List<User> users = List.of(User.builder().userId(1L).build());
         Page<User> userPage = new PageImpl<>(users, pageable, users.size());
 
-        when(userRepository.findAll(pageable)).thenReturn(userPage);
+        when(userRepository.searchUsers(condition, pageable)).thenReturn(userPage);
 
         // when
-        Page<User> result = userManagementService.getUserList(pageable);
+        Page<User> result = userManagementService.getUserList(condition, pageable);
 
         // then
-        assertEquals(2, result.getContent().size());
-        verify(userRepository, times(1)).findAll(pageable);
+        assertEquals(1, result.getContent().size());
+        verify(userRepository, times(1)).searchUsers(condition, pageable);
     }
 
     @Test
@@ -186,7 +190,7 @@ class UserManagementServiceTests {
 
     @Test
     @DisplayName("회원 상태 변경")
-    void updateStatus_Success() {
+    void updateStatus() {
 
         // given
         Long userId = 1L;

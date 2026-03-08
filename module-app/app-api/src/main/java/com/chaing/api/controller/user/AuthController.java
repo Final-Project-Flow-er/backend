@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -31,7 +32,7 @@ public class AuthController {
     public ResponseEntity<ApiResponse<LoginResponse>> login(
             @Valid @RequestBody LoginRequest request
     ) {
-        return ResponseEntity.ok(ApiResponse.success(authFacade.login(request)));
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(authFacade.login(request)));
     }
 
     @Operation(summary = "비밀번호 재설정", description = "등록된 이메일로 임시 비밀번호 전송")
@@ -46,17 +47,18 @@ public class AuthController {
     @Operation(summary = "토큰 재발급", description = "만료된 Access Token을 Refresh Token을 사용하여 갱신")
     @PostMapping("/reissue")
     public ResponseEntity<ApiResponse<LoginResponse>> reissue(
+            @AuthenticationPrincipal UserPrincipal principal,
             @RequestHeader("Authorization-Refresh") String refreshToken
     ) {
-        return ResponseEntity.ok(ApiResponse.success(authFacade.reissue(refreshToken)));
+        return ResponseEntity.ok(ApiResponse.success(authFacade.reissue(refreshToken, principal.getRole())));
     }
 
     @Operation(summary = "로그아웃", description = "토큰을 무효화 시켜 로그아웃 처리")
     @PostMapping("/logout")
-    public ResponseEntity<ApiResponse<String>> logout(
+    public ResponseEntity<Void> logout(
             @AuthenticationPrincipal UserPrincipal principal
     ) {
         authFacade.logout(principal.getId());
-        return ResponseEntity.ok(ApiResponse.success("로그아웃 성공"));
+        return ResponseEntity.noContent().build();
     }
 }

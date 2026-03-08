@@ -169,7 +169,7 @@ class FranchiseServiceImplTests {
     }
 
     @Test
-    @DisplayName("가맹점 경고 부여 및 페널티")
+    @DisplayName("가맹점 경고 부여 및 패널티")
     void addWarning() {
 
         // given

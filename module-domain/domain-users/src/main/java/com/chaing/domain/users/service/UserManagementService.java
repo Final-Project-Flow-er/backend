@@ -1,7 +1,9 @@
 package com.chaing.domain.users.service;
 
 import com.chaing.domain.users.dto.command.UserUpdateCommand;
+import com.chaing.domain.users.dto.condition.UserSearchCondition;
 import com.chaing.domain.users.entity.User;
+import com.chaing.domain.users.enums.UserPosition;
 import com.chaing.domain.users.enums.UserRole;
 import com.chaing.domain.users.enums.UserStatus;
 import com.chaing.domain.users.exception.UserErrorCode;
@@ -13,6 +15,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Service
@@ -57,17 +61,20 @@ public class UserManagementService {
             default -> throw new UserException(UserErrorCode.INVALID_ROLE);
         };
 
-        return userRepository.findMaxLoginIdByRole(role)
+        String currentYearMonth = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMM"));
+        String searchPattern = prefix + currentYearMonth;
+
+        return userRepository.findMaxLoginIdByPattern(searchPattern)
                 .map(maxId -> {
-                    int nextNum = Integer.parseInt(maxId.substring(2)) + 1;
-                    return prefix + String.format("%04d", nextNum);
+                    int nextNum = Integer.parseInt(maxId.substring(searchPattern.length())) + 1;
+                    return searchPattern + String.format("%03d", nextNum);
                 })
-                .orElse(prefix + "0001");
+                .orElse(searchPattern + "001");
     }
 
     // 회원 목록 조회
-    public Page<User> getUserList(Pageable pageable) {
-        return userRepository.findAll(pageable);
+    public Page<User> getUserList(UserSearchCondition condition, Pageable pageable) {
+        return userRepository.searchUsers(condition, pageable);
     }
 
     // 회원 아이디로 회원 조회
@@ -76,6 +83,7 @@ public class UserManagementService {
                 .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
     }
 
+    // 활성화 상태인 유저 아이디 전체 조회
     public List<Long> getAllActiveUserIds() {
         return userRepository.getAllActiveUserIds();
     }
@@ -90,13 +98,16 @@ public class UserManagementService {
     public User updateUser(Long userId, UserUpdateCommand command) {
         User user = getUserById(userId);
 
-        if (!user.getEmail().equals(command.email())) {
+        if (command.email() != null && !user.getEmail().equals(command.email())) {
             if (userRepository.existsByEmail(command.email())) {
                 throw new UserException(UserErrorCode.DUPLICATE_EMAIL);
             }
         }
 
-        if (!command.position().isAvailableFor(command.role())) {
+        UserPosition positionToValidate = (command.position() != null) ? command.position() : user.getPosition();
+        UserRole roleToValidate = (command.role() != null) ? command.role() : user.getRole();
+
+        if (!positionToValidate.isAvailableFor(roleToValidate)) {
             throw new UserException(UserErrorCode.INVALID_POSITION_FOR_ROLE);
         }
 
@@ -128,6 +139,7 @@ public class UserManagementService {
         return user.getUsername();
     }
 
+    // 유저 아이디로 전화번호 조회
     public String getPhoneNumberByUserId(Long userId) {
         User user = getUserById(userId);
         return user.getPhone();

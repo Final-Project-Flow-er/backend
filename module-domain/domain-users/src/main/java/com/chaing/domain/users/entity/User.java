@@ -98,7 +98,12 @@ public class User extends BaseEntity {
         if (request.phone() != null) this.phone = request.phone();
         if (request.birthDate() != null) this.birthDate = request.birthDate();
         if (request.profileImageUrl() != null) this.profileImageUrl = request.profileImageUrl();
-        if (request.role() != null) this.role = request.role();
+        if (request.role() != null) {
+            this.role = request.role();
+            if (request.businessUnitId() == null) {
+                this.businessUnitId = null;
+            }
+        }
         if (request.position() != null) this.position = request.position();
         if (request.businessUnitId() != null) this.businessUnitId = request.businessUnitId();
     }

@@ -56,40 +56,30 @@ public class InventoryLog extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private LogType logType;
 
-
-    // 박스 수량
-    @NotNull
-    @Positive
-    @Column(nullable = false)
-    private Integer boxQuantity;
-
     // 수량
     @NotNull
     @Column(nullable = false)
     private Integer quantity;
 
     // 당시 공급가
-    @NotNull
-    @Column(nullable = false)
     private BigDecimal supplyPrice;
 
     // 당시 판매가
     @NotNull
-    @Column(nullable = false)
     private BigDecimal price;
 
     // 출발지 -판매같은 경우 출발지 도착지 컬럼이 없으므로 제약조건 제외
     @Enumerated(EnumType.STRING)
     private LocationType fromLocationType;
 
-    // FA01, HEAD, SE01 등
-    private String fromLocationCode;
+    // 해당 ID
+    private Long fromLocationId;
 
     @Enumerated(EnumType.STRING)
     private LocationType toLocationType;
 
-    // HEAD, SE01, CUSTOMER(판매), WASTE(폐기장)
-    private String toLocationCode;
+    // 해당 ID
+    private Long toLocationId;
 
     @Enumerated(EnumType.STRING)
     @NotNull

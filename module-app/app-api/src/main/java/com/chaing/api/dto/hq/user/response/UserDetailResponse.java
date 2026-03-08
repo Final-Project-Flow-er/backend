@@ -23,7 +23,7 @@ public record UserDetailResponse(
         UserStatus status,
         Long businessUnitId
 ) {
-    public static UserDetailResponse from(User user) {
+    public static UserDetailResponse from(User user, String profileImageUrl) {
 
         Long businessUnitId = switch (user.getRole()) {
             case HQ -> user.getHqId();
@@ -39,7 +39,7 @@ public record UserDetailResponse(
                 .phone(user.getPhone())
                 .birthDate(user.getBirthDate())
                 .employeeNumber(user.getEmployeeNumber())
-                .profileImageUrl(user.getProfileImageUrl())
+                .profileImageUrl(profileImageUrl)
                 .role(user.getRole())
                 .position(user.getPosition())
                 .status(user.getStatus())

@@ -8,7 +8,11 @@ public record UpdateMyInfoRequest(
         String phone,
         String profileImageUrl
 ) {
-    public MyInfoUpdateCommand toCommand() {
-        return new MyInfoUpdateCommand(email, phone, profileImageUrl);
+    public MyInfoUpdateCommand toCommand(String newFileName) {
+        return new MyInfoUpdateCommand(
+                this.email,
+                this.phone,
+                (newFileName != null) ? newFileName : this.profileImageUrl
+        );
     }
 }

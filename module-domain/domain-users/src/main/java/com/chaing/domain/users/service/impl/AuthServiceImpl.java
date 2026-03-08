@@ -15,7 +15,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Collections;
-import java.util.HexFormat;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -95,7 +94,7 @@ public class AuthServiceImpl implements AuthService {
         passwordBuilder.append(digits.charAt(random.nextInt(digits.length())));
         passwordBuilder.append(specialChars.charAt(random.nextInt(specialChars.length())));
 
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < 6; i++) {
             passwordBuilder.append(allChars.charAt(random.nextInt(allChars.length())));
         }
 

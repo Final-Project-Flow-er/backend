@@ -49,4 +49,7 @@ public interface FactoryInventoryRepository extends JpaRepository<FactoryInvento
             @Param("status1") LogType status1,
             @Param("status2") LogType status2
     );
+    List<FactoryInventory> findAllByInventoryIdIn(List<Long> selectedList);
+
+    void deleteByInventoryIdIn(List<Long> longs);
 }

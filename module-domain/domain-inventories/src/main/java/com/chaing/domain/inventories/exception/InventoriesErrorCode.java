@@ -21,7 +21,9 @@ public enum InventoriesErrorCode implements ErrorCode {
     INVENTORIES_UNMATCHED(400, "IV011", "발주 ID와 식별 코드의 개수가 맞지 않습니다."),
     INVALID_OUTBOUND_STATUS(400, "IV012", "해당 제품은 출고 가능 상태가 아닙니다."),
     INVALID_OUTBOUND_CANCEL_STATUS(400, "IV013", "해당 제품은 출고 취소 가능 상태가 아닙니다."),
-    INVENTORIES_BOX_CODE_UNMATCHED(400, "IV014", "해당 제품의 박스 코드가 요청 값과 다릅니다.");
+    INVENTORIES_BOX_CODE_UNMATCHED(400, "IV014", "해당 제품의 박스 코드가 요청 값과 다릅니다."),
+    INVALID_LOCATION_TYPE(400,"IV015","유효하지 않은 제품 타입입니다."),
+    INVALID_LOCATION_ID(400,"IV016", "유효하지 않은 ID입니다.");
 
     private final Integer status;
     private final String code;

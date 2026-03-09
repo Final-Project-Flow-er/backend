@@ -22,4 +22,9 @@ public interface FranchiseInventoryRepositoryCustom {
     void updateFranchiseStatus(Long franchiseId, List<String> serialCode, LogType logType);
 
     List<ExpirationBatchResultResponse> getExpirationAlerts(String locationType, Long locationId);
+
+    long updateExpiredStatus(java.time.LocalDate expirationDate);
+
+    List<com.chaing.domain.inventories.dto.response.SafetyStockResponse> getLowStockAlerts(String locationType,
+            Long locationId);
 }

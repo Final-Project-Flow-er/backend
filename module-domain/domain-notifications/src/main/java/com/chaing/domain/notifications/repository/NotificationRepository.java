@@ -20,6 +20,7 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     @Query("SELECT n FROM Notification n " +
             "LEFT JOIN NotificationStatus s ON n.notificationId = s.notificationId AND s.userId = :userId " +
             "WHERE (n.userId = :userId OR n.userId = 0) " +
+            "AND (s.deletedAt IS NULL) " +
             "ORDER BY n.createdAt DESC")
     Page<Notification> findAllMyNotifications(@Param("userId") Long userId, Pageable pageable);
 

@@ -155,9 +155,7 @@ public class HQOrderService {
                 .map(HeadOfficeOrderItem::getQuantity)
                 .reduce(0, Integer::sum);
         BigDecimal totalPrice = upsertItems.stream()
-                .map(item ->
-                        item.getTotalPrice().multiply(BigDecimal.valueOf(item.getQuantity()))
-                )
+                .map(HeadOfficeOrderItem::getTotalPrice)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         order.updateTotalQuantity(totalQuantity);
         order.updateTotalPrice(totalPrice);

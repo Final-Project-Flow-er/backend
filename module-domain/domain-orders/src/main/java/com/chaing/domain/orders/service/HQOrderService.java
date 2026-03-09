@@ -147,7 +147,7 @@ public class HQOrderService {
                 .toList();
 
         // 수정사항 반영
-        orderItemRepository.deleteAll(deletedItems);
+        deletedItems.forEach(HeadOfficeOrderItem::delete);
         orderItemRepository.saveAll(upsertItems);
 
         // 발주 정보 수정

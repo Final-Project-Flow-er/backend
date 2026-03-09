@@ -25,9 +25,9 @@ public class NotificationServiceImpl implements NotificationService {
     private final NotificationRepository notificationRepository;
     private final Map<Long, SseEmitter> emitters = new ConcurrentHashMap<>();
 
-    // SSE 구독
+    // SSE 스트림
     @Override
-    public SseEmitter subscribe(Long userId) {
+    public SseEmitter stream(Long userId) {
         SseEmitter emitter = new SseEmitter(60L * 1000 * 60);
         emitters.put(userId, emitter);
 

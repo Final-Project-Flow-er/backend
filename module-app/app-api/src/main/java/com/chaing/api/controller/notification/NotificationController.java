@@ -28,12 +28,12 @@ public class NotificationController {
 
     private final NotificationFacade notificationFacade;
 
-    @Operation(summary = "실시간 알림 구독", description = "SSE 연결을 통한 실시간 알림 구독")
-    @GetMapping(value = "/subscribe", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public ResponseEntity<SseEmitter> subscribe(
+    @Operation(summary = "실시간 알림 스트림", description = "SSE 연결을 통한 실시간 알림 수신")
+    @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public ResponseEntity<SseEmitter> stream(
             @AuthenticationPrincipal UserPrincipal principal
     ) {
-        return ResponseEntity.ok(notificationFacade.subscribe(principal.getId()));
+        return ResponseEntity.ok(notificationFacade.stream(principal.getId()));
     }
 
     @Operation(summary = "알림 목록 조회", description = "로그인한 회원에게 온 알림 목록 조회")

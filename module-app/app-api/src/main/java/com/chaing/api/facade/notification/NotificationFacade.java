@@ -19,8 +19,8 @@ public class NotificationFacade {
     private final NotificationService notificationService;
 
     // SSE 구독 연결
-    public SseEmitter subscribe(Long userId) {
-        return notificationService.subscribe(userId);
+    public SseEmitter stream(Long userId) {
+        return notificationService.stream(userId);
     }
 
     // 알림 목록 조회

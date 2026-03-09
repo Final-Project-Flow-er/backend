@@ -9,7 +9,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 public interface NotificationService {
 
-    SseEmitter subscribe(Long userId);
+    SseEmitter stream(Long userId);
     void sendToAll(NotificationEvent event);
     void sendToUser(NotificationEvent event);
     void deleteNotificationsByTarget(NotificationType type, Long targetId);

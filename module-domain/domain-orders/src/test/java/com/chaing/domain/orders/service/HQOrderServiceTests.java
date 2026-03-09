@@ -219,7 +219,7 @@ class HQOrderServiceTests {
 
         given(orderRepository.findByUserIdAndOrderCodeAndOrderStatusAndDeletedAtIsNull(userId, orderCode, HQOrderStatus.PENDING))
                 .willReturn(Optional.of(order));
-        given(orderItemRepository.findAllByHeadOfficeOrder_HeadOfficeUserIdAndHeadOfficeOrder_OrderCode(userId, orderCode))
+        given(orderItemRepository.findAllByHeadOfficeOrder_HeadOfficeUserIdAndHeadOfficeOrder_OrderCodeAndDeletedAtIsNull(userId, orderCode))
                 .willReturn(List.of(orderItem));
 
         // when
@@ -227,7 +227,7 @@ class HQOrderServiceTests {
 
         // then
         verify(orderRepository, times(1)).findByUserIdAndOrderCodeAndOrderStatusAndDeletedAtIsNull(userId, orderCode, HQOrderStatus.PENDING);
-        verify(orderItemRepository, times(1)).findAllByHeadOfficeOrder_HeadOfficeUserIdAndHeadOfficeOrder_OrderCode(userId, orderCode);
+        verify(orderItemRepository, times(1)).findAllByHeadOfficeOrder_HeadOfficeUserIdAndHeadOfficeOrder_OrderCodeAndDeletedAtIsNull(userId, orderCode);
         assertEquals(1, result.size());
         assertEquals(productId, result.get(0).productId());
     }
@@ -267,7 +267,7 @@ class HQOrderServiceTests {
 
         given(orderRepository.findByUserIdAndOrderCodeAndOrderStatusAndDeletedAtIsNull(userId, orderCode, HQOrderStatus.PENDING))
                 .willReturn(Optional.of(order));
-        given(orderItemRepository.findAllByHeadOfficeOrder_HeadOfficeUserIdAndHeadOfficeOrder_OrderCode(userId, orderCode))
+        given(orderItemRepository.findAllByHeadOfficeOrder_HeadOfficeUserIdAndHeadOfficeOrder_OrderCodeAndDeletedAtIsNull(userId, orderCode))
                 .willReturn(List.of());
 
         // when & then
@@ -286,7 +286,7 @@ class HQOrderServiceTests {
 
         given(orderRepository.findByUserIdAndOrderCodeAndOrderStatusAndDeletedAtIsNull(userId, orderCode, HQOrderStatus.PENDING))
                 .willReturn(Optional.of(order));
-        given(orderItemRepository.findAllByHeadOfficeOrder_HeadOfficeUserIdAndHeadOfficeOrder_OrderCode(userId, orderCode))
+        given(orderItemRepository.findAllByHeadOfficeOrder_HeadOfficeUserIdAndHeadOfficeOrder_OrderCodeAndDeletedAtIsNull(userId, orderCode))
                 .willReturn(List.of(orderItem));
 
         // when & then

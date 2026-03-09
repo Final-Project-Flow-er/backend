@@ -98,7 +98,7 @@ public class FranchiseInventoryController {
 
     @Operation(summary = "폐기 처리", description = "제품을 폐기합니다.")
     @PostMapping("/disposal")
-    public ResponseEntity<ApiResponse<Void>> disposalInventory(@RequestBody DisposalRequest request) {
+    public ResponseEntity<ApiResponse<Void>> disposalInventory(@Valid @RequestBody DisposalRequest request) {
         return ResponseEntity.ok(ApiResponse.success(franchiseInventoryFacade.disposalInventory(request)));
     }
 

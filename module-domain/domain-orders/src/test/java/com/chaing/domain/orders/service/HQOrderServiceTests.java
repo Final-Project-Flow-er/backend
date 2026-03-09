@@ -303,7 +303,7 @@ class HQOrderServiceTests {
         given(orderRepository.findByOrderCodeAndDeletedAtIsNull(orderCode)).willReturn(Optional.of(order));
 
         // when
-        HQOrderCommand result = hqOrderService.updateOrder(hqId, orderCode, newDate);
+        HQOrderCommand result = hqOrderService.updateOrder(orderCode, newDate);
 
         // then
         verify(orderRepository, times(1)).findByOrderCodeAndDeletedAtIsNull(orderCode);
@@ -318,7 +318,7 @@ class HQOrderServiceTests {
 
         // when & then
         HQOrderException exception = assertThrows(HQOrderException.class, () ->
-                hqOrderService.updateOrder(hqId, orderCode, manufactureDate));
+                hqOrderService.updateOrder(orderCode, manufactureDate));
         assertEquals(HQOrderErrorCode.ORDER_NOT_FOUND, exception.getErrorCode());
     }
 

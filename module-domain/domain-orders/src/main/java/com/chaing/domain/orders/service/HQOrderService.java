@@ -157,7 +157,7 @@ public class HQOrderService {
     }
 
     // 발주 정보 수정
-    public HQOrderCommand updateOrder(Long hqId, String orderCode, @NotNull LocalDateTime manufactureDate) {
+    public HQOrderCommand updateOrder(String orderCode, @NotNull LocalDateTime manufactureDate) {
         // 발주 정보 조회
         HeadOfficeOrder order = orderRepository.findByOrderCodeAndDeletedAtIsNull(orderCode)
                 .orElseThrow(() -> new HQOrderException(HQOrderErrorCode.ORDER_NOT_FOUND));

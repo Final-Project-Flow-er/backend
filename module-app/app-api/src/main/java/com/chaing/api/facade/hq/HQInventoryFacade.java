@@ -345,12 +345,14 @@ public class HQInventoryFacade {
         return result;
     }
 
+    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public Void disposalInventory(DisposalRequest request) {
         inventoryService.disposalInventory(request);
         // 로그 기록 추가
         return null;
     }
 
+    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public void setSafetyStock(SafetyStockRequest request) {
         inventoryService.setSafetyStock(request);
     }

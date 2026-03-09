@@ -23,6 +23,8 @@ import com.chaing.domain.settlements.enums.VoucherType;
 import com.chaing.domain.settlements.service.DailySettlementService;
 import com.chaing.domain.settlements.service.MonthlySettlementService;
 import com.chaing.domain.settlements.service.SettlementDocumentService;
+import com.chaing.domain.settlements.repository.interfaces.SettlementVoucherRepository;
+import com.chaing.domain.settlements.entity.SettlementVoucher;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -54,6 +56,7 @@ public class FranchiseSettlementFacade {
         private final FranchiseOrderRepository orderRepository;
         private final FranchiseOrderItemRepository orderItemRepository;
         private final FranchiseReturnRepository returnRepository;
+        private final SettlementVoucherRepository voucherRepository;
 
         // 일별 정산 요약
         public FranchiseSettlementSummaryResponse getDailySummary(Long franchiseId, LocalDate date) {
@@ -171,10 +174,15 @@ public class FranchiseSettlementFacade {
                 } else {
                         // MONTHLY → SettlementVoucher 조회
                         MonthlySettlement settlement = monthlyService.getByFranchiseAndMonth(franchiseId, month);
-                        // TODO: SettlementVoucherRepository에서 조회
-                        // voucherRepository.findByMonthlySettlementId(settlement.getId(), type,
-                        // pageable)
-                        return Page.empty();
+                        Page<SettlementVoucher> vouchers;
+                        if (type != null) {
+                                vouchers = voucherRepository.findAllByMonthlySettlementIdAndVoucherType(
+                                                settlement.getMonthlySettlementId(), type, pageable);
+                        } else {
+                                vouchers = voucherRepository.findAllByMonthlySettlementId(
+                                                settlement.getMonthlySettlementId(), pageable);
+                        }
+                        return vouchers.map(this::toVoucherResponse);
                 }
         }
         // 내부 메서드, 외부 controller에서 직접 부를 수 없는 private로 선언.
@@ -201,6 +209,16 @@ public class FranchiseSettlementFacade {
                                 line.getQuantity(),
                                 line.getAmount(),
                                 line.getOccurredAt());
+        }
+
+        private FranchiseVoucherResponse toVoucherResponse(SettlementVoucher voucher) {
+                return new FranchiseVoucherResponse(
+                                voucher.getReferenceCode(),
+                                voucher.getVoucherType(),
+                                voucher.getDescription(),
+                                voucher.getQuantity(),
+                                voucher.getAmount(),
+                                voucher.getOccurredAt());
         }
 
         // SalesItem 집계: 상품명별 수량/금액 합산 후에 순위 매기기
@@ -267,7 +285,7 @@ public class FranchiseSettlementFacade {
                 return ranked;
         }
 
-        // --- PDF / EXCEL 다운로드 (프론트 통신용 실제 URL 반환) ---
+        // PDF / EXCEL 다운로드 (프론트 통신용 실제 URL 반환) ---
         public String getDailyReceiptPdf(Long franchiseId, LocalDate date) {
                 // 1. 해당 가맹점의 일별 정산 데이터 조회
                 DailySettlementReceipt receipt = dailyService.getByFranchiseAndDate(franchiseId, date);
@@ -287,7 +305,7 @@ public class FranchiseSettlementFacade {
                 List<com.chaing.domain.settlements.entity.SettlementDocument> documents = documentService
                                 .getMonthlyDocuments(settlement.getMonthlySettlementId());
 
-                // 3. 임시: 첫 번째 문서의 URL을 반환 (나중에 RECEIPT_PDF 타입만 필터링하는 로직 고도화 가능)
+                // 3. 임시: 첫 번째 문서의 URL을 반환
                 if (documents != null && !documents.isEmpty()) {
                         return documents.get(0).getFileUrl();
                 }

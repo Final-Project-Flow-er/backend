@@ -11,10 +11,6 @@ public record FranchiseReturnCreateRequest(
         @NotBlank
         String orderCode,
 
-        String username,
-
-        String phoneNumber,
-
         String franchiseCode,
 
         @NotNull
@@ -26,6 +22,6 @@ public record FranchiseReturnCreateRequest(
 
         BigDecimal totalPrice,
 
-        List<FranchiseReturnItemCreateRequest> items
+        List<String> boxCodes
 ) {
 }

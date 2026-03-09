@@ -53,7 +53,7 @@ public class FranchiseSettlementController {
         }
 
         @Operation(summary = "일별 발주 내역 조회", description = "발주 내역 리스트(상품명/수량/단가/총금액)")
-        @GetMapping("/daily/orders-items")
+        @GetMapping("/daily/order-items")
         public ResponseEntity<ApiResponse<?>> getDailyOrdersItems(
                         @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
                         @AuthenticationPrincipal UserPrincipal principal) {

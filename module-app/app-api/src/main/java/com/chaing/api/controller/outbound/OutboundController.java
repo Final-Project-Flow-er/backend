@@ -31,7 +31,7 @@ public class OutboundController {
     private final OutboundFacade outboundFacade;
 
     // 출고 제품 스캔 및 피킹 대기 상태 변경
-    @PatchMapping("/scan")
+    @PatchMapping("/scans")
     @Operation(summary = "출고 스캔", description = "출고를 위해 제품을 스캔합니다.")
     public ResponseEntity<ApiResponse<Void>> scanOutbound(
         @Valid @RequestBody OutboundUpdateRequest request
@@ -42,7 +42,7 @@ public class OutboundController {
     }
 
     // 박스 할당
-    @PatchMapping("/assign")
+    @PatchMapping("/assigns")
     @Operation(summary = "박스 할당", description = "스캔된 제품에 박스를 할당합니다.")
     public ResponseEntity<ApiResponse<Void>> assignBox(
             @Valid @RequestBody OutboundAssignRequest request
@@ -52,7 +52,7 @@ public class OutboundController {
     }
 
     // 피킹 확정
-    @PatchMapping("/picking")
+    @PatchMapping("/pickings")
     @Operation(summary = "피킹 확정", description = "피킹 대기 상태의 제품의 피킹을 확정합니다.")
     public ResponseEntity<ApiResponse<Void>> pickOutbound(
         @Valid @RequestBody OutboundUpdateRequest request
@@ -63,7 +63,7 @@ public class OutboundController {
     }
 
     // 출고 확정
-    @PatchMapping("/confirm")
+    @PatchMapping("/confirms")
     @Operation(summary = "출고 확정", description = "피킹 상태 제품의 출고를 확정합니다.")
     public ResponseEntity<ApiResponse<Void>> confirmOutbound(
             @Valid @RequestBody OutboundUpdateRequest request
@@ -74,7 +74,7 @@ public class OutboundController {
     }
 
     // 할당 취소 및 상태 변경
-    @PatchMapping("/cancel")
+    @PatchMapping("/cancels")
     @Operation(summary = "할당 취소 및 상태 변경", description = "제품에 할당된 박스 코드를 취소하고 가용 상태로 변경합니다.")
     public ResponseEntity<ApiResponse<Void>> cancelOutbound(
             @Valid @RequestBody OutboundCancelRequest request

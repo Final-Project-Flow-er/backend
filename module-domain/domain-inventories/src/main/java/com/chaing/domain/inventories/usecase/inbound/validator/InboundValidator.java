@@ -1,11 +1,11 @@
-package com.chaing.domain.inventories.usecase.valiator;
+package com.chaing.domain.inventories.usecase.inbound.validator;
 
 import com.chaing.core.enums.LogType;
 import jakarta.validation.constraints.NotBlank;
 
 import java.util.List;
 
-public interface Validator<T, R> {
+public interface InboundValidator<T, R> {
 
     void checkAlreadyScanned(@NotBlank String serialCode);
 

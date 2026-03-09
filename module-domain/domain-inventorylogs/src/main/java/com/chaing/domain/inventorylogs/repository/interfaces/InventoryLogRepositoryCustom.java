@@ -5,7 +5,7 @@ import com.chaing.domain.inventorylogs.dto.request.FactoryLogRequest;
 import com.chaing.domain.inventorylogs.dto.request.FranchiseLogRequest;
 import com.chaing.domain.inventorylogs.dto.request.LogRequest;
 import com.chaing.domain.inventorylogs.dto.response.FranchiseInventoryLogListResponse;
-import com.chaing.domain.inventorylogs.dto.response.FranchiseProductSalesResponse;
+import com.chaing.domain.inventorylogs.dto.response.ActorProductSalesResponse;
 import com.chaing.domain.inventorylogs.dto.response.InventoryLogListResponse;
 import com.chaing.domain.inventorylogs.enums.ActorType;
 
@@ -24,5 +24,6 @@ public interface InventoryLogRepositoryCustom {
 
     InventoryLogListResponse findFactoryInventoryLogs(Long factoryId, FactoryLogRequest request);
 
-    List<FranchiseProductSalesResponse> getProductSales(List<Long> actorId, List<Long> productIds, ActorType actorType, LogType logType);
+    List<ActorProductSalesResponse> getProductSales(List<Long> actorId, List<Long> productIds, ActorType actorType,
+            LogType logType);
 }

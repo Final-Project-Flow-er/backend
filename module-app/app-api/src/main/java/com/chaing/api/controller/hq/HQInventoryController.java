@@ -2,9 +2,11 @@ package com.chaing.api.controller.hq;
 
 import com.chaing.api.facade.hq.HQInventoryFacade;
 import com.chaing.core.dto.ApiResponse;
+import com.chaing.domain.inventories.dto.request.DisposalRequest;
 import com.chaing.domain.inventories.dto.request.FranchiseInventoryItemsRequest;
 import com.chaing.domain.inventories.dto.request.InventoryBatchRequest;
 import com.chaing.domain.inventories.dto.request.HQInventoryItemsRequest;
+import com.chaing.domain.inventories.dto.request.SafetyStockRequest;
 import com.chaing.domain.inventories.dto.request.StockSearchRequest;
 import com.chaing.domain.inventories.dto.response.FranchiseInventoryBatchResponse;
 import com.chaing.domain.inventories.dto.response.FranchiseInventoryItemResponse;
@@ -121,10 +123,24 @@ public class HQInventoryController {
         return ResponseEntity.ok(ApiResponse.success(hqInventoryFacade.getFranchiseItems(franchiseId, request)));
     }
 
-    @Operation(summary = "안전 재고 계산 상세 갱신", description = "최근 판매 데이터를 기반으로 모든 가맹점의 모든 상품 안전재고를 자동으로 재계산하여 갱신합니다.")
+    @Operation(summary = "안전 재고 계산 및 유통기한 상세 갱신", description = "모든 상품 안전재고와 안전재고를 자동으로 재계산하여 갱신합니다.")
     @PostMapping("/safety-stock/refresh")
     public ResponseEntity<ApiResponse<Void>> calculateSafetyStock() {
         hqInventoryFacade.calculateSafetyStock();
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @Operation(summary = "폐기 처리", description = "제품을 폐기합니다.")
+    @PostMapping("/disposal")
+    public ResponseEntity<ApiResponse<Void>> disposalInventory(@Valid @RequestBody DisposalRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(hqInventoryFacade.disposalInventory(request)));
+    }
+
+    @Operation(summary = "안전재고 설정", description = "관리자가 직접 안전재고를 설정합니다.")
+    @PostMapping("/set/safety-stock")
+    public ResponseEntity<ApiResponse<Void>> setSafetyStock(
+            @RequestBody SafetyStockRequest request) {
+        hqInventoryFacade.setSafetyStock(request);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

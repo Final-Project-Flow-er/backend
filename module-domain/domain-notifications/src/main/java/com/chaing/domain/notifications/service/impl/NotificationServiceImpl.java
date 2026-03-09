@@ -74,7 +74,7 @@ public class NotificationServiceImpl implements NotificationService {
     public void retryableSseSendToAll(NotificationEvent event) {
         emitters.forEach((userId, emitter) -> {
             try {
-                sendSse(emitter, userId, event);
+                sendSse(emitter, event);
             } catch (IOException e) {
                 emitters.remove(userId, emitter);
                 throw new NotificationException(NotificationErrorCode.SSE_SEND_FAIL);
@@ -95,12 +95,12 @@ public class NotificationServiceImpl implements NotificationService {
 
         SseEmitter emitter = emitters.get(event.userId());
         if (emitter != null) {
-            sendSse(emitter, event.userId(), event);
+            sendSse(emitter, event);
         }
     }
 
     // SSE 실제 전송 로직
-    private void sendSse(SseEmitter emitter, Long userId, NotificationEvent event) throws IOException {
+    private void sendSse(SseEmitter emitter, NotificationEvent event) throws IOException {
         emitter.send(SseEmitter.event()
                 .id(String.valueOf(event.targetId()))
                 .name("notification")

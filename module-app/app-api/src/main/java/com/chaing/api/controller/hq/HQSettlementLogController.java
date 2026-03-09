@@ -2,7 +2,7 @@ package com.chaing.api.controller.hq;
 
 import com.chaing.api.dto.hq.settlement.request.HQSettlementLogRequest;
 import com.chaing.api.dto.hq.settlement.response.HQSettlementLogResponse; // 새로 만들 DTO (테이블 한 줄)
-import com.chaing.api.facade.settlement.HQSettlementLogFacade; // 새로 만들 Facade
+import com.chaing.api.facade.hq.HQSettlementLogFacade; // 새로 만들 Facade
 import com.chaing.core.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 @PreAuthorize("hasAnyRole('HQ', 'ADMIN')")
 public class HQSettlementLogController {
 
-    private final HQSettlementLogFacade logFacade; // [NEW] Facade 주입
+    private final HQSettlementLogFacade logFacade;
 
     @Operation(summary = "정산 이력 목록 조회", description = """
             정산 이력 조회 화면의 테이블 데이터를 조회합니다.
@@ -30,9 +30,7 @@ public class HQSettlementLogController {
             """)
     @GetMapping
     public ResponseEntity<ApiResponse<Page<HQSettlementLogResponse>>> getSettlementLogs(
-            @Valid HQSettlementLogRequest request // [UPDATED] 8개의 파라미터를 하나의 DTO로 통합
-    ) {
-        // [수정] Facade 호출로 실제 데이터 조회 위임
+            @Valid HQSettlementLogRequest request) {
         Page<HQSettlementLogResponse> response = logFacade.getSettlementLogs(request);
         return ResponseEntity.ok(ApiResponse.success(response));
     }

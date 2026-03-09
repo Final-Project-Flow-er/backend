@@ -6,8 +6,11 @@ import com.chaing.domain.inventories.entity.FactoryInventory;
 import com.chaing.domain.inventories.entity.FranchiseInventory;
 import com.chaing.domain.inventories.service.InventoryService;
 import com.chaing.domain.inventorylogs.dto.request.InventoryLogCreateRequest;
+import com.chaing.domain.inventorylogs.dto.response.BoxCodeResponse;
 import com.chaing.domain.inventorylogs.enums.ActorType;
 import com.chaing.domain.inventorylogs.enums.LocationType;
+import com.chaing.domain.inventorylogs.exception.InventoryLogException;
+import com.chaing.domain.inventorylogs.exception.InventoryLogtErrorCode;
 import com.chaing.domain.inventorylogs.service.InventoryLogService;
 import com.chaing.domain.orders.entity.FranchiseOrder;
 import com.chaing.domain.orders.entity.FranchiseOrderItem;
@@ -40,17 +43,6 @@ public class InventoryLogFacade {
     private final ProductService productService;
     private final InventoryService inventoryService;
 
-    // =========================================================
-    // 주문 기반 로그 (입고 / 출고)
-    // =========================================================
-
-    /**
-     * orderId를 기반으로 입고/출고 로그를 생성
-     * 
-     * @param orderType "FRANCHISE" 또는 "HQ"
-     *                  - 공장 출고 시: logType=OUTBOUND, actorType=FACTORY
-     *                  - 가맹점 입고 시: logType=INBOUND, actorType=FRANCHISE
-     */
     public void recordOrderLogs(Long orderId, String orderType, LogType logType, ActorType actorType, Long actorId) {
         if ("FRANCHISE".equalsIgnoreCase(orderType)) {
             FranchiseOrder franchiseOrder = franchiseOrderService.getOrderByOrderId(orderId);
@@ -65,7 +57,7 @@ public class InventoryLogFacade {
 
             recordHqOrderLogs(hqOrder, hqItems, factoryInventories, logType, actorType, actorId);
         } else {
-            throw new IllegalArgumentException("지원하지 않는 orderType 입니다: " + orderType);
+            throw new InventoryLogException(InventoryLogtErrorCode.INVALID_ACTOR_TYPE);
         }
     }
 
@@ -129,23 +121,6 @@ public class InventoryLogFacade {
         }
     }
 
-    // =========================================================
-    // 반품 기반 로그 (반품 출고 / 반품 입고)
-    // =========================================================
-
-    /**
-     * returnId를 기반으로 반품 출고/입고 로그를 생성
-     *
-     * [반품 출고] 가맹점이 본사로 물건 보낼 때
-     * → logType=RETURN_OUTBOUND, actorType=FRANCHISE, actorId=franchiseId
-     *
-     * [반품 입고] 본사가 반품 물건 수령할 때
-     * → logType=RETURN_INBOUND, actorType=HQ, actorId=hqId
-     *
-     * 출발지: FRANCHISE (franchiseId)
-     * 도착지: HQ
-     * ReturnItem에 boxCode가 직접 저장되어 있어 별도 재고 조회 불필요
-     */
     public void recordReturnLogs(Long returnId, LogType logType, ActorType actorType, Long actorId) {
         // 1. 반품 정보 조회 (returnCode, franchiseId, franchiseOrderId 포함)
         Returns returns = franchiseReturnService.getReturnByReturnId(returnId);
@@ -194,5 +169,9 @@ public class InventoryLogFacade {
         if (!logs.isEmpty()) {
             inventoryLogService.recordInventoryLog(logs);
         }
+    }
+
+    public List<BoxCodeResponse> getBoxCodes(String transactionCode) {
+        return inventoryLogService.findBoxCodesByTransactionCode(transactionCode);
     }
 }

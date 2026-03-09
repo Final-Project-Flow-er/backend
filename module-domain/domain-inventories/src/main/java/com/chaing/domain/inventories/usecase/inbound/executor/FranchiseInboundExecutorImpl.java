@@ -1,4 +1,4 @@
-package com.chaing.domain.inventories.usecase.executor;
+package com.chaing.domain.inventories.usecase.inbound.executor;
 
 import com.chaing.domain.inventories.dto.command.FranchiseInboundCreateCommand;
 import com.chaing.domain.inventories.entity.FranchiseInventory;
@@ -16,7 +16,7 @@ import java.util.stream.IntStream;
 @Component
 @Qualifier("franchise")
 @RequiredArgsConstructor
-public class FranchiseExecutorImpl implements Executor<FranchiseInboundCreateCommand> {
+public class FranchiseInboundExecutorImpl implements InboundExecutor<FranchiseInboundCreateCommand> {
 
     private final FranchiseInventoryRepository repository;
 
@@ -31,9 +31,8 @@ public class FranchiseExecutorImpl implements Executor<FranchiseInboundCreateCom
         List<FranchiseInventory> inventories = IntStream.range(0, command.serialCodes().size())
                 .mapToObj(i -> {
                     String serial = command.serialCodes().get(i);
-                    Long orderItemId = command.orderItemIds().get(i); // i번째 아이템 ID 추출!
+                    Long orderItemId = command.orderItemIds().get(i);
 
-                    // 2. from 메서드에 orderItemId도 같이 넘겨주기
                     return FranchiseInventory.from(command, serial, orderItemId);
                 })
                 .toList();

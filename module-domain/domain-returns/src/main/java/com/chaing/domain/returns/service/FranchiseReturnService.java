@@ -63,7 +63,7 @@ public class FranchiseReturnService {
     }
 
     // 반품 제품 수정
-    public List<ReturnItemCommand> updateReturnItems(List<String> boxCodes, String returnCode, Map<Long, FranchiseInventoryCommand> inventoryByBoxCode) {
+    public List<ReturnItemCommand> updateReturnItems(List<String> boxCodes, String returnCode, Map<String, FranchiseInventoryCommand> inventoryByBoxCode) {
         // 반품 조회
         Returns returns = franchiseReturnRepository.findByReturnCodeAndDeletedAtIsNull(returnCode)
                 .orElseThrow(() -> new FranchiseReturnException(FranchiseReturnErrorCode.RETURN_NOT_FOUND));

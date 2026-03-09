@@ -1,7 +1,6 @@
-package com.chaing.domain.inventories.usecase.reader;
+package com.chaing.domain.inventories.usecase.inbound.reader;
 
 import com.chaing.core.enums.LogType;
-import com.chaing.domain.inventories.dto.raw.FactoryInventoryRawData;
 import com.chaing.domain.inventories.dto.raw.FranchiseInventoryRawData;
 import com.chaing.domain.inventories.entity.FranchiseInventory;
 import com.chaing.domain.inventories.repository.FranchiseInventoryRepository;
@@ -14,7 +13,7 @@ import java.util.List;
 @Component
 @Qualifier("franchise")
 @RequiredArgsConstructor
-public class FranchiseReaderImpl implements Reader<FranchiseInventoryRawData> {
+public class FranchiseInboundReaderImpl implements InboundReader<FranchiseInventoryRawData> {
 
     private final FranchiseInventoryRepository repository;
 
@@ -41,8 +40,8 @@ public class FranchiseReaderImpl implements Reader<FranchiseInventoryRawData> {
     }
 
     @Override
-    public List<FranchiseInventoryRawData> findAllByIds(List<Long> selectedList) {
-        List<FranchiseInventory> entities = repository.findAllByInventoryIdIn(selectedList);
+    public List<FranchiseInventoryRawData> findAllBySerialCode(List<String> selectedList) {
+        List<FranchiseInventory> entities = repository.findAllBySerialCodeIn(selectedList);
 
         return entities.stream()
                 .map(entity -> new FranchiseInventoryRawData(

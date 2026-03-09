@@ -240,8 +240,8 @@ public class FranchiseReturnFacade {
         // List<boxCode>
         List<String> boxCodes = requests.stream().map(FranchiseReturnUpdateRequest::boxCode).toList();
 
-        // Map<inventoryId, FranchiseInventoryCommand>
-        Map<Long, FranchiseInventoryCommand> inventoryByBoxCode = inventoryService.getInventoriesByBoxCode(boxCodes);
+        // Map<boxCode, FranchiseInventoryCommand>
+        Map<String, FranchiseInventoryCommand> inventoryByBoxCode = inventoryService.getInventoriesByBoxCode(boxCodes);
         log.info("inventoryByBoxCode: {}" , inventoryByBoxCode);
         // Map<returnItemId, ReturnItemCommand>
         Map<Long, ReturnItemCommand> returnItemByReturnItemId = franchiseReturnService.getReturnItemsByReturnId(returnCommand.returnId());

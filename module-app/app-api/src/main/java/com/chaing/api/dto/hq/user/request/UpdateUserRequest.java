@@ -17,7 +17,15 @@ public record UpdateUserRequest(
         UserPosition position,
         Long businessUnitId
 ) {
-    public UserUpdateCommand toCommand() {
-        return new UserUpdateCommand(username, email, phone, birthDate, profileImageUrl, role, position, businessUnitId);
+    public UserUpdateCommand toCommand(String newFileName) {
+        return new UserUpdateCommand(
+                username,
+                email,
+                phone,
+                birthDate,
+                (newFileName != null) ? newFileName : this.profileImageUrl,
+                role,
+                position,
+                businessUnitId);
     }
 }

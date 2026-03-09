@@ -26,9 +26,7 @@ public record HQReturnCommand(
 
         BigDecimal totalPrice,
 
-        String receiver,
-
-        String phoneNumber
+        Long userId
 ) {
     public static HQReturnCommand from(Returns returns) {
         return HQReturnCommand.builder()
@@ -40,8 +38,7 @@ public record HQReturnCommand(
                 .type(returns.getReturnType())
                 .quantity(returns.getTotalReturnQuantity())
                 .totalPrice(returns.getTotalReturnAmount())
-                .receiver(returns.getUsername())
-                .phoneNumber(returns.getPhoneNumber())
+                .userId(returns.getUserId())
                 .build();
     }
 }

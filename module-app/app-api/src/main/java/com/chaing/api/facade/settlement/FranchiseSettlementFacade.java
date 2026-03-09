@@ -233,22 +233,23 @@ public class FranchiseSettlementFacade {
                 return ranked;
         }
 
-        // OrderItem 집계 (FranchiseOrderItem에는 상품명이 없으므로 serialCode 사용)
+        // OrderItem 집계 (FranchiseOrderItem에는 상품명이 없으므로 productId 사용)
         // 발주 상품별로 묶고 더해서 순위 매기기
         private List<FranchiseOrderItemResponse> aggregateOrderItems(
                         List<FranchiseOrderItem> items, Integer limit) {
-                // serialCode별 그룹핑 (상품 정보가 없으면 serialCode 사용)
-                Map<String, List<FranchiseOrderItem>> grouped = items.stream()
-                                .collect(Collectors.groupingBy(FranchiseOrderItem::getSerialCode));
+                // productId별 그룹핑
+                Map<Long, List<FranchiseOrderItem>> grouped = items.stream()
+                                .collect(Collectors.groupingBy(FranchiseOrderItem::getProductId));
                 List<FranchiseOrderItemResponse> result = grouped.entrySet().stream()
                                 .map(entry -> {
-                                        String code = entry.getKey();
+                                        Long productId = entry.getKey();
+                                        String productName = "품목 ID " + productId; // TODO: 상품 도메인에서 조회 필요
                                         List<FranchiseOrderItem> group = entry.getValue();
                                         int totalQty = group.stream()
                                                         .mapToInt(FranchiseOrderItem::getQuantity).sum();
                                         BigDecimal price = group.get(0).getUnitPrice();
                                         BigDecimal total = price.multiply(BigDecimal.valueOf(totalQty));
-                                        return new FranchiseOrderItemResponse(0, code, totalQty, price, total);
+                                        return new FranchiseOrderItemResponse(0, productName, totalQty, price, total);
                                 })
                                 .sorted((a, b) -> b.totalAmount().compareTo(a.totalAmount()))
                                 .toList();
@@ -275,7 +276,8 @@ public class FranchiseSettlementFacade {
                 return "https://dummy-url.com/monthly-receipt-" + franchiseId + "-" + month + ".pdf";
         }
 
-        public String getMonthlyVouchersExcel(Long franchiseId, YearMonth month, VoucherType type) {
+        public String getMonthlyVouchersExcel(Long franchiseId, YearMonth month,
+                        com.chaing.domain.settlements.enums.VoucherType type) {
                 // TODO: SettlementDocumentService 호출하여 실제 MinIO URL 반환
                 String typeStr = (type == null) ? "all" : type.name();
                 return "https://dummy-url.com/monthly-vouchers-" + franchiseId + "-" + month + "-" + typeStr + ".xlsx";

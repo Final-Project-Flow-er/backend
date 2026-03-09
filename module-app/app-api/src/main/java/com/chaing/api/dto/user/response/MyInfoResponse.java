@@ -20,7 +20,7 @@ public record MyInfoResponse(
         UserRole role,
         UserPosition position
 ) {
-    public static MyInfoResponse from(User user) {
+    public static MyInfoResponse from(User user, String profileImageUrl) {
 
         return MyInfoResponse.builder()
                 .loginId(user.getLoginId())
@@ -29,7 +29,7 @@ public record MyInfoResponse(
                 .phone(user.getPhone())
                 .birthDate(user.getBirthDate())
                 .employeeNumber(user.getEmployeeNumber())
-                .profileImageUrl(user.getProfileImageUrl())
+                .profileImageUrl(profileImageUrl)
                 .role(user.getRole())
                 .position(user.getPosition())
                 .build();

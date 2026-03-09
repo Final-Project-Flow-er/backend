@@ -4,7 +4,7 @@ import lombok.Builder;
 
 @Builder
 public record FranchiseOrderInfo(
-        Long orderId,
+        String orderCode,
 
         String username,
 

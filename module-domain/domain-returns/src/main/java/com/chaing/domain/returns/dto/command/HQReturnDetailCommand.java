@@ -30,7 +30,7 @@ public record HQReturnDetailCommand(
 
         String receiver,
 
-        String phoneNumber,
+        Long userId,
 
         String description
 ) {
@@ -45,8 +45,7 @@ public record HQReturnDetailCommand(
                 .type(returns.getReturnType())
                 .quantity(returns.getTotalReturnQuantity())
                 .totalPrice(returns.getTotalReturnAmount())
-                .receiver(returns.getUsername())
-                .phoneNumber(returns.getPhoneNumber())
+                .userId(returns.getUserId())
                 .description(returns.getDescription())
                 .build();
     }

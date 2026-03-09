@@ -9,6 +9,7 @@ import com.chaing.api.security.principal.CustomUserDetailsService;
 import com.chaing.api.security.principal.UserPrincipal;
 import com.chaing.domain.users.entity.User;
 import com.chaing.domain.users.enums.UserAction;
+import com.chaing.domain.users.enums.UserRole;
 import com.chaing.domain.users.exception.UserErrorCode;
 import com.chaing.domain.users.exception.UserException;
 import com.chaing.domain.users.service.AuthService;
@@ -34,7 +35,7 @@ public class AuthFacade {
     private final JwtProvider jwtProvider;
 
     // 로그인
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public LoginResponse login(LoginRequest request) {
 
         UserPrincipal principal = (UserPrincipal) userDetailsService.loadUserByUsername(request.loginId());
@@ -50,11 +51,11 @@ public class AuthFacade {
 
         authService.saveRefreshToken(user.getUserId(), refreshToken, jwtProvider.getRefreshTokenExpireTime() / 1000);
 
-        return new LoginResponse(accessToken, refreshToken);
+        return new LoginResponse(accessToken, refreshToken, principal.getRole());
     }
 
     // 비밀번호 재설정 (이메일 전송)
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void resetPassword(ResetPasswordRequest request) {
 
         User user = userManagementService.getUserByLoginId(request.loginId());
@@ -70,8 +71,8 @@ public class AuthFacade {
     }
 
     // 토큰 재발급
-    @Transactional
-    public LoginResponse reissue(String refreshToken) {
+    @Transactional(rollbackFor = Exception.class)
+    public LoginResponse reissue(String refreshToken, UserRole userRole) {
 
         if (!jwtProvider.validateToken(refreshToken)) {
             throw new UserException(UserErrorCode.INVALID_TOKEN);
@@ -91,11 +92,11 @@ public class AuthFacade {
 
         authService.saveRefreshToken(user.getUserId(), newRefreshToken, jwtProvider.getRefreshTokenExpireTime() / 1000);
 
-        return new LoginResponse(newAccessToken, newRefreshToken);
+        return new LoginResponse(newAccessToken, newRefreshToken, userRole);
     }
 
     // 로그아웃
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void logout(Long userId) {
         authService.deleteRefreshToken(userId);
     }

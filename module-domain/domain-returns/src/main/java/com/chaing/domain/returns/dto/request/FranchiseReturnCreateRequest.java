@@ -11,10 +11,18 @@ public record FranchiseReturnCreateRequest(
         @NotBlank
         String orderCode,
 
+        String username,
+
+        String phoneNumber,
+
+        String franchiseCode,
+
         @NotNull
         ReturnType returnType,
 
         String description,
+
+        Integer quantity,
 
         BigDecimal totalPrice,
 

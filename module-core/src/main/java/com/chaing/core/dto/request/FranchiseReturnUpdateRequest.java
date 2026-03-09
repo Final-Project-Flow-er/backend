@@ -5,15 +5,6 @@ import jakarta.validation.constraints.NotNull;
 
 public record FranchiseReturnUpdateRequest(
         @NotBlank
-        String boxCode,
-
-        @NotBlank
-        String serialCode,
-
-        @NotBlank
-        String returnCode,
-
-        @NotNull
-        Long orderItemId
+        String boxCode
 ) {
 }

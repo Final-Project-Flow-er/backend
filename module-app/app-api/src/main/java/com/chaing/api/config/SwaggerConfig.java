@@ -95,7 +95,7 @@ public class SwaggerConfig {
     @Bean
     public GroupedOpenApi hqInventoryApi() {
         return GroupedOpenApi.builder()
-                .group("본사 재고(HqInventory)")
+                .group("본사 재고(HQInventory)")
                 .pathsToMatch("/api/v1/hq/inventory/**")
                 .build();
     }
@@ -208,7 +208,7 @@ public class SwaggerConfig {
                         .addSecuritySchemes(jwtSchemeName, securityScheme))
                 .addSecurityItem(securityRequirement)
                 .info(new Info()
-                        .title("AccountBookForMoms API")
+                        .title("CHAING-G")
                         .version("v1"));
     }
 
@@ -225,6 +225,14 @@ public class SwaggerConfig {
         return GroupedOpenApi.builder()
                 .group("가맹점 정산(FranchiseSettlement)")
                 .pathsToMatch("/api/v1/franchise/settlements/**")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi inboundProcessApi() {
+        return GroupedOpenApi.builder()
+                .group("입고(InboundProcess)")
+                .pathsToMatch("/api/v1/inbounds/**")
                 .build();
     }
 }

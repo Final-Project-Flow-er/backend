@@ -4,6 +4,7 @@ import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.domain.products.dto.request.ProductRequest;
 import com.chaing.domain.products.dto.request.ProductSearchRequest;
 import com.chaing.domain.products.dto.request.ProductUpdateRequest;
+import com.chaing.domain.products.dto.response.ProductInfoResponse;
 import com.chaing.domain.products.dto.response.ProductListResponse;
 import com.chaing.domain.products.entity.Product;
 import com.chaing.domain.products.entity.ProductComponent;
@@ -90,6 +91,7 @@ public class ProductService {
             syncComponents(productId, req.componentIds());
         }
     }
+
     public void createProductTypes(String type, String productName) {
         if (productTypeRepository.existsByProductType(type)) {
             throw new ProductException(ProductErrorCode.DUPLICATE_PRODUCT_CODE);
@@ -157,9 +159,12 @@ public class ProductService {
     }
 
     public Map<Long, ProductInfo> getProductInfos(List<Long> productIds) {
+        List<Product> products = productRepository.findAllByProductIdIn(productIds);
 
-
-        return productRepository.findAllByProductIdIn(productIds).stream()
+        if (products == null || products.isEmpty()) {
+            throw new ProductException(ProductErrorCode.PRODUCT_NOT_FOUND);
+        }
+        return products.stream()
                 .collect(Collectors.toMap(
                         Product::getProductId,
                         entry -> ProductInfo.builder()
@@ -173,6 +178,29 @@ public class ProductService {
                 ));
     }
 
+    // 제품 정보 전체 반환
+    // return: Map<productId, ProductInfo>
+    public Map<Long, ProductInfo> getAllProductInfo() {
+        List<Product> products = productRepository.findAllByStatus(ProductStatus.ON_SALE);
+
+        if (products == null || products.isEmpty()) {
+            throw new ProductException(ProductErrorCode.PRODUCT_NOT_FOUND);
+        }
+
+        return products.stream()
+                .collect(Collectors.toMap(
+                        Product::getProductId,
+                        product -> ProductInfo.builder()
+                                .productId(product.getProductId())
+                                .productCode(product.getProductCode())
+                                .productName(product.getName())
+                                .retailPrice(product.getPrice())
+                                .costPrice(product.getCostPrice())
+                                .tradePrice(product.getSupplyPrice())
+                                .build()
+                ));
+    }
+
     public Map<Long, Integer> getWeightsByProductIds(List<Long> productIds) {
 
         List<Product> products = productRepository.findAllByProductIdIn(productIds);
@@ -181,9 +209,18 @@ public class ProductService {
                 .collect(Collectors.toMap(Product::getProductId, Product::getWeight));
 
         if (weightMap.size() != productIds.stream().distinct().count()) {
-                throw new ProductException(ProductErrorCode.PRODUCT_NOT_FOUND);
+            throw new ProductException(ProductErrorCode.PRODUCT_NOT_FOUND);
         }
 
         return weightMap;
+    }
+
+    // 모든 상품 Id 조회
+    public List<Long> getAllProductIds() {
+        return productRepository.findAllProductIds();
+    }
+
+    public List<ProductInfoResponse> getInventoryProducts(String productCode, String name) {
+        return productRepository.getInventoryProducts(productCode, name);
     }
 }

@@ -4,6 +4,9 @@ import com.chaing.domain.settlements.entity.SettlementDocument;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+import java.util.Optional;
+
 @Repository
 public interface SettlementDocumentRepository extends JpaRepository<SettlementDocument, Long> {
     // 월별 정산의 문서 목록

@@ -2,13 +2,21 @@ package com.chaing.api.facade.hq;
 
 import com.chaing.api.dto.hq.user.request.CreateUserRequest;
 import com.chaing.api.dto.hq.user.request.UpdateUserRequest;
+import com.chaing.api.dto.hq.user.request.UserLogSearchRequest;
+import com.chaing.api.dto.hq.user.request.UserSearchRequest;
 import com.chaing.api.dto.hq.user.response.CreateUserResponse;
 import com.chaing.api.dto.hq.user.response.UserDetailResponse;
 import com.chaing.api.dto.hq.user.response.UserLogResponse;
 import com.chaing.api.dto.hq.user.response.UserSummaryResponse;
+import com.chaing.api.dto.user.event.ProfileImageDeleteEvent;
+import com.chaing.api.dto.user.event.ProfileImageUploadEvent;
+import com.chaing.api.dto.user.event.UserInfoResendEvent;
 import com.chaing.api.dto.user.event.UserRegisteredEvent;
+import com.chaing.core.enums.BucketName;
+import com.chaing.core.service.MinioService;
+import com.chaing.domain.users.dto.condition.UserLogSearchCondition;
+import com.chaing.domain.users.dto.condition.UserSearchCondition;
 import com.chaing.domain.users.entity.User;
-import com.chaing.domain.users.entity.UserLog;
 import com.chaing.domain.users.enums.UserAction;
 import com.chaing.domain.users.enums.UserStatus;
 import com.chaing.domain.users.exception.UserErrorCode;
@@ -22,6 +30,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @RequiredArgsConstructor
@@ -32,13 +41,20 @@ public class UserManagementFacade {
     private final AuthService authService;
     private final UserLogService userLogService;
     private final ApplicationEventPublisher eventPublisher;
+    private final MinioService minioService;
 
     // 회원 등록
-    @Transactional
-    public CreateUserResponse registerUser(CreateUserRequest request, Long actorId) {
+    @Transactional(rollbackFor = Exception.class)
+    public CreateUserResponse registerUser(CreateUserRequest request, MultipartFile profileImage, Long actorId) {
 
         if (!request.position().isAvailableFor(request.role())) {
             throw new UserException(UserErrorCode.INVALID_POSITION_FOR_ROLE);
+        }
+
+        String savedFileName = null;
+        if (profileImage != null && !profileImage.isEmpty()) {
+            savedFileName = minioService.generateFileName(profileImage);
+            minioService.uploadFile(profileImage, savedFileName, BucketName.PROFILES);
         }
 
         String loginId = userManagementService.generateLoginId(request.role());
@@ -54,7 +70,7 @@ public class UserManagementFacade {
                 .birthDate(request.birthDate())
                 .role(request.role())
                 .position(request.position())
-                .profileImageUrl(request.profileImageUrl())
+                .profileImageUrl(savedFileName)
                 .businessUnitId(request.businessUnitId())
                 .status(UserStatus.ACTIVE)
                 .build();
@@ -66,29 +82,55 @@ public class UserManagementFacade {
         return CreateUserResponse.from(user);
     }
 
+    // 회원 정보 재발송
+    public void sendUserInfo(Long userId) {
+        User user = userManagementService.getUserById(userId);
+
+        if (user.getEmail() == null || user.getEmail().isBlank()) {
+            throw new UserException(UserErrorCode.EMAIL_NOT_FOUND);
+        }
+
+        eventPublisher.publishEvent(new UserInfoResendEvent(user.getEmail(), user.getLoginId(), user.getEmployeeNumber()));
+    }
+
     // 회원 목록 조회
-    public Page<UserSummaryResponse> getUserList(Pageable pageable) {
-        return userManagementService.getUserList(pageable).map(UserSummaryResponse::from);
+    public Page<UserSummaryResponse> getUserList(UserSearchRequest request, Pageable pageable) {
+        UserSearchCondition condition = request.toCondition();
+        return userManagementService.getUserList(condition, pageable).map(UserSummaryResponse::from);
     }
 
     // 회원 상세 조회
     public UserDetailResponse getUserById(Long userId) {
         User user = userManagementService.getUserById(userId);
-        return UserDetailResponse.from(user);
+        String profileImageUrl = minioService.getFileUrl(user.getProfileImageUrl(), BucketName.PROFILES);
+        return UserDetailResponse.from(user, profileImageUrl);
     }
 
     // 회원 정보 수정
-    @Transactional
-    public UserDetailResponse updateUser(Long userId, UpdateUserRequest request, Long actorId) {
+    @Transactional(rollbackFor = Exception.class)
+    public UserDetailResponse updateUser(Long userId, UpdateUserRequest request, MultipartFile profileImage, Long actorId) {
+        User user = userManagementService.getUserById(userId);
+        String oldFileName = user.getProfileImageUrl();
 
-        User updatedUser = userManagementService.updateUser(userId, request.toCommand());
+        String savedFileName = null;
+        if (profileImage != null && !profileImage.isEmpty()) {
+            savedFileName = minioService.generateFileName(profileImage);
+            minioService.uploadFile(profileImage, savedFileName, BucketName.PROFILES);
+        }
 
-        userLogService.saveLog(updatedUser, actorId, UserAction.INFO_UPDATE);
-        return UserDetailResponse.from(updatedUser);
+        userManagementService.updateUser(userId, request.toCommand(savedFileName));
+        userLogService.saveLog(user, actorId, UserAction.INFO_UPDATE);
+
+        if (savedFileName != null && oldFileName != null) {
+            eventPublisher.publishEvent(new ProfileImageDeleteEvent(oldFileName, BucketName.PROFILES));
+        }
+
+        String profileImageUrl = minioService.getFileUrl(user.getProfileImageUrl(), BucketName.PROFILES);
+        return UserDetailResponse.from(user, profileImageUrl);
     }
 
     // 회원 상태 변경
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public UserDetailResponse updateUserStatus(Long userId, UserStatus status, Long actorId) {
         userManagementService.updateStatus(userId, status);
 
@@ -100,22 +142,28 @@ public class UserManagementFacade {
         UserAction action = (status == UserStatus.ACTIVE) ? UserAction.RESTORE : UserAction.DEACTIVATE;
         userLogService.saveLog(user, actorId, action);
 
-        return UserDetailResponse.from(user);
+        String profileImageUrl = minioService.getFileUrl(user.getProfileImageUrl(), BucketName.PROFILES);
+        return UserDetailResponse.from(user, profileImageUrl);
     }
 
     // 회원 로그 조회
-    public Page<UserLogResponse> getUserLogs(Pageable pageable) {
-        Page<UserLog> logs = userLogService.getAllUserLogs(pageable);
-        return logs.map(UserLogResponse::from);
+    public Page<UserLogResponse> getUserLogs(UserLogSearchRequest request, Pageable pageable) {
+        UserLogSearchCondition condition = request.toCondition();
+        return userLogService.getUserLogList(condition, pageable).map(UserLogResponse::from);
     }
 
-    // 회원 탈퇴
-    @Transactional
+    // 회원 삭제
+    @Transactional(rollbackFor = Exception.class)
     public void deleteUser(Long userId, Long actorId) {
         User user = userManagementService.getUserById(userId);
+        String fileName = user.getProfileImageUrl();
         userLogService.saveLog(user, actorId, UserAction.DELETE);
 
         authService.deleteRefreshToken(userId);
         userManagementService.deleteUser(userId);
+
+        if (fileName != null) {
+            eventPublisher.publishEvent(new ProfileImageDeleteEvent(fileName, BucketName.PROFILES));
+        }
     }
 }

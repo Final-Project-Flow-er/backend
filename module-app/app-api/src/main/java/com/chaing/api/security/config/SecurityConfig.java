@@ -47,6 +47,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/auth/logout").authenticated()
                         .requestMatchers(
                                 "/api/v1/auth/**",
+                                "/api/v1/**",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/error"
@@ -58,6 +59,11 @@ public class SecurityConfig {
                             response.setContentType("application/json;charset=UTF-8");
                             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                             response.getWriter().write("{\"success\":false,\"message\":\"인증에 실패했습니다.\"}");
+                        })
+                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+                            response.setContentType("application/json;charset=UTF-8");
+                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                            response.getWriter().write("{\"success\":false,\"message\":\"해당 권한이 없습니다.\"}");
                         })
                 )
                 .addFilterBefore(

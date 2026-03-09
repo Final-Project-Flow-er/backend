@@ -3,6 +3,7 @@ package com.chaing.domain.settlements.service.impl;
 import com.chaing.domain.settlements.entity.SettlementAdjustment;
 import com.chaing.domain.settlements.exception.SettlementErrorCode;
 import com.chaing.domain.settlements.exception.SettlementException;
+import com.chaing.domain.settlements.enums.VoucherType;
 import com.chaing.domain.settlements.repository.interfaces.SettlementAdjustmentRepository;
 import com.chaing.domain.settlements.service.SettlementAdjustmentService;
 import lombok.RequiredArgsConstructor;
@@ -30,9 +31,9 @@ public class SettlementAdjustmentServiceImpl implements SettlementAdjustmentServ
     } // 새로운 조정 내역을 DB에 저장
 
     @Override
-    public Page<SettlementAdjustment> getAll(Pageable pageable) {
-        return repository.findAll(pageable);
-    } // 조정 내역 DB에서 가져오기
+    public Page<SettlementAdjustment> getAll(Long franchiseId, VoucherType voucherType, Pageable pageable) {
+        return repository.findByConditions(franchiseId, voucherType, pageable);
+    } // 조건별 조정 내역 DB에서 가져오기
 
     @Override
     public SettlementAdjustment getById(Long id) {

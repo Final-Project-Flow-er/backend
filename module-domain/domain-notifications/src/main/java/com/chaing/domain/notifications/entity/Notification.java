@@ -27,7 +27,6 @@ public class Notification extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long notificationId;
 
-    @Column(nullable = false)
     private Long userId;
 
     @Column(nullable = false)
@@ -39,25 +38,12 @@ public class Notification extends BaseEntity {
 
     private Long targetId;
 
-    @Column(name = "is_read", nullable = false)
-    @Builder.Default
-    private boolean isRead = false;
-
-    public void read() {
-        this.isRead = true;
-    }
-
-    public void markAsUnread() {
-        this.isRead = false;
-    }
-
     public static Notification createNotification(NotificationCreateCommand command) {
         return Notification.builder()
                 .userId(command.userId())
                 .type(command.type())
                 .message(command.message())
                 .targetId(command.targetId())
-                .isRead(false)
                 .build();
     }
 

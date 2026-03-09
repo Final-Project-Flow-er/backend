@@ -2,11 +2,13 @@ package com.chaing.api.facade.hq;
 
 import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.core.enums.LogType;
+import com.chaing.domain.inventories.dto.request.DisposalRequest;
 import com.chaing.domain.inventories.dto.request.FranchiseInventoryItemsRequest;
 import com.chaing.domain.inventories.dto.request.HQInventoryItemsRequest;
 import com.chaing.domain.inventories.dto.request.InventoryBatchRequest;
 import com.chaing.domain.inventories.dto.request.InventoryBoxRequest;
 import com.chaing.domain.inventories.dto.request.InventoryRequest;
+import com.chaing.domain.inventories.dto.request.SafetyStockRequest;
 import com.chaing.domain.inventories.dto.request.StockSearchRequest;
 import com.chaing.domain.inventories.dto.response.ExpirationAlertResponse;
 import com.chaing.domain.inventories.dto.response.ExpirationBatchResultResponse;
@@ -22,8 +24,8 @@ import com.chaing.domain.inventories.dto.response.SafetyStockAlertResponse;
 import com.chaing.domain.inventories.dto.response.SafetyStockResponse;
 import com.chaing.domain.inventories.service.InventoryService;
 import com.chaing.domain.inventorylogs.dto.request.InventoryLogCreateRequest;
+import com.chaing.domain.inventorylogs.dto.response.ActorProductSalesResponse;
 import com.chaing.domain.inventorylogs.dto.response.DailySales;
-import com.chaing.domain.inventorylogs.dto.response.FranchiseProductSalesResponse;
 import com.chaing.domain.inventorylogs.dto.response.ProductSalesResponse;
 import com.chaing.domain.inventorylogs.enums.ActorType;
 import com.chaing.domain.inventorylogs.enums.LocationType;
@@ -41,8 +43,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static com.chaing.domain.inventories.enums.LocationType.FACTORY;
 import static com.chaing.domain.inventories.enums.LocationType.FRANCHISE;
-import static com.chaing.domain.inventories.enums.LocationType.HQ;
 
 @Service
 @RequiredArgsConstructor
@@ -149,19 +151,22 @@ public class HQInventoryFacade {
         return inventoryService.getFranchiseItems(franchiseId, request);
     }
 
-    // 안전재고 계산
+    // 안전재고, 유통기한 계산
     @Scheduled(cron = "0 0 0 * * *") // 매일 자정 실행
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public void calculateSafetyStock() {
+        // 0. 유통기한 만료 상태 업데이트
+        inventoryService.updateExpiredStatus();
+
         List<Long> franchiseIds = inventoryService.getAllFranchiseIds();
         List<Long> ids = productService.getAllProductIds();
 
         // 1. 가맹점 안전재고 계산 (판매량 기준)
-        List<FranchiseProductSalesResponse> salesData = inventoryLogService.getProductSales(
+        List<ActorProductSalesResponse> salesData = inventoryLogService.getProductSales(
                 franchiseIds, ids, ActorType.FRANCHISE, LogType.SALE);
 
-        for (FranchiseProductSalesResponse franchise : salesData) {
-            Long franchiseId = franchise.franchiseId();
+        for (ActorProductSalesResponse franchise : salesData) {
+            Long franchiseId = franchise.actorId();
             for (ProductSalesResponse product : franchise.products()) {
                 double stdDev = calculateStdDev(product.sales());
                 double z = 1.65; // 95% 서비스 수준
@@ -177,14 +182,13 @@ public class HQInventoryFacade {
             }
         }
 
-        // 2. 본사(HQ) 안전재고 계산 (출고량 기준)
-        List<FranchiseProductSalesResponse> hqOutboundData = inventoryLogService.getProductSales(
-                List.of(1L), ids, ActorType.HQ, LogType.OUTBOUND);
+        // 2. 공장(FACTORY) 안전재고 계산 (출고량 기준)
+        List<ActorProductSalesResponse> factoryOutboundData = inventoryLogService.getProductSales(
+                null, ids, ActorType.FACTORY, LogType.OUTBOUND);
 
-        for (FranchiseProductSalesResponse hq : hqOutboundData) {
-            // 본사 ID는 1L
-            Long hqId = hq.franchiseId();
-            for (ProductSalesResponse product : hq.products()) {
+        for (ActorProductSalesResponse factory : factoryOutboundData) {
+            Long actorId = factory.actorId(); // null일 것임
+            for (ProductSalesResponse product : factory.products()) {
                 double stdDev = calculateStdDev(product.sales());
                 double z = 1.65; // 95% 서비스 수준
                 int leadTime = 3; // 예시 리드타임
@@ -192,8 +196,8 @@ public class HQInventoryFacade {
                 int safetyStockInt = (int) Math.ceil(safetyStock);
 
                 inventoryService.updateSafetyStock(
-                        HQ,
-                        hqId,
+                        FACTORY,
+                        actorId,
                         product.productId(),
                         safetyStockInt);
             }
@@ -202,9 +206,9 @@ public class HQInventoryFacade {
 
     // 안전재고 유통기한 알림
     public InventoryAlertResponse getInventoryAlerts() {
-        List<SafetyStockResponse> safetyStockAlert = inventoryService.getLowStockAlerts("HQ", 1L); // 임의로 본사 이렇게 정함
+        List<SafetyStockResponse> safetyStockAlert = inventoryService.getLowStockAlerts("FACTORY", null);
 
-        List<ExpirationBatchResultResponse> expirationAlerts = inventoryService.getExpirationAlerts("HQ", 1L);
+        List<ExpirationBatchResultResponse> expirationAlerts = inventoryService.getExpirationAlerts("FACTORY", null);
 
         List<Long> ids = productService.getAllProductIds();
 
@@ -268,6 +272,7 @@ public class HQInventoryFacade {
         }
         return null;
     }
+
     // 제품 식별코드 반환
     public List<String> convertsSerialCode(List<InventoryBoxRequest> boxes) {
         return boxes.stream()
@@ -279,8 +284,8 @@ public class HQInventoryFacade {
     // 재고 상태 변환 및 로그 기록
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public Void decreaseInventory(@Valid InventoryBatchRequest inventoryBatchRequest) {
-
-        inventoryService.updateShippingStatus(inventoryBatchRequest.boxes());
+        List<String> serialCodes = convertsSerialCode(inventoryBatchRequest.boxes());
+        inventoryService.updateShippingStatus(serialCodes);
         List<InventoryLogCreateRequest> logs = convert(inventoryBatchRequest);
         inventoryLogService.recordInventoryLog(logs);
 
@@ -338,5 +343,17 @@ public class HQInventoryFacade {
         }
 
         return result;
+    }
+
+    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
+    public Void disposalInventory(DisposalRequest request) {
+        inventoryService.disposalInventory(request);
+        // 로그 기록 추가
+        return null;
+    }
+
+    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
+    public void setSafetyStock(SafetyStockRequest request) {
+        inventoryService.setSafetyStock(request);
     }
 }

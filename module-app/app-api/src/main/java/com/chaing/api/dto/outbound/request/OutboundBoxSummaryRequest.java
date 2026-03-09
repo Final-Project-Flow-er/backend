@@ -1,4 +1,7 @@
 package com.chaing.api.dto.outbound.request;
 
-public record OutboundBoxSummaryRequest() {
+public record OutboundBoxSummaryRequest(
+        String boxCode
+) {
+
 }

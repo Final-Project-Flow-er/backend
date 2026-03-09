@@ -54,13 +54,18 @@ public class Transit extends BaseEntity {
     @Column(nullable = false)
     private Long weight;
 
-    public static Transit create(Long vehicleId, String orderCode, Long weight, String trackingNumber) {
+    @NotNull
+    @Column(nullable = false)
+    private Long franchiseId;
+
+    public static Transit create(Long vehicleId, String orderCode, Long weight, String trackingNumber, Long franchiseId) {
         return Transit.builder()
                 .orderCode(orderCode)
                 .vehicleId(vehicleId)
                 .status(DeliverStatus.PENDING)
                 .trackingNumber(trackingNumber)
                 .weight(weight)
+                .franchiseId(franchiseId)
                 .build();
     }
 }

@@ -10,13 +10,19 @@ import com.chaing.domain.orders.dto.request.FranchiseOrderCreateRequestItem;
 import com.chaing.domain.orders.dto.request.FranchiseOrderUpdateRequest;
 import com.chaing.domain.orders.dto.request.HQOrderUpdateStatusRequest;
 import com.chaing.domain.orders.dto.response.FranchiseOrderCancelResponse;
+import com.chaing.domain.orders.dto.response.FranchiseOrderForTransitResponse;
 import com.chaing.domain.orders.dto.response.FranchiseOrderItemDetailResponse;
 import com.chaing.domain.orders.dto.response.HQOrderStatusUpdateResponse;
 import com.chaing.domain.orders.entity.FranchiseOrder;
 import com.chaing.domain.orders.entity.FranchiseOrderItem;
+import com.chaing.domain.orders.entity.HeadOfficeOrder;
+import com.chaing.domain.orders.entity.HeadOfficeOrderItem;
 import com.chaing.domain.orders.enums.FranchiseOrderStatus;
+import com.chaing.domain.orders.enums.HQOrderStatus;
 import com.chaing.domain.orders.exception.FranchiseOrderErrorCode;
 import com.chaing.domain.orders.exception.FranchiseOrderException;
+import com.chaing.domain.orders.exception.HQOrderErrorCode;
+import com.chaing.domain.orders.exception.HQOrderException;
 import com.chaing.domain.orders.exception.OrderErrorCode;
 import com.chaing.domain.orders.exception.OrderException;
 import com.chaing.domain.orders.repository.FranchiseOrderItemRepository;
@@ -385,5 +391,52 @@ public class FranchiseOrderService {
                         FranchiseOrderItem::getFranchiseOrderItemId,
                         FranchiseOrderItem::getProductId
                 ));
+    }
+
+    public List<FranchiseOrderForTransitResponse> getOrdersForTransit(List<Long> orderIds) {
+
+        if(orderIds == null || orderIds.isEmpty()) {
+            throw new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_NOT_FOUND);
+        }
+
+        List<FranchiseOrderItem> allItems = franchiseOrderItemRepository
+                .findByFranchiseOrder_FranchiseOrderIdInAndFranchiseOrder_OrderStatusAndDeletedAtIsNull(
+                        orderIds,
+                        FranchiseOrderStatus.AWAITING
+                );
+
+        if (allItems.isEmpty()) {
+            throw new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_ITEM_NOT_FOUND);
+        }
+
+        Map<FranchiseOrder, List<FranchiseOrderItem>> itemsByOrder = allItems.stream()
+                .collect(Collectors.groupingBy(FranchiseOrderItem::getFranchiseOrder));
+
+        long requestedCount = orderIds.stream().distinct().count();
+
+        if (itemsByOrder.size() != requestedCount) {
+            throw new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_NOT_FOUND);
+        }
+
+        return itemsByOrder.entrySet().stream()
+                .map(entry -> {
+                    FranchiseOrder order = entry.getKey();
+                    List<FranchiseOrderItem> items = entry.getValue();
+
+                    List<FranchiseOrderForTransitResponse.OrderItemForTransit> itemResponses = items.stream()
+                            .map(item -> new FranchiseOrderForTransitResponse.OrderItemForTransit(
+                                    item.getProductId(),
+                                    item.getQuantity()
+                            ))
+                            .toList();
+
+                    return new FranchiseOrderForTransitResponse(
+                            order.getFranchiseOrderId(),
+                            order.getOrderCode(),
+                            itemResponses,
+                            order.getFranchiseId()
+                    );
+                })
+                .toList();
     }
 }

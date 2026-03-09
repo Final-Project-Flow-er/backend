@@ -1,5 +1,6 @@
 package com.chaing.domain.transports.service;
 
+import com.chaing.domain.transports.dto.DeliveryFeeInfo;
 import com.chaing.domain.transports.dto.OrderInfo;
 import com.chaing.domain.transports.dto.request.TransportForceUpdateRequest;
 import com.chaing.domain.transports.dto.request.VehicleAssignmentRequest;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -64,13 +66,7 @@ public class InternalTransportService {
         Long currentWeight = reader.getCurrentTransitWeight(vehicleId);
 
         // 적재 가능 유효성 검증
-        long computedNewWeight = orders.stream()
-                .map(OrderInfo::weight)
-                .filter(java.util.Objects::nonNull)
-                .mapToLong(Long::longValue)
-                .sum();
-
-        validator.checkLoadable(maxLoad, currentWeight, computedNewWeight);
+        validator.checkLoadable(maxLoad, currentWeight, newWeight);
 
         // 송장 유효성 검증
         validator.checkTrackingNumber(orders, trackingMap);
@@ -92,4 +88,17 @@ public class InternalTransportService {
     }
 
 
+    public List<DeliveryFeeInfo> calculateDeliveryFee(List<OrderInfo> orderInfos, @NotNull(message = "차량을 선택해주세요") Long vehicleId) {
+
+        List<Long> franchiseList = orderInfos.stream()
+                .map(OrderInfo::franchiseId)
+                .distinct()
+                .toList();
+
+        BigDecimal deliveryFee = BigDecimal.valueOf(reader.getDeliveryFee(vehicleId));
+
+        return franchiseList.stream()
+                .map(franchiseId -> new DeliveryFeeInfo(franchiseId, deliveryFee))
+                .toList();
+    }
 }

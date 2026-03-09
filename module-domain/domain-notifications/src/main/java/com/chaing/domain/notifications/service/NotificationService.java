@@ -20,6 +20,6 @@ public interface NotificationService {
     Notification readNotification(Long notificationId, Long userId);
     Map<Long, Boolean> getReadStatusMap(Long userId, List<Long> notificationIds);
     void markAllAsRead(Long userId);
-    void updateNotification(Long notificationId, String newMessage);
+    void updateNotification(NotificationType type, Long targetId, String newMessage);
     void deleteNotification(Long notificationId, Long userId);
 }

@@ -39,4 +39,6 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     void deleteOldNotifications(@Param("targetDate") LocalDateTime targetDate);
 
     void deleteAllByTypeAndTargetId(NotificationType type, Long targetId);
+
+    Optional<Notification> findByTypeAndTargetId(NotificationType type, Long targetId);
 }

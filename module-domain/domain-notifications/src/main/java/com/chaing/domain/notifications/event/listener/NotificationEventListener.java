@@ -22,7 +22,7 @@ public class NotificationEventListener {
 
         try {
             if (event.isUpdate()) {
-                notificationService.updateNotification(event.targetId(), event.message());
+                notificationService.updateNotification(event.type(), event.targetId(), event.message());
             } else if (event.isAll()) {
                 notificationService.sendToAll(event);
             } else {

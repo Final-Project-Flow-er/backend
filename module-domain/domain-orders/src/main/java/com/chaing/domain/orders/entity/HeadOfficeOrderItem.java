@@ -57,7 +57,7 @@ public class HeadOfficeOrderItem extends BaseEntity {
     private BigDecimal totalPrice;
 
     public void update(Integer quantity) {
-        if (quantity < 1) {
+        if (quantity == null || quantity < 1) {
             throw new HQOrderException(HQOrderErrorCode.INVALID_INPUT);
         }
         this.quantity = quantity;

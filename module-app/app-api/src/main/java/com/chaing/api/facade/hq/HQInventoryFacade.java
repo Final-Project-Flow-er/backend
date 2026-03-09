@@ -370,11 +370,11 @@ public class HQInventoryFacade {
                         pInfo != null ? pInfo.tradePrice() : null,
                         pInfo != null ? pInfo.retailPrice() : null,
                         LocationType.HQ,
-                        null,
+                        request.actorId(),
                         null,
                         null,
                         ActorType.HQ,
-                        null));
+                        request.actorId()));
             }
         } else if (actorTypeRaw.equals("FACTORY")) {
             List<FactoryInventory> inventories = inventoryService.getFactoryInventoriesByIds(request.inventoryIds());
@@ -393,11 +393,11 @@ public class HQInventoryFacade {
                         pInfo != null ? pInfo.tradePrice() : null,
                         pInfo != null ? pInfo.retailPrice() : null,
                         LocationType.FACTORY,
-                        null,
+                        request.actorId(),
                         null,
                         null,
                         ActorType.FACTORY,
-                        null));
+                        request.actorId()));
             }
         } else if (actorTypeRaw.equals("FRANCHISE")) {
             List<FranchiseInventory> inventories = inventoryService

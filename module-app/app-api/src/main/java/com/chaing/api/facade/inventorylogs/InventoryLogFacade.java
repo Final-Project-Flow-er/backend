@@ -143,7 +143,8 @@ public class InventoryLogFacade {
 
         // 4. productName 조회
         List<Long> productIds = productIdByBoxCode.values().stream().distinct().toList();
-        Map<Long, ProductInfo> productInfos = productService.getProductInfos(productIds);
+        Map<Long, ProductInfo> productInfos = productIds.isEmpty() ? Map.of()
+                : productService.getProductInfos(productIds);
 
         // 5. 로그 생성
         List<InventoryLogCreateRequest> logs = new ArrayList<>();

@@ -96,7 +96,8 @@ public class HQInventoryLogController {
                 .success(hqInventoryLogFacade.findFranchiseInboundOutboundLogs(franchiseId, request, pageable)));
     }
 
-    @GetMapping("/logs/boxes")
+    @Operation(summary = "발주 코드로 조회", description = "해당 발주코드로 박스코드 조회")
+    @GetMapping("/boxes")
     public ResponseEntity<ApiResponse<List<BoxCodeResponse>>> getBoxes(@RequestParam String transactionCode) {
         return ResponseEntity.ok(ApiResponse.success(inventoryLogFacade.getBoxCodes(transactionCode)));
     }

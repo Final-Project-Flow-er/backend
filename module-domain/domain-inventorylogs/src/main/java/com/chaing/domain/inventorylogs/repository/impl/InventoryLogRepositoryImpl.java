@@ -183,12 +183,12 @@ public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom 
                 List<FranchiseInventoryLogResponse> franchiseInventoryLogResponseList = queryFactory
                                 .select(Projections.constructor(
                                                 FranchiseInventoryLogResponse.class,
-                                                log.createdAt,
+                                                log.createdAt.max(),
                                                 log.transactionCode,
                                                 log.productName,
                                                 log.logType,
                                                 log.boxCode.countDistinct().intValue(),
-                                                log.quantity.sum()))
+                                                log.quantity.sum().intValue()))
                                 .from(log)
                                 .where(
                                                 log.logType.eq(LogType.INBOUND).or(log.logType.eq(LogType.OUTBOUND)),
@@ -200,13 +200,13 @@ public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom 
                                                 log.transactionCode,
                                                 log.productName,
                                                 log.logType)
-                                .orderBy(log.createdAt.desc())
+                                .orderBy(log.createdAt.max().desc())
                                 .offset(pageable.getOffset())
                                 .limit(pageable.getPageSize())
                                 .fetch();
 
                 long total = queryFactory
-                                .select(log.transactionCode.countDistinct())
+                                .select(log.transactionCode, log.productName, log.logType)
                                 .from(log)
                                 .where(
                                                 log.logType.eq(LogType.INBOUND).or(log.logType.eq(LogType.OUTBOUND)),
@@ -214,21 +214,11 @@ public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom 
                                                 containsTransactionCode(request.transactionCode()),
                                                 actorContains("FRANCHISE", franchiseId),
                                                 containsProductName(request.productName()))
-                                .fetchOne() == null ? 0L
-                                                : queryFactory
-                                                                .select(log.transactionCode.countDistinct())
-                                                                .from(log)
-                                                                .where(
-                                                                                log.logType.eq(LogType.INBOUND).or(
-                                                                                                log.logType.eq(LogType.OUTBOUND)),
-                                                                                betweenDate(request.startDate(),
-                                                                                                request.endDate()),
-                                                                                containsTransactionCode(request
-                                                                                                .transactionCode()),
-                                                                                actorContains("FRANCHISE", franchiseId),
-                                                                                containsProductName(
-                                                                                                request.productName()))
-                                                                .fetchOne();
+                                .groupBy(
+                                                log.transactionCode,
+                                                log.productName,
+                                                log.logType)
+                                .fetch().size();
 
                 return FranchiseInventoryLogListResponse.builder()
                                 .franchiseInventoryLogResponseList(franchiseInventoryLogResponseList)
@@ -259,7 +249,7 @@ public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom 
                                                 log.transactionCode,
                                                 log.productName,
                                                 log.logType,
-                                                log.quantity,
+                                                Expressions.asNumber(0),
                                                 log.quantity))
                                 .from(log)
                                 .where(
@@ -312,12 +302,12 @@ public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom 
                 List<FactoryInventoryLogResponse> inventoryLogResponses = queryFactory
                                 .select(Projections.constructor(
                                                 FactoryInventoryLogResponse.class,
-                                                log.createdAt,
+                                                log.createdAt.max(),
                                                 log.transactionCode,
                                                 log.productName,
                                                 log.logType,
                                                 log.boxCode.countDistinct().intValue(),
-                                                log.quantity.sum()))
+                                                log.quantity.sum().intValue()))
                                 .from(log)
                                 .where(
                                                 actorContains("FACTORY", factoryId),
@@ -329,13 +319,13 @@ public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom 
                                                 log.transactionCode,
                                                 log.productName,
                                                 log.logType)
-                                .orderBy(log.createdAt.desc())
+                                .orderBy(log.createdAt.max().desc())
                                 .offset(pageable.getOffset())
                                 .limit(pageable.getPageSize())
                                 .fetch();
 
                 long total = queryFactory
-                                .select(log.transactionCode.countDistinct())
+                                .select(log.transactionCode, log.productName, log.logType)
                                 .from(log)
                                 .where(
                                                 actorContains("FACTORY", factoryId),
@@ -343,20 +333,11 @@ public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom 
                                                 betweenDate(request.startDate(), request.endDate()),
                                                 containsTransactionCode(request.transactionCode()),
                                                 containsLogType(request.logType()))
-                                .fetchOne() == null ? 0L
-                                                : queryFactory
-                                                                .select(log.transactionCode.countDistinct())
-                                                                .from(log)
-                                                                .where(
-                                                                                actorContains("FACTORY", factoryId),
-                                                                                containsProductName(
-                                                                                                request.productName()),
-                                                                                betweenDate(request.startDate(),
-                                                                                                request.endDate()),
-                                                                                containsTransactionCode(request
-                                                                                                .transactionCode()),
-                                                                                containsLogType(request.logType()))
-                                                                .fetchOne();
+                                .groupBy(
+                                                log.transactionCode,
+                                                log.productName,
+                                                log.logType)
+                                .fetch().size();
 
                 return FactoryInventoryLogListResponse.builder()
                                 .factoryInventoryLogResponseList(inventoryLogResponses)

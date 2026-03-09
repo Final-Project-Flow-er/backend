@@ -123,6 +123,12 @@ public class FactoryInventoryRepositoryImpl implements FactoryInventoryRepositor
         // 유통기한 체크
         @Override
         public List<ExpirationBatchResultResponse> getExpirationAlerts(String locationType, Long locationId) {
+                if (locationId != null) {
+                        throw new InventoriesException(InventoriesErrorCode.INVALID_LOCATION_ID);
+                }
+                if (!"FACTORY".equalsIgnoreCase(locationType)) {
+                        throw new InventoriesException(InventoriesErrorCode.INVALID_LOCATION_TYPE);
+                }
 
                 LocalDate today = LocalDate.now();
                 // 유통기한 = 제조일자 + 1년
@@ -138,11 +144,7 @@ public class FactoryInventoryRepositoryImpl implements FactoryInventoryRepositor
                                                 factoryInventory.manufactureDate,
                                                 quantity)
                                 .from(factoryInventory)
-                                // QInventoryPolicy가 where절에서 사용되므로 join 필요
-                                .join(inventoryPolicy).on(factoryInventory.productId.eq(inventoryPolicy.productId))
                                 .where(
-                                                containsLocationType(locationType),
-                                                containsLocationId(locationId),
                                                 factoryInventory.manufactureDate.between(startManufactureDate,
                                                                 endManufactureDate))
                                 .groupBy(factoryInventory.productId, factoryInventory.manufactureDate)
@@ -208,6 +210,10 @@ public class FactoryInventoryRepositoryImpl implements FactoryInventoryRepositor
 
         @Override
         public List<SafetyStockResponse> getLowStockAlerts(String locationType, Long locationId) {
+
+                BooleanExpression typeFilter = containsLocationType(locationType);
+                BooleanExpression idFilter = containsLocationId(locationId);
+
                 NumberExpression<Integer> quantity = factoryInventory.inventoryId.count().intValue();
                 NumberExpression<Integer> effectiveSafetyStock = inventoryPolicy.safetyStock
                                 .coalesce(inventoryPolicy.defaultSafetyStock);
@@ -223,8 +229,9 @@ public class FactoryInventoryRepositoryImpl implements FactoryInventoryRepositor
                                 .on(factoryInventory.productId.eq(inventoryPolicy.productId)
                                                 .and(factoryInventory.status.eq(LogType.AVAILABLE)))
                                 .where(
-                                                containsLocationType(locationType),
-                                                containsLocationId(locationId))
+                                                typeFilter,
+                                                idFilter
+                                )
                                 .groupBy(inventoryPolicy.productId, inventoryPolicy.safetyStock,
                                                 inventoryPolicy.defaultSafetyStock)
                                 .having(quantity.loe(effectiveSafetyStock))

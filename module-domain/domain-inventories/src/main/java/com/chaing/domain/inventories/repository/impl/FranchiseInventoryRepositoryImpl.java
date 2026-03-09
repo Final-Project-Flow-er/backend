@@ -179,6 +179,10 @@ public class FranchiseInventoryRepositoryImpl implements FranchiseInventoryRepos
 
         @Override
         public List<SafetyStockResponse> getLowStockAlerts(String locationType, Long locationId) {
+
+                BooleanExpression typeFilter = containsLocationType(locationType);
+                BooleanExpression idFilter = containsLocationId(locationId);
+
                 NumberExpression<Integer> quantity = franchiseInventory.inventoryId.count().intValue();
                 NumberExpression<Integer> effectiveSafetyStock = inventoryPolicy.safetyStock
                                 .coalesce(inventoryPolicy.defaultSafetyStock);
@@ -195,8 +199,8 @@ public class FranchiseInventoryRepositoryImpl implements FranchiseInventoryRepos
                                                 .and(franchiseInventory.franchiseId.eq(locationId))
                                                 .and(franchiseInventory.status.eq(LogType.AVAILABLE)))
                                 .where(
-                                                containsLocationType(locationType),
-                                                containsLocationId(locationId))
+                                                typeFilter,
+                                                idFilter)
                                 .groupBy(inventoryPolicy.productId, inventoryPolicy.safetyStock,
                                                 inventoryPolicy.defaultSafetyStock)
                                 .having(quantity.loe(effectiveSafetyStock))
@@ -205,6 +209,13 @@ public class FranchiseInventoryRepositoryImpl implements FranchiseInventoryRepos
 
         @Override
         public List<ExpirationBatchResultResponse> getExpirationAlerts(String locationType, Long locationId) {
+                if (locationId == null) {
+                        throw new InventoriesException(InventoriesErrorCode.INVALID_LOCATION_ID);
+                }
+                if (!"FRANCHISE".equalsIgnoreCase(locationType)) {
+                        throw new InventoriesException(InventoriesErrorCode.INVALID_LOCATION_TYPE);
+                }
+
                 LocalDate today = LocalDate.now();
                 // 유통기한 = 제조일자 + 1년
                 // 0~5일 남은 제조일자의 범위 (오늘 - 1년 <= 제조일자 <= 오늘 + 5일 - 1년)

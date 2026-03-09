@@ -203,7 +203,7 @@ public class HQOrderService {
                 .map(item -> {
                     ProductInfo productInfo = productInfoByProductCode.get(item.productCode());
 
-                    return productInfo.costPrice();
+                    return productInfo.costPrice().multiply(BigDecimal.valueOf(item.quantity()));
                 })
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 

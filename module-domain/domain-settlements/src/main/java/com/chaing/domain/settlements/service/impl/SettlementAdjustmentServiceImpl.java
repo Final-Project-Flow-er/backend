@@ -6,6 +6,7 @@ import com.chaing.domain.settlements.exception.SettlementException;
 import com.chaing.domain.settlements.repository.interfaces.SettlementAdjustmentRepository;
 import com.chaing.domain.settlements.service.SettlementAdjustmentService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -21,7 +22,11 @@ public class SettlementAdjustmentServiceImpl implements SettlementAdjustmentServ
     @Override
     @Transactional
     public SettlementAdjustment create(SettlementAdjustment adjustment) {
-        return repository.save(adjustment);
+        try {
+            return repository.save(adjustment);
+        } catch (DataIntegrityViolationException e) {
+            throw new SettlementException(SettlementErrorCode.INVALID_ADJUSTMENT_DATA);
+        }
     } // 새로운 조정 내역을 DB에 저장
 
     @Override

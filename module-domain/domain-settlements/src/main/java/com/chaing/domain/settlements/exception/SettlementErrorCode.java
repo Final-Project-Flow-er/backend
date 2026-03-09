@@ -21,6 +21,7 @@ public enum SettlementErrorCode implements ErrorCode {
     // 조정 전표
     ADJUSTMENT_NOT_FOUND(404, "S008", "해당 조정 전표를 찾을 수 없습니다."),
     INVALID_ADJUSTMENT_AMOUNT(400, "S009", "조정 금액은 0 이상이어야 합니다."),
+    INVALID_ADJUSTMENT_DATA(400, "S013", "유효하지 않은 조정 전표 데이터입니다.(필수값 누락 또는 중복)"),
     INVALID_VOUCHER_TYPE(400, "S010", "유효하지 않은 전표 유형입니다."),
     // 문서 (PDF/Excel)
     DOCUMENT_GENERATION_FAILED(500, "S011", "정산 문서 생성에 실패했습니다."),

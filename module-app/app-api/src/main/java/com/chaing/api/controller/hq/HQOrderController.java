@@ -88,6 +88,7 @@ public class HQOrderController {
 
     @Operation(summary = "발주 취소", description = "발주 번호로 특정 발주 취소")
     @PatchMapping("/{order-code}/cancellation")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HQ')")
     public ResponseEntity<ApiResponse<HQOrderCancelResponse>> cancelOrder(
             @PathVariable("order-code") String orderCode,
             @AuthenticationPrincipal UserPrincipal userPrincipal

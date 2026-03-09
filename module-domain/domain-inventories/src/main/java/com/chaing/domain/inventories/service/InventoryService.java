@@ -350,6 +350,9 @@ public class InventoryService {
     }
 
     public void disposalInventory(DisposalRequest request) {
+        if (request.actorType() == null || request.actorType().isBlank()) {
+            throw new InventoriesException(InventoriesErrorCode.INVALID_LOCATION_TYPE);
+        }
         String actorType = request.actorType().toUpperCase();
         if (actorType.equals("HQ")) {
             hqInventoryRepository.deleteByInventoryIdIn(request.inventoryIds());

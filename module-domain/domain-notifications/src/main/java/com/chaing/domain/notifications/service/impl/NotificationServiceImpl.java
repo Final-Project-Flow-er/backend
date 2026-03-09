@@ -201,15 +201,13 @@ public class NotificationServiceImpl implements NotificationService {
     // 알림 수정
     @Override
     public void updateNotification(NotificationType type, Long targetId, String newMessage) {
-        Notification notification = notificationRepository.findByTypeAndTargetId(type, targetId)
-                .orElseThrow(() -> new NotificationException(NotificationErrorCode.NOTIFICATION_NOT_FOUND));
+        notificationRepository.findByTypeAndTargetId(type, targetId).ifPresent(notification -> {
+            notificationStatusRepository.deleteAllByNotificationId(notification.getNotificationId());
+            notificationRepository.delete(notification);
+        });
 
-        notification.updateContent(newMessage);
-
-        notificationStatusRepository.deleteAllByNotificationId(notification.getNotificationId());
-
-        NotificationEvent event = NotificationEvent.ofAll(notification.getType(), newMessage, notification.getTargetId());
-        Objects.requireNonNull(selfProvider.getIfAvailable()).retryableSseSendToAll(event);
+        NotificationEvent event = NotificationEvent.ofAll(type, newMessage, targetId);
+        sendToAll(event);
     }
 
     // 알림 삭제

@@ -5,11 +5,11 @@ import com.chaing.core.dto.info.ReturnItemInfo;
 import com.chaing.core.dto.request.FranchiseReturnUpdateRequest;
 import com.chaing.core.dto.returns.request.ReturnToInventoryRequest;
 import com.chaing.core.enums.LogType;
+import com.chaing.domain.inventories.dto.request.DisposalRequest;
 import com.chaing.domain.inventories.dto.request.FranchiseInventoryItemsRequest;
 import com.chaing.domain.inventories.dto.request.HQInventoryItemsRequest;
 import com.chaing.domain.inventories.dto.request.InventoryBatchRequest;
-import com.chaing.domain.inventories.dto.request.InventoryBoxRequest;
-import com.chaing.domain.inventories.dto.request.InventoryRequest;
+import com.chaing.domain.inventories.dto.request.SafetyStockRequest;
 import com.chaing.domain.inventories.dto.response.ExpirationBatchResultResponse;
 import com.chaing.domain.inventories.dto.response.FranchiseInventoryBatchResponse;
 import com.chaing.domain.inventories.dto.response.FranchiseInventoryItemResponse;
@@ -22,21 +22,23 @@ import com.chaing.domain.inventories.entity.FranchiseInventory;
 import com.chaing.domain.inventories.entity.HQInventory;
 import com.chaing.domain.inventories.entity.InventoryPolicy;
 import com.chaing.domain.inventories.enums.LocationType;
-import com.chaing.domain.inventories.exception.InventoryErrorCode;
-import com.chaing.domain.inventories.exception.InventoryException;
+import com.chaing.domain.inventories.exception.InventoriesErrorCode;
+import com.chaing.domain.inventories.exception.InventoriesException;
 import com.chaing.domain.inventories.repository.FactoryInventoryRepository;
 import com.chaing.domain.inventories.repository.FranchiseInventoryRepository;
 import com.chaing.domain.inventories.repository.HQInventoryRepository;
 import com.chaing.domain.inventories.repository.InventoryPolicyRepository;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class InventoryService {
@@ -44,7 +46,6 @@ public class InventoryService {
     private final FranchiseInventoryRepository franchiseInventoryRepository;
     private final FactoryInventoryRepository factoryInventoryRepository;
     private final InventoryPolicyRepository inventoryPolicyRepository;
-
 
     // 대분류
     public Map<Long, InventoryProductInfoResponse> getStock(List<Long> ids, String status) {
@@ -72,7 +73,8 @@ public class InventoryService {
     }
 
     // 가맹점 소분류
-    public List<FranchiseInventoryItemResponse> getFranchiseItems(Long franchiseId, FranchiseInventoryItemsRequest request) {
+    public List<FranchiseInventoryItemResponse> getFranchiseItems(Long franchiseId,
+            FranchiseInventoryItemsRequest request) {
         return franchiseInventoryRepository.getFranchiseItems(franchiseId, request);
     }
 
@@ -84,7 +86,7 @@ public class InventoryService {
     public void updateSafetyStock(LocationType locationType, Long locationId, Long productId, int safetyStock) {
 
         InventoryPolicy policy = inventoryPolicyRepository
-                .findByLocationTypeAndLocationIdAndProductId(
+                .findPolicy(
                         locationType,
                         locationId,
                         productId)
@@ -99,48 +101,52 @@ public class InventoryService {
                 .locationType(policy.getLocationType())
                 .locationId(policy.getLocationId())
                 .productId(policy.getProductId())
-                .defaultSafetyStock(policy.getDefaultSafetyStock())
-                .safetyStock(safetyStock)
+                .defaultSafetyStock(safetyStock)
+                .safetyStock(policy.getSafetyStock())
                 .build();
 
         inventoryPolicyRepository.save(policy);
     }
 
+    // 안전 재고 알림
     public List<SafetyStockResponse> getLowStockAlerts(String locationType, Long locationId) {
-        return inventoryPolicyRepository.getLowStockAlerts(locationType, locationId);
-
+        if (locationType.equals("FRANCHISE")) {
+            return franchiseInventoryRepository.getLowStockAlerts(locationType, locationId);
+        } else {
+            // 본사나 공장이면 ID를 null로 보냄 (ID-less)
+            return factoryInventoryRepository.getLowStockAlerts(locationType, null);
+        }
     }
 
     // 유통기한
     public List<ExpirationBatchResultResponse> getExpirationAlerts(String locationType, Long locationId) {
-        if(locationType.equals("FRANCHISE")) {
+        if (locationType.equals("FRANCHISE")) {
             return franchiseInventoryRepository.getExpirationAlerts(locationType, locationId);
+        } else {
+            // 본사나 공장이면 ID를 null로 보냄 (ID-less)
+            return factoryInventoryRepository.getExpirationAlerts(locationType, null);
         }
-        else{
-            return factoryInventoryRepository.getExpirationAlerts(locationType, locationId);
-        }
+    }
+
+    // 유통기한 상태 자동 업데이트
+    public void updateExpiredStatus() {
+        // 현재 로직상 유통기한은 제조일로부터 1년
+        LocalDate expirationThreshold = LocalDate.now().minusYears(1);
+
+        hqInventoryRepository.updateExpiredStatus(expirationThreshold);
+        factoryInventoryRepository.updateExpiredStatus(expirationThreshold);
+        franchiseInventoryRepository.updateExpiredStatus(expirationThreshold);
     }
 
     // 배송 중 상태 변경
-    public void updateShippingStatus(List<InventoryBoxRequest> boxes) {
-        // boxes에 있는 모든 seralCode 조회
-        List<String> serialCode = convertsSerialCode(boxes);
+    public void updateShippingStatus(List<String> serialCodes) {
         // 해당 seralCode 배송 중으로 변경
-        factoryInventoryRepository.updateStatus(serialCode, LogType.SHIPPING);
+        factoryInventoryRepository.updateStatus(serialCodes, LogType.SHIPPING);
     }
 
-    public void updateFranchiseShippingStatus(Long franchiseId, List<InventoryBoxRequest> boxes) {
-        List<String> serialCode = convertsSerialCode(boxes);
-        franchiseInventoryRepository.updateFranchiseStatus(franchiseId, serialCode, LogType.SHIPPING);
+    public void updateFranchiseShippingStatus(Long franchiseId, List<String> serialCodes) {
+        franchiseInventoryRepository.updateFranchiseStatus(franchiseId, serialCodes, LogType.SHIPPING);
     }
-    // 제품 식별코드 반환
-    public List<String> convertsSerialCode(List<InventoryBoxRequest> boxes) {
-        return boxes.stream()
-                .flatMap(box -> box.productList().stream())
-                .map(InventoryRequest::serialCode)
-                .toList();
-    }
-
 
     // 가맹점 상품 증가
     public void franchiseIncreaseInventory(InventoryBatchRequest request) {
@@ -233,8 +239,7 @@ public class InventoryService {
                         item -> ReturnItemInfo.builder()
                                 .boxCode(item.getBoxCode())
                                 .productId(item.getProductId())
-                                .build()
-                ));
+                                .build()));
     }
 
     // return: Map<boxCode, serialCode>
@@ -242,14 +247,13 @@ public class InventoryService {
         List<FranchiseInventory> inventories = franchiseInventoryRepository.findAllBySerialCodeIn(serialCodes);
 
         if (inventories == null || inventories.isEmpty()) {
-            throw new InventoryException(InventoryErrorCode.INVENTORY_NOT_FOUND);
+            throw new InventoriesException(InventoriesErrorCode.PRODUCT_NOT_FOUND);
         }
 
         return inventories.stream()
                 .collect(Collectors.toMap(
                         FranchiseInventory::getSerialCode,
-                        FranchiseInventory::getBoxCode
-                ));
+                        FranchiseInventory::getBoxCode));
     }
 
     // serialCode로 productId 조회
@@ -258,14 +262,13 @@ public class InventoryService {
         List<FranchiseInventory> inventories = franchiseInventoryRepository.findAllBySerialCodeIn(serialCodes);
 
         if (inventories == null || inventories.isEmpty()) {
-            throw new InventoryException(InventoryErrorCode.INVENTORY_NOT_FOUND);
+            throw new InventoriesException(InventoriesErrorCode.PRODUCT_NOT_FOUND);
         }
 
         return inventories.stream()
                 .collect(Collectors.toMap(
                         FranchiseInventory::getSerialCode,
-                        FranchiseInventory::getProductId
-                ));
+                        FranchiseInventory::getProductId));
     }
 
     // return: Map<serialCode, orderItemId>
@@ -273,14 +276,13 @@ public class InventoryService {
         List<FranchiseInventory> inventories = franchiseInventoryRepository.findAllByOrderItemIdIn(orderItemIds);
 
         if (inventories == null || inventories.isEmpty()) {
-            throw new InventoryException(InventoryErrorCode.INVENTORY_NOT_FOUND);
+            throw new InventoriesException(InventoriesErrorCode.PRODUCT_NOT_FOUND);
         }
 
         return inventories.stream()
                 .collect(Collectors.toMap(
                         FranchiseInventory::getSerialCode,
-                        FranchiseInventory::getOrderItemId
-                ));
+                        FranchiseInventory::getOrderItemId));
     }
 
     // return: Map<serialCode, FranchiseInventoryCommand>
@@ -288,7 +290,7 @@ public class InventoryService {
         List<FranchiseInventory> inventories = franchiseInventoryRepository.findAllBySerialCodeIn(serialCodes);
 
         if (inventories == null || inventories.isEmpty()) {
-            throw new InventoryException(InventoryErrorCode.INVENTORY_NOT_FOUND);
+            throw new InventoriesException(InventoriesErrorCode.PRODUCT_NOT_FOUND);
         }
 
         return inventories.stream()
@@ -301,8 +303,7 @@ public class InventoryService {
                                 .productId(inventory.getProductId())
                                 .serialCode(inventory.getSerialCode())
                                 .boxCode(inventory.getBoxCode())
-                                .build()
-                ));
+                                .build()));
     }
 
     // return: Map<boxCode, FranchiseInventoryCommand>
@@ -310,7 +311,7 @@ public class InventoryService {
         List<FranchiseInventory> inventories = franchiseInventoryRepository.findAllByBoxCodeIn(boxCodes);
 
         if (inventories == null || inventories.isEmpty()) {
-            throw new InventoryException(InventoryErrorCode.INVENTORY_NOT_FOUND);
+            throw new InventoriesException(InventoriesErrorCode.PRODUCT_NOT_FOUND);
         }
 
         return inventories.stream()
@@ -323,8 +324,7 @@ public class InventoryService {
                                 .productId(inventory.getProductId())
                                 .serialCode(inventory.getSerialCode())
                                 .boxCode(inventory.getBoxCode())
-                                .build()
-                ));
+                                .build()));
     }
 
     // return: Map<orderItemId, FranchiseInventoryCommand>
@@ -332,8 +332,9 @@ public class InventoryService {
         List<FranchiseInventory> inventories = franchiseInventoryRepository.findAllByOrderItemIdIn(orderItemIds);
 
         if (inventories == null || inventories.isEmpty()) {
-            throw new InventoryException(InventoryErrorCode.INVENTORY_NOT_FOUND);
+            throw new InventoriesException(InventoriesErrorCode.PRODUCT_NOT_FOUND);
         }
+        log.info("inventories={}", inventories);
 
         return inventories.stream()
                 .collect(Collectors.toMap(
@@ -345,10 +346,70 @@ public class InventoryService {
                                 .productId(inventory.getProductId())
                                 .serialCode(inventory.getSerialCode())
                                 .boxCode(inventory.getBoxCode())
-                                .build()
-                ));
+                                .build()));
     }
-    
 
+    public void disposalInventory(DisposalRequest request) {
+        if (request.actorType() == null || request.actorType().isBlank()) {
+            throw new InventoriesException(InventoriesErrorCode.INVALID_LOCATION_TYPE);
+        }
+        String actorType = request.actorType().toUpperCase();
+        if (actorType.equals("HQ")) {
+            hqInventoryRepository.deleteByInventoryIdIn(request.inventoryIds());
+        } else if (actorType.equals("FRANCHISE")) {
+            if (request.actorId() == null) {
+                throw new InventoriesException(InventoriesErrorCode.INVALID_LOCATION_ID);
+            }
+            franchiseInventoryRepository.deleteByFranchiseIdAndInventoryIdIn(
+                    request.actorId(),
+                    request.inventoryIds());
+        } else if (actorType.equals("FACTORY")) {
+            factoryInventoryRepository.deleteByInventoryIdIn(request.inventoryIds());
+        } else {
+            throw new InventoriesException(InventoriesErrorCode.INVALID_LOCATION_TYPE);
+        }
+    }
 
+    public void setSafetyStock(SafetyStockRequest request) {
+        if (request.locationType() == null || request.locationType().isBlank()) {
+            throw new InventoriesException(InventoriesErrorCode.INVALID_LOCATION_TYPE);
+        }
+
+        LocationType type;
+        try {
+            type = LocationType.valueOf(request.locationType().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new InventoriesException(InventoriesErrorCode.INVALID_LOCATION_TYPE);
+        }
+
+        if (request.productId() == null) {
+            throw new InventoriesException(InventoriesErrorCode.PRODUCT_NOT_FOUND);
+        }
+
+        Long locationId = request.locationId();
+
+        // 본사(HQ)나 공장(FACTORY)이면 ID를 null로 처리 (ID-less)
+        if (type == LocationType.HQ || type == LocationType.FACTORY) {
+            locationId = null;
+        } else if (type == LocationType.FRANCHISE && locationId == null) {
+            throw new InventoriesException(InventoriesErrorCode.INVALID_LOCATION_ID);
+        }
+
+        long updatedCount = inventoryPolicyRepository.updateManualSafetyStock(
+                type,
+                locationId,
+                request.productId(),
+                request.safetyStock());
+
+        if (updatedCount == 0) {
+            InventoryPolicy policy = InventoryPolicy.builder()
+                    .locationType(type)
+                    .locationId(locationId)
+                    .productId(request.productId())
+                    .safetyStock(request.safetyStock())
+                    .defaultSafetyStock(0)
+                    .build();
+            inventoryPolicyRepository.save(policy);
+        }
+    }
 }

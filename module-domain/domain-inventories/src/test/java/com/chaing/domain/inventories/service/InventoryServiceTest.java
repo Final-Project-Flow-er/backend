@@ -4,8 +4,7 @@ import com.chaing.core.enums.LogType;
 import com.chaing.domain.inventories.dto.request.FranchiseInventoryItemsRequest;
 import com.chaing.domain.inventories.dto.request.HQInventoryItemsRequest;
 import com.chaing.domain.inventories.dto.request.InventoryBatchRequest;
-import com.chaing.domain.inventories.dto.request.InventoryBoxRequest;
-import com.chaing.domain.inventories.dto.request.InventoryRequest;
+import com.chaing.domain.inventories.dto.request.SafetyStockRequest;
 import com.chaing.domain.inventories.entity.InventoryPolicy;
 import com.chaing.domain.inventories.enums.LocationType;
 import com.chaing.domain.inventories.repository.FactoryInventoryRepository;
@@ -15,6 +14,7 @@ import com.chaing.domain.inventories.repository.InventoryPolicyRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -24,9 +24,14 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class InventoryServiceTest {
@@ -171,17 +176,65 @@ class InventoryServiceTest {
 
         InventoryPolicy savedPolicy = captor.getValue();
         assertThat(savedPolicy.getId()).isEqualTo(100L);
-        assertThat(savedPolicy.getSafetyStock()).isEqualTo(10);
+        assertThat(savedPolicy.getDefaultSafetyStock()).isEqualTo(10);
+        assertThat(savedPolicy.getSafetyStock()).isEqualTo(5);
     }
 
     @Test
-    @DisplayName("재고 부족 알림 조회")
-    void getLowStockAlerts() {
+    @DisplayName("수동 안전재고 설정 - 기존 정책 업데이트")
+    void setSafetyStock_Update() {
+        // given
+        SafetyStockRequest request = new SafetyStockRequest("FRANCHISE", 1L, 1L, 30);
+        when(inventoryPolicyRepository.updateManualSafetyStock(any(), any(), any(), any())).thenReturn(1L);
+
+        // when
+        inventoryService.setSafetyStock(request);
+
+        // then
+        verify(inventoryPolicyRepository).updateManualSafetyStock(LocationType.FRANCHISE, 1L, 1L, 30);
+        verify(inventoryPolicyRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("수동 안전재고 설정 - 신규 정책 생성")
+    void setSafetyStock_Insert() {
+        // given
+        SafetyStockRequest request = new SafetyStockRequest("FRANCHISE", 1L, 1L, 30);
+        when(inventoryPolicyRepository.updateManualSafetyStock(any(), any(), any(), any())).thenReturn(0L);
+
+        // when
+        inventoryService.setSafetyStock(request);
+
+        // then
+        verify(inventoryPolicyRepository).updateManualSafetyStock(LocationType.FRANCHISE, 1L, 1L, 30);
+        ArgumentCaptor<InventoryPolicy> captor = ArgumentCaptor.forClass(InventoryPolicy.class);
+        verify(inventoryPolicyRepository).save(captor.capture());
+
+        InventoryPolicy savedPolicy = captor.getValue();
+        assertThat(savedPolicy.getLocationType()).isEqualTo(LocationType.FRANCHISE);
+        assertThat(savedPolicy.getLocationId()).isEqualTo(1L);
+        assertThat(savedPolicy.getProductId()).isEqualTo(1L);
+        assertThat(savedPolicy.getSafetyStock()).isEqualTo(30);
+    }
+
+    @Test
+    @DisplayName("재고 부족 알림 조회 - HQ")
+    void getLowStockAlerts_HQ() {
         // when
         inventoryService.getLowStockAlerts("HQ", 1L);
 
         // then
-        verify(inventoryPolicyRepository).getLowStockAlerts("HQ", 1L);
+        verify(factoryInventoryRepository).getLowStockAlerts("HQ", null);
+    }
+
+    @Test
+    @DisplayName("재고 부족 알림 조회 - 가맹점")
+    void getLowStockAlerts_Franchise() {
+        // when
+        inventoryService.getLowStockAlerts("FRANCHISE", 2L);
+
+        // then
+        verify(franchiseInventoryRepository).getLowStockAlerts("FRANCHISE", 2L);
     }
 
     @Test
@@ -198,13 +251,13 @@ class InventoryServiceTest {
     @DisplayName("배송 상태 변경")
     void updateShippingStatus() {
         // given
-        List<InventoryBoxRequest> boxes = List.of();
+        List<String> serialCodes = List.of("SERIAL1");
 
         // when
-        inventoryService.updateShippingStatus(boxes);
+        inventoryService.updateShippingStatus(serialCodes);
 
         // then
-        verify(factoryInventoryRepository).updateStatus(anyList(), eq(LogType.SHIPPING));
+        verify(factoryInventoryRepository).updateStatus(eq(serialCodes), eq(LogType.SHIPPING));
     }
 
     @Test
@@ -212,13 +265,14 @@ class InventoryServiceTest {
     void updateFranchiseShippingStatus() {
         // given
         Long franchiseId = 1L;
-        List<InventoryBoxRequest> boxes = List.of();
+        List<String> serialCodes = List.of("SERIAL1");
 
         // when
-        inventoryService.updateFranchiseShippingStatus(franchiseId, boxes);
+        inventoryService.updateFranchiseShippingStatus(franchiseId, serialCodes);
 
         // then
-        verify(franchiseInventoryRepository).updateFranchiseStatus(anyLong(), anyList(), eq(LogType.SHIPPING));
+        verify(franchiseInventoryRepository).updateFranchiseStatus(eq(franchiseId), eq(serialCodes),
+                eq(LogType.SHIPPING));
     }
 
     @Test
@@ -263,19 +317,19 @@ class InventoryServiceTest {
         verify(hqInventoryRepository).saveAll(anyList());
     }
 
-//    @Test
-//    @DisplayName("가맹점 재고 삭제")
-//    void deleteFranchiseInventory() {
-//        // given
-//        Long franchiseId = 1L;
-//        List<InventoryBoxRequest> boxes = List.of();
-//
-//        // when
-//        inventoryService.deleteFranchiseInventory(franchiseId, boxes);
-//
-//        // then
-//        verify(franchiseInventoryRepository).deleteFranchiseInventory(eq(franchiseId), anyList());
-//    }
+    @Test
+    @DisplayName("가맹점 재고 삭제")
+    void deleteFranchiseInventory() {
+        // given
+        Long franchiseId = 1L;
+        List<String> serialCodes = List.of("SERIAL1");
+
+        // when
+        inventoryService.deleteFranchiseInventory(franchiseId, serialCodes);
+
+        // then
+        verify(franchiseInventoryRepository).deleteFranchiseInventory(eq(franchiseId), eq(serialCodes));
+    }
 
     @Test
     @DisplayName("공장 재고 삭제")
@@ -297,22 +351,4 @@ class InventoryServiceTest {
         verify(hqInventoryRepository).deleteHQInventory(anyList());
     }
 
-    @Test
-    @DisplayName("시리얼 코드 변환")
-    void convertsSerialCode() {
-        // given
-        InventoryRequest product = mock(InventoryRequest.class);
-        given(product.serialCode()).willReturn("SN123");
-
-        InventoryBoxRequest box = mock(InventoryBoxRequest.class);
-        given(box.productList()).willReturn(List.of(product));
-
-        List<InventoryBoxRequest> boxes = List.of(box);
-
-        // when
-        List<String> result = inventoryService.convertsSerialCode(boxes);
-
-        // then
-        assertThat(result).containsExactly("SN123");
-    }
 }

@@ -6,7 +6,7 @@ import com.chaing.domain.inventorylogs.dto.request.FranchiseLogRequest;
 import com.chaing.domain.inventorylogs.dto.request.InventoryLogCreateRequest;
 import com.chaing.domain.inventorylogs.dto.request.LogRequest;
 import com.chaing.domain.inventorylogs.dto.response.FranchiseInventoryLogListResponse;
-import com.chaing.domain.inventorylogs.dto.response.FranchiseProductSalesResponse;
+import com.chaing.domain.inventorylogs.dto.response.ActorProductSalesResponse;
 import com.chaing.domain.inventorylogs.dto.response.InventoryLogListResponse;
 import com.chaing.domain.inventorylogs.entity.InventoryLog;
 import com.chaing.domain.inventorylogs.enums.ActorType;
@@ -48,7 +48,8 @@ public class InventoryLogService {
         return inventoryLogRepository.findFactoryInventoryLogs(factoryId, request);
     }
 
-    public List<FranchiseProductSalesResponse> getProductSales(List<Long> actorIds, List<Long> productIds, ActorType actorType, LogType logType) {
+    public List<ActorProductSalesResponse> getProductSales(List<Long> actorIds, List<Long> productIds,
+            ActorType actorType, LogType logType) {
         return inventoryLogRepository.getProductSales(actorIds, productIds, actorType, logType);
     }
 

@@ -1,75 +1,60 @@
 package com.chaing.domain.inventories.repository.impl;
 
-import com.chaing.core.enums.LogType;
-import com.chaing.domain.inventories.dto.response.SafetyStockResponse;
-import com.chaing.domain.inventories.entity.QFactoryInventory;
-import com.chaing.domain.inventories.entity.QFranchiseInventory;
+import com.chaing.domain.inventories.entity.InventoryPolicy;
 import com.chaing.domain.inventories.entity.QInventoryPolicy;
 import com.chaing.domain.inventories.enums.LocationType;
-import com.chaing.domain.inventories.exception.InventoryErrorCode;
-import com.chaing.domain.inventories.exception.InventoryException;
+import com.chaing.domain.inventories.exception.InventoriesErrorCode;
+import com.chaing.domain.inventories.exception.InventoriesException;
 import com.chaing.domain.inventories.repository.interfaces.InventoryPolicyRepositoryCustom;
-import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
-import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
+import java.util.Optional;
 
 @RequiredArgsConstructor
 @Repository
 public class InventoryPolicyRepositoryImpl implements InventoryPolicyRepositoryCustom {
     private final JPAQueryFactory queryFactory;
     private final QInventoryPolicy inventoryPolicy = QInventoryPolicy.inventoryPolicy;
-    private final QFranchiseInventory franchiseInventory = QFranchiseInventory.franchiseInventory;
-    private final QFactoryInventory  factoryInventory = QFactoryInventory.factoryInventory;
 
     @Override
-    public List<SafetyStockResponse> getLowStockAlerts(String locationType, Long locationId) {
-        NumberExpression<Integer> quantity = factoryInventory.inventoryId.count().intValue();
-
-        return queryFactory
-                .select(Projections.constructor(
-                        SafetyStockResponse.class,
-                        inventoryPolicy.productId,
-                        quantity,
-                        inventoryPolicy.safetyStock
-                ))
-                .from(inventoryPolicy)
-                .join(factoryInventory)
-                .on(
-                        factoryInventory.productId.eq(inventoryPolicy.productId)
-                )
+    public Optional<InventoryPolicy> findPolicy(LocationType type, Long locationId, Long productId) {
+        return Optional.ofNullable(queryFactory
+                .selectFrom(inventoryPolicy)
                 .where(
-                        containsLocationType(locationType),
+                        inventoryPolicy.locationType.eq(type),
                         containsLocationId(locationId),
-                        factoryInventory.status.eq(LogType.AVAILABLE)
-
-                )
-                .groupBy(inventoryPolicy.productId)
-                .having(quantity.lt(inventoryPolicy.safetyStock))
-                .fetch();
+                        inventoryPolicy.productId.eq(productId))
+                .fetchOne());
     }
 
-
+    @Override
+    public long updateManualSafetyStock(LocationType type, Long locationId, Long productId, Integer safetyStock) {
+        return queryFactory.update(inventoryPolicy)
+                .set(inventoryPolicy.safetyStock, safetyStock)
+                .where(
+                        inventoryPolicy.locationType.eq(type),
+                        containsLocationId(locationId),
+                        inventoryPolicy.productId.eq(productId))
+                .execute();
+    }
 
     private BooleanExpression containsLocationType(String locationType) {
-        try{
-            LocationType type =  LocationType.valueOf(locationType.toUpperCase());
+        try {
+            LocationType type = LocationType.valueOf(locationType.toUpperCase());
             return QInventoryPolicy.inventoryPolicy.locationType.eq(type);
-        }catch (IllegalArgumentException e){
-            throw new InventoryException(InventoryErrorCode.INVALID_LOCATION_TYPE);
+        } catch (IllegalArgumentException e) {
+            throw new InventoriesException(InventoriesErrorCode.INVALID_LOCATION_TYPE);
         }
     }
 
     private BooleanExpression containsLocationId(Long locationId) {
-        try{
-            return QInventoryPolicy.inventoryPolicy.locationId.eq(locationId);
-        }catch (IllegalArgumentException e){
-            throw new InventoryException(InventoryErrorCode.INVALID_LOCATION_ID);
+        if (locationId == null) {
+            return QInventoryPolicy.inventoryPolicy.locationId.isNull();
         }
+        return QInventoryPolicy.inventoryPolicy.locationId.eq(locationId);
     }
 
 }

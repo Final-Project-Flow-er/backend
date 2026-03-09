@@ -47,6 +47,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/auth/logout").authenticated()
                         .requestMatchers(
                                 "/api/v1/auth/**",
+                                "/api/v1/**",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/error"

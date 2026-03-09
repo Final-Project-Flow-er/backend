@@ -3,17 +3,17 @@ package com.chaing.api.controller.franchise;
 import com.chaing.api.facade.franchise.FranchiseReturnFacade;
 import com.chaing.api.security.principal.UserPrincipal;
 import com.chaing.core.dto.ApiResponse;
+import com.chaing.core.dto.request.FranchiseReturnUpdateRequest;
 import com.chaing.core.dto.returns.response.FranchiseReturnTargetResponse;
 import com.chaing.domain.returns.dto.request.FranchiseReturnCreateRequest;
-import com.chaing.domain.returns.dto.response.ReturnCreateResponse;
 import com.chaing.domain.returns.dto.response.FranchiseReturnCreateResponse;
 import com.chaing.domain.returns.dto.response.FranchiseReturnDetailResponse;
 import com.chaing.domain.returns.dto.response.FranchiseReturnResponse;
 import com.chaing.domain.returns.dto.response.FranchiseReturnUpdateResponse;
+import com.chaing.domain.returns.dto.response.ReturnCreateResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -64,13 +64,13 @@ public class FranchiseReturnController {
     @PreAuthorize("hasAnyRole('ADMIN', 'FRANCHISE')")
     public ResponseEntity<ApiResponse<FranchiseReturnUpdateResponse>> updateReturn(
             @PathVariable("return-code") String returnCode,
-            @Valid @RequestBody List<@NotBlank String> boxCodes,
+            @Valid @RequestBody List<FranchiseReturnUpdateRequest> requests,
             @AuthenticationPrincipal UserPrincipal userPrincipal
 
     ) {
         Long userId = userPrincipal.getId();
 
-        return ResponseEntity.ok(ApiResponse.success(franchiseReturnFacade.updateReturn(userId, boxCodes, returnCode)));
+        return ResponseEntity.ok(ApiResponse.success(franchiseReturnFacade.updateReturn(userId, requests, returnCode)));
     }
 
     @Operation(summary = "반품 취소", description = "가맹점 id와 반품 번호로 특정 반품 취소")
@@ -97,7 +97,7 @@ public class FranchiseReturnController {
     }
 
     @Operation(summary = "반품 생성 화면 데이터", description = "반품 요청 생성 시 발주 코드에 따라 보여지는 화면에 띄울 데이터 반환")
-    @GetMapping("/{order-code}")
+    @GetMapping("/{order-code}/target-info")
     @PreAuthorize("hasAnyRole('ADMIN', 'FRANCHISE')")
     public ResponseEntity<ApiResponse<FranchiseReturnCreateResponse>> getReturnCreateInfo(
             @PathVariable("order-code") String orderCode,

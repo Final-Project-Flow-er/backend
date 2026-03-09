@@ -32,8 +32,6 @@ public class InventoryPolicy extends BaseEntity {
     private LocationType locationType;
 
     //가맹점ID
-    @NotNull
-    @Column(nullable = false)
     private Long locationId;
 
     //제품ID

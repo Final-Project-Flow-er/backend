@@ -6,6 +6,6 @@ import java.util.List;
 
 public record InboundConfirmRequest(
         @NotEmpty(message = "선택된 제품이 존재하지 않습니다.")
-        List<Long> inventoryIds
+        List<String> serialCodes
 ) {
 }

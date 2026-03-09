@@ -9,7 +9,6 @@ import com.chaing.api.dto.hq.user.response.UserDetailResponse;
 import com.chaing.api.dto.hq.user.response.UserLogResponse;
 import com.chaing.api.dto.hq.user.response.UserSummaryResponse;
 import com.chaing.domain.businessunits.service.BusinessUnitService;
-import com.chaing.domain.users.enums.UserRole;
 import com.chaing.domain.users.event.ProfileImageDeleteEvent;
 import com.chaing.domain.users.event.UserInfoResendEvent;
 import com.chaing.domain.users.event.UserRegisteredEvent;

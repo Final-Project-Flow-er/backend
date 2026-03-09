@@ -1,9 +1,11 @@
 package com.chaing.domain.notifications.service.impl;
 
-import com.chaing.domain.notifications.event.NotificationEvent;
 import com.chaing.domain.notifications.entity.Notification;
+import com.chaing.domain.notifications.entity.NotificationStatus;
 import com.chaing.domain.notifications.enums.NotificationType;
+import com.chaing.domain.notifications.event.NotificationEvent;
 import com.chaing.domain.notifications.repository.NotificationRepository;
+import com.chaing.domain.notifications.repository.NotificationStatusRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -21,17 +23,19 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.argThat;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class NotificationServiceImplTests {
 
     @Mock
     private NotificationRepository notificationRepository;
+
+    @Mock
+    private NotificationStatusRepository notificationStatusRepository;
 
     @InjectMocks
     private NotificationServiceImpl notificationService;
@@ -47,16 +51,15 @@ class NotificationServiceImplTests {
                 .message("테스트 알림")
                 .type(NotificationType.NOTICE)
                 .targetId(targetId)
-                .isRead(false)
                 .build();
     }
 
     @Test
-    @DisplayName("SSE 구독")
-    void subscribe() {
+    @DisplayName("SSE 스트림 연결")
+    void stream() {
 
         // when
-        SseEmitter emitter = notificationService.subscribe(userId);
+        SseEmitter emitter = notificationService.stream(userId);
 
         // then
         assertThat(emitter).isNotNull();
@@ -67,7 +70,7 @@ class NotificationServiceImplTests {
     void sendToAll() {
 
         // given
-        NotificationEvent event = NotificationEvent.forNotice("전체 공지", targetId);
+        NotificationEvent event = NotificationEvent.ofAll(NotificationType.NOTICE, "전체 공지", targetId);
 
         // when
         notificationService.sendToAll(event);
@@ -83,7 +86,7 @@ class NotificationServiceImplTests {
     void sendToUser() {
 
         // given
-        NotificationEvent event = new NotificationEvent(userId, NotificationType.NOTICE, "개인 알림", targetId, false);
+        NotificationEvent event = new NotificationEvent(userId, NotificationType.NOTICE, "개인 알림", targetId, false, false);
 
         // when
         notificationService.sendToUser(event);
@@ -101,14 +104,14 @@ class NotificationServiceImplTests {
         // given
         Pageable pageable = PageRequest.of(0, 10);
         Page<Notification> page = new PageImpl<>(List.of(notification));
-        given(notificationRepository.findAllByUserIdInOrderByUpdatedAtDesc(eq(List.of(userId, 0L)), eq(pageable))).willReturn(page);
+        given(notificationRepository.findAllMyNotifications(eq(userId), eq(pageable))).willReturn(page);
 
         // when
         Page<Notification> result = notificationService.getNotificationList(userId, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(1);
-        verify(notificationRepository).findAllByUserIdInOrderByUpdatedAtDesc(eq(List.of(userId, 0L)), eq(pageable));
+        verify(notificationRepository).findAllMyNotifications(eq(userId), eq(pageable));
     }
 
     @Test
@@ -116,15 +119,16 @@ class NotificationServiceImplTests {
     void readNotification() {
 
         // given
-        Long noticeId = 1L;
-        given(notificationRepository.findByNotificationIdAndUserId(noticeId, userId)).willReturn(Optional.of(notification));
+        Long notificationId = 1L;
+        given(notificationRepository.findById(notificationId)).willReturn(Optional.of(notification));
+        given(notificationStatusRepository.findByUserIdAndNotificationId(userId, notificationId)).willReturn(Optional.empty());
 
         // when
-        Notification result = notificationService.readNotification(noticeId, userId);
+        Notification result = notificationService.readNotification(notificationId, userId);
 
         // then
-        assertThat(result.isRead()).isTrue();
-        verify(notificationRepository).findByNotificationIdAndUserId(noticeId, userId);
+        assertThat(result).isNotNull();
+        verify(notificationStatusRepository).save(any(NotificationStatus.class));
     }
 
     @Test
@@ -132,16 +136,15 @@ class NotificationServiceImplTests {
     void markAllAsRead() {
 
         // given
-        Notification notification2 = Notification.builder().isRead(false).build();
-        given(notificationRepository.findAllByUserIdInAndIsReadFalse(eq(List.of(userId, 0L)))).willReturn(List.of(notification, notification2));
+        Notification notification2 = Notification.builder().build();
+        given(notificationRepository.findAllUnreadNotificationsList(userId)).willReturn(List.of(notification, notification2));
+        given(notificationStatusRepository.findByUserIdAndNotificationId(any(), any())).willReturn(Optional.empty());
 
         // when
         notificationService.markAllAsRead(userId);
 
         // then
-        assertThat(notification.isRead()).isTrue();
-        assertThat(notification2.isRead()).isTrue();
-        verify(notificationRepository).findAllByUserIdInAndIsReadFalse(eq(List.of(userId, 0L)));
+        verify(notificationStatusRepository, times(2)).save(any(NotificationStatus.class));
     }
 
     @Test
@@ -156,17 +159,16 @@ class NotificationServiceImplTests {
     }
 
     @Test
-    @DisplayName("단건 알림 삭제")
+    @DisplayName("알림 삭제")
     void deleteNotification() {
 
         // given
-        Long noticeId = 1L;
-        given(notificationRepository.findByNotificationIdAndUserId(noticeId, userId)).willReturn(Optional.of(notification));
+        Long notificationId = 1L;
 
         // when
-        notificationService.deleteNotification(noticeId, userId);
+        notificationService.deleteNotification(notificationId, userId);
 
         // then
-        verify(notificationRepository).delete(notification);
+        verify(notificationStatusRepository).deleteByUserIdAndNotificationId(userId, notificationId);
     }
 }

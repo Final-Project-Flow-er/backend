@@ -6,11 +6,12 @@ import com.chaing.domain.inventories.dto.response.ExpirationBatchResultResponse;
 import com.chaing.domain.inventories.dto.response.HQInventoryBatchResponse;
 import com.chaing.domain.inventories.dto.response.HQInventoryItemResponse;
 import com.chaing.domain.inventories.dto.response.InventoryProductInfoResponse;
+import com.chaing.domain.inventories.dto.response.SafetyStockResponse;
 import com.chaing.domain.inventories.entity.QFactoryInventory;
 import com.chaing.domain.inventories.entity.QInventoryPolicy;
 import com.chaing.domain.inventories.enums.LocationType;
-import com.chaing.domain.inventories.exception.InventoryErrorCode;
-import com.chaing.domain.inventories.exception.InventoryException;
+import com.chaing.domain.inventories.exception.InventoriesErrorCode;
+import com.chaing.domain.inventories.exception.InventoriesException;
 import com.chaing.domain.inventories.repository.interfaces.FactoryInventoryRepositoryCustom;
 import com.querydsl.core.Tuple;
 import com.querydsl.core.types.Projections;
@@ -47,9 +48,11 @@ public class FactoryInventoryRepositoryImpl implements FactoryInventoryRepositor
 
                 NumberExpression<Integer> quantity = factoryInventory.inventoryId.count().intValue();
 
+                NumberExpression<Integer> effectiveSafetyStock = inventoryPolicy.safetyStock
+                                .coalesce(inventoryPolicy.defaultSafetyStock);
                 StringExpression safetyResult = new CaseBuilder()
-                                .when(quantity.gt(inventoryPolicy.safetyStock.add(20))).then("SAFE")
-                                .when(quantity.gt(inventoryPolicy.safetyStock)).then("WARNING")
+                                .when(quantity.gt(effectiveSafetyStock.add(20))).then("SAFE")
+                                .when(quantity.gt(effectiveSafetyStock)).then("WARNING")
                                 .otherwise("DANGER");
 
                 List<InventoryProductInfoResponse> result = queryFactory
@@ -57,18 +60,20 @@ public class FactoryInventoryRepositoryImpl implements FactoryInventoryRepositor
                                                 InventoryProductInfoResponse.class,
                                                 factoryInventory.productId,
                                                 quantity,
-                                                inventoryPolicy.safetyStock,
+                                                effectiveSafetyStock,
                                                 safetyResult))
                                 .from(factoryInventory)
                                 .join(inventoryPolicy)
                                 .on(
                                                 factoryInventory.productId.eq(inventoryPolicy.productId)
-                                                                .and(inventoryPolicy.locationType.eq(LocationType.HQ)))
+                                                                .and(inventoryPolicy.locationType
+                                                                                .eq(LocationType.FACTORY))
+                                                                .and(inventoryPolicy.locationId.isNull()))
                                 .where(
-                                        factoryInventory.productId.in(products),
-                                        factoryInventory.status.eq(LogType.AVAILABLE)
-                                )
-                                .groupBy(factoryInventory.productId, inventoryPolicy.safetyStock)
+                                                factoryInventory.productId.in(products),
+                                                factoryInventory.status.eq(LogType.AVAILABLE))
+                                .groupBy(factoryInventory.productId, inventoryPolicy.safetyStock,
+                                                inventoryPolicy.defaultSafetyStock)
                                 .having(status == null ? null : safetyResult.eq(status))
                                 .fetch();
 
@@ -118,6 +123,12 @@ public class FactoryInventoryRepositoryImpl implements FactoryInventoryRepositor
         // 유통기한 체크
         @Override
         public List<ExpirationBatchResultResponse> getExpirationAlerts(String locationType, Long locationId) {
+                if (locationId != null) {
+                        throw new InventoriesException(InventoriesErrorCode.INVALID_LOCATION_ID);
+                }
+                if (!"FACTORY".equalsIgnoreCase(locationType)) {
+                        throw new InventoriesException(InventoriesErrorCode.INVALID_LOCATION_TYPE);
+                }
 
                 LocalDate today = LocalDate.now();
                 // 유통기한 = 제조일자 + 1년
@@ -133,11 +144,7 @@ public class FactoryInventoryRepositoryImpl implements FactoryInventoryRepositor
                                                 factoryInventory.manufactureDate,
                                                 quantity)
                                 .from(factoryInventory)
-                                // QInventoryPolicy가 where절에서 사용되므로 join 필요
-                                .join(inventoryPolicy).on(factoryInventory.productId.eq(inventoryPolicy.productId))
                                 .where(
-                                                containsLocationType(locationType),
-                                                containsLocationId(locationId),
                                                 factoryInventory.manufactureDate.between(startManufactureDate,
                                                                 endManufactureDate))
                                 .groupBy(factoryInventory.productId, factoryInventory.manufactureDate)
@@ -185,6 +192,52 @@ public class FactoryInventoryRepositoryImpl implements FactoryInventoryRepositor
                 em.clear();
         }
 
+        @Override
+        public long updateExpiredStatus(LocalDate expirationDate) {
+                long updatedCount = queryFactory
+                                .update(factoryInventory)
+                                .set(factoryInventory.status, LogType.EXPIRED)
+                                .where(
+                                                factoryInventory.manufactureDate.loe(expirationDate),
+                                                factoryInventory.status.eq(LogType.AVAILABLE))
+                                .execute();
+
+                em.flush();
+                em.clear();
+
+                return updatedCount;
+        }
+
+        @Override
+        public List<SafetyStockResponse> getLowStockAlerts(String locationType, Long locationId) {
+
+                BooleanExpression typeFilter = containsLocationType(locationType);
+                BooleanExpression idFilter = containsLocationId(locationId);
+
+                NumberExpression<Integer> quantity = factoryInventory.inventoryId.count().intValue();
+                NumberExpression<Integer> effectiveSafetyStock = inventoryPolicy.safetyStock
+                                .coalesce(inventoryPolicy.defaultSafetyStock);
+
+                return queryFactory
+                                .select(Projections.constructor(
+                                                SafetyStockResponse.class,
+                                                inventoryPolicy.productId,
+                                                quantity,
+                                                effectiveSafetyStock))
+                                .from(inventoryPolicy)
+                                .leftJoin(factoryInventory)
+                                .on(factoryInventory.productId.eq(inventoryPolicy.productId)
+                                                .and(factoryInventory.status.eq(LogType.AVAILABLE)))
+                                .where(
+                                                typeFilter,
+                                                idFilter
+                                )
+                                .groupBy(inventoryPolicy.productId, inventoryPolicy.safetyStock,
+                                                inventoryPolicy.defaultSafetyStock)
+                                .having(quantity.loe(effectiveSafetyStock))
+                                .fetch();
+        }
+
         private BooleanExpression containsSerialCode(String serialCode) {
                 return serialCode != null ? factoryInventory.serialCode.eq(serialCode) : null;
         }
@@ -216,21 +269,21 @@ public class FactoryInventoryRepositoryImpl implements FactoryInventoryRepositor
         }
 
         private BooleanExpression containsLocationType(String locationType) {
-            if(locationType == null || locationType.isBlank()){
-                throw new InventoryException(InventoryErrorCode.INVALID_LOCATION_TYPE);
-            }
+                if (locationType == null || locationType.isBlank()) {
+                        return null;
+                }
                 try {
                         LocationType type = LocationType.valueOf(locationType.toUpperCase());
-                        return QInventoryPolicy.inventoryPolicy.locationType.eq(type);
+                        return inventoryPolicy.locationType.eq(type);
                 } catch (IllegalArgumentException e) {
-                        throw new InventoryException(InventoryErrorCode.INVALID_LOCATION_TYPE);
+                        throw new InventoriesException(InventoriesErrorCode.INVALID_LOCATION_TYPE);
                 }
         }
 
         private BooleanExpression containsLocationId(Long locationId) {
-            if(locationId == null){
-                throw new InventoryException(InventoryErrorCode.INVALID_LOCATION_ID);
-            }
-            return QInventoryPolicy.inventoryPolicy.locationId.eq(locationId);
+                if (locationId == null) {
+                        return inventoryPolicy.locationId.isNull();
+                }
+                return inventoryPolicy.locationId.eq(locationId);
         }
 }

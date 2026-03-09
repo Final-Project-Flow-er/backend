@@ -335,7 +335,7 @@ public class HQOrderService {
 
     // 발주 접수/반려
     public Map<String, HQOrderStatus> updateOrderStatus(FactoryOrderRequest request) {
-        List<HeadOfficeOrder> orders = orderRepository.findAllByOrderCodeIn(request.orderCodes());
+        List<HeadOfficeOrder> orders = orderRepository.findAllByOrderCodeInAndDeletedAtIsNull(request.orderCodes());
 
         if (orders == null || orders.isEmpty() || orders.size() != request.orderCodes().size()) {
             throw new HQOrderException(HQOrderErrorCode.ORDER_NOT_FOUND);

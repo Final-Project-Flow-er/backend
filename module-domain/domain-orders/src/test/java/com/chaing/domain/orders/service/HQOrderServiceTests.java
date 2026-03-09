@@ -547,13 +547,13 @@ class HQOrderServiceTests {
     void updateOrderStatus_GivenAcceptRequest_ShouldReturnAcceptedStatus() {
         // given
         FactoryOrderRequest request = new FactoryOrderRequest(true, List.of(orderCode));
-        given(orderRepository.findAllByOrderCodeIn(List.of(orderCode))).willReturn(List.of(order));
+        given(orderRepository.findAllByOrderCodeInAndDeletedAtIsNull(List.of(orderCode))).willReturn(List.of(order));
 
         // when
         Map<String, HQOrderStatus> result = hqOrderService.updateOrderStatus(request);
 
         // then
-        verify(orderRepository, times(1)).findAllByOrderCodeIn(List.of(orderCode));
+        verify(orderRepository, times(1)).findAllByOrderCodeInAndDeletedAtIsNull(List.of(orderCode));
         assertEquals(HQOrderStatus.ACCEPTED, result.get(orderCode));
     }
 
@@ -562,13 +562,13 @@ class HQOrderServiceTests {
     void updateOrderStatus_GivenRejectRequest_ShouldReturnRejectedStatus() {
         // given
         FactoryOrderRequest request = new FactoryOrderRequest(false, List.of(orderCode));
-        given(orderRepository.findAllByOrderCodeIn(List.of(orderCode))).willReturn(List.of(order));
+        given(orderRepository.findAllByOrderCodeInAndDeletedAtIsNull(List.of(orderCode))).willReturn(List.of(order));
 
         // when
         Map<String, HQOrderStatus> result = hqOrderService.updateOrderStatus(request);
 
         // then
-        verify(orderRepository, times(1)).findAllByOrderCodeIn(List.of(orderCode));
+        verify(orderRepository, times(1)).findAllByOrderCodeInAndDeletedAtIsNull(List.of(orderCode));
         assertEquals(HQOrderStatus.REJECTED, result.get(orderCode));
     }
 
@@ -577,7 +577,7 @@ class HQOrderServiceTests {
     void updateOrderStatus_GivenInvalidOrderCode_ShouldThrowORDER_NOT_FOUND() {
         // given
         FactoryOrderRequest request = new FactoryOrderRequest(true, List.of(orderCode));
-        given(orderRepository.findAllByOrderCodeIn(List.of(orderCode))).willReturn(List.of());
+        given(orderRepository.findAllByOrderCodeInAndDeletedAtIsNull(List.of(orderCode))).willReturn(List.of());
 
         // when & then
         HQOrderException exception = assertThrows(HQOrderException.class, () ->
@@ -590,7 +590,7 @@ class HQOrderServiceTests {
     void updateOrderStatus_GivenNonPendingOrder_ShouldThrowORDER_NOT_PENDING() {
         // given
         FactoryOrderRequest request = new FactoryOrderRequest(true, List.of(orderCode));
-        given(orderRepository.findAllByOrderCodeIn(List.of(orderCode))).willReturn(List.of(acceptedOrder));
+        given(orderRepository.findAllByOrderCodeInAndDeletedAtIsNull(List.of(orderCode))).willReturn(List.of(acceptedOrder));
 
         // when & then
         HQOrderException exception = assertThrows(HQOrderException.class, () ->

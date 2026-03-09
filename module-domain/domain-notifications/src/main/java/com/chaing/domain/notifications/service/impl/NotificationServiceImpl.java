@@ -1,11 +1,13 @@
 package com.chaing.domain.notifications.service.impl;
 
-import com.chaing.domain.notifications.event.NotificationEvent;
 import com.chaing.domain.notifications.entity.Notification;
+import com.chaing.domain.notifications.entity.NotificationStatus;
 import com.chaing.domain.notifications.enums.NotificationType;
+import com.chaing.domain.notifications.event.NotificationEvent;
 import com.chaing.domain.notifications.exception.NotificationErrorCode;
 import com.chaing.domain.notifications.exception.NotificationException;
 import com.chaing.domain.notifications.repository.NotificationRepository;
+import com.chaing.domain.notifications.repository.NotificationStatusRepository;
 import com.chaing.domain.notifications.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -23,6 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class NotificationServiceImpl implements NotificationService {
 
     private final NotificationRepository notificationRepository;
+    private final NotificationStatusRepository notificationStatusRepository;
     private final Map<Long, SseEmitter> emitters = new ConcurrentHashMap<>();
 
     // SSE 스트림
@@ -50,7 +53,6 @@ public class NotificationServiceImpl implements NotificationService {
                 .type(event.type())
                 .message(event.message())
                 .targetId(event.targetId())
-                .isRead(false)
                 .build();
         notificationRepository.save(notification);
     }
@@ -63,7 +65,6 @@ public class NotificationServiceImpl implements NotificationService {
                 .type(event.type())
                 .message(event.message())
                 .targetId(event.targetId())
-                .isRead(false)
                 .build();
         notificationRepository.save(notification);
 
@@ -106,30 +107,42 @@ public class NotificationServiceImpl implements NotificationService {
     // 알림 목록 조회
     @Override
     public Page<Notification> getNotificationList(Long userId, Pageable pageable) {
-        return notificationRepository.findAllByUserIdInOrderByUpdatedAtDesc(List.of(userId, 0L), pageable);
+        return notificationRepository.findAllMyNotifications(userId, pageable);
     }
 
     // 알림 상세 조회
     @Override
     public Notification readNotification(Long notificationId, Long userId) {
-        Notification notification = notificationRepository.findByNotificationIdAndUserId(notificationId, userId)
+        Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new NotificationException(NotificationErrorCode.NOTIFICATION_NOT_FOUND));
-        notification.read();
+
+        NotificationStatus status = notificationStatusRepository.findByUserIdAndNotificationId(userId, notificationId)
+                .orElseGet(() -> NotificationStatus.builder().userId(userId).notificationId(notificationId).isRead(false).build());
+
+        status.read();
         return notification;
     }
 
     // 알림 전체 읽음 처리
     @Override
     public void markAllAsRead(Long userId) {
-        List<Notification> unreadList = notificationRepository.findAllByUserIdInAndIsReadFalse(List.of(userId, 0L));
-        unreadList.forEach(Notification::read);
+        List<Notification> unreadNotifications = notificationRepository.findAllUnreadNotificationsList(userId);
+
+        for (Notification n : unreadNotifications) {
+            NotificationStatus status = notificationStatusRepository.findByUserIdAndNotificationId(userId, n.getNotificationId())
+                    .orElseGet(() -> NotificationStatus.builder()
+                            .userId(userId)
+                            .notificationId(n.getNotificationId())
+                            .isRead(false)
+                            .build());
+            status.read();
+            notificationStatusRepository.save(status);
+        }
     }
 
     // 알림 삭제
     @Override
     public void deleteNotification(Long notificationId, Long userId) {
-        Notification notification = notificationRepository.findByNotificationIdAndUserId(notificationId, userId)
-                .orElseThrow(() -> new NotificationException(NotificationErrorCode.NOTIFICATION_NOT_FOUND));
-        notificationRepository.delete(notification);
+        notificationStatusRepository.deleteByUserIdAndNotificationId(userId, notificationId);
     }
 }

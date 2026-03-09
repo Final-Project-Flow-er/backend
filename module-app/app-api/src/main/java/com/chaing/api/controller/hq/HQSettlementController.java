@@ -99,9 +99,9 @@ public class HQSettlementController {
 
         @Operation(summary = "본사 월별 전체 가맹점 정산 추이(그래프)", description = "기간(start~end) 동안 전체 가맹점 합계 추이(월별 또는 선택 월 내부 일자별은 일별 trend로 처리)")
         @GetMapping("/monthly/monthly-sales-graph")
-        public ResponseEntity<ApiResponse<List<HQMonthlyTrendResponse>>> getMonthlyTrend(
+        public ResponseEntity<ApiResponse<List<HQMonthlyGraphResponse>>> getMonthlyTrend(
                         @Valid HQSettlementMonthlyGraphRequest request) {
-                List<HQMonthlyTrendResponse> response = hqFacade.getMonthlyTrend(request);
+                List<HQMonthlyGraphResponse> response = hqFacade.getMonthlyTrend(request);
                 return ResponseEntity.ok(ApiResponse.success(response));
         }
 

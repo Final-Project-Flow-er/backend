@@ -148,14 +148,17 @@ public class NotificationServiceImpl implements NotificationService {
     // 조회 상태 매핑
     @Override
     public Map<Long, Boolean> getReadStatusMap(Long userId, List<Long> notificationIds) {
+        Map<Long, Boolean> readStatusMap = notificationIds.stream()
+                .collect(Collectors.toMap(id -> id, id -> false));
+
         List<NotificationStatus> statuses = notificationStatusRepository
                 .findAllByUserIdAndNotificationIdIn(userId, notificationIds);
 
-        return statuses.stream()
-                .collect(Collectors.toMap(
-                        NotificationStatus::getNotificationId,
-                        NotificationStatus::isRead
-                ));
+        statuses.forEach(status ->
+                readStatusMap.put(status.getNotificationId(), status.isRead())
+        );
+
+        return readStatusMap;
     }
 
     // 알림 전체 읽음 처리

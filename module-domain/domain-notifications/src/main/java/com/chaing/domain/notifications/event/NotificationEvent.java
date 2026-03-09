@@ -8,14 +8,16 @@ public record NotificationEvent(
         NotificationType type,
         String message,
         Long targetId,
-        boolean isAll
+        boolean isAll,
+        boolean isUpdate
 ) {
-    public static NotificationEvent forNotice(String message, Long noticeId) {
-        return new NotificationEvent(
-                null,
-                NotificationType.NOTICE,
-                message,
-                noticeId,
-                true);
+    // 공지사항 등록
+    public static NotificationEvent ofAll(NotificationType type, String message, Long targetId) {
+        return new NotificationEvent(null, type, message, targetId, true, false);
+    }
+
+    // 공지사항 수정
+    public static NotificationEvent ofUpdate(NotificationType type, String message, Long targetId) {
+        return new NotificationEvent(null, type, message, targetId, true, true);
     }
 }

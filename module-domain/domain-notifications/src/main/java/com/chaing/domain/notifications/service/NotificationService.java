@@ -16,5 +16,6 @@ public interface NotificationService {
     Page<Notification> getNotificationList(Long userId, Pageable pageable);
     Notification readNotification(Long notificationId, Long userId);
     void markAllAsRead(Long userId);
+    void updateNotification(Long notificationId, String newMessage);
     void deleteNotification(Long notificationId, Long userId);
 }

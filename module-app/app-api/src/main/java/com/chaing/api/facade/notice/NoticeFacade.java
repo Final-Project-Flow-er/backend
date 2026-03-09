@@ -43,8 +43,8 @@ public class NoticeFacade {
     public NoticeDetailResponse createNotice(CreateNoticeRequest request, Long authorId) {
         Notice notice = noticeService.create(request.toCommand(), authorId);
 
-        // 공지사항 알림 생성
-        eventPublisher.publishEvent(NotificationEvent.forNotice(
+        eventPublisher.publishEvent(NotificationEvent.ofAll(
+                NotificationType.NOTICE,
                 "[공지] " + notice.getTitle(),
                 notice.getNoticeId()
         ));
@@ -57,8 +57,8 @@ public class NoticeFacade {
     public NoticeDetailResponse updateNotice(Long id, UpdateNoticeRequest request, Long updaterId) {
         Notice notice = noticeService.update(id, request.toCommand(), updaterId);
 
-        // 공지사항 알림 수정
-        eventPublisher.publishEvent(NotificationEvent.forNotice(
+        eventPublisher.publishEvent(NotificationEvent.ofUpdate(
+                NotificationType.NOTICE,
                 "[수정된 공지] " + notice.getTitle(),
                 notice.getNoticeId()
         ));

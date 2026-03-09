@@ -35,8 +35,4 @@ public class NotificationStatus extends BaseEntity {
     public void read() {
         this.isRead = true;
     }
-
-    public void markAsUnread() {
-        this.isRead = false;
-    }
 }

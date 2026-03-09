@@ -18,7 +18,9 @@ public class NotificationEventListener {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleNotificationEvent(NotificationEvent event) {
 
-        if (event.isAll()) {
+        if (event.isUpdate()) {
+            notificationService.updateNotification(event.targetId(), event.message());
+        } else if (event.isAll()) {
             notificationService.sendToAll(event);
         } else {
             notificationService.sendToUser(event);

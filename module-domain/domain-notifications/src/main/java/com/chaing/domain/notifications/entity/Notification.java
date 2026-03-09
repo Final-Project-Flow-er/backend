@@ -1,7 +1,6 @@
 package com.chaing.domain.notifications.entity;
 
 import com.chaing.core.entity.BaseEntity;
-import com.chaing.domain.notifications.dto.command.NotificationCreateCommand;
 import com.chaing.domain.notifications.enums.NotificationType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -37,15 +36,6 @@ public class Notification extends BaseEntity {
     private String message;
 
     private Long targetId;
-
-    public static Notification createNotification(NotificationCreateCommand command) {
-        return Notification.builder()
-                .userId(command.userId())
-                .type(command.type())
-                .message(command.message())
-                .targetId(command.targetId())
-                .build();
-    }
 
     public void updateContent(String message) {
         this.message = message;

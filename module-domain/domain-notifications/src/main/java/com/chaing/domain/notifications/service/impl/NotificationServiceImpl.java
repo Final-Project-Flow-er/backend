@@ -120,6 +120,7 @@ public class NotificationServiceImpl implements NotificationService {
                 .orElseGet(() -> NotificationStatus.builder().userId(userId).notificationId(notificationId).isRead(false).build());
 
         status.read();
+        notificationStatusRepository.save(status);
         return notification;
     }
 
@@ -138,6 +139,19 @@ public class NotificationServiceImpl implements NotificationService {
             status.read();
             notificationStatusRepository.save(status);
         }
+    }
+
+    // 알림 수정
+    @Override
+    public void updateNotification(Long notificationId, String newMessage) {
+        Notification notification = notificationRepository.findById(notificationId)
+                .orElseThrow(() -> new NotificationException(NotificationErrorCode.NOTIFICATION_NOT_FOUND));
+        notification.updateContent(newMessage);
+
+        notificationStatusRepository.deleteAllByNotificationId(notificationId);
+
+        NotificationEvent event = NotificationEvent.ofAll(notification.getType(), newMessage, notification.getTargetId());
+        emitters.forEach((userId, emitter) -> sendSse(emitter, userId, event));
     }
 
     // 알림 삭제

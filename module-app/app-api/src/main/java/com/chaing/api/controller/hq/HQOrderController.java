@@ -88,12 +88,12 @@ public class HQOrderController {
     @Operation(summary = "발주 취소", description = "발주 번호로 특정 발주 취소")
     @PatchMapping("/{order-code}/cancellation")
     public ResponseEntity<ApiResponse<HQOrderCancelResponse>> cancelOrder(
-            @PathVariable("order-code") String orderCode
+            @PathVariable("order-code") String orderCode,
+            @AuthenticationPrincipal UserPrincipal userPrincipal
     ) {
-        //TODO: Spring Security Context에서 값 꺼내오는 걸로 수정해야 함
-        String username = "test";
+        Long userId = userPrincipal.getId();
 
-        return ResponseEntity.ok(ApiResponse.success(hqOrderFacade.cancel(username, orderCode)));
+        return ResponseEntity.ok(ApiResponse.success(hqOrderFacade.cancel(userId, orderCode)));
     }
 
     @Operation(summary = "발주 생성", description = "본사 직원의 요청에 따른 발주 생성")

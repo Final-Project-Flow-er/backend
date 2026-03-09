@@ -25,4 +25,6 @@ public interface HeadOfficeOrderRepository extends JpaRepository<HeadOfficeOrder
     List<HeadOfficeOrder> findAllByOrderCodeIn(@NotNull List<@NotBlank String> orderCodes);
 
     Optional<HeadOfficeOrder> findByUserIdAndOrderCodeAndOrderStatusAndDeletedAtIsNull(Long userId, String orderCode, HQOrderStatus orderStatus);
+
+    Optional<HeadOfficeOrder> findByUserIdAndOrderCodeAndDeletedAtIsNull(Long userId, String orderCode);
 }

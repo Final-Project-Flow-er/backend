@@ -1,6 +1,7 @@
 package com.chaing.domain.orders.service;
 
 import com.chaing.core.dto.info.ProductInfo;
+import com.chaing.domain.orders.dto.command.HQOrderCancelCommand;
 import com.chaing.domain.orders.dto.info.HQOrderCommand;
 import com.chaing.domain.orders.dto.info.HQOrderItemCommand;
 import com.chaing.domain.orders.dto.request.FactoryOrderRequest;
@@ -168,19 +169,17 @@ public class HQOrderService {
         return HQOrderCommand.from(order);
     }
 
-    public Map<String, HQOrderStatus> cancel(Long hqId, String orderCode) {
+    // return: Map<orderCode, HQOrderStatus>
+    public HQOrderCancelCommand cancel(Long userId, String orderCode) {
         // 발주 정보 조회
-        HeadOfficeOrder order = orderRepository.findByOrderCodeAndDeletedAtIsNull(orderCode)
+        HeadOfficeOrder order = orderRepository.findByUserIdAndOrderCodeAndDeletedAtIsNull(userId, orderCode)
                 .orElseThrow(() -> new HQOrderException(HQOrderErrorCode.ORDER_NOT_FOUND));
 
         // 취소
         order.cancel();
 
         // 반환
-        Map<String, HQOrderStatus> result = new HashMap<>();
-        result.put(order.getOrderCode(), order.getOrderStatus());
-
-        return result;
+        return HQOrderCancelCommand.from(order);
     }
 
     // 발주 생성

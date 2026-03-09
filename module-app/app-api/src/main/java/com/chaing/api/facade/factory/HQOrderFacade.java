@@ -1,6 +1,7 @@
 package com.chaing.api.facade.factory;
 
 import com.chaing.domain.businessunits.service.impl.FranchiseServiceImpl;
+import com.chaing.domain.orders.dto.command.HQOrderCancelCommand;
 import com.chaing.domain.orders.dto.command.FranchiseOrderDetailCommand;
 import com.chaing.domain.orders.dto.command.FranchiseOrderItemCommand;
 import com.chaing.domain.orders.dto.request.HQOrderCreateRequest;
@@ -17,7 +18,6 @@ import com.chaing.domain.orders.dto.response.HQOrderResponse;
 import com.chaing.domain.orders.dto.response.HQOrderStatusUpdateResponse;
 import com.chaing.domain.orders.dto.response.HQOrderUpdateResponse;
 import com.chaing.domain.orders.dto.response.HQRequestedOrderResponse;
-import com.chaing.domain.orders.enums.HQOrderStatus;
 import com.chaing.domain.orders.exception.HQOrderErrorCode;
 import com.chaing.domain.orders.exception.HQOrderException;
 import com.chaing.domain.orders.service.FranchiseOrderService;
@@ -248,18 +248,12 @@ public class HQOrderFacade {
 
     // 발주 취소
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
-    public HQOrderCancelResponse cancel(String username, String orderCode) {
-        // hqId username으로 꺼내오는 로직 추가
-        Long hqId = 10L;
-
+    public HQOrderCancelResponse cancel(Long userId, String orderCode) {
         // 취소
-        Map<String, HQOrderStatus> cancelOrder = hqOrderService.cancel(hqId, orderCode);
+        HQOrderCancelCommand cancelOrder = hqOrderService.cancel(userId, orderCode);
 
         // 반환
-        return HQOrderCancelResponse.builder()
-                .orderCode(cancelOrder.keySet().iterator().next())
-                .status(cancelOrder.values().iterator().next())
-                .build();
+        return HQOrderCancelResponse.from(cancelOrder);
     }
 
     // 가맹점 발주 상태 변경(접수/반려)

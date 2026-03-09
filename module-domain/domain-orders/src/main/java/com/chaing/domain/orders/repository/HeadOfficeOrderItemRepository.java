@@ -21,4 +21,6 @@ public interface HeadOfficeOrderItemRepository extends JpaRepository<HeadOfficeO
     List<HeadOfficeOrderItem> findAllByHeadOfficeOrder_HeadOfficeOrderIdIn(List<Long> orderIds);
 
     List<HeadOfficeOrderItem> findAllByHeadOfficeOrderItemIdInAndDeletedAtIsNull(List<Long> orderItemIds);
+
+    List<HeadOfficeOrderItem> findAllByHeadOfficeOrder_HeadOfficeOrderIdAndHeadOfficeOrder_OrderCode(Long userId, String orderCode);
 }

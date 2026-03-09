@@ -56,14 +56,15 @@ public class HQOrderController {
 
     @Operation(summary = "발주 수정", description = "발주 번호로 특정 발주 수정")
     @PatchMapping("/{order-code}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HQ')")
     public ResponseEntity<ApiResponse<HQOrderUpdateResponse>> updateOrder(
             @PathVariable("order-code") String orderCode,
-            @Valid @RequestBody HQOrderUpdateRequest request
+            @Valid @RequestBody HQOrderUpdateRequest request,
+            @AuthenticationPrincipal UserPrincipal userPrincipal
     ) {
-        //TODO: Spring Security Context에서 값 꺼내오는 걸로 수정해야 함
-        String username = "test";
+        Long userId = userPrincipal.getId();
 
-        return ResponseEntity.ok(ApiResponse.success(hqOrderFacade.updateOrder(username, orderCode, request)));
+        return ResponseEntity.ok(ApiResponse.success(hqOrderFacade.updateOrder(userId, orderCode, request)));
     }
 
     @Operation(summary = "가맹점 발주 요청 조회", description = "가맹점이 생성한 발주 요청 전체 조회")

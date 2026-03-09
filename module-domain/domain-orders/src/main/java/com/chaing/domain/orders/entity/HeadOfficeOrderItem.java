@@ -56,13 +56,11 @@ public class HeadOfficeOrderItem extends BaseEntity {
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal totalPrice;
 
-    public void update(Long productId, Integer quantity) {
-        if (productId != null &&  quantity != null) {
-            this.productId = productId;
-            this.quantity = quantity;
-            this.totalPrice = this.unitPrice.multiply(BigDecimal.valueOf(quantity));
-        } else {
+    public void update(Integer quantity) {
+        if (quantity < 1) {
             throw new HQOrderException(HQOrderErrorCode.INVALID_INPUT);
         }
+        this.quantity = quantity;
+        this.totalPrice = unitPrice.multiply(BigDecimal.valueOf(quantity));
     }
 }

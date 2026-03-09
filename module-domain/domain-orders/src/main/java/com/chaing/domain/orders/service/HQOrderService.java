@@ -7,6 +7,7 @@ import com.chaing.domain.orders.dto.request.FactoryOrderRequest;
 import com.chaing.domain.orders.dto.request.HQOrderCreateRequest;
 import com.chaing.domain.orders.dto.request.HQOrderItemCreateInfo;
 import com.chaing.domain.orders.dto.request.HQOrderItemUpdateRequest;
+import com.chaing.domain.orders.dto.request.HQOrderUpdateRequest;
 import com.chaing.domain.orders.dto.response.HQOrderForTransitResponse;
 import com.chaing.domain.orders.entity.HeadOfficeOrder;
 import com.chaing.domain.orders.entity.HeadOfficeOrderItem;
@@ -17,17 +18,18 @@ import com.chaing.domain.orders.repository.HeadOfficeOrderItemRepository;
 import com.chaing.domain.orders.repository.HeadOfficeOrderRepository;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class HQOrderService {
@@ -53,7 +55,7 @@ public class HQOrderService {
 
     // 특정 발주 정보 조회
     public HQOrderCommand getOrder(String orderCode) {
-        HeadOfficeOrder order = orderRepository.findByOrderCode(orderCode)
+        HeadOfficeOrder order = orderRepository.findByOrderCodeAndDeletedAtIsNull(orderCode)
                 .orElseThrow(() -> new HQOrderException(HQOrderErrorCode.ORDER_NOT_FOUND));
 
         return HQOrderCommand.from(order);
@@ -74,75 +76,89 @@ public class HQOrderService {
     }
 
     // 발주 제품 수정
-    public List<HQOrderItemCommand> updateOrderItems(Long hqId, String orderCode, List<HQOrderItemUpdateRequest> request, Map<Long, ProductInfo> productInfoByProductId) {
-        // 발주 조회
-        HeadOfficeOrder order = orderRepository.findByOrderCode(orderCode)
-                .orElseThrow(() -> new HQOrderException(HQOrderErrorCode.ORDER_NOT_FOUND));
+    public List<HQOrderItemCommand> updateOrderItems(Long userId, String orderCode, HQOrderUpdateRequest request, Map<String, ProductInfo> productInfoByProductCode) {
+        // 발주 정보
+        HeadOfficeOrder order = orderRepository.findByUserIdAndOrderCodeAndOrderStatusAndDeletedAtIsNull(userId, orderCode, HQOrderStatus.PENDING)
+                .orElseThrow(() -> new HQOrderException(HQOrderErrorCode.INVALID_STATUS));
 
-        // Map<productId, HeadOfficeOrderItem> 발주 제품 조회
-        Map<Long, HeadOfficeOrderItem> items = orderItemRepository.findAllByHeadOfficeOrder_OrderCodeAndDeletedAtIsNull(orderCode).stream()
+        // 원본 발주 제품 정보
+        List<HeadOfficeOrderItem> items = orderItemRepository.findAllByHeadOfficeOrder_HeadOfficeOrderIdAndHeadOfficeOrder_OrderCode(userId, orderCode);
+
+        if (items == null || items.isEmpty()) {
+            throw new HQOrderException(HQOrderErrorCode.ORDER_ITEM_NOT_FOUND);
+        }
+
+        // Map<productId, HeadOfficeOrderItem>
+        Map<Long, HeadOfficeOrderItem> existingItems = items.stream()
                 .collect(Collectors.toMap(
                         HeadOfficeOrderItem::getProductId,
                         Function.identity()
                 ));
 
-        if (items.isEmpty()) {
-            throw new HQOrderException(HQOrderErrorCode.ORDER_ITEM_NOT_FOUND);
-        }
-
-        // 발주 수정
-        // 1. 요청에 대한 Map<productId, quantity>
-        Map<Long, Integer> requestedItems = request.stream()
+        // Map<productId, ProductInfo>
+        Map<Long, ProductInfo> productInfoByProductId = productInfoByProductCode.values().stream()
                 .collect(Collectors.toMap(
-                        HQOrderItemUpdateRequest::productId,
-                        HQOrderItemUpdateRequest::quantity
+                        ProductInfo::productId,
+                        Function.identity()
                 ));
-        // 2. 추가
-        requestedItems.forEach((productId, quantity) -> {
-            if (!items.containsKey(productId)) {
-                ProductInfo productInfo = productInfoByProductId.get(productId);
-                if (productInfo == null) {
-                    throw new HQOrderException(HQOrderErrorCode.INVALID_INPUT);
-                }
 
-                // 추가
-                HeadOfficeOrderItem addedItem = HeadOfficeOrderItem.builder()
-                        .headOfficeOrder(order)
-                        .productId(productId)
-                        .quantity(quantity)
-                        .unitPrice(productInfo.costPrice())
-                        .totalPrice(productInfo.costPrice().multiply(BigDecimal.valueOf(quantity)))
-                        .build();
+        // Map<productId, HQOrderItemUpdateRequest> - 요청 정보
+        Map<Long, HQOrderItemUpdateRequest> requestMap = request.items().stream()
+                .collect(Collectors.toMap(
+                        info -> {
+                            if (productInfoByProductCode.get(info.productCode()) == null) {
+                                throw new HQOrderException(HQOrderErrorCode.PRODUCT_NOT_FOUND);
+                            }
 
-                orderItemRepository.save(addedItem);
-                items.put(productId, addedItem);
-            } else {
-                // 업데이트
-                items.get(productId).update(productId, quantity);
-            }
-        });
-        // 3. 삭제
-        List<Long> toDelete = new ArrayList<>();
-        items.forEach((productId, headOfficeOrderItem) -> {
-            if (!requestedItems.containsKey(productId)) {
-                toDelete.add(productId);
-            }
-        });
-        toDelete.forEach(productId -> {
-            items.get(productId).delete();
-            items.remove(productId);
-        });
+                            return productInfoByProductCode.get(info.productCode()).productId();
+                        },
+                        Function.identity()
+                ));
+
+        // 삭제 대상
+        List<HeadOfficeOrderItem> deletedItems = items.stream()
+                .filter(item -> !requestMap.containsKey(item.getProductId()))
+                .toList();
+
+        // 수정/추가
+        List<HeadOfficeOrderItem> upsertItems = requestMap.entrySet().stream()
+                .map(entry -> {
+                    Long productId = entry.getKey();
+                    HeadOfficeOrderItem item = existingItems.get(productId);
+                    HQOrderItemUpdateRequest updateRequest = entry.getValue();
+                    ProductInfo productInfo = productInfoByProductId.get(productId);
+
+                    if (item != null) {
+                        // 수정
+                        item.update(updateRequest.quantity());
+                        return item;
+                    } else {
+                        // 추가
+                        return HeadOfficeOrderItem.builder()
+                                .headOfficeOrder(order)
+                                .productId(productId)
+                                .quantity(updateRequest.quantity())
+                                .unitPrice(productInfo.costPrice())
+                                .totalPrice(productInfo.costPrice().multiply(BigDecimal.valueOf(updateRequest.quantity())))
+                                .build();
+                    }
+                })
+                .toList();
+
+        // 수정사항 반영
+        orderItemRepository.deleteAll(deletedItems);
+        orderItemRepository.saveAll(upsertItems);
 
         // 반환
-        return items.values().stream()
-                .map(item -> HQOrderItemCommand.of(item, productInfoByProductId))
+        return upsertItems.stream()
+                .map(HQOrderItemCommand::from)
                 .toList();
     }
 
     // 발주 정보 수정
     public HQOrderCommand updateOrder(Long hqId, String orderCode, @NotNull LocalDateTime manufactureDate) {
         // 발주 정보 조회
-        HeadOfficeOrder order = orderRepository.findByOrderCode(orderCode)
+        HeadOfficeOrder order = orderRepository.findByOrderCodeAndDeletedAtIsNull(orderCode)
                 .orElseThrow(() -> new HQOrderException(HQOrderErrorCode.ORDER_NOT_FOUND));
 
         // 수정
@@ -154,7 +170,7 @@ public class HQOrderService {
 
     public Map<String, HQOrderStatus> cancel(Long hqId, String orderCode) {
         // 발주 정보 조회
-        HeadOfficeOrder order = orderRepository.findByOrderCode(orderCode)
+        HeadOfficeOrder order = orderRepository.findByOrderCodeAndDeletedAtIsNull(orderCode)
                 .orElseThrow(() -> new HQOrderException(HQOrderErrorCode.ORDER_NOT_FOUND));
 
         // 취소
@@ -285,7 +301,7 @@ public class HQOrderService {
 
     public List<HQOrderForTransitResponse> getOrdersForTransit(List<Long> orderIds) {
 
-        if(orderIds == null || orderIds.isEmpty()) {
+        if (orderIds == null || orderIds.isEmpty()) {
             throw new HQOrderException(HQOrderErrorCode.INVALID_INPUT);
         }
 
@@ -344,5 +360,13 @@ public class HQOrderService {
         response.put(orderId, itemCommands);
 
         return response;
+    }
+
+    // return: HQOrderCommand
+    public HQOrderCommand getOrderByUserIdAndOrderCodeAndPending(Long userId, String orderCode) {
+        HeadOfficeOrder order = orderRepository.findByUserIdAndOrderCodeAndOrderStatusAndDeletedAtIsNull(userId, orderCode, HQOrderStatus.PENDING)
+                .orElseThrow(() -> new HQOrderException(HQOrderErrorCode.INVALID_STATUS));
+
+        return HQOrderCommand.from(order);
     }
 }

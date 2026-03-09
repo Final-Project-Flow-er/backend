@@ -14,7 +14,7 @@ import java.util.Optional;
 public interface HeadOfficeOrderRepository extends JpaRepository<HeadOfficeOrder, Long> {
     List<HeadOfficeOrder> findAllByDeletedAtIsNull();
 
-    Optional<HeadOfficeOrder> findByOrderCode(String orderCode);
+    Optional<HeadOfficeOrder> findByOrderCodeAndDeletedAtIsNull(String orderCode);
 
     Optional<HeadOfficeOrder> findByHeadOfficeOrderId(Long orderId);
 
@@ -23,4 +23,6 @@ public interface HeadOfficeOrderRepository extends JpaRepository<HeadOfficeOrder
     List<HeadOfficeOrder> findAllByOrderStatusNot(HQOrderStatus hqOrderStatus);
 
     List<HeadOfficeOrder> findAllByOrderCodeIn(@NotNull List<@NotBlank String> orderCodes);
+
+    Optional<HeadOfficeOrder> findByUserIdAndOrderCodeAndOrderStatusAndDeletedAtIsNull(Long userId, String orderCode, HQOrderStatus orderStatus);
 }

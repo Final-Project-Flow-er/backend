@@ -26,6 +26,7 @@ import com.chaing.domain.products.service.ProductService;
 import com.chaing.domain.users.service.UserManagementService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,6 +37,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class HQOrderFacade {
@@ -209,29 +211,39 @@ public class HQOrderFacade {
 
     // 발주 수정
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
-    public HQOrderUpdateResponse updateOrder(String username, String orderCode, @Valid HQOrderUpdateRequest request) {
-        // hqId username으로 꺼내오는 로직 추가
-        Long hqId = 10L;
+    public HQOrderUpdateResponse updateOrder(Long userId, String orderCode, HQOrderUpdateRequest request) {
+        // UserInfo
+        String username = userManagementService.getUsernameByUserId(userId);
+        String phoneNumber = userManagementService.getPhoneNumberByUserId(userId);
 
-        // orderCode로 발주 조회
-        HQOrderCommand orderInfo = hqOrderService.getOrder(orderCode);
+        // HQOrderCommand
+        HQOrderCommand order = hqOrderService.getOrderByUserIdAndOrderCodeAndPending(userId, orderCode);
 
-        // 발주 제품의 productIds 조회
-        List<Long> productIds = hqOrderService.getOrderItemProductId(hqId, orderInfo.orderId());
+        // Map<productId, ProductInfo>
+        Map<Long, ProductInfo> productInfoByProductId = productService.getAllProductInfo();
 
-        // 제품 정보 조회
-        Map<Long, ProductInfo> productInfoByProductId = productService.getProductInfos(productIds);
-
+        // Map<productCode, ProductInfo>
+        Map<String, ProductInfo> productInfoByProductCode = productInfoByProductId.values().stream()
+                .collect(Collectors.toMap(
+                        ProductInfo::productCode,
+                        Function.identity()
+                ));
+        log.info("productInfoByProductCode: {}", productInfoByProductCode);
         // 발주 제품 데이터 수정
-        List<HQOrderItemCommand> itemInfos = hqOrderService.updateOrderItems(hqId, orderCode, request.items(), productInfoByProductId);
-
-        // 발주 정보 수정
-        HQOrderCommand updatedOrderInfo = hqOrderService.updateOrder(hqId, orderCode, request.manufactureDate());
+        List<HQOrderItemCommand> items = hqOrderService.updateOrderItems(userId, orderCode, request, productInfoByProductCode);
 
         // 반환
         return HQOrderUpdateResponse.builder()
-                .orderInfo(updatedOrderInfo)
-                .items(itemInfos)
+                .orderCode(order.orderCode())
+                .status(order.status())
+                .username(username)
+                .phoneNumber(phoneNumber)
+                .requestedDate(order.requestedDate())
+                .manufacturedDate(order.manufacturedDate())
+                .storedDate(order.storedDate())
+                .description(order.description())
+                .isRegular(order.isRegular())
+                .items(items)
                 .build();
     }
 

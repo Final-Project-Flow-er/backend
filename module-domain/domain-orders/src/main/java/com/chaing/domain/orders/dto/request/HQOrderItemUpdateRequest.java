@@ -4,7 +4,7 @@ import jakarta.validation.constraints.NotNull;
 
 public record HQOrderItemUpdateRequest(
         @NotNull
-        Long productId,
+        String productCode,
 
         @NotNull
         Integer quantity

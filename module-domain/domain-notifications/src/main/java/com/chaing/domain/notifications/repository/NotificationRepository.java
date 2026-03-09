@@ -12,6 +12,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
@@ -27,6 +28,11 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
             "WHERE (n.userId = :userId OR n.userId = 0) " +
             "AND (s.isRead IS NULL OR s.isRead = false)")
     List<Notification> findAllUnreadNotificationsList(@Param("userId") Long userId);
+
+    @Query("SELECT n FROM Notification n " +
+            "WHERE n.notificationId = :notificationId " +
+            "AND (n.userId = :userId OR n.userId = 0)")
+    Optional<Notification> findByIdAndUserIdOrAll(@Param("notificationId") Long notificationId, @Param("userId") Long userId);
 
     @Modifying
     @Query("DELETE FROM Notification n WHERE n.createdAt < :targetDate")

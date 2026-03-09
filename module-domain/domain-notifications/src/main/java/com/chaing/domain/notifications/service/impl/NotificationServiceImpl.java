@@ -123,7 +123,7 @@ public class NotificationServiceImpl implements NotificationService {
     // 알림 상세 조회
     @Override
     public Notification readNotification(Long notificationId, Long userId) {
-        Notification notification = notificationRepository.findById(notificationId)
+        Notification notification = notificationRepository.findByIdAndUserIdOrAll(notificationId, userId)
                 .orElseThrow(() -> new NotificationException(NotificationErrorCode.NOTIFICATION_NOT_FOUND));
 
         NotificationStatus status = notificationStatusRepository.findByUserIdAndNotificationId(userId, notificationId)

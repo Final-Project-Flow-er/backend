@@ -30,6 +30,7 @@ import com.chaing.domain.inventories.repository.HQInventoryRepository;
 import com.chaing.domain.inventories.repository.InventoryPolicyRepository;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,6 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class InventoryService {
@@ -315,7 +317,7 @@ public class InventoryService {
 
         return inventories.stream()
                 .collect(Collectors.toMap(
-                        FranchiseInventory::getBoxCode,
+                        FranchiseInventory::getInventoryId,
                         inventory -> FranchiseInventoryCommand.builder()
                                 .inventoryId(inventory.getInventoryId())
                                 .orderItemId(inventory.getOrderItemId())
@@ -334,6 +336,7 @@ public class InventoryService {
         if (inventories == null || inventories.isEmpty()) {
             throw new InventoryException(InventoryErrorCode.INVENTORY_NOT_FOUND);
         }
+        log.info("inventories={}", inventories);
 
         return inventories.stream()
                 .collect(Collectors.toMap(

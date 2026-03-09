@@ -2,6 +2,7 @@ package com.chaing.api.facade.franchise;
 
 import com.chaing.core.dto.command.FranchiseInventoryCommand;
 import com.chaing.core.dto.info.ProductInfo;
+import com.chaing.core.dto.request.FranchiseReturnUpdateRequest;
 import com.chaing.core.dto.returns.response.FranchiseOrderInfo;
 import com.chaing.core.dto.returns.response.FranchiseReturnTargetResponse;
 import com.chaing.domain.businessunits.service.impl.FranchiseServiceImpl;
@@ -58,6 +59,7 @@ public class FranchiseReturnFacade {
 
         // Map<returnId, ReturnCommand>
         Map<Long, ReturnCommand> returns = franchiseReturnService.getAllReturns(franchiseId);
+        log.info("returns: {}", returns);
 
         // List<returnId>
         List<Long> returnIds = returns.keySet().stream().toList();
@@ -87,16 +89,6 @@ public class FranchiseReturnFacade {
         // Map<returnItemId, productId>
         Map<Long, Long> productIdByReturnItemId = franchiseOrderService.getProductIdByReturnItemId(orderItemIdByReturnItemId);
 
-        // Map<productId, List<returnItemId>>
-        Map<Long, List<Long>> returnItemIdsByProductId = productIdByReturnItemId.entrySet().stream()
-                .collect(Collectors.groupingBy(
-                        Map.Entry::getValue,
-                        Collectors.mapping(Map.Entry::getKey, Collectors.toList())
-                ));
-
-        // List<returnItemId>
-        List<Long> returnItemIds = productIdByReturnItemId.keySet().stream().toList();
-
         // 발주 코드 조회
         // List<orderId>
         List<Long> orderIds = returns.values().stream()
@@ -105,35 +97,45 @@ public class FranchiseReturnFacade {
         // Map<orderId, orderCode>
         Map<Long, String> orderCodeByOrderId = franchiseOrderService.getAllOrderCodeByOrderIds(orderIds);
 
-        // Map<productId, List<orderItemId>>
-        Map<Long, List<Long>> orderItemIdsByProductId = franchiseOrderService.getOrderItemIdsAndProductIdsByOrderIds(orderIds);
-
         // List<productId>
-        List<Long> productIds = orderItemIdsByProductId.keySet().stream().toList();
+        List<Long> productIds = productIdByReturnItemId.values().stream().distinct().toList();
 
         // Map<productId, ProductInfo>
         Map<Long, ProductInfo> productInfoByProductId = productService.getProductInfos(productIds);
 
-        return returnItemIdsByProductId.entrySet().stream()
-                .map(entry -> {
-                    Long productId = entry.getKey();
-                    List<Long> returnItemIdList = entry.getValue();
-                    Long returnId = returnIdByReturnItemId.get(returnItemIdList.get(0));
-
+        return returnItemByReturnId.entrySet().stream()
+                .flatMap(entry -> {
+                    Long returnId = entry.getKey();
+                    List<ReturnItemCommand> items = entry.getValue();
                     ReturnCommand returnCommand = returns.get(returnId);
-                    ProductInfo productInfo = productInfoByProductId.get(productId);
 
-                    return FranchiseReturnResponse.builder()
-                            .returnCode(returnCommand.returnCode())
-                            .status(returnCommand.status())
-                            .productCode(productInfo.productCode())
-                            .productName(productInfo.productName())
-                            .unitPrice(productInfo.tradePrice())
-                            .quantity(returnItemIdList.size())
-                            .totalPrice(productInfo.tradePrice().multiply(BigDecimal.valueOf(returnItemIdList.size())))
-                            .type(returnCommand.type())
-                            .requestedDate(returnCommand.requestedAt())
-                            .build();
+                    Map<Long, List<ReturnItemCommand>> itemsByProductId = items.stream()
+                            .collect(Collectors.groupingBy(
+                                    item -> productIdByReturnItemId.get(item.returnItemId())
+                            ));
+
+                    return itemsByProductId.entrySet().stream()
+                            .map(productEntry -> {
+                                Long productId = productEntry.getKey();
+                                List<ReturnItemCommand> productItems = productEntry.getValue();
+                                ProductInfo productInfo = productInfoByProductId.get(productId);
+
+                                if (productInfo == null) {
+                                    throw new FranchiseReturnException(FranchiseReturnErrorCode.PRODUCT_NOT_FOUND);
+                                }
+
+                                return FranchiseReturnResponse.builder()
+                                        .returnCode(returnCommand.returnCode())
+                                        .status(returnCommand.status())
+                                        .productCode(productInfo.productCode())
+                                        .productName(productInfo.productName())
+                                        .unitPrice(productInfo.tradePrice())
+                                        .quantity(productItems.size())
+                                        .totalPrice(productInfo.tradePrice().multiply(BigDecimal.valueOf(productItems.size())))
+                                        .type(returnCommand.type())
+                                        .requestedDate(returnCommand.requestedAt())
+                                        .build();
+                            });
                 })
                 .toList();
     }
@@ -225,7 +227,7 @@ public class FranchiseReturnFacade {
 
     // 반품 수정
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
-    public FranchiseReturnUpdateResponse updateReturn(Long userId, List<String> boxCodes, String returnCode) {
+    public FranchiseReturnUpdateResponse updateReturn(Long userId, List<FranchiseReturnUpdateRequest> requests, String returnCode) {
         // franchiseId
         Long franchiseId = userManagementService.getFranchiseIdByUserId(userId);
 
@@ -235,18 +237,14 @@ public class FranchiseReturnFacade {
         // FranchiseOrderDetailCommand
         FranchiseOrderDetailCommand orderCommand = franchiseOrderService.getOrderByOrderId(franchiseId, userId, returnCommand.orderId());
 
-        // Map<boxCode, FranchiseInventoryCommand>
-        Map<String, FranchiseInventoryCommand> inventoryByBoxCode = inventoryService.getInventoriesByBoxCode(boxCodes);
+        // List<boxCode>
+        List<String> boxCodes = requests.stream().map(FranchiseReturnUpdateRequest::boxCode).toList();
 
+        // Map<inventoryId, FranchiseInventoryCommand>
+        Map<Long, FranchiseInventoryCommand> inventoryByBoxCode = inventoryService.getInventoriesByBoxCode(boxCodes);
+        log.info("inventoryByBoxCode: {}" , inventoryByBoxCode);
         // Map<returnItemId, ReturnItemCommand>
         Map<Long, ReturnItemCommand> returnItemByReturnItemId = franchiseReturnService.getReturnItemsByReturnId(returnCommand.returnId());
-
-        // Map<boxCode, orderItemId>
-        Map<String, Long> orderItemIdByBoxCode = returnItemByReturnItemId.values().stream()
-                .collect(Collectors.toMap(
-                        ReturnItemCommand::boxCode,
-                        ReturnItemCommand::orderItemId
-                ));
 
         // Map<returnItemId, orderItemId>
         Map<Long, Long> orderItemIdByReturnItemId = returnItemByReturnItemId.values().stream()
@@ -255,8 +253,8 @@ public class FranchiseReturnFacade {
                         ReturnItemCommand::orderItemId
                 ));
 
-        // 수정 반영. input: Map<returnItemId, orderItemId>, boxCodes, Map<boxCode, orderItemId>
-        List<ReturnItemCommand> updatedReturnItems = franchiseReturnService.updateReturnItems(boxCodes, orderItemIdByReturnItemId, returnCode, orderItemIdByBoxCode);
+        // 수정
+        List<ReturnItemCommand> updatedReturnItems = franchiseReturnService.updateReturnItems(boxCodes, returnCode, inventoryByBoxCode);
 
         // List<returnItemId>
         List<Long> returnItemIds = returnItemByReturnItemId.keySet().stream().toList();
@@ -321,7 +319,7 @@ public class FranchiseReturnFacade {
         Long franchiseId = userManagementService.getFranchiseIdByUserId(userId);
 
         // franchiseCode
-        String franchiseCode = franchiseService.getById(franchiseId).businessNumber();
+        String franchiseCode = franchiseService.getById(franchiseId).code();
 
         // FranchiseOrderDetailCommand
         FranchiseOrderDetailCommand order = franchiseOrderService.getOrderByOrderCode(franchiseId, userId, request.orderCode());
@@ -346,6 +344,7 @@ public class FranchiseReturnFacade {
 
         // Map<orderItemId, boxCode>
         Map<Long, String> boxCodeByOrderItemId = inventoryByOrderItemId.values().stream()
+                .filter(inventory -> request.boxCodes().contains(inventory.boxCode()))
                 .collect(Collectors.toMap(
                         FranchiseInventoryCommand::orderItemId,
                         FranchiseInventoryCommand::boxCode
@@ -412,9 +411,11 @@ public class FranchiseReturnFacade {
 
         // FranchiseOrderDetailCommand
         FranchiseOrderDetailCommand order = franchiseOrderService.getOrderByOrderCode(franchiseId, userId, orderCode);
+        log.info("order: {}", order);
 
         // Map<orderId, List<FranchiseOrderItemCommand>>
         Map<Long, List<FranchiseOrderItemCommand>> orderItemsByOrderId = franchiseOrderService.getOrderItemsByOrderId(order.orderId());
+        log.info("orderItemsByOrderId: {}", orderItemsByOrderId);
 
         // List<FranchiseOrderItemCommand>
         List<FranchiseOrderItemCommand> orderItems = orderItemsByOrderId.values().stream()
@@ -425,6 +426,7 @@ public class FranchiseReturnFacade {
         List<Long> orderItemIds = orderItems.stream()
                 .map(FranchiseOrderItemCommand::orderItemId)
                 .toList();
+        log.info("orderItemIds={}", orderItemIds);
 
         // Map<orderItemId, FranchiseInventoryCommand>
         Map<Long, FranchiseInventoryCommand> inventoryByOrderItemId = inventoryService.getInventoriesByOrderItemIds(orderItemIds);
@@ -449,7 +451,10 @@ public class FranchiseReturnFacade {
         List<FranchiseReturnTargetOrderItem> items = orderItems.stream()
                 .map(item -> {
                     Long orderItemId = item.orderItemId();
+                    log.info("orderItemId: {}", orderItemId);
                     FranchiseInventoryCommand inventory = inventoryByOrderItemId.get(orderItemId);
+                    log.info("inventoryByOrderItemId: {}", inventoryByOrderItemId);
+                    log.info("inventory: {}", inventory);
                     Long productId = inventory.productId();
                     ProductInfo productInfo = productInfoByProductId.get(productId);
 

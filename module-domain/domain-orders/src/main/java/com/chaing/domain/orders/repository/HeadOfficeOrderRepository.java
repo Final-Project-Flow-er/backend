@@ -12,15 +12,17 @@ import java.util.Optional;
 
 @Repository
 public interface HeadOfficeOrderRepository extends JpaRepository<HeadOfficeOrder, Long> {
-    List<HeadOfficeOrder> findAllByHqIdAndUsername(Long hqId, String username);
+    List<HeadOfficeOrder> findAllByDeletedAtIsNull();
 
-    Optional<HeadOfficeOrder> findByHqIdAndOrderCode(Long hqId, String orderCode);
+    Optional<HeadOfficeOrder> findByOrderCodeAndDeletedAtIsNull(String orderCode);
 
-    Optional<HeadOfficeOrder> findByHeadOfficeOrderId(Long orderId);
+    Optional<HeadOfficeOrder> findByHeadOfficeOrderIdAndDeletedAtIsNull(Long orderId);
 
-    List<HeadOfficeOrder> findAllByOrderStatus(HQOrderStatus hqOrderStatus);
+    List<HeadOfficeOrder> findAllByOrderStatusAndDeletedAtIsNull(HQOrderStatus hqOrderStatus);
 
-    List<HeadOfficeOrder> findAllByOrderStatusNot(HQOrderStatus hqOrderStatus);
+    List<HeadOfficeOrder> findAllByOrderCodeInAndDeletedAtIsNull(@NotNull List<@NotBlank String> orderCodes);
 
-    List<HeadOfficeOrder> findAllByOrderCodeIn(@NotNull List<@NotBlank String> orderCodes);
+    Optional<HeadOfficeOrder> findByUserIdAndOrderCodeAndOrderStatusAndDeletedAtIsNull(Long userId, String orderCode, HQOrderStatus orderStatus);
+
+    Optional<HeadOfficeOrder> findByUserIdAndOrderCodeAndDeletedAtIsNull(Long userId, String orderCode);
 }

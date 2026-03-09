@@ -6,7 +6,7 @@ import com.chaing.domain.orders.dto.info.HQOrderCommand;
 import com.chaing.domain.orders.dto.info.HQOrderItemCommand;
 import com.chaing.domain.orders.dto.request.FactoryOrderRequest;
 import com.chaing.domain.orders.dto.request.HQOrderCreateRequest;
-import com.chaing.domain.orders.dto.request.HQOrderItemCreateInfo;
+import com.chaing.domain.orders.dto.request.HQOrderItemCreateCommand;
 import com.chaing.domain.orders.dto.request.HQOrderItemUpdateRequest;
 import com.chaing.domain.orders.dto.request.HQOrderUpdateRequest;
 import com.chaing.domain.orders.dto.response.HQOrderForTransitResponse;
@@ -183,15 +183,44 @@ public class HQOrderService {
     }
 
     // 발주 생성
-    public HQOrderCommand createOrder(Long hqId, HQOrderCreateRequest request, Integer totalQuantity, BigDecimal totalAmount) {
+    public HQOrderCommand createOrder(Long userId, HQOrderCreateRequest request, String hqCode, Map<Long, ProductInfo> productInfoByProductId) {
+        // Map<productCode, ProductInfo>
+        Map<String, ProductInfo> productInfoByProductCode = productInfoByProductId.values().stream()
+                .collect(Collectors.toMap(
+                        ProductInfo::productCode,
+                        Function.identity()
+                ));
+
+        // 검증
+        request.items().forEach(item -> {
+            if (!productInfoByProductCode.containsKey(item.productCode())) {
+                throw new HQOrderException(HQOrderErrorCode.PRODUCT_NOT_FOUND);
+            }
+        });
+
+        // totalPrice
+        BigDecimal totalPrice = request.items().stream()
+                .map(item -> {
+                    ProductInfo productInfo = productInfoByProductCode.get(item.productCode());
+
+                    return productInfo.costPrice();
+                })
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // totalQuantity
+        Integer totalQuantity = request.items().stream()
+                .map(HQOrderItemCreateCommand::quantity)
+                .reduce(0, Integer::sum);
+
         // 발주 생성
         HeadOfficeOrder order = HeadOfficeOrder.builder()
-                .orderCode(generator.generate("수정요망"))
+                .orderCode(generator.generate(hqCode))
+                .userId(userId)
                 .manufactureDate(request.manufactureDate())
                 .description(request.description())
-                .totalQuantity(totalQuantity)
-                .totalAmount(totalAmount)
                 .isRegular(request.isRegular())
+                .totalQuantity(totalQuantity)
+                .totalAmount(totalPrice)
                 .build();
 
         // 저장
@@ -202,20 +231,35 @@ public class HQOrderService {
     }
 
     // 발주 제품 생성
-    public List<HQOrderItemCommand> createOrderItems(Long orderId, Map<Long, ProductInfo> productInfoByProductId, List<HQOrderItemCreateInfo> items) {
+    public List<HQOrderItemCommand> createOrderItems(Long orderId, Map<Long, ProductInfo> productInfoByProductId, List<HQOrderItemCreateCommand> items) {
         // 발주 조회
-        HeadOfficeOrder order = orderRepository.findByHeadOfficeOrderId(orderId)
+        HeadOfficeOrder order = orderRepository.findByHeadOfficeOrderIdAndDeletedAtIsNull(orderId)
                 .orElseThrow(() -> new HQOrderException(HQOrderErrorCode.ORDER_NOT_FOUND));
+
+        // Map<productCode, ProductInfo>
+        Map<String, ProductInfo> productInfoByProductCode = productInfoByProductId.values().stream()
+                .collect(Collectors.toMap(
+                        ProductInfo::productCode,
+                        Function.identity()
+                ));
 
         // 발주 제품 생성
         List<HeadOfficeOrderItem> orderItems = items.stream()
-                .map(item -> HeadOfficeOrderItem.builder()
-                        .headOfficeOrder(order)
-                        .productId(item.productId())
-                        .quantity(item.quantity())
-                        .unitPrice(productInfoByProductId.get(item.productId()).costPrice())
-                        .totalPrice(productInfoByProductId.get(item.productId()).costPrice().multiply(BigDecimal.valueOf(item.quantity())))
-                        .build())
+                .map(item -> {
+                    String productCode = item.productCode();
+                    Integer quantity = item.quantity();
+                    ProductInfo productInfo = productInfoByProductCode.get(productCode);
+                    BigDecimal unitPrice = productInfo.costPrice();
+
+                    return HeadOfficeOrderItem.builder()
+                            .headOfficeOrder(order)
+                            .productId(productInfo.productId())
+                            .quantity(quantity)
+                            .unitPrice(unitPrice)
+                            .totalPrice(unitPrice.multiply(BigDecimal.valueOf(quantity)))
+                            .build();
+                        }
+                )
                 .toList();
 
         // 발주 제품 저장

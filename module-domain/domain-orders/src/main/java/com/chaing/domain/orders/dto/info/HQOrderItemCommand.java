@@ -34,6 +34,8 @@ public record HQOrderItemCommand(
         }
 
         return HQOrderItemCommand.builder()
+                .orderId(item.getHeadOfficeOrder().getHeadOfficeOrderId())
+                .orderItemId(item.getHeadOfficeOrderItemId())
                 .productId(productId)
                 .quantity(item.getQuantity())
                 .unitPrice(item.getUnitPrice())

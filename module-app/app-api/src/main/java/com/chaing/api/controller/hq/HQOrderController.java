@@ -98,12 +98,13 @@ public class HQOrderController {
 
     @Operation(summary = "발주 생성", description = "본사 직원의 요청에 따른 발주 생성")
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'HQ')")
     public ResponseEntity<ApiResponse<HQOrderCreateResponse>> createOrder(
-            @Valid @RequestBody HQOrderCreateRequest request
+            @Valid @RequestBody HQOrderCreateRequest request,
+            @AuthenticationPrincipal UserPrincipal userPrincipal
     ) {
-        //TODO: Spring Security Context에서 값 꺼내오는 걸로 수정해야 함
-        String username = "test";
+        Long userId = userPrincipal.getId();
 
-        return ResponseEntity.ok(ApiResponse.success(hqOrderFacade.create(username, request)));
+        return ResponseEntity.ok(ApiResponse.success(hqOrderFacade.create(userId, request)));
     }
 }

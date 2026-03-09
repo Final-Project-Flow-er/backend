@@ -1,6 +1,7 @@
 package com.chaing.api.facade.factory;
 
 import com.chaing.domain.businessunits.service.impl.FranchiseServiceImpl;
+import com.chaing.domain.businessunits.service.impl.HeadquarterServiceImpl;
 import com.chaing.domain.orders.dto.command.HQOrderCancelCommand;
 import com.chaing.domain.orders.dto.command.FranchiseOrderDetailCommand;
 import com.chaing.domain.orders.dto.command.FranchiseOrderItemCommand;
@@ -8,7 +9,7 @@ import com.chaing.domain.orders.dto.request.HQOrderCreateRequest;
 import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.domain.orders.dto.info.HQOrderCommand;
 import com.chaing.domain.orders.dto.info.HQOrderItemCommand;
-import com.chaing.domain.orders.dto.request.HQOrderItemCreateInfo;
+import com.chaing.domain.orders.dto.request.HQOrderItemCreateCommand;
 import com.chaing.domain.orders.dto.request.HQOrderUpdateRequest;
 import com.chaing.domain.orders.dto.request.HQOrderUpdateStatusRequest;
 import com.chaing.domain.orders.dto.response.HQOrderCancelResponse;
@@ -46,6 +47,7 @@ public class HQOrderFacade {
     private final ProductService productService;
     private final UserManagementService userManagementService;
     private final FranchiseServiceImpl franchiseService;
+    private final HeadquarterServiceImpl headquarterService;
 
     // 발주 조회
     public List<HQOrderResponse> getAllOrders() {
@@ -265,39 +267,37 @@ public class HQOrderFacade {
 
     // 발주 생성
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
-    public HQOrderCreateResponse create(String username, HQOrderCreateRequest request) {
-        // hqId username으로 꺼내오는 로직 추가
-        Long hqId = 10L;
+    public HQOrderCreateResponse create(Long userId, HQOrderCreateRequest request) {
+        // HQCode - 수정요망
+        String hqCode = "hqCode";
 
-        // 발주 제품 정보 조회
-        List<Long> productIds = request.items().stream()
-                .map(HQOrderItemCreateInfo::productId)
-                .toList();
-        Map<Long, ProductInfo> productInfoByProductId = productService.getProductInfos(productIds);
+        // UserInfo
+        String username = userManagementService.getUsernameByUserId(userId);
+        String phoneNumber = userManagementService.getPhoneNumberByUserId(userId);
+
+        if (!username.equals(request.username()) || !phoneNumber.equals(request.phoneNumber())) {
+            throw new HQOrderException(HQOrderErrorCode.INVALID_USER_INFO);
+        }
+
+        // Map<productId, ProductInfo>
+        Map<Long, ProductInfo> productInfoByProductId = productService.getAllProductInfo();
 
         // 발주 생성
-        Integer totalQuantity = request.items().stream()
-                .map(HQOrderItemCreateInfo::quantity)
-                .reduce(0, Integer::sum);
-        BigDecimal totalAmount = request.items().stream()
-                .map(item -> {
-                    ProductInfo productInfo = productInfoByProductId.get(item.productId());
+        HQOrderCommand order = hqOrderService.createOrder(userId, request, hqCode, productInfoByProductId);
 
-                    if (productInfo == null) {
-                        throw new HQOrderException(HQOrderErrorCode.PRODUCT_NOT_FOUND);
-                    }
-
-                    return productInfo.costPrice().multiply(BigDecimal.valueOf(item.quantity()));
-                })
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        HQOrderCommand orderInfo = hqOrderService.createOrder(hqId, request, totalQuantity, totalAmount);
-
-        // 발주 제품 생성
-        List<HQOrderItemCommand> items = hqOrderService.createOrderItems(orderInfo.orderId(), productInfoByProductId, request.items());
+        // 발주 제품 생성 - 수정요망
+        List<HQOrderItemCommand> items = hqOrderService.createOrderItems(order.orderId(), productInfoByProductId, request.items());
 
         // 반환
         return HQOrderCreateResponse.builder()
-                .orderInfo(orderInfo)
+                .orderCode(order.orderCode())
+                .status(order.status())
+                .username(username)
+                .phoneNumber(phoneNumber)
+                .requestedDate(order.requestedDate())
+                .storedDate(order.storedDate())
+                .description(order.description())
+                .isRegular(order.isRegular())
                 .items(items)
                 .build();
     }

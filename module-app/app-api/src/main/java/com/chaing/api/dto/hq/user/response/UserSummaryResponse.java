@@ -9,6 +9,7 @@ import lombok.Builder;
 @Builder
 public record UserSummaryResponse(
 
+        Long userId,
         String loginId,
         String username,
         String employeeNumber,
@@ -16,10 +17,12 @@ public record UserSummaryResponse(
         String phone,
         UserRole role,
         UserPosition position,
-        UserStatus status
+        UserStatus status,
+        String businessUnitName
 ) {
-    public static UserSummaryResponse from(User user) {
+    public static UserSummaryResponse from(User user, String businessUnitName) {
         return new UserSummaryResponse(
+                user.getUserId(),
                 user.getLoginId(),
                 user.getUsername(),
                 user.getEmployeeNumber(),
@@ -27,7 +30,8 @@ public record UserSummaryResponse(
                 user.getPhone(),
                 user.getRole(),
                 user.getPosition(),
-                user.getStatus()
+                user.getStatus(),
+                businessUnitName
         );
     }
 }

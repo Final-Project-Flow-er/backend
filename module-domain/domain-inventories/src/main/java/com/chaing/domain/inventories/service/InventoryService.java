@@ -224,9 +224,7 @@ public class InventoryService {
                 new ReturnToInventoryRequest(
                         "SerialCode",
                         1L,
-                        "BoxCode"
-                )
-        );
+                        "BoxCode"));
     }
 
     public List<Long> getProductsBySerialCodeAndBoxCode(List<FranchiseReturnUpdateRequest> requests) {
@@ -419,5 +417,17 @@ public class InventoryService {
                     .build();
             inventoryPolicyRepository.save(policy);
         }
+    }
+
+    public List<HQInventory> getHqInventoriesByIds(List<Long> inventoryIds) {
+        return hqInventoryRepository.findAllById(inventoryIds);
+    }
+
+    public List<FranchiseInventory> getFranchiseInventoriesByIds(List<Long> inventoryIds) {
+        return franchiseInventoryRepository.findAllById(inventoryIds);
+    }
+
+    public List<FactoryInventory> getFactoryInventoriesByIds(List<Long> inventoryIds) {
+        return factoryInventoryRepository.findAllById(inventoryIds);
     }
 }

@@ -2,6 +2,9 @@ package com.chaing.api.facade.hq;
 
 import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.core.enums.LogType;
+import com.chaing.domain.inventories.entity.FactoryInventory;
+import com.chaing.domain.inventories.entity.FranchiseInventory;
+import com.chaing.domain.inventories.entity.HQInventory;
 import com.chaing.domain.inventories.dto.request.DisposalRequest;
 import com.chaing.domain.inventories.dto.request.FranchiseInventoryItemsRequest;
 import com.chaing.domain.inventories.dto.request.HQInventoryItemsRequest;
@@ -347,8 +350,86 @@ public class HQInventoryFacade {
 
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public Void disposalInventory(DisposalRequest request) {
+        String actorTypeRaw = request.actorType().toUpperCase();
+        List<InventoryLogCreateRequest> logs = new ArrayList<>();
+
+        if (actorTypeRaw.equals("HQ")) {
+            List<HQInventory> inventories = inventoryService.getHqInventoriesByIds(request.inventoryIds());
+            Map<Long, ProductInfo> productInfos = productService.getProductInfos(
+                    inventories.stream().map(HQInventory::getProductId).distinct().toList());
+
+            for (HQInventory inv : inventories) {
+                ProductInfo pInfo = productInfos.get(inv.getProductId());
+                logs.add(new InventoryLogCreateRequest(
+                        inv.getProductId(),
+                        pInfo != null ? pInfo.productName() : "Unknown",
+                        inv.getBoxCode(),
+                        null,
+                        LogType.DISPOSAL,
+                        1,
+                        pInfo != null ? pInfo.tradePrice() : null,
+                        pInfo != null ? pInfo.retailPrice() : null,
+                        LocationType.HQ,
+                        null,
+                        null,
+                        null,
+                        ActorType.HQ,
+                        null));
+            }
+        } else if (actorTypeRaw.equals("FACTORY")) {
+            List<FactoryInventory> inventories = inventoryService.getFactoryInventoriesByIds(request.inventoryIds());
+            Map<Long, ProductInfo> productInfos = productService.getProductInfos(
+                    inventories.stream().map(FactoryInventory::getProductId).distinct().toList());
+
+            for (FactoryInventory inv : inventories) {
+                ProductInfo pInfo = productInfos.get(inv.getProductId());
+                logs.add(new InventoryLogCreateRequest(
+                        inv.getProductId(),
+                        pInfo != null ? pInfo.productName() : "Unknown",
+                        inv.getBoxCode(),
+                        null,
+                        LogType.DISPOSAL,
+                        1,
+                        pInfo != null ? pInfo.tradePrice() : null,
+                        pInfo != null ? pInfo.retailPrice() : null,
+                        LocationType.FACTORY,
+                        null,
+                        null,
+                        null,
+                        ActorType.FACTORY,
+                        null));
+            }
+        } else if (actorTypeRaw.equals("FRANCHISE")) {
+            List<FranchiseInventory> inventories = inventoryService
+                    .getFranchiseInventoriesByIds(request.inventoryIds());
+            Map<Long, ProductInfo> productInfos = productService.getProductInfos(
+                    inventories.stream().map(FranchiseInventory::getProductId).distinct().toList());
+
+            for (FranchiseInventory inv : inventories) {
+                ProductInfo pInfo = productInfos.get(inv.getProductId());
+                logs.add(new InventoryLogCreateRequest(
+                        inv.getProductId(),
+                        pInfo != null ? pInfo.productName() : "Unknown",
+                        inv.getBoxCode(),
+                        null,
+                        LogType.DISPOSAL,
+                        1,
+                        pInfo != null ? pInfo.tradePrice() : null,
+                        pInfo != null ? pInfo.retailPrice() : null,
+                        LocationType.FRANCHISE,
+                        inv.getFranchiseId(),
+                        null,
+                        null,
+                        ActorType.FRANCHISE,
+                        inv.getFranchiseId()));
+            }
+        }
+
+        if (!logs.isEmpty()) {
+            inventoryLogService.recordInventoryLog(logs);
+        }
+
         inventoryService.disposalInventory(request);
-        // 로그 기록 추가
         return null;
     }
 

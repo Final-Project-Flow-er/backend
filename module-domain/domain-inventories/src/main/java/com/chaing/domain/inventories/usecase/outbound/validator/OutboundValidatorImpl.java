@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Objects;
 
 @Component
 @RequiredArgsConstructor
@@ -46,5 +47,16 @@ public class OutboundValidatorImpl implements OutboundValidator{
     if(targetBoxCode==null || targetBoxCode.isEmpty()){
         throw new InventoriesException(InventoriesErrorCode.INVENTORIES_IS_NULL);
     }
+    }
+
+    @Override
+    public void isTargetMatched(String boxCode, String targetBoxCode) {
+
+        checkBoxCode(boxCode);
+        checkBoxCode(targetBoxCode);
+
+        if(!Objects.equals(boxCode, targetBoxCode)){
+            throw new InventoriesException(InventoriesErrorCode.INVENTORIES_BOX_CODE_UNMATCHED);
+        }
     }
 }

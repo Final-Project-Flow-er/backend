@@ -85,6 +85,11 @@ public class OutboundService {
     public void cancelOutbound(String boxCode, List<String> serialCodes) {
         List<FactoryInventory> selectedList = getListAndValidate(serialCodes);
 
+        // 요소들의 boxCode 확인
+        for(FactoryInventory f : selectedList) {
+            outboundValidator.isTargetMatched(f.getBoxCode(), boxCode);
+        }
+
         // 타겟 리스트가 가용 상태가 아닌지 확인
         selectedList.forEach(target -> {
             LogType status = target.getStatus();

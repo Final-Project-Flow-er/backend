@@ -32,16 +32,19 @@ public class OutboundFacade {
     private final ProductService productService;
 
     // 재고 상태 변경
+    @Transactional
     public void updateOutboundStatus(@Valid OutboundUpdateRequest request, LogType currentStatus) {
         List<String> selectedList = request.serialCodes();
         outboundService.updateStatus(selectedList, currentStatus);
     }
 
     // 박스 할당
+    @Transactional
     public void assignBoxToInventories(String boxCode, List<String> serialCodes) {
         outboundService.assignBox(boxCode, serialCodes);
     }
 
+    @Transactional
     public void cancelOutbound(String boxCode, List<String> serialCodes) {
         outboundService.cancelOutbound(boxCode, serialCodes);
     }

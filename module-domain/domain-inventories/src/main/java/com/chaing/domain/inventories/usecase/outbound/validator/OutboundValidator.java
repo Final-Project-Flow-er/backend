@@ -11,4 +11,6 @@ public interface OutboundValidator {
     void checkValidStatus(LogType status, LogType logType);
 
     void checkBoxCode(String targetBoxCode);
+
+    void isTargetMatched(String boxCode, String targetBoxCode);
 }

@@ -26,7 +26,11 @@ public enum SettlementErrorCode implements ErrorCode {
     // 문서 (PDF/Excel)
     DOCUMENT_GENERATION_FAILED(500, "S011", "정산 문서 생성에 실패했습니다."),
     // 가맹점
-    FRANCHISE_NOT_FOUND(404, "S012", "해당 가맹점을 찾을 수 없습니다.");
+    FRANCHISE_NOT_FOUND(404, "S012", "해당 가맹점을 찾을 수 없습니다."),
+    // 공통 검증
+    INVALID_PARAMETER(400, "S014", "유효하지 않은 파라미터입니다."),
+    INVALID_DATE_RANGE(400, "S015", "시작일은 종료일보다 늦을 수 없습니다."),
+    INVALID_PAGINATION(400, "S016", "페이지 번호는 0 이상, 사이즈는 1 이상이어야 합니다.");
 
     private final Integer status;
     private final String code;

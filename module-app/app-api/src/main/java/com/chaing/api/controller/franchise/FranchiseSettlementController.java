@@ -5,6 +5,8 @@ import com.chaing.core.dto.ApiResponse;
 import com.chaing.api.security.principal.UserPrincipal;
 import com.chaing.domain.settlements.enums.PeriodType;
 import com.chaing.domain.settlements.enums.VoucherType;
+import com.chaing.domain.settlements.exception.SettlementErrorCode;
+import com.chaing.domain.settlements.exception.SettlementException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -80,7 +82,7 @@ public class FranchiseSettlementController {
                         @RequestParam(value = "limit", required = false) Integer limit,
                         @AuthenticationPrincipal UserPrincipal principal) {
                 if (limit != null && limit < 1) {
-                        throw new IllegalArgumentException("limit는 0보다 커야합니다");
+                        throw new SettlementException(SettlementErrorCode.INVALID_PARAMETER);
                 }
                 Long franchiseId = principal.getBusinessUnitId();
                 // TODO: Swagger 테스트용 임시 응답. 추후 서비스 로직 연동 예정
@@ -96,10 +98,10 @@ public class FranchiseSettlementController {
                         @RequestParam("end") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end,
                         @AuthenticationPrincipal UserPrincipal principal) {
                 if (start.isAfter(end)) {
-                        throw new IllegalArgumentException("시작일은 종료일보다 늦을 수 없습니다.");
+                        throw new SettlementException(SettlementErrorCode.INVALID_DATE_RANGE);
                 }
                 if (!YearMonth.from(start).equals(month) || !YearMonth.from(end).equals(month)) {
-                        throw new IllegalArgumentException("시작일과 종료일은 요청한 월 범위 내에 있어야 합니다.");
+                        throw new SettlementException(SettlementErrorCode.INVALID_PARAMETER);
                 }
                 Long franchiseId = principal.getBusinessUnitId();
                 // TODO: Swagger 테스트용 임시 응답. 추후 서비스 로직 연동 예정
@@ -114,7 +116,7 @@ public class FranchiseSettlementController {
                         @RequestParam(value = "limit", required = false) Integer limit,
                         @AuthenticationPrincipal UserPrincipal principal) {
                 if (limit != null && limit < 1) {
-                        throw new IllegalArgumentException("limit는 0보다 커야합니다");
+                        throw new SettlementException(SettlementErrorCode.INVALID_PARAMETER);
                 }
                 Long franchiseId = principal.getBusinessUnitId();
                 return ResponseEntity.ok(ApiResponse.success(
@@ -138,13 +140,13 @@ public class FranchiseSettlementController {
                         @RequestParam(value = "size", defaultValue = "20") int size,
                         @AuthenticationPrincipal UserPrincipal principal) {
                 if (page < 0 || size < 1) {
-                        throw new IllegalArgumentException("page는 0 이상, size는 1 이상이어야 합니다");
+                        throw new SettlementException(SettlementErrorCode.INVALID_PAGINATION);
                 }
                 if (period == PeriodType.DAILY && date == null) {
-                        throw new IllegalArgumentException("period=DAILY일때, date는 필수입니다.");
+                        throw new SettlementException(SettlementErrorCode.INVALID_PARAMETER);
                 }
                 if (period == PeriodType.MONTHLY && month == null) {
-                        throw new IllegalArgumentException("period=MONTHLY일때, month는 필수입니다.");
+                        throw new SettlementException(SettlementErrorCode.INVALID_PARAMETER);
                 }
                 Long franchiseId = principal.getBusinessUnitId();
                 Pageable pageable = PageRequest.of(page, size);

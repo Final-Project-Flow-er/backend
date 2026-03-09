@@ -22,6 +22,7 @@ import com.chaing.domain.settlements.enums.PeriodType;
 import com.chaing.domain.settlements.enums.VoucherType;
 import com.chaing.domain.settlements.service.DailySettlementService;
 import com.chaing.domain.settlements.service.MonthlySettlementService;
+import com.chaing.domain.settlements.service.SettlementDocumentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -45,6 +46,7 @@ public class FranchiseSettlementFacade {
 
         private final DailySettlementService dailyService;
         private final MonthlySettlementService monthlyService;
+        private final SettlementDocumentService documentService;
 
         // 다른 도메인 Repository (메서드 추가 요청 후 사용)
         private final FranchiseSalesRepository salesRepository;
@@ -265,22 +267,46 @@ public class FranchiseSettlementFacade {
                 return ranked;
         }
 
-        // --- PDF / EXCEL 다운로드 (프론트 통신용 임시 URL 반환. 추후 실제 서비스 연결) ---
+        // --- PDF / EXCEL 다운로드 (프론트 통신용 실제 URL 반환) ---
         public String getDailyReceiptPdf(Long franchiseId, LocalDate date) {
-                // TODO: SettlementDocumentService 호출하여 실제 MinIO URL 반환
-                return "https://dummy-url.com/daily-receipt-" + franchiseId + "-" + date + ".pdf";
+                // 1. 해당 가맹점의 일별 정산 데이터 조회
+                DailySettlementReceipt receipt = dailyService.getByFranchiseAndDate(franchiseId, date);
+
+                // 2. 해당 정산 ID로 영수증 문서(PDF) 조회
+                com.chaing.domain.settlements.entity.SettlementDocument document = documentService
+                                .getDailyDocument(receipt.getDailyReceiptId());
+
+                return document != null ? document.getFileUrl() : "문서가 존재하지 않습니다.";
         }
 
         public String getMonthlyReceiptPdf(Long franchiseId, YearMonth month) {
-                // TODO: SettlementDocumentService 호출하여 실제 MinIO URL 반환
-                return "https://dummy-url.com/monthly-receipt-" + franchiseId + "-" + month + ".pdf";
+                // 1. 해당 가맹점의 월별 정산 데이터 조회
+                MonthlySettlement settlement = monthlyService.getByFranchiseAndMonth(franchiseId, month);
+
+                // 2. 해당 월별 정산에 연관된 모든 문서 목록 조회
+                List<com.chaing.domain.settlements.entity.SettlementDocument> documents = documentService
+                                .getMonthlyDocuments(settlement.getMonthlySettlementId());
+
+                // 3. 임시: 첫 번째 문서의 URL을 반환 (나중에 RECEIPT_PDF 타입만 필터링하는 로직 고도화 가능)
+                if (documents != null && !documents.isEmpty()) {
+                        return documents.get(0).getFileUrl();
+                }
+                return "문서가 존재하지 않습니다.";
         }
 
         public String getMonthlyVouchersExcel(Long franchiseId, YearMonth month,
                         com.chaing.domain.settlements.enums.VoucherType type) {
-                // TODO: SettlementDocumentService 호출하여 실제 MinIO URL 반환
-                String typeStr = (type == null) ? "all" : type.name();
-                return "https://dummy-url.com/monthly-vouchers-" + franchiseId + "-" + month + "-" + typeStr + ".xlsx";
+                // 엑셀도 동일하게 해당 정산 데이터 기반으로 조회 후 반환
+                MonthlySettlement settlement = monthlyService.getByFranchiseAndMonth(franchiseId, month);
+                List<com.chaing.domain.settlements.entity.SettlementDocument> documents = documentService
+                                .getMonthlyDocuments(settlement.getMonthlySettlementId());
+
+                if (documents != null && !documents.isEmpty()) {
+                        // 우선 첫 번째 문서 반환 로직 적용
+                        // 필요시 VOUCHER_EXCEL 타입 등 상세 조건으로 필터링
+                        return documents.get(0).getFileUrl();
+                }
+                return "문서가 존재하지 않습니다.";
         }
 
 }

@@ -4,7 +4,7 @@ import com.chaing.api.dto.hq.settlement.request.HQSettlementAdjustmentListReques
 import com.chaing.api.dto.hq.settlement.request.HQSettlementAdjustmentVoucherRequest;
 import com.chaing.api.dto.hq.settlement.response.HQAdjustmentFranchiseResponse;
 import com.chaing.api.dto.hq.settlement.response.HQAdjustmentResponse;
-import com.chaing.api.facade.settlement.HQSettlementAdjustmentFacade;
+import com.chaing.api.facade.hq.HQSettlementAdjustmentFacade;
 import com.chaing.core.dto.ApiResponse;
 import com.chaing.domain.settlements.enums.VoucherType;
 import io.swagger.v3.oas.annotations.Operation;

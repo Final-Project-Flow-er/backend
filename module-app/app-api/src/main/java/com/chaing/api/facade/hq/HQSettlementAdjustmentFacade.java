@@ -1,4 +1,4 @@
-package com.chaing.api.facade.settlement;
+package com.chaing.api.facade.hq;
 
 import com.chaing.api.dto.hq.settlement.request.HQSettlementAdjustmentListRequest;
 import com.chaing.api.dto.hq.settlement.request.HQSettlementAdjustmentVoucherRequest;

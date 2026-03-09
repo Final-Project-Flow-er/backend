@@ -4,7 +4,7 @@ import com.chaing.api.dto.hq.settlement.request.*;
 import com.chaing.api.dto.hq.settlement.response.*;
 import com.chaing.api.dto.franchise.settlement.response.FranchiseSettlementSummaryResponse;
 import com.chaing.api.dto.franchise.settlement.response.FranchiseVoucherResponse;
-import com.chaing.api.facade.settlement.HQSettlementFacade;
+import com.chaing.api.facade.hq.HQSettlementFacade;
 import com.chaing.core.dto.ApiResponse;
 import com.chaing.domain.settlements.enums.PeriodType;
 import com.chaing.domain.settlements.enums.VoucherType;

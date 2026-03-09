@@ -5,6 +5,7 @@ import com.chaing.domain.inventories.dto.request.FranchiseInventoryItemsRequest;
 import com.chaing.domain.inventories.dto.request.InventoryBatchRequest;
 import com.chaing.domain.inventories.dto.request.InventoryBoxRequest;
 import com.chaing.domain.inventories.dto.request.InventoryRequest;
+import com.chaing.domain.inventories.dto.request.SafetyStockRequest;
 import com.chaing.domain.inventories.dto.request.StockSearchRequest;
 import com.chaing.domain.inventories.dto.response.ExpirationAlertResponse;
 import com.chaing.domain.inventories.dto.response.ExpirationBatchResultResponse;
@@ -16,6 +17,7 @@ import com.chaing.domain.inventories.dto.response.InventoryProductInfoResponse;
 import com.chaing.domain.inventories.dto.response.SafetyStockAlertResponse;
 import com.chaing.domain.inventories.dto.response.SafetyStockResponse;
 import com.chaing.domain.inventories.service.InventoryService;
+import com.chaing.domain.inventories.dto.request.DisposalRequest;
 import com.chaing.domain.inventorylogs.dto.request.InventoryLogCreateRequest;
 import com.chaing.domain.inventorylogs.enums.ActorType;
 import com.chaing.domain.inventorylogs.enums.LocationType;
@@ -123,9 +125,8 @@ public class FranchiseInventoryFacade {
     // 출고 처리
     @Transactional
     public Void decreaseInventory(@Valid InventoryBatchRequest inventoryBatchRequest) {
-        // 해당 제품들 다 배송 중 상태로 변경
-        inventoryService.updateFranchiseShippingStatus(inventoryBatchRequest.fromLocationId(),
-                inventoryBatchRequest.boxes());
+        List<String> serialCodes = convertsSerialCode(inventoryBatchRequest.boxes());
+        inventoryService.updateFranchiseShippingStatus(inventoryBatchRequest.fromLocationId(), serialCodes);
         // 로그 기록 (출고 로그 기록)
         List<InventoryLogCreateRequest> logs = convert(inventoryBatchRequest);
         inventoryLogService.recordInventoryLog(logs);
@@ -208,4 +209,13 @@ public class FranchiseInventoryFacade {
         return result;
     }
 
+    public Void disposalInventory(DisposalRequest request) {
+        inventoryService.disposalInventory(request);
+        // 로그 기록 추가
+        return null;
+    }
+
+    public void setSafetyStock(SafetyStockRequest request) {
+        inventoryService.setSafetyStock(request);
+    }
 }

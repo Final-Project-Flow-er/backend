@@ -12,13 +12,19 @@ import java.util.Map;
 
 public interface FactoryInventoryRepositoryCustom {
     Map<Long, InventoryProductInfoResponse> getStock(List<Long> products, String status);
-    List<HQInventoryBatchResponse> getBatches(Long productId);
-    List<HQInventoryItemResponse> getItems(HQInventoryItemsRequest request);
 
+    List<HQInventoryBatchResponse> getBatches(Long productId);
+
+    List<HQInventoryItemResponse> getItems(HQInventoryItemsRequest request);
 
     void updateStatus(List<String> serialCode, LogType status);
 
     void deleteFactoryInventory(List<String> serialCode);
 
     List<ExpirationBatchResultResponse> getExpirationAlerts(String locationType, Long locationId);
+
+    long updateExpiredStatus(java.time.LocalDate expirationDate);
+
+    List<com.chaing.domain.inventories.dto.response.SafetyStockResponse> getLowStockAlerts(String locationType,
+            Long locationId);
 }

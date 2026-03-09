@@ -6,4 +6,6 @@ import java.util.List;
 
 public interface HQInventoryRepositoryCustom {
     void deleteHQInventory(List<String> serialCode);
+
+    long updateExpiredStatus(java.time.LocalDate expirationDate);
 }

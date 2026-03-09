@@ -21,4 +21,6 @@ public interface FactoryInventoryRepository extends JpaRepository<FactoryInvento
     void updateAllStatusInboundBySerialCode(@Param("serials") List<String> serials);
 
     List<FactoryInventory> findAllByInventoryIdIn(List<Long> selectedList);
+
+    void deleteByInventoryIdIn(List<Long> longs);
 }

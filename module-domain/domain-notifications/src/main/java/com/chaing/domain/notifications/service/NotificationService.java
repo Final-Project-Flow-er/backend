@@ -18,10 +18,11 @@ public interface NotificationService {
     void sendToUser(NotificationEvent event) throws IOException;
     void retryableSseSendToAll(NotificationEvent event);
     void deleteNotificationsByTarget(NotificationType type, Long targetId);
-    Page<Notification> getNotificationList(Long userId, Pageable pageable);
+    Page<Notification> getNotificationList(Long userId, NotificationType type, Pageable pageable);
     Notification readNotification(Long notificationId, Long userId);
     Map<Long, Boolean> getReadStatusMap(Long userId, List<Long> notificationIds);
     void markAllAsRead(Long userId);
     void updateNotification(NotificationType type, Long targetId, String newMessage);
     void deleteNotification(Long notificationId, Long userId);
+    long getUnreadCount(Long userId);
 }

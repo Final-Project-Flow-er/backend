@@ -127,8 +127,8 @@ public class NotificationServiceImpl implements NotificationService {
 
     // 알림 목록 조회
     @Override
-    public Page<Notification> getNotificationList(Long userId, Pageable pageable) {
-        return notificationRepository.findAllMyNotifications(userId, pageable);
+    public Page<Notification> getNotificationList(Long userId, NotificationType type, Pageable pageable) {
+        return notificationRepository.findAllMyNotificationsByType(userId, type, pageable);
     }
 
     // 알림 상세 조회
@@ -176,6 +176,12 @@ public class NotificationServiceImpl implements NotificationService {
             status.read();
             notificationStatusRepository.save(status);
         }
+    }
+
+    // 미읽음 알림 수 조회
+    @Override
+    public long getUnreadCount(Long userId) {
+        return notificationRepository.countUnreadNotifications(userId);
     }
 
     // 알림 수정

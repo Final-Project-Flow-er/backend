@@ -27,8 +27,8 @@ public class NotificationFacade {
     }
 
     // 알림 목록 조회
-    public Page<NotificationListResponse> getNotificationList(Long userId, Pageable pageable) {
-        Page<Notification> notifications = notificationService.getNotificationList(userId, pageable);
+    public Page<NotificationListResponse> getNotificationList(Long userId, NotificationType type, Pageable pageable) {
+        Page<Notification> notifications = notificationService.getNotificationList(userId, type, pageable);
         List<Long> notificationIds = notifications.getContent().stream().map(Notification::getNotificationId).toList();
         Map<Long, Boolean> readStatusMap = notificationService.getReadStatusMap(userId, notificationIds);
 
@@ -61,5 +61,10 @@ public class NotificationFacade {
     @Transactional
     public void deleteNotificationsByTarget(NotificationType type, Long targetId) {
         notificationService.deleteNotificationsByTarget(type, targetId);
+    }
+
+    // 미읽음 알림 수 조회
+    public long getUnreadCount(Long userId) {
+        return notificationService.getUnreadCount(userId);
     }
 }

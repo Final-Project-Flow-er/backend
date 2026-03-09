@@ -317,7 +317,7 @@ public class InventoryService {
 
         return inventories.stream()
                 .collect(Collectors.toMap(
-                        FranchiseInventory::getInventoryId,
+                        FranchiseInventory::getBoxCode,
                         inventory -> FranchiseInventoryCommand.builder()
                                 .inventoryId(inventory.getInventoryId())
                                 .orderItemId(inventory.getOrderItemId())

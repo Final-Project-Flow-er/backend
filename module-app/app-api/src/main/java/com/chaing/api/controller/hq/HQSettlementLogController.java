@@ -1,20 +1,19 @@
 package com.chaing.api.controller.hq;
 
+import com.chaing.api.dto.hq.settlement.request.HQSettlementLogRequest;
+import com.chaing.api.dto.hq.settlement.response.HQSettlementLogResponse; // 새로 만들 DTO (테이블 한 줄)
+import com.chaing.api.facade.settlement.HQSettlementLogFacade; // 새로 만들 Facade
 import com.chaing.core.dto.ApiResponse;
-import com.chaing.domain.settlements.enums.SettlementLogType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.time.LocalDate;
-import java.util.List;
 
 @RestController
 @Tag(name = "HQSettlementLog API", description = "본사 정산 로그(이력) 조회 API")
@@ -23,29 +22,18 @@ import java.util.List;
 @PreAuthorize("hasAnyRole('HQ', 'ADMIN')")
 public class HQSettlementLogController {
 
-    @Operation(
-            summary = "정산 이력 목록 조회",
-            description = """
-                    정산 이력 조회 화면의 테이블 데이터를 조회합니다.
-                    - type 탭 필터(ALL/CONFIRM/DOC/ADJUSTMENT/CANCEL)
-                    """
-    )
+    private final HQSettlementLogFacade logFacade; // [NEW] Facade 주입
+
+    @Operation(summary = "정산 이력 목록 조회", description = """
+            정산 이력 조회 화면의 테이블 데이터를 조회합니다.
+            - type 탭 필터(ALL/CONFIRM/DOC/ADJUSTMENT/CANCEL)
+            """)
     @GetMapping
-    public ResponseEntity<ApiResponse<?>> getSettlementLogs(
-            @RequestParam(value = "type", defaultValue = "ALL") SettlementLogType type,
-            @RequestParam(value = "franchiseId", required = false) Long franchiseId,
-            @RequestParam(value = "keyword", required = false) String keyword,
-            @RequestParam(value = "from", required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDate from,
-            @RequestParam(value = "to", required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDate to,
-            @RequestParam(value = "page", defaultValue = "0") int page,
-            @RequestParam(value = "size", defaultValue = "20") int size,
-            @RequestParam(value = "sort", defaultValue = "createdAt,desc") String sort
+    public ResponseEntity<ApiResponse<Page<HQSettlementLogResponse>>> getSettlementLogs(
+            @Valid HQSettlementLogRequest request // [UPDATED] 8개의 파라미터를 하나의 DTO로 통합
     ) {
-        // 응답 예시(프론트 테이블 컬럼 매핑):
-        // id(번호), type(유형), franchiseName(가맹점), content(내역), actorName(처리자), createdAt(일시)
-        return ResponseEntity.ok(ApiResponse.success(List.of()));
+        // [수정] Facade 호출로 실제 데이터 조회 위임
+        Page<HQSettlementLogResponse> response = logFacade.getSettlementLogs(request);
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
-    
 }

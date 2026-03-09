@@ -73,9 +73,9 @@ public class HQSettlementController {
 
         @Operation(summary = "본사 일별 전체 가맹점 정산 추이(그래프)", description = "기간(start~end) 동안 전체 가맹점 합계 추이(일자별)")
         @GetMapping("/daily/daily-sales-graph")
-        public ResponseEntity<ApiResponse<List<HQDailyTrendResponse>>> getDailyTrend(
+        public ResponseEntity<ApiResponse<List<HQDailyGraphResponse>>> getDailyTrend(
                         @Valid HQSettlementDailyGraphRequest request) {
-                List<HQDailyTrendResponse> response = hqFacade.getDailyTrend(request);
+                List<HQDailyGraphResponse> response = hqFacade.getDailyTrend(request);
                 return ResponseEntity.ok(ApiResponse.success(response));
         }
 

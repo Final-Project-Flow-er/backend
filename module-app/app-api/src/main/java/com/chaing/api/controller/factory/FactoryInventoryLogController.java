@@ -1,5 +1,8 @@
 package com.chaing.api.controller.factory;
 
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+
 import com.chaing.api.facade.factory.FactoryInventoryLogFacade;
 import com.chaing.core.dto.ApiResponse;
 import com.chaing.domain.inventorylogs.dto.request.FactoryLogRequest;
@@ -24,6 +27,7 @@ import java.time.LocalDate;
 public class FactoryInventoryLogController {
 
     private final FactoryInventoryLogFacade factoryInventoryLogFacade;
+
     @Operation(summary = "공장 재고 이력 조회", description = "공장의 재고 이력을 확인합니다.")
     @GetMapping("/{factoryId}")
     public ResponseEntity<ApiResponse<FactoryInventoryLogListResponse>> findFactoryInventoryLogs(
@@ -31,16 +35,14 @@ public class FactoryInventoryLogController {
             @RequestParam(required = false) String productName,
             @RequestParam(required = false) String logType,
 
-            @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-            LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
 
-            @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-            LocalDate endDate,
-            @RequestParam(required = false) String transactionCode
-    ) {
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(required = false) String transactionCode,
+
+            @PageableDefault(size = 10) Pageable pageable) {
         FactoryLogRequest request = new FactoryLogRequest(productName, logType, startDate, endDate, transactionCode);
-        return ResponseEntity.ok(ApiResponse.success(factoryInventoryLogFacade.findFactoryInventoryLogs(factoryId, request)));
+        return ResponseEntity.ok(
+                ApiResponse.success(factoryInventoryLogFacade.findFactoryInventoryLogs(factoryId, request, pageable)));
     }
 }

@@ -1,6 +1,7 @@
 package com.chaing.domain.inventorylogs.repository.impl;
 
 import com.chaing.core.enums.LogType;
+import org.springframework.data.domain.Pageable;
 import com.chaing.domain.inventorylogs.dto.request.FactoryLogRequest;
 import com.chaing.domain.inventorylogs.dto.request.FranchiseLogRequest;
 import com.chaing.domain.inventorylogs.dto.request.LogRequest;
@@ -47,7 +48,7 @@ public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom 
         private final QInventoryLog log = QInventoryLog.inventoryLog;
 
         @Override
-        public InventoryLogListResponse findReturnInboundLogs(LogRequest request) {
+        public InventoryLogListResponse findReturnInboundLogs(LogRequest request, Pageable pageable) {
 
                 List<InventoryLogResponse> inventoryLogResponses = queryFactory
                                 .select(inventoryLogProjection())
@@ -58,15 +59,40 @@ public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom 
                                                 betweenDate(request.startDate(), request.endDate()),
                                                 containsTransactionCode(request.transactionCode()))
                                 .orderBy(log.createdAt.desc())
+                                .offset(pageable.getOffset())
+                                .limit(pageable.getPageSize())
                                 .fetch();
+
+                long total = queryFactory
+                                .select(log.count())
+                                .from(log)
+                                .where(
+                                                log.logType.eq(LogType.RETURN_INBOUND),
+                                                actorContains("HQ", 1L), // 본사Id
+                                                betweenDate(request.startDate(), request.endDate()),
+                                                containsTransactionCode(request.transactionCode()))
+                                .fetchOne() == null ? 0L
+                                                : queryFactory
+                                                                .select(log.count())
+                                                                .from(log)
+                                                                .where(
+                                                                                log.logType.eq(LogType.RETURN_INBOUND),
+                                                                                actorContains("HQ", 1L), // 본사Id
+                                                                                betweenDate(request.startDate(),
+                                                                                                request.endDate()),
+                                                                                containsTransactionCode(request
+                                                                                                .transactionCode()))
+                                                                .fetchOne();
 
                 return InventoryLogListResponse.builder()
                                 .inventoryLogResponses(inventoryLogResponses)
+                                .totalElements(total)
+                                .totalPages((int) Math.ceil((double) total / pageable.getPageSize()))
                                 .build();
         }
 
         @Override
-        public InventoryLogListResponse findReturnOutboundLogs(LogRequest request) {
+        public InventoryLogListResponse findReturnOutboundLogs(LogRequest request, Pageable pageable) {
                 List<InventoryLogResponse> inventoryLogResponses = queryFactory
                                 .select(inventoryLogProjection())
                                 .from(log)
@@ -76,15 +102,40 @@ public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom 
                                                 betweenDate(request.startDate(), request.endDate()),
                                                 containsTransactionCode(request.transactionCode()))
                                 .orderBy(log.createdAt.desc())
+                                .offset(pageable.getOffset())
+                                .limit(pageable.getPageSize())
                                 .fetch();
+
+                long total = queryFactory
+                                .select(log.count())
+                                .from(log)
+                                .where(
+                                                log.logType.eq(LogType.RETURN_OUTBOUND),
+                                                actorContains("HQ", 1L), // 본사Id
+                                                betweenDate(request.startDate(), request.endDate()),
+                                                containsTransactionCode(request.transactionCode()))
+                                .fetchOne() == null ? 0L
+                                                : queryFactory
+                                                                .select(log.count())
+                                                                .from(log)
+                                                                .where(
+                                                                                log.logType.eq(LogType.RETURN_OUTBOUND),
+                                                                                actorContains("HQ", 1L), // 본사Id
+                                                                                betweenDate(request.startDate(),
+                                                                                                request.endDate()),
+                                                                                containsTransactionCode(request
+                                                                                                .transactionCode()))
+                                                                .fetchOne();
 
                 return InventoryLogListResponse.builder()
                                 .inventoryLogResponses(inventoryLogResponses)
+                                .totalElements(total)
+                                .totalPages((int) Math.ceil((double) total / pageable.getPageSize()))
                                 .build();
         }
 
         @Override
-        public InventoryLogListResponse findDisposalLogs(LogRequest request) {
+        public InventoryLogListResponse findDisposalLogs(LogRequest request, Pageable pageable) {
                 List<InventoryLogResponse> inventoryLogResponses = queryFactory
                                 .select(inventoryLogProjection())
                                 .from(log)
@@ -94,16 +145,41 @@ public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom 
                                                 betweenDate(request.startDate(), request.endDate()),
                                                 containsTransactionCode(request.transactionCode()))
                                 .orderBy(log.createdAt.desc())
+                                .offset(pageable.getOffset())
+                                .limit(pageable.getPageSize())
                                 .fetch();
+
+                long total = queryFactory
+                                .select(log.count())
+                                .from(log)
+                                .where(
+                                                log.logType.eq(LogType.DISPOSAL),
+                                                actorContains("HQ", 1L), // 본사Id
+                                                betweenDate(request.startDate(), request.endDate()),
+                                                containsTransactionCode(request.transactionCode()))
+                                .fetchOne() == null ? 0L
+                                                : queryFactory
+                                                                .select(log.count())
+                                                                .from(log)
+                                                                .where(
+                                                                                log.logType.eq(LogType.DISPOSAL),
+                                                                                actorContains("HQ", 1L), // 본사Id
+                                                                                betweenDate(request.startDate(),
+                                                                                                request.endDate()),
+                                                                                containsTransactionCode(request
+                                                                                                .transactionCode()))
+                                                                .fetchOne();
 
                 return InventoryLogListResponse.builder()
                                 .inventoryLogResponses(inventoryLogResponses)
+                                .totalElements(total)
+                                .totalPages((int) Math.ceil((double) total / pageable.getPageSize()))
                                 .build();
         }
 
         @Override
         public FranchiseInventoryLogListResponse findFranchiseInboundOutboundLogs(Long franchiseId,
-                        FranchiseLogRequest request) {
+                        FranchiseLogRequest request, Pageable pageable) {
                 List<FranchiseInventoryLogResponse> franchiseInventoryLogResponseList = queryFactory
                                 .select(Projections.constructor(
                                                 FranchiseInventoryLogResponse.class,
@@ -111,7 +187,7 @@ public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom 
                                                 log.transactionCode,
                                                 log.productName,
                                                 log.logType,
-                                                log.boxCode.countDistinct(),
+                                                log.boxCode.countDistinct().intValue(),
                                                 log.quantity.sum()))
                                 .from(log)
                                 .where(
@@ -120,44 +196,70 @@ public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom 
                                                 containsTransactionCode(request.transactionCode()),
                                                 actorContains("FRANCHISE", franchiseId),
                                                 containsProductName(request.productName()))
-                        .groupBy(
-                                log.transactionCode,
-                                log.productName,
-                                log.logType
-                        )
+                                .groupBy(
+                                                log.transactionCode,
+                                                log.productName,
+                                                log.logType)
                                 .orderBy(log.createdAt.desc())
+                                .offset(pageable.getOffset())
+                                .limit(pageable.getPageSize())
                                 .fetch();
+
+                long total = queryFactory
+                                .select(log.transactionCode.countDistinct())
+                                .from(log)
+                                .where(
+                                                log.logType.eq(LogType.INBOUND).or(log.logType.eq(LogType.OUTBOUND)),
+                                                betweenDate(request.startDate(), request.endDate()),
+                                                containsTransactionCode(request.transactionCode()),
+                                                actorContains("FRANCHISE", franchiseId),
+                                                containsProductName(request.productName()))
+                                .fetchOne() == null ? 0L
+                                                : queryFactory
+                                                                .select(log.transactionCode.countDistinct())
+                                                                .from(log)
+                                                                .where(
+                                                                                log.logType.eq(LogType.INBOUND).or(
+                                                                                                log.logType.eq(LogType.OUTBOUND)),
+                                                                                betweenDate(request.startDate(),
+                                                                                                request.endDate()),
+                                                                                containsTransactionCode(request
+                                                                                                .transactionCode()),
+                                                                                actorContains("FRANCHISE", franchiseId),
+                                                                                containsProductName(
+                                                                                                request.productName()))
+                                                                .fetchOne();
+
                 return FranchiseInventoryLogListResponse.builder()
                                 .franchiseInventoryLogResponseList(franchiseInventoryLogResponseList)
+                                .totalElements(total)
+                                .totalPages((int) Math.ceil((double) total / pageable.getPageSize()))
                                 .build();
         }
 
         @Override
         public List<BoxCodeResponse> findBoxCodesByTransactionCode(String transactionCode) {
-            return queryFactory
-                    .select(Projections.constructor(
-                            BoxCodeResponse.class,
-                            log.boxCode
-                    ))
-                    .from(log)
-                    .where(log.transactionCode.eq(transactionCode))
-                    .distinct()
-                    .fetch();
+                return queryFactory
+                                .select(Projections.constructor(
+                                                BoxCodeResponse.class,
+                                                log.boxCode))
+                                .from(log)
+                                .where(log.transactionCode.eq(transactionCode))
+                                .distinct()
+                                .fetch();
         }
 
-    @Override
+        @Override
         public FranchiseInventoryLogListResponse findFranchiseSalesRefundLogs(Long franchiseId,
-                        FranchiseLogRequest request) {
+                        FranchiseLogRequest request, Pageable pageable) {
                 List<FranchiseInventoryLogResponse> franchiseInventoryLogResponseList = queryFactory
                                 .select(Projections.constructor(
                                                 FranchiseInventoryLogResponse.class,
                                                 log.createdAt,
                                                 log.transactionCode,
-                                                log.boxCode,
                                                 log.productName,
                                                 log.logType,
                                                 log.quantity,
-                                                log.price,
                                                 log.quantity))
                                 .from(log)
                                 .where(
@@ -168,39 +270,98 @@ public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom 
                                                 actorContains("FRANCHISE", franchiseId),
                                                 containsProductName(request.productName()))
                                 .orderBy(log.createdAt.desc())
+                                .offset(pageable.getOffset())
+                                .limit(pageable.getPageSize())
                                 .fetch();
+
+                long total = queryFactory
+                                .select(log.count())
+                                .from(log)
+                                .where(
+                                                log.logType.eq(LogType.SALE).or(log.logType.eq(LogType.REFUND)),
+                                                betweenDate(request.startDate(), request.endDate()),
+                                                containsTransactionCode(request.transactionCode()),
+                                                actorContains("FRANCHISE", franchiseId),
+                                                containsProductName(request.productName()))
+                                .fetchOne() == null ? 0L
+                                                : queryFactory
+                                                                .select(log.count())
+                                                                .from(log)
+                                                                .where(
+                                                                                log.logType.eq(LogType.SALE).or(
+                                                                                                log.logType.eq(LogType.REFUND)),
+                                                                                betweenDate(request.startDate(),
+                                                                                                request.endDate()),
+                                                                                containsTransactionCode(request
+                                                                                                .transactionCode()),
+                                                                                actorContains("FRANCHISE", franchiseId),
+                                                                                containsProductName(
+                                                                                                request.productName()))
+                                                                .fetchOne();
+
                 return FranchiseInventoryLogListResponse.builder()
                                 .franchiseInventoryLogResponseList(franchiseInventoryLogResponseList)
+                                .totalElements(total)
+                                .totalPages((int) Math.ceil((double) total / pageable.getPageSize()))
                                 .build();
         }
 
         @Override
-        public FactoryInventoryLogListResponse findFactoryInventoryLogs(Long factoryId, FactoryLogRequest request) {
+        public FactoryInventoryLogListResponse findFactoryInventoryLogs(Long factoryId, FactoryLogRequest request,
+                        Pageable pageable) {
                 List<FactoryInventoryLogResponse> inventoryLogResponses = queryFactory
-                        .select(Projections.constructor(
-                                FactoryInventoryLogResponse.class,
-                                log.createdAt,
-                                log.transactionCode,
-                                log.productName,
-                                log.logType,
-                                log.boxCode.countDistinct(),
-                                log.quantity.sum()))
-                        .from(log)
+                                .select(Projections.constructor(
+                                                FactoryInventoryLogResponse.class,
+                                                log.createdAt,
+                                                log.transactionCode,
+                                                log.productName,
+                                                log.logType,
+                                                log.boxCode.countDistinct().intValue(),
+                                                log.quantity.sum()))
+                                .from(log)
                                 .where(
                                                 actorContains("FACTORY", factoryId),
                                                 containsProductName(request.productName()),
                                                 betweenDate(request.startDate(), request.endDate()),
                                                 containsTransactionCode(request.transactionCode()),
                                                 containsLogType(request.logType()))
-                        .groupBy(
-                                log.transactionCode,
-                                log.productName,
-                                log.logType
-                        )
+                                .groupBy(
+                                                log.transactionCode,
+                                                log.productName,
+                                                log.logType)
                                 .orderBy(log.createdAt.desc())
+                                .offset(pageable.getOffset())
+                                .limit(pageable.getPageSize())
                                 .fetch();
+
+                long total = queryFactory
+                                .select(log.transactionCode.countDistinct())
+                                .from(log)
+                                .where(
+                                                actorContains("FACTORY", factoryId),
+                                                containsProductName(request.productName()),
+                                                betweenDate(request.startDate(), request.endDate()),
+                                                containsTransactionCode(request.transactionCode()),
+                                                containsLogType(request.logType()))
+                                .fetchOne() == null ? 0L
+                                                : queryFactory
+                                                                .select(log.transactionCode.countDistinct())
+                                                                .from(log)
+                                                                .where(
+                                                                                actorContains("FACTORY", factoryId),
+                                                                                containsProductName(
+                                                                                                request.productName()),
+                                                                                betweenDate(request.startDate(),
+                                                                                                request.endDate()),
+                                                                                containsTransactionCode(request
+                                                                                                .transactionCode()),
+                                                                                containsLogType(request.logType()))
+                                                                .fetchOne();
+
                 return FactoryInventoryLogListResponse.builder()
                                 .factoryInventoryLogResponseList(inventoryLogResponses)
+                                .totalElements(total)
+                                .totalPages((int) Math.ceil((double) total / pageable.getPageSize()))
                                 .build();
         }
 

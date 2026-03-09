@@ -6,6 +6,7 @@ import java.util.List;
 
 @Builder
 public record InventoryLogListResponse(
-        List<InventoryLogResponse> inventoryLogResponses
-) {
+                List<InventoryLogResponse> inventoryLogResponses,
+                long totalElements,
+                int totalPages) {
 }

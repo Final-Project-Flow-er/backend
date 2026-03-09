@@ -13,18 +13,23 @@ import com.chaing.domain.inventorylogs.enums.ActorType;
 
 import java.util.List;
 
+import org.springframework.data.domain.Pageable;
+
 public interface InventoryLogRepositoryCustom {
-    InventoryLogListResponse findReturnInboundLogs(LogRequest request);
+    InventoryLogListResponse findReturnInboundLogs(LogRequest request, Pageable pageable);
 
-    InventoryLogListResponse findReturnOutboundLogs(LogRequest request);
+    InventoryLogListResponse findReturnOutboundLogs(LogRequest request, Pageable pageable);
 
-    InventoryLogListResponse findDisposalLogs(LogRequest request);
+    InventoryLogListResponse findDisposalLogs(LogRequest request, Pageable pageable);
 
-    FranchiseInventoryLogListResponse findFranchiseInboundOutboundLogs(Long franchiseId, FranchiseLogRequest request);
+    FranchiseInventoryLogListResponse findFranchiseInboundOutboundLogs(Long franchiseId, FranchiseLogRequest request,
+            Pageable pageable);
 
-    FranchiseInventoryLogListResponse findFranchiseSalesRefundLogs(Long franchiseId, FranchiseLogRequest request);
+    FranchiseInventoryLogListResponse findFranchiseSalesRefundLogs(Long franchiseId, FranchiseLogRequest request,
+            Pageable pageable);
 
-    FactoryInventoryLogListResponse findFactoryInventoryLogs(Long factoryId, FactoryLogRequest request);
+    FactoryInventoryLogListResponse findFactoryInventoryLogs(Long factoryId, FactoryLogRequest request,
+            Pageable pageable);
 
     List<ActorProductSalesResponse> getProductSales(List<Long> actorId, List<Long> productIds, ActorType actorType,
             LogType logType);

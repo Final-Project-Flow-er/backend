@@ -6,7 +6,8 @@ import java.util.List;
 
 @Builder
 public record FactoryInventoryLogListResponse(
-        List<FactoryInventoryLogResponse> factoryInventoryLogResponseList
-) {
+                List<FactoryInventoryLogResponse> factoryInventoryLogResponseList,
+                long totalElements,
+                int totalPages) {
 
 }

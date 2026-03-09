@@ -282,7 +282,7 @@ public class HQOrderService {
     }
 
     public Map<Long, HQOrderCommand> getAllPendingOrders() {
-        List<HeadOfficeOrder> orders = orderRepository.findAllByOrderStatus(HQOrderStatus.PENDING);
+        List<HeadOfficeOrder> orders = orderRepository.findAllByOrderStatusAndDeletedAtIsNull(HQOrderStatus.PENDING);
 
         return orders.stream()
                 .collect(Collectors.toMap(

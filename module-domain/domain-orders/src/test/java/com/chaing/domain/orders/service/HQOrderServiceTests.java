@@ -458,13 +458,13 @@ class HQOrderServiceTests {
     @DisplayName("대기 중인 발주 전체 조회 - 성공")
     void getAllPendingOrders_ShouldReturnPendingOrders() {
         // given
-        given(orderRepository.findAllByOrderStatus(HQOrderStatus.PENDING)).willReturn(List.of(order));
+        given(orderRepository.findAllByOrderStatusAndDeletedAtIsNull(HQOrderStatus.PENDING)).willReturn(List.of(order));
 
         // when
         Map<Long, HQOrderCommand> result = hqOrderService.getAllPendingOrders();
 
         // then
-        verify(orderRepository, times(1)).findAllByOrderStatus(HQOrderStatus.PENDING);
+        verify(orderRepository, times(1)).findAllByOrderStatusAndDeletedAtIsNull(HQOrderStatus.PENDING);
         assertEquals(1, result.size());
         assertEquals(orderCode, result.get(orderId).orderCode());
     }

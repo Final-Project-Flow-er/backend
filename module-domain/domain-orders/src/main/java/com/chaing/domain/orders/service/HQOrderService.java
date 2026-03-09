@@ -1,7 +1,8 @@
 package com.chaing.domain.orders.service;
 
 import com.chaing.core.dto.info.ProductInfo;
-import com.chaing.domain.orders.dto.info.HQOrderInfo;
+import com.chaing.domain.orders.dto.command.HQOrderItemCommand;
+import com.chaing.domain.orders.dto.info.HQOrderCommand;
 import com.chaing.domain.orders.dto.info.HQOrderItemInfo;
 import com.chaing.domain.orders.dto.request.FactoryOrderRequest;
 import com.chaing.domain.orders.dto.request.HQOrderCreateRequest;
@@ -37,49 +38,32 @@ public class HQOrderService {
     private final HQOrderCodeGenerator generator;
 
     // 발주 정보 조회
-    // hqId, username으로 order 조회
-    public Map<Long, HQOrderInfo> getAllOrders(Long hqId, String username) {
-        List<HeadOfficeOrder> orders = orderRepository.findAllByHqIdAndUsername(hqId, username);
+    public Map<Long, HQOrderCommand> getAllOrders() {
+        List<HeadOfficeOrder> orders = orderRepository.findAllByDeletedAtIsNull();
+
+        if (orders == null || orders.isEmpty()) {
+            throw new HQOrderException(HQOrderErrorCode.ORDER_NOT_FOUND);
+        }
 
         return orders.stream()
                 .collect(Collectors.toMap(
                         HeadOfficeOrder::getHeadOfficeOrderId,
-                        HQOrderInfo::from
-                ));
-    }
-
-    // 발주 제품 정보 조회
-    // orderId로 orderItem 조회
-    // Map<orderId, List<productId>>
-    public Map<Long, List<Long>> getAllOrderItemProductId(Long hqId, List<Long> orderIds) {
-        List<HeadOfficeOrderItem> orderItems = orderItemRepository.findAllByHeadOfficeOrder_HqIdAndHeadOfficeOrder_HeadOfficeOrderIdIn(hqId, orderIds);
-
-        if (orderItems == null || orderItems.isEmpty()) {
-            throw new HQOrderException(HQOrderErrorCode.ORDER_ITEM_NOT_FOUND);
-        }
-
-        return orderItems.stream()
-                .collect(Collectors.groupingBy(
-                        item -> item.getHeadOfficeOrder().getHeadOfficeOrderId(),
-                        Collectors.mapping(
-                                HeadOfficeOrderItem::getProductId,
-                                Collectors.toList()
-                        )
+                        HQOrderCommand::from
                 ));
     }
 
     // 특정 발주 정보 조회
-    public HQOrderInfo getOrder(Long hqId, String orderCode) {
-        HeadOfficeOrder order = orderRepository.findByHqIdAndOrderCode(hqId, orderCode)
+    public HQOrderCommand getOrder(Long hqId, String orderCode) {
+        HeadOfficeOrder order = orderRepository.findByOrderCode(orderCode)
                 .orElseThrow(() -> new HQOrderException(HQOrderErrorCode.ORDER_NOT_FOUND));
 
-        return HQOrderInfo.from(order);
+        return HQOrderCommand.from(order);
     }
 
     // 발주 제품 productId 조회
     // List<productId>
     public List<Long> getOrderItemProductId(Long hqId, Long orderId) {
-        List<HeadOfficeOrderItem> orderItems = orderItemRepository.findAllByHeadOfficeOrder_HqIdAndHeadOfficeOrder_HeadOfficeOrderId(hqId, orderId);
+        List<HeadOfficeOrderItem> orderItems = orderItemRepository.findAllByHeadOfficeOrder_HeadOfficeOrderId(orderId);
 
         if (orderItems == null || orderItems.isEmpty()) {
             throw new HQOrderException(HQOrderErrorCode.ORDER_ITEM_NOT_FOUND);
@@ -93,11 +77,11 @@ public class HQOrderService {
     // 발주 제품 수정
     public List<HQOrderItemInfo> updateOrderItems(Long hqId, String orderCode, List<HQOrderItemUpdateRequest> request, Map<Long, ProductInfo> productInfoByProductId) {
         // 발주 조회
-        HeadOfficeOrder order = orderRepository.findByHqIdAndOrderCode(hqId, orderCode)
+        HeadOfficeOrder order = orderRepository.findByOrderCode(orderCode)
                 .orElseThrow(() -> new HQOrderException(HQOrderErrorCode.ORDER_NOT_FOUND));
 
         // Map<productId, HeadOfficeOrderItem> 발주 제품 조회
-        Map<Long, HeadOfficeOrderItem> items = orderItemRepository.findAllByHeadOfficeOrder_HqIdAndHeadOfficeOrder_OrderCodeAndDeletedAtIsNull(hqId, orderCode).stream()
+        Map<Long, HeadOfficeOrderItem> items = orderItemRepository.findAllByHeadOfficeOrder_OrderCodeAndDeletedAtIsNull(orderCode).stream()
                 .collect(Collectors.toMap(
                         HeadOfficeOrderItem::getProductId,
                         Function.identity()
@@ -157,21 +141,21 @@ public class HQOrderService {
     }
 
     // 발주 정보 수정
-    public HQOrderInfo updateOrder(Long hqId, String orderCode, @NotNull LocalDateTime manufactureDate) {
+    public HQOrderCommand updateOrder(Long hqId, String orderCode, @NotNull LocalDateTime manufactureDate) {
         // 발주 정보 조회
-        HeadOfficeOrder order = orderRepository.findByHqIdAndOrderCode(hqId, orderCode)
+        HeadOfficeOrder order = orderRepository.findByOrderCode(orderCode)
                 .orElseThrow(() -> new HQOrderException(HQOrderErrorCode.ORDER_NOT_FOUND));
 
         // 수정
         order.update(manufactureDate);
 
         // 반환
-        return HQOrderInfo.from(order);
+        return HQOrderCommand.from(order);
     }
 
     public Map<String, HQOrderStatus> cancel(Long hqId, String orderCode) {
         // 발주 정보 조회
-        HeadOfficeOrder order = orderRepository.findByHqIdAndOrderCode(hqId, orderCode)
+        HeadOfficeOrder order = orderRepository.findByOrderCode(orderCode)
                 .orElseThrow(() -> new HQOrderException(HQOrderErrorCode.ORDER_NOT_FOUND));
 
         // 취소
@@ -185,13 +169,10 @@ public class HQOrderService {
     }
 
     // 발주 생성
-    public HQOrderInfo createOrder(Long hqId, HQOrderCreateRequest request, Integer totalQuantity, BigDecimal totalAmount) {
+    public HQOrderCommand createOrder(Long hqId, HQOrderCreateRequest request, Integer totalQuantity, BigDecimal totalAmount) {
         // 발주 생성
         HeadOfficeOrder order = HeadOfficeOrder.builder()
                 .orderCode(generator.generate("수정요망"))
-                .hqId(hqId)
-                .username(request.username())
-                .phoneNumber(request.phoneNumber())
                 .manufactureDate(request.manufactureDate())
                 .description(request.description())
                 .totalQuantity(totalQuantity)
@@ -203,7 +184,7 @@ public class HQOrderService {
         orderRepository.save(order);
 
         // 반환
-        return HQOrderInfo.from(order);
+        return HQOrderCommand.from(order);
     }
 
     // 발주 제품 생성
@@ -230,19 +211,19 @@ public class HQOrderService {
         return HQOrderItemInfo.ofList(orderItems, productInfoByProductId);
     }
 
-    public Map<Long, HQOrderInfo> getAllPendingOrders() {
+    public Map<Long, HQOrderCommand> getAllPendingOrders() {
         List<HeadOfficeOrder> orders = orderRepository.findAllByOrderStatus(HQOrderStatus.PENDING);
 
         return orders.stream()
                 .collect(Collectors.toMap(
                         HeadOfficeOrder::getHeadOfficeOrderId,
-                        HQOrderInfo::from
+                        HQOrderCommand::from
                 ));
     }
 
     // 대기 상태 발주 제품 정보 조회
-    // return: Map<orderId, List<orderItemId>>
-    public Map<Long, List<Long>> getOrderItemIdsByOrderIdAndStatus(List<Long> orderIds) {
+    // return: Map<orderId, List<HQOrderItemCommand>>
+    public Map<Long, List<HQOrderItemCommand>> getOrderItemIdsByOrderId(List<Long> orderIds) {
         List<HeadOfficeOrderItem> orderItems = orderItemRepository.findAllByHeadOfficeOrder_HeadOfficeOrderIdIn(orderIds);
 
         if (orderItems == null || orderItems.isEmpty()) {
@@ -252,13 +233,13 @@ public class HQOrderService {
         return orderItems.stream()
                 .collect(Collectors.groupingBy(
                         item -> item.getHeadOfficeOrder().getHeadOfficeOrderId(),
-                        Collectors.mapping(HeadOfficeOrderItem::getHeadOfficeOrderItemId, Collectors.toList())
+                        Collectors.mapping(HQOrderItemCommand::from, Collectors.toList())
                 ));
     }
 
     // return: Map<orderItemId, productId>
     public Map<Long, Long> getProductIdsByOrderItemIds(List<Long> orderItemIds) {
-        List<HeadOfficeOrderItem> items = orderItemRepository.findAllByHeadOfficeOrderItemIdIn(orderItemIds);
+        List<HeadOfficeOrderItem> items = orderItemRepository.findAllByHeadOfficeOrderItemIdInAndDeletedAtIsNull(orderItemIds);
 
         if (items == null || items.isEmpty()) {
             throw new HQOrderException(HQOrderErrorCode.ORDER_ITEM_NOT_FOUND);
@@ -272,13 +253,13 @@ public class HQOrderService {
     }
 
     // 발주 전체 조회
-    public Map<Long, HQOrderInfo> getAllOrdersByFactory() {
+    public Map<Long, HQOrderCommand> getAllOrdersByFactory() {
         List<HeadOfficeOrder> orders = orderRepository.findAll();
 
         return orders.stream()
                 .collect(Collectors.toMap(
                         HeadOfficeOrder::getHeadOfficeOrderId,
-                        HQOrderInfo::from
+                        HQOrderCommand::from
                 ));
     }
 

@@ -1,12 +1,12 @@
 package com.chaing.api.facade.factory;
 
-import com.chaing.domain.businessunits.service.BusinessUnitService;
 import com.chaing.domain.businessunits.service.impl.FranchiseServiceImpl;
 import com.chaing.domain.orders.dto.command.FranchiseOrderDetailCommand;
 import com.chaing.domain.orders.dto.command.FranchiseOrderItemCommand;
+import com.chaing.domain.orders.dto.command.HQOrderItemCommand;
 import com.chaing.domain.orders.dto.request.HQOrderCreateRequest;
 import com.chaing.core.dto.info.ProductInfo;
-import com.chaing.domain.orders.dto.info.HQOrderInfo;
+import com.chaing.domain.orders.dto.info.HQOrderCommand;
 import com.chaing.domain.orders.dto.info.HQOrderItemInfo;
 import com.chaing.domain.orders.dto.request.HQOrderItemCreateInfo;
 import com.chaing.domain.orders.dto.request.HQOrderUpdateRequest;
@@ -25,6 +25,7 @@ import com.chaing.domain.orders.service.FranchiseOrderService;
 import com.chaing.domain.orders.service.HQOrderService;
 import com.chaing.domain.products.service.ProductService;
 import com.chaing.domain.users.service.UserManagementService;
+import io.lettuce.core.protocol.Command;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -48,44 +49,107 @@ public class HQOrderFacade {
     private final FranchiseServiceImpl franchiseService;
 
     // 발주 조회
-    public List<HQOrderResponse> getAllOrders(String username) {
-        // hqId username으로 꺼내오는 로직 추가
-        Long hqId = 10L;
-
+    public List<HQOrderResponse> getAllOrders() {
         // 발주 정보 조회
-        // Map<orderId, HQOrderInfo>
-        Map<Long, HQOrderInfo> orderInfos = hqOrderService.getAllOrders(hqId, username);
+        // Map<orderId, HQOrderCommand>
+        Map<Long, HQOrderCommand> orders = hqOrderService.getAllOrders();
+
+        // Map<userId, username>
+        Map<Long, String> usernameByUserId = orders.values().stream()
+                .collect(Collectors.toMap(
+                        HQOrderCommand::userId,
+                        command -> userManagementService.getUsernameByUserId(command.userId()),
+                        (a , b) -> a
+                ));
+
+        // Map<userId, phoneNumber>
+        Map<Long, String> phoneNumberByUserId = orders.values().stream()
+                .collect(Collectors.toMap(
+                        HQOrderCommand::userId,
+                        command -> userManagementService.getPhoneNumberByUserId(command.userId()),
+                        (a , b) -> a
+                ));
 
         // 발주 제품 정보 조회
-        List<Long> orderIds = orderInfos.keySet().stream().toList();
-        // 1. Map<orderId, List<productId>>
-        Map<Long, List<Long>> productIdByOrderId = hqOrderService.getAllOrderItemProductId(hqId, orderIds);
-        // 2. Map<productId, List<ProductInfo>> productId 별 제품 정보 조회
-        List<Long> productIds = productIdByOrderId.values().stream()
+        List<Long> orderIds = orders.keySet().stream().toList();
+
+        // Map<orderId, List<HQOrderItemCommand>>
+        Map<Long, List<HQOrderItemCommand>> orderItemsByOrderId = hqOrderService.getOrderItemIdsByOrderId(orderIds);
+
+        // Map<orderItemId, HQOrderItemCommand>
+        Map<Long, HQOrderItemCommand> orderItemByOrderItemId = orderItemsByOrderId.values().stream()
                 .flatMap(List::stream)
+                .collect(Collectors.toMap(
+                        HQOrderItemCommand::orderItemId,
+                        Function.identity()
+                ));
+
+        // Map<orderItemId, productId>
+        Map<Long, Long> productIdByOrderItemId = orderItemsByOrderId.values().stream()
+                .flatMap(List::stream)
+                .collect(Collectors.toMap(
+                        HQOrderItemCommand::orderItemId,
+                        HQOrderItemCommand::productId
+                ));
+
+        // List<productId>
+        List<Long> productIds = productIdByOrderItemId.values().stream()
                 .distinct()
                 .toList();
+
+        // Map<productId, ProductInfo>
         Map<Long, ProductInfo> productInfoByProductId = productService.getProductInfos(productIds);
-        // 3. Map<orderId, quantity> orderId 별 수량 계산
-        Map<Long, Integer> quantityByOrderId = productIdByOrderId.entrySet().stream()
+
+        // Map<orderId, Map<productId, List<orderItemId>>>
+        Map<Long, Map<Long, List<Long>>> productIdOrderItemIdByOrderId = orderItemsByOrderId.entrySet().stream()
                 .collect(Collectors.toMap(
                         Map.Entry::getKey,
-                        entry -> entry.getValue().size()
+                        entry -> entry.getValue().stream()
+                                .collect(Collectors.groupingBy(
+                                        HQOrderItemCommand::productId,
+                                        Collectors.mapping(HQOrderItemCommand::orderItemId, Collectors.toList())
+                                ))
                 ));
 
         // 반환
-        return productIdByOrderId.keySet().stream()
-                .<HQOrderResponse>map(orderId -> HQOrderResponse.builder()
-                        .orderCode(orderInfos.get(orderId).orderCode())
-                        .status(orderInfos.get(orderId).status())
-                        .quantity(quantityByOrderId.get(orderId))
-                        .username(orderInfos.get(orderId).username())
-                        .phoneNumber(orderInfos.get(orderId).phoneNumber())
-                        .requestedDate(orderInfos.get(orderId).requestedDate())
-                        .manufacturedDate(orderInfos.get(orderId).manufacturedDate())
-                        .storedDate(orderInfos.get(orderId).storedDate())
-                        .productCode(productInfoByProductId.get(productIdByOrderId.get(orderId).get(0)).productCode())
-                        .build())
+        return productIdOrderItemIdByOrderId.entrySet().stream()
+                .flatMap(entry -> {
+                    Long orderId = entry.getKey();
+                    HQOrderCommand order = orders.get(orderId);
+                    Map<Long, List<Long>> orderItemByProductId = entry.getValue();
+
+                    return orderItemByProductId.entrySet().stream()
+                            .map(entrySet -> {
+                                Long productId = entrySet.getKey();
+                                List<Long> orderItemIds = entrySet.getValue();
+                                Long userId = order.userId();
+                                String username = usernameByUserId.get(userId);
+                                String phoneNumber = phoneNumberByUserId.get(userId);
+                                List<HQOrderItemCommand> orderItems = orderItemIds.stream()
+                                        .map(orderItemByOrderItemId::get)
+                                        .toList();
+                                Integer quantity = orderItems.stream()
+                                        .map(HQOrderItemCommand::quantity)
+                                        .reduce(0, Integer::sum);
+                                ProductInfo productInfo = productInfoByProductId.get(productId);
+
+                                if (productInfo == null) {
+                                    throw new HQOrderException(HQOrderErrorCode.PRODUCT_NOT_FOUND);
+                                }
+
+                                return HQOrderResponse.builder()
+                                        .orderCode(order.orderCode())
+                                        .status(order.status())
+                                        .quantity(quantity)
+                                        .username(username)
+                                        .phoneNumber(phoneNumber)
+                                        .requestedDate(order.requestedDate())
+                                        .manufacturedDate(order.manufacturedDate())
+                                        .storedDate(order.storedDate())
+                                        .productCode(productInfo.productCode())
+                                        .build();
+                            });
+                })
                 .toList();
     }
 
@@ -95,7 +159,7 @@ public class HQOrderFacade {
         Long hqId = 10L;
 
         // 발주 정보 조회
-        HQOrderInfo orderInfo = hqOrderService.getOrder(hqId, orderCode);
+        HQOrderCommand orderInfo = hqOrderService.getOrder(hqId, orderCode);
 
         // 발주 제품 정보 조회
         // 1. List<productId> productId 조회
@@ -144,7 +208,7 @@ public class HQOrderFacade {
         Long hqId = 10L;
 
         // orderCode로 발주 조회
-        HQOrderInfo orderInfo = hqOrderService.getOrder(hqId, orderCode);
+        HQOrderCommand orderInfo = hqOrderService.getOrder(hqId, orderCode);
 
         // 발주 제품의 productIds 조회
         List<Long> productIds = hqOrderService.getOrderItemProductId(hqId, orderInfo.orderId());
@@ -156,7 +220,7 @@ public class HQOrderFacade {
         List<HQOrderItemInfo> itemInfos = hqOrderService.updateOrderItems(hqId, orderCode, request.items(), productInfoByProductId);
 
         // 발주 정보 수정
-        HQOrderInfo updatedOrderInfo = hqOrderService.updateOrder(hqId, orderCode, request.manufactureDate());
+        HQOrderCommand updatedOrderInfo = hqOrderService.updateOrder(hqId, orderCode, request.manufactureDate());
 
         // 반환
         return HQOrderUpdateResponse.builder()
@@ -218,7 +282,7 @@ public class HQOrderFacade {
                     return productInfo.costPrice().multiply(BigDecimal.valueOf(item.quantity()));
                 })
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-        HQOrderInfo orderInfo = hqOrderService.createOrder(hqId, request, totalQuantity, totalAmount);
+        HQOrderCommand orderInfo = hqOrderService.createOrder(hqId, request, totalQuantity, totalAmount);
 
         // 발주 제품 생성
         List<HQOrderItemInfo> items = hqOrderService.createOrderItems(orderInfo.orderId(), productInfoByProductId, request.items());

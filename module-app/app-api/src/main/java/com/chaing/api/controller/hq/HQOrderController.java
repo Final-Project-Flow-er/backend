@@ -18,6 +18,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -39,11 +40,9 @@ public class HQOrderController {
 
     @Operation(summary = "발주 조회", description = "본사의 발주 전체 조회")
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'HQ')")
     public ResponseEntity<ApiResponse<List<HQOrderResponse>>> getAllOrders() {
-        //TODO: Spring Security Context에서 값 꺼내오는 걸로 수정해야 함
-        String username = "test";
-
-        return ResponseEntity.ok(ApiResponse.success(hqOrderFacade.getAllOrders(username)));
+        return ResponseEntity.ok(ApiResponse.success(hqOrderFacade.getAllOrders()));
     }
 
     @Operation(summary = "특정 발주 조회", description = "발주 번호로 특정 발주 조회")

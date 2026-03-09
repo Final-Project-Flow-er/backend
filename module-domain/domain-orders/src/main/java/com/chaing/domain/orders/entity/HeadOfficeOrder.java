@@ -35,13 +35,7 @@ public class HeadOfficeOrder extends BaseEntity {
     private String orderCode;
 
     @Column(nullable = false)
-    private Long hqId;
-
-    @Column(nullable = false)
-    private String username;
-
-    @Column(nullable = false)
-    private String phoneNumber;
+    private Long userId;
 
     @Column(nullable = false)
     private LocalDateTime manufactureDate;

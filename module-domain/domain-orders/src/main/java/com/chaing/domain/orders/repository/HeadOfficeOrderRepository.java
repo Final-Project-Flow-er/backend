@@ -12,9 +12,9 @@ import java.util.Optional;
 
 @Repository
 public interface HeadOfficeOrderRepository extends JpaRepository<HeadOfficeOrder, Long> {
-    List<HeadOfficeOrder> findAllByHqIdAndUsername(Long hqId, String username);
+    List<HeadOfficeOrder> findAllByDeletedAtIsNull();
 
-    Optional<HeadOfficeOrder> findByHqIdAndOrderCode(Long hqId, String orderCode);
+    Optional<HeadOfficeOrder> findByOrderCode(String orderCode);
 
     Optional<HeadOfficeOrder> findByHeadOfficeOrderId(Long orderId);
 

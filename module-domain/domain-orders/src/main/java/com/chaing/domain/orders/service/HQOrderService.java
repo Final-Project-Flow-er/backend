@@ -83,7 +83,7 @@ public class HQOrderService {
                 .orElseThrow(() -> new HQOrderException(HQOrderErrorCode.INVALID_STATUS));
 
         // 원본 발주 제품 정보
-        List<HeadOfficeOrderItem> items = orderItemRepository.findAllByHeadOfficeOrder_HeadOfficeOrderIdAndHeadOfficeOrder_OrderCode(userId, orderCode);
+        List<HeadOfficeOrderItem> items = orderItemRepository.findAllByHeadOfficeOrder_HeadOfficeUserIdAndHeadOfficeOrder_OrderCode(userId, orderCode);
 
         if (items == null || items.isEmpty()) {
             throw new HQOrderException(HQOrderErrorCode.ORDER_ITEM_NOT_FOUND);

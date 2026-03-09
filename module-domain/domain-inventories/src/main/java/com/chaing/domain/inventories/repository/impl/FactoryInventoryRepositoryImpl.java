@@ -219,15 +219,15 @@ public class FactoryInventoryRepositoryImpl implements FactoryInventoryRepositor
                                                 quantity,
                                                 effectiveSafetyStock))
                                 .from(inventoryPolicy)
-                                .join(factoryInventory)
-                                .on(factoryInventory.productId.eq(inventoryPolicy.productId))
+                                .leftJoin(factoryInventory)
+                                .on(factoryInventory.productId.eq(inventoryPolicy.productId)
+                                                .and(factoryInventory.status.eq(LogType.AVAILABLE)))
                                 .where(
                                                 containsLocationType(locationType),
-                                                containsLocationId(locationId),
-                                                factoryInventory.status.eq(LogType.AVAILABLE))
+                                                containsLocationId(locationId))
                                 .groupBy(inventoryPolicy.productId, inventoryPolicy.safetyStock,
                                                 inventoryPolicy.defaultSafetyStock)
-                                .having(quantity.lt(effectiveSafetyStock))
+                                .having(quantity.loe(effectiveSafetyStock))
                                 .fetch();
         }
 

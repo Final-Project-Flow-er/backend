@@ -190,16 +190,16 @@ public class FranchiseInventoryRepositoryImpl implements FranchiseInventoryRepos
                                                 quantity,
                                                 effectiveSafetyStock))
                                 .from(inventoryPolicy)
-                                .join(franchiseInventory)
-                                .on(franchiseInventory.productId.eq(inventoryPolicy.productId))
+                                .leftJoin(franchiseInventory)
+                                .on(franchiseInventory.productId.eq(inventoryPolicy.productId)
+                                                .and(franchiseInventory.franchiseId.eq(locationId))
+                                                .and(franchiseInventory.status.eq(LogType.AVAILABLE)))
                                 .where(
                                                 containsLocationType(locationType),
-                                                containsLocationId(locationId),
-                                                franchiseInventory.franchiseId.eq(locationId),
-                                                franchiseInventory.status.eq(LogType.AVAILABLE))
+                                                containsLocationId(locationId))
                                 .groupBy(inventoryPolicy.productId, inventoryPolicy.safetyStock,
                                                 inventoryPolicy.defaultSafetyStock)
-                                .having(quantity.lt(effectiveSafetyStock))
+                                .having(quantity.loe(effectiveSafetyStock))
                                 .fetch();
         }
 
@@ -219,11 +219,7 @@ public class FranchiseInventoryRepositoryImpl implements FranchiseInventoryRepos
                                                 franchiseInventory.manufactureDate,
                                                 quantity)
                                 .from(franchiseInventory)
-                                // QInventoryPolicy가 where절에서 사용되므로 join 필요
-                                .join(inventoryPolicy).on(franchiseInventory.productId.eq(inventoryPolicy.productId))
                                 .where(
-                                                containsLocationType(locationType),
-                                                containsLocationId(locationId),
                                                 franchiseInventory.franchiseId.eq(locationId),
                                                 franchiseInventory.manufactureDate.between(startManufactureDate,
                                                                 endManufactureDate))

@@ -9,9 +9,7 @@ import java.util.List;
 
 @Repository
 public interface HeadOfficeOrderItemRepository extends JpaRepository<HeadOfficeOrderItem, Long> {
-    List<HeadOfficeOrderItem> findAllByHeadOfficeOrder_HeadOfficeOrderId(Long orderId);
-
-    List<HeadOfficeOrderItem> findAllByHeadOfficeOrder_OrderCodeAndDeletedAtIsNull(String orderCode);
+    List<HeadOfficeOrderItem> findAllByHeadOfficeOrder_HeadOfficeOrderIdAndDeletedAtIsNull(Long orderId);
 
     List<HeadOfficeOrderItem> findByHeadOfficeOrder_HeadOfficeOrderIdInAndHeadOfficeOrder_OrderStatusAndDeletedAtIsNull(
             List<Long> orderIds,
@@ -22,5 +20,5 @@ public interface HeadOfficeOrderItemRepository extends JpaRepository<HeadOfficeO
 
     List<HeadOfficeOrderItem> findAllByHeadOfficeOrderItemIdInAndDeletedAtIsNull(List<Long> orderItemIds);
 
-    List<HeadOfficeOrderItem> findAllByHeadOfficeOrder_HeadOfficeUserIdAndHeadOfficeOrder_OrderCodeAndDeletedAtIsNull(Long userId, String orderCode);
+    List<HeadOfficeOrderItem> findAllByHeadOfficeOrder_UserIdAndHeadOfficeOrder_OrderCodeAndDeletedAtIsNull(Long userId, String orderCode);
 }

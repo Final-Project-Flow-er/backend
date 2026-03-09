@@ -65,7 +65,7 @@ public class HQOrderService {
     // 발주 제품 productId 조회
     // List<productId>
     public List<Long> getOrderItemProductId(Long hqId, Long orderId) {
-        List<HeadOfficeOrderItem> orderItems = orderItemRepository.findAllByHeadOfficeOrder_HeadOfficeOrderId(orderId);
+        List<HeadOfficeOrderItem> orderItems = orderItemRepository.findAllByHeadOfficeOrder_HeadOfficeOrderIdAndDeletedAtIsNull(orderId);
 
         if (orderItems == null || orderItems.isEmpty()) {
             throw new HQOrderException(HQOrderErrorCode.ORDER_ITEM_NOT_FOUND);
@@ -83,7 +83,7 @@ public class HQOrderService {
                 .orElseThrow(() -> new HQOrderException(HQOrderErrorCode.INVALID_STATUS));
 
         // 원본 발주 제품 정보
-        List<HeadOfficeOrderItem> items = orderItemRepository.findAllByHeadOfficeOrder_HeadOfficeUserIdAndHeadOfficeOrder_OrderCodeAndDeletedAtIsNull(userId, orderCode);
+        List<HeadOfficeOrderItem> items = orderItemRepository.findAllByHeadOfficeOrder_UserIdAndHeadOfficeOrder_OrderCodeAndDeletedAtIsNull(userId, orderCode);
 
         if (items == null || items.isEmpty()) {
             throw new HQOrderException(HQOrderErrorCode.ORDER_ITEM_NOT_FOUND);
@@ -390,7 +390,7 @@ public class HQOrderService {
 
     // return: Map<orderId, List<HQOrderItemCommand>>
     public Map<Long, List<HQOrderItemCommand>> getOrderItemsByOrderId(Long orderId) {
-        List<HeadOfficeOrderItem> items = orderItemRepository.findAllByHeadOfficeOrder_HeadOfficeOrderId(orderId);
+        List<HeadOfficeOrderItem> items = orderItemRepository.findAllByHeadOfficeOrder_HeadOfficeOrderIdAndDeletedAtIsNull(orderId);
 
         if (items == null || items.isEmpty()) {
             throw new HQOrderException(HQOrderErrorCode.ORDER_ITEM_NOT_FOUND);

@@ -347,24 +347,46 @@ public class InventoryService {
     }
 
     public void disposalInventory(DisposalRequest request) {
-        if (request.actorType().equals("HQ")) {
+        String actorType = request.actorType().toUpperCase();
+        if (actorType.equals("HQ")) {
             hqInventoryRepository.deleteByInventoryIdIn(request.inventoryIds());
-        } else if (request.actorType().equals("FRANCHISE")) {
+        } else if (actorType.equals("FRANCHISE")) {
+            if (request.actorId() == null) {
+                throw new InventoriesException(InventoriesErrorCode.INVALID_LOCATION_ID);
+            }
             franchiseInventoryRepository.deleteByFranchiseIdAndInventoryIdIn(
                     request.actorId(),
                     request.inventoryIds());
-        } else {
+        } else if (actorType.equals("FACTORY")) {
             factoryInventoryRepository.deleteByInventoryIdIn(request.inventoryIds());
+        } else {
+            throw new InventoriesException(InventoriesErrorCode.INVALID_LOCATION_TYPE);
         }
     }
 
     public void setSafetyStock(SafetyStockRequest request) {
-        LocationType type = LocationType.valueOf(request.locationType().toUpperCase());
+        if (request.locationType() == null || request.locationType().isBlank()) {
+            throw new InventoriesException(InventoriesErrorCode.INVALID_LOCATION_TYPE);
+        }
+
+        LocationType type;
+        try {
+            type = LocationType.valueOf(request.locationType().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new InventoriesException(InventoriesErrorCode.INVALID_LOCATION_TYPE);
+        }
+
+        if (request.productId() == null) {
+            throw new InventoriesException(InventoriesErrorCode.PRODUCT_NOT_FOUND);
+        }
+
         Long locationId = request.locationId();
 
         // 본사(HQ)나 공장(FACTORY)이면 ID를 null로 처리 (ID-less)
         if (type == LocationType.HQ || type == LocationType.FACTORY) {
             locationId = null;
+        } else if (type == LocationType.FRANCHISE && locationId == null) {
+            throw new InventoriesException(InventoriesErrorCode.INVALID_LOCATION_ID);
         }
 
         long updatedCount = inventoryPolicyRepository.updateManualSafetyStock(
@@ -379,6 +401,7 @@ public class InventoryService {
                     .locationId(locationId)
                     .productId(request.productId())
                     .safetyStock(request.safetyStock())
+                    .defaultSafetyStock(0)
                     .build();
             inventoryPolicyRepository.save(policy);
         }

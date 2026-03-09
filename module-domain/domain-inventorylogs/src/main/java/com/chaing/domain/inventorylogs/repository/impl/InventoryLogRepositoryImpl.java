@@ -27,6 +27,7 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
+import java.sql.Date;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -275,10 +276,23 @@ public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom 
                 NumberExpression<Integer> quantity = log.quantity.sum().intValue();
 
                 BooleanExpression actorIdsCondition;
-                if (actorIds == null || actorIds.isEmpty() || actorIds.contains(null)) {
+                if (actorIds == null || actorIds.isEmpty()) {
                         actorIdsCondition = log.actorId.isNull();
                 } else {
-                        actorIdsCondition = log.actorId.in(actorIds);
+                        List<Long> nonNullActorIds = actorIds.stream()
+                                        .filter(id -> id != null)
+                                        .toList();
+
+                        actorIdsCondition = null;
+                        if (!nonNullActorIds.isEmpty()) {
+                                actorIdsCondition = log.actorId.in(nonNullActorIds);
+                        }
+
+                        if (actorIds.contains(null)) {
+                                actorIdsCondition = (actorIdsCondition == null)
+                                                ? log.actorId.isNull()
+                                                : actorIdsCondition.or(log.actorId.isNull());
+                        }
                 }
 
                 DateExpression<LocalDate> datePath = Expressions.dateTemplate(LocalDate.class, "DATE({0})",
@@ -307,8 +321,8 @@ public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom 
                         Long actorId = tuple.get(log.actorId);
                         Long productId = tuple.get(log.productId);
                         Object dateObj = tuple.get(datePath);
-                        LocalDate date = (dateObj instanceof java.sql.Date)
-                                        ? ((java.sql.Date) dateObj).toLocalDate()
+                        LocalDate date = (dateObj instanceof Date)
+                                        ? ((Date) dateObj).toLocalDate()
                                         : (LocalDate) dateObj;
                         Integer qty = tuple.get(quantity);
 

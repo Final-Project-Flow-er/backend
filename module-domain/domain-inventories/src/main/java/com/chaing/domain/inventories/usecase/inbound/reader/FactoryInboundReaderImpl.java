@@ -1,4 +1,4 @@
-package com.chaing.domain.inventories.usecase.reader;
+package com.chaing.domain.inventories.usecase.inbound.reader;
 
 import com.chaing.core.enums.LogType;
 import com.chaing.domain.inventories.dto.raw.FactoryInventoryRawData;
@@ -13,7 +13,7 @@ import java.util.List;
 @Component
 @Qualifier("factory")
 @RequiredArgsConstructor
-public class FactoryReaderImpl implements Reader<FactoryInventoryRawData> {
+public class FactoryInboundReaderImpl implements InboundReader<FactoryInventoryRawData> {
 
     private final FactoryInventoryRepository repository;
     @Override
@@ -37,8 +37,8 @@ public class FactoryReaderImpl implements Reader<FactoryInventoryRawData> {
     }
 
     @Override
-    public List<FactoryInventoryRawData> findAllByIds(List<Long> selectedList) {
-        List<FactoryInventory> entities = repository.findAllByInventoryIdIn(selectedList);
+    public List<FactoryInventoryRawData> findAllBySerialCode(List<String> selectedList) {
+        List<FactoryInventory> entities = repository.findAllBySerialCodeIn(selectedList);
 
         return entities.stream()
                 .map(entity -> new FactoryInventoryRawData(

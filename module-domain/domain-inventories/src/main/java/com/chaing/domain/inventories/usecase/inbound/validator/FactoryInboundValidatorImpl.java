@@ -1,11 +1,11 @@
-package com.chaing.domain.inventories.usecase.valiator;
+package com.chaing.domain.inventories.usecase.inbound.validator;
 
 import com.chaing.core.enums.LogType;
 import com.chaing.domain.inventories.dto.command.FactoryInboundCreateCommand;
 import com.chaing.domain.inventories.dto.raw.FactoryInventoryRawData;
 import com.chaing.domain.inventories.exception.InventoriesErrorCode;
 import com.chaing.domain.inventories.exception.InventoriesException;
-import com.chaing.domain.inventories.usecase.reader.Reader;
+import com.chaing.domain.inventories.usecase.inbound.reader.InboundReader;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
@@ -16,17 +16,17 @@ import java.util.List;
 @Component
 @Qualifier("factory")
 @RequiredArgsConstructor
-public class FactoryValidatorImpl implements Validator<FactoryInboundCreateCommand, FactoryInventoryRawData> {
+public class FactoryInboundValidatorImpl implements InboundValidator<FactoryInboundCreateCommand, FactoryInventoryRawData> {
 
     @Qualifier("factory")
-    private final Reader<FactoryInventoryRawData> reader;
+    private final InboundReader<FactoryInventoryRawData> inboundReader;
 
     public final int SERIAL_CODE_LENGTH = 10;
 
     @Override
     public void checkAlreadyScanned(String serialCode) {
 
-        boolean alreadyScanned = reader.existsBySerialCode(serialCode);
+        boolean alreadyScanned = inboundReader.existsBySerialCode(serialCode);
 
         if (alreadyScanned) {
             throw new InventoriesException(InventoriesErrorCode.INVENTORIES_ALREADY_EXISTS);

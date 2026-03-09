@@ -1,4 +1,4 @@
-package com.chaing.domain.inventories.usecase.executor;
+package com.chaing.domain.inventories.usecase.inbound.executor;
 
 import com.chaing.domain.inventories.dto.command.FactoryInboundCreateCommand;
 import com.chaing.domain.inventories.entity.FactoryInventory;
@@ -13,7 +13,7 @@ import java.util.List;
 @Component
 @Qualifier("factory")
 @RequiredArgsConstructor
-public class FactoryExecutorImpl implements Executor<FactoryInboundCreateCommand> {
+public class FactoryInboundExecutorImpl implements InboundExecutor<FactoryInboundCreateCommand> {
 
     private final FactoryInventoryRepository repository;
 

@@ -7,7 +7,7 @@ import com.chaing.domain.inventorylogs.dto.request.LogRequest;
 import com.chaing.domain.inventorylogs.dto.response.DailySales;
 import com.chaing.domain.inventorylogs.dto.response.FranchiseInventoryLogListResponse;
 import com.chaing.domain.inventorylogs.dto.response.FranchiseInventoryLogResponse;
-import com.chaing.domain.inventorylogs.dto.response.FranchiseProductSalesResponse;
+import com.chaing.domain.inventorylogs.dto.response.ActorProductSalesResponse;
 import com.chaing.domain.inventorylogs.dto.response.InventoryLogListResponse;
 import com.chaing.domain.inventorylogs.dto.response.InventoryLogResponse;
 import com.chaing.domain.inventorylogs.dto.response.ProductSalesResponse;
@@ -20,6 +20,8 @@ import com.querydsl.core.Tuple;
 import com.querydsl.core.types.Expression;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.dsl.DateExpression;
+import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
@@ -210,6 +212,11 @@ public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom 
                         return null;
                 }
 
+                if (actorId == null) {
+                        return log.actorType.eq(type)
+                                        .and(log.actorId.isNull());
+                }
+
                 return log.actorType.eq(type)
                                 .and(log.actorId.eq(actorId));
         }
@@ -255,8 +262,7 @@ public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom 
         }
 
         // 판매기록 가져오기
-        @Override
-        public List<FranchiseProductSalesResponse> getProductSales(
+        public List<ActorProductSalesResponse> getProductSales(
                         List<Long> actorIds,
                         List<Long> productIds,
                         ActorType queryActorType,
@@ -268,43 +274,58 @@ public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom 
 
                 NumberExpression<Integer> quantity = log.quantity.sum().intValue();
 
+                BooleanExpression actorIdsCondition;
+                if (actorIds == null || actorIds.isEmpty() || actorIds.contains(null)) {
+                        actorIdsCondition = log.actorId.isNull();
+                } else {
+                        actorIdsCondition = log.actorId.in(actorIds);
+                }
+
+                DateExpression<LocalDate> datePath = Expressions.dateTemplate(LocalDate.class, "DATE({0})",
+                                log.createdAt);
+
                 List<Tuple> result = queryFactory
                                 .select(
                                                 log.actorId,
                                                 log.productId,
-                                                log.createdAt,
+                                                datePath,
                                                 quantity)
                                 .from(log)
                                 .where(
                                                 betweenDate(startDate, endDate),
                                                 log.actorType.eq(queryActorType),
                                                 log.logType.eq(queryLogType),
-                                                log.actorId.in(actorIds),
+                                                actorIdsCondition,
                                                 log.productId.in(productIds))
-                                .groupBy(log.actorId, log.productId, log.createdAt)
+                                .groupBy(log.actorId, log.productId, datePath)
                                 .fetch();
 
                 Map<Long, Map<Long, List<DailySales>>> grouped = new HashMap<>();
 
                 for (Tuple tuple : result) {
 
-                        Long franchiseId = tuple.get(log.actorId);
+                        Long actorId = tuple.get(log.actorId);
                         Long productId = tuple.get(log.productId);
-                        LocalDate date = tuple.get(log.createdAt).toLocalDate();
+                        Object dateObj = tuple.get(datePath);
+                        LocalDate date = (dateObj instanceof java.sql.Date)
+                                        ? ((java.sql.Date) dateObj).toLocalDate()
+                                        : (LocalDate) dateObj;
                         Integer qty = tuple.get(quantity);
 
                         grouped
-                                        .computeIfAbsent(franchiseId, k -> new HashMap<>())
+                                        .computeIfAbsent(actorId != null ? actorId : -1L, k -> new HashMap<>())
                                         .computeIfAbsent(productId, k -> new ArrayList<>())
                                         .add(new DailySales(date, qty));
                 }
 
-                List<FranchiseProductSalesResponse> responses = new ArrayList<>();
+                List<ActorProductSalesResponse> responses = new ArrayList<>();
 
-                for (Map.Entry<Long, Map<Long, List<DailySales>>> franchiseEntry : grouped.entrySet()) {
+                for (Map.Entry<Long, Map<Long, List<DailySales>>> actorEntry : grouped.entrySet()) {
 
-                        Long franchiseId = franchiseEntry.getKey();
-                        Map<Long, List<DailySales>> productMap = franchiseEntry.getValue();
+                        Long actorId = actorEntry.getKey();
+                        if (actorId == -1L)
+                                actorId = null;
+                        Map<Long, List<DailySales>> productMap = actorEntry.getValue();
 
                         List<ProductSalesResponse> productResponses = new ArrayList<>();
 
@@ -322,7 +343,7 @@ public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom 
                         }
 
                         responses.add(
-                                        new FranchiseProductSalesResponse(franchiseId, productResponses));
+                                        new ActorProductSalesResponse(actorId, productResponses));
                 }
 
                 return responses;

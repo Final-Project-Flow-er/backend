@@ -58,7 +58,7 @@ public class HQSettlementController {
                         description = "본사 관점 일별 정산 요약(최종 정산 금액, 발주 매출, 수수료 수익, 배송 수익, 반품 차감액, 본사 손실)")
         @GetMapping("/daily/summary")
         public ResponseEntity<ApiResponse<HQSettlementSummaryResponse>> getDailySummary(
-                        @Valid HQSettlementDailySummaryRequest request)
+                        @Valid HQSettlementDailySummaryRequest request) {
                 HQSettlementSummaryResponse response = hqFacade.getDailySummary(request);
                 return ResponseEntity.ok(ApiResponse.success(response));
         }

@@ -56,8 +56,7 @@ class HeadquarterServiceImplTests {
 
         BusinessUnitUpdateCommand command = new BusinessUnitUpdateCommand(
                 "변경된 본사", null, null, null, null,
-                null, null, null
-        );
+                null, null, null);
         when(headquarterRepository.findById(id)).thenReturn(Optional.of(hq));
 
         // when
@@ -69,6 +68,24 @@ class HeadquarterServiceImplTests {
         assertEquals("서울시 서초구", hq.getAddress());
         assertEquals("02-123-4567", hq.getPhone());
 
+        verify(headquarterRepository, times(1)).findById(id);
+    }
+
+    @Test
+    @DisplayName("본사 코드 조회")
+    void getHqCode() {
+
+        // given
+        Long id = 1L;
+        Headquarter hq = Headquarter.builder().hqId(id).hqCode("HQ001").build();
+        when(headquarterRepository.findById(id)).thenReturn(Optional.of(hq));
+
+        // when
+        String result = headquarterService.getHqCode(id);
+
+        // then
+        assertNotNull(result);
+        assertEquals("HQ001", result);
         verify(headquarterRepository, times(1)).findById(id);
     }
 }

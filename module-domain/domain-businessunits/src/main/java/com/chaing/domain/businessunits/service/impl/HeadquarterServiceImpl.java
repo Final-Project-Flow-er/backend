@@ -42,5 +42,8 @@ public class HeadquarterServiceImpl implements BusinessUnitService {
     }
 
     // HqId 조회
-    public Long getHqId()
+    public Long getHqId() {
+
+        return 1L;
+    }
 }

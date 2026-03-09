@@ -2,6 +2,8 @@ package com.chaing.domain.settlements.entity;
 
 import com.chaing.core.entity.BaseEntity;
 import com.chaing.domain.settlements.enums.SettlementStatus;
+import com.chaing.domain.settlements.exception.SettlementErrorCode;
+import com.chaing.domain.settlements.exception.SettlementException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -100,5 +102,26 @@ public class MonthlySettlement extends BaseEntity {
         return orderAmount.add(commissionFee)
                 .add(deliveryFee)
                 .subtract(refundAmount);
+    }
+
+    public void requestConfirm() {
+        if (this.status != SettlementStatus.CALCULATED) {
+            throw new SettlementException(SettlementErrorCode.INVALID_SETTLEMENT_STATUS);
+        }
+        this.status = SettlementStatus.CONFIRM_REQUESTED;
+    }
+
+    public void confirm() {
+        if (this.status != SettlementStatus.CONFIRM_REQUESTED) {
+            throw new SettlementException(SettlementErrorCode.INVALID_SETTLEMENT_STATUS);
+        }
+        this.status = SettlementStatus.CONFIRMED;
+    }
+
+    public void rollback() {
+        if (this.status != SettlementStatus.CONFIRM_REQUESTED) {
+            throw new SettlementException(SettlementErrorCode.INVALID_SETTLEMENT_STATUS);
+        }
+        this.status = SettlementStatus.CALCULATED;
     }
 }

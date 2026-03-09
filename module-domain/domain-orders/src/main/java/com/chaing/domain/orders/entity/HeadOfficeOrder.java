@@ -11,6 +11,8 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Min;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -53,9 +55,11 @@ public class HeadOfficeOrder extends BaseEntity {
     private HQOrderStatus orderStatus = HQOrderStatus.PENDING;
 
     @Column(nullable = false)
+    @Min(1)
     private Integer totalQuantity;
 
     @Column(nullable = false, precision = 19, scale = 2)
+    @DecimalMin("3000")
     private BigDecimal totalAmount;
 
     @Column(nullable = false)

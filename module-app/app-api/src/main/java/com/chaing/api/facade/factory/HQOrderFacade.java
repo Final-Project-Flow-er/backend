@@ -333,7 +333,13 @@ public class HQOrderFacade {
         Map<Long, String> franchiseCodeByUserId = orders.values().stream()
                 .collect(Collectors.toMap(
                         FranchiseOrderDetailCommand::userId,
-                        order -> franchiseService.getById(userManagementService.getFranchiseIdByUserId(order.userId())).code(),
+                        order -> {
+                            try {
+                                return franchiseService.getById(userManagementService.getFranchiseIdByUserId(order.userId())).code();
+                            } catch (Exception e) {
+                                throw new HQOrderException(HQOrderErrorCode.INVALID_USER_INFO);
+                            }
+                        },
                         (a, b) -> a
                 ));
 

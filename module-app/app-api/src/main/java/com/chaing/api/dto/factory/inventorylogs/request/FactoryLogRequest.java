@@ -5,7 +5,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDate;
 
-public record FactoryLogRequest(
+public record                                                                                                                                            FactoryLogRequest(
         String productName,
         LogType logType,
         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)

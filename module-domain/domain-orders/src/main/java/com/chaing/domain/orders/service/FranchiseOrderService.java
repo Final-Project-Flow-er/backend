@@ -41,7 +41,7 @@ public class FranchiseOrderService {
     private final FranchiseOrderItemRepository franchiseOrderItemRepository;
 
     // 가맹점 발주 목록 조회
-    public Map<Long, FranchiseOrderCommand> getAllOrders(Long franchiseId, Long userId) {
+    public Map<Long, FranchiseOrderCommand> getAllOrdersByFranchiseIdAndUserId(Long franchiseId, Long userId) {
         List<FranchiseOrder> orders = franchiseOrderRepository.findAllByFranchiseIdAndUserId(franchiseId, userId);
 
         if (orders == null || orders.isEmpty()) {
@@ -415,6 +415,21 @@ public class FranchiseOrderService {
                 .collect(Collectors.groupingBy(
                         item -> item.getFranchiseOrder().getFranchiseOrderId(),
                         Collectors.mapping(FranchiseOrderItemCommand::from, Collectors.toList())
+                ));
+    }
+
+    // return: Map<orderId, FranchiseOrderDetail>
+    public Map<Long, FranchiseOrderDetailCommand> getAllOrders() {
+        List<FranchiseOrder> orders = franchiseOrderRepository.findAllByDeletedAtIsNull();
+
+        if (orders == null || orders.isEmpty()) {
+            throw new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_NOT_FOUND);
+        }
+
+        return orders.stream()
+                .collect(Collectors.toMap(
+                        FranchiseOrder::getFranchiseOrderId,
+                        FranchiseOrderDetailCommand::from
                 ));
     }
 }

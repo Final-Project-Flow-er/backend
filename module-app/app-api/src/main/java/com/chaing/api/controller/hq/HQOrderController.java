@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -70,11 +71,9 @@ public class HQOrderController {
     @Operation(summary = "가맹점 발주 요청 조회", description = "가맹점이 생성한 발주 요청 전체 조회")
     @GetMapping("/requested")
     public ResponseEntity<ApiResponse<List<HQRequestedOrderResponse>>> getRequestedOrders(
-            @AuthenticationPrincipal UserPrincipal userPrincipal
+            @RequestParam(defaultValue = "false") boolean isPending
     ) {
-        Long userId = userPrincipal.getId();
-
-        return ResponseEntity.ok(ApiResponse.success(hqOrderFacade.getRequestedOrders(userId)));
+        return ResponseEntity.ok(ApiResponse.success(hqOrderFacade.getRequestedOrders(isPending)));
     }
 
     @Operation(summary = "가맹점의 발주 상태 변경", description = "가맹점의 발주의 상태를 접수/반려로 변경")

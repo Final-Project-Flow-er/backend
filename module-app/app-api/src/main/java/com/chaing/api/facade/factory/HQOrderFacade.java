@@ -24,7 +24,6 @@ import com.chaing.domain.orders.service.FranchiseOrderService;
 import com.chaing.domain.orders.service.HQOrderService;
 import com.chaing.domain.products.service.ProductService;
 import com.chaing.domain.users.service.UserManagementService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -310,9 +309,16 @@ public class HQOrderFacade {
     }
 
     // 가맹점 발주 요청 조회
-    public List<HQRequestedOrderResponse> getRequestedOrders(Long userId) {
+    public List<HQRequestedOrderResponse> getRequestedOrders(boolean isPending) {
         // Map<orderId, FranchiseOrderDetail>
-        Map<Long, FranchiseOrderDetailCommand> orders = franchiseOrderService.getAllRequestedOrders();
+        Map<Long, FranchiseOrderDetailCommand> orders;
+        if (isPending) {
+            // 대기 상태 요청 조회
+            orders = franchiseOrderService.getAllRequestedOrders();
+        } else {
+            // 전체 요청 조회
+            orders = franchiseOrderService.getAllOrders();
+        }
 
         // List<orderId>
         List<Long> orderIds = orders.keySet().stream().toList();

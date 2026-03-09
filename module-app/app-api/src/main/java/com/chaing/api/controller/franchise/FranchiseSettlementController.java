@@ -178,11 +178,10 @@ public class FranchiseSettlementController {
         @GetMapping("/monthly/vouchers/excel")
         public ResponseEntity<ApiResponse<?>> getMonthlyVouchersExcel(
                         @RequestParam("month") @DateTimeFormat(pattern = "yyyy-MM") YearMonth month,
-                        @RequestParam(value = "type", required = false) VoucherType type,
                         @AuthenticationPrincipal UserPrincipal principal) {
                 Long franchiseId = principal.getBusinessUnitId();
                 return ResponseEntity.ok(ApiResponse.success(
-                                facade.getMonthlyVouchersExcel(franchiseId, month, type)));
+                                facade.getMonthlyVouchersExcel(franchiseId, month)));
         }
 
 }

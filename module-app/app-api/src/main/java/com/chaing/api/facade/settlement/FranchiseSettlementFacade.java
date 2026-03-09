@@ -324,8 +324,7 @@ public class FranchiseSettlementFacade {
                 return "문서가 존재하지 않습니다.";
         }
 
-        public String getMonthlyVouchersExcel(Long franchiseId, YearMonth month,
-                        com.chaing.domain.settlements.enums.VoucherType type) {
+        public String getMonthlyVouchersExcel(Long franchiseId, YearMonth month) {
                 // 엑셀도 동일하게 해당 정산 데이터 기반으로 조회 후 반환
                 MonthlySettlement settlement = monthlyService.getByFranchiseAndMonth(franchiseId, month);
                 List<com.chaing.domain.settlements.entity.SettlementDocument> documents = documentService

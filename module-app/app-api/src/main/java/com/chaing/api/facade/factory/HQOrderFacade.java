@@ -265,10 +265,7 @@ public class HQOrderFacade {
 
     // 가맹점 발주 상태 변경(접수/반려)
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
-    public List<HQOrderStatusUpdateResponse> updateStatus(String username, @Valid HQOrderUpdateStatusRequest request) {
-        // hqId username으로 꺼내오는 로직 추가
-        Long hqId = 10L;
-
+    public List<HQOrderStatusUpdateResponse> updateStatus(HQOrderUpdateStatusRequest request) {
         // 상태 변경 및 반환
         return franchiseOrderService.updateStatus(request);
     }

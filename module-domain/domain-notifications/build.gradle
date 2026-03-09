@@ -8,6 +8,9 @@ dependencies {
 
     // SSE 사용에 필요
     implementation 'org.springframework.boot:spring-boot-starter-web'
+
+    // Spring Retry
+    implementation 'org.springframework.retry:spring-retry'
 }
 
 bootJar { enabled = false }

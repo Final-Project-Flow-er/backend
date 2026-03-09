@@ -12,6 +12,8 @@ import com.chaing.domain.notifications.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -46,6 +48,11 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     // 전체 공지사항 처리
+    @Retryable(
+            retryFor = { Exception.class },
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 2000)
+    )
     @Override
     public void sendToAll(NotificationEvent event) {
         Notification notification = Notification.builder()

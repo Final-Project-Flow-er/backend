@@ -1,7 +1,7 @@
 package com.chaing.domain.orders.dto.response;
 
 import com.chaing.domain.orders.dto.info.HQOrderCommand;
-import com.chaing.domain.orders.dto.info.HQOrderItemInfo;
+import com.chaing.domain.orders.dto.info.HQOrderItemCommand;
 import lombok.Builder;
 
 import java.util.List;
@@ -10,6 +10,6 @@ import java.util.List;
 public record HQOrderUpdateResponse(
         HQOrderCommand orderInfo,
 
-        List<HQOrderItemInfo> items
+        List<HQOrderItemCommand> items
 ) {
 }

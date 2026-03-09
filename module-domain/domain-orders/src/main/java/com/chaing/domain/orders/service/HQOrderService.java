@@ -1,9 +1,8 @@
 package com.chaing.domain.orders.service;
 
 import com.chaing.core.dto.info.ProductInfo;
-import com.chaing.domain.orders.dto.command.HQOrderItemCommand;
 import com.chaing.domain.orders.dto.info.HQOrderCommand;
-import com.chaing.domain.orders.dto.info.HQOrderItemInfo;
+import com.chaing.domain.orders.dto.info.HQOrderItemCommand;
 import com.chaing.domain.orders.dto.request.FactoryOrderRequest;
 import com.chaing.domain.orders.dto.request.HQOrderCreateRequest;
 import com.chaing.domain.orders.dto.request.HQOrderItemCreateInfo;
@@ -53,7 +52,7 @@ public class HQOrderService {
     }
 
     // 특정 발주 정보 조회
-    public HQOrderCommand getOrder(Long hqId, String orderCode) {
+    public HQOrderCommand getOrder(String orderCode) {
         HeadOfficeOrder order = orderRepository.findByOrderCode(orderCode)
                 .orElseThrow(() -> new HQOrderException(HQOrderErrorCode.ORDER_NOT_FOUND));
 
@@ -75,7 +74,7 @@ public class HQOrderService {
     }
 
     // 발주 제품 수정
-    public List<HQOrderItemInfo> updateOrderItems(Long hqId, String orderCode, List<HQOrderItemUpdateRequest> request, Map<Long, ProductInfo> productInfoByProductId) {
+    public List<HQOrderItemCommand> updateOrderItems(Long hqId, String orderCode, List<HQOrderItemUpdateRequest> request, Map<Long, ProductInfo> productInfoByProductId) {
         // 발주 조회
         HeadOfficeOrder order = orderRepository.findByOrderCode(orderCode)
                 .orElseThrow(() -> new HQOrderException(HQOrderErrorCode.ORDER_NOT_FOUND));
@@ -136,7 +135,7 @@ public class HQOrderService {
 
         // 반환
         return items.values().stream()
-                .map(item -> HQOrderItemInfo.of(item, productInfoByProductId))
+                .map(item -> HQOrderItemCommand.of(item, productInfoByProductId))
                 .toList();
     }
 
@@ -188,7 +187,7 @@ public class HQOrderService {
     }
 
     // 발주 제품 생성
-    public List<HQOrderItemInfo> createOrderItems(Long orderId, Map<Long, ProductInfo> productInfoByProductId, List<HQOrderItemCreateInfo> items) {
+    public List<HQOrderItemCommand> createOrderItems(Long orderId, Map<Long, ProductInfo> productInfoByProductId, List<HQOrderItemCreateInfo> items) {
         // 발주 조회
         HeadOfficeOrder order = orderRepository.findByHeadOfficeOrderId(orderId)
                 .orElseThrow(() -> new HQOrderException(HQOrderErrorCode.ORDER_NOT_FOUND));
@@ -208,7 +207,7 @@ public class HQOrderService {
         orderItemRepository.saveAll(orderItems);
 
         // 반환
-        return HQOrderItemInfo.ofList(orderItems, productInfoByProductId);
+        return HQOrderItemCommand.ofList(orderItems, productInfoByProductId);
     }
 
     public Map<Long, HQOrderCommand> getAllPendingOrders() {
@@ -223,7 +222,7 @@ public class HQOrderService {
 
     // 대기 상태 발주 제품 정보 조회
     // return: Map<orderId, List<HQOrderItemCommand>>
-    public Map<Long, List<HQOrderItemCommand>> getOrderItemIdsByOrderId(List<Long> orderIds) {
+    public Map<Long, List<com.chaing.domain.orders.dto.command.HQOrderItemCommand>> getOrderItemIdsByOrderId(List<Long> orderIds) {
         List<HeadOfficeOrderItem> orderItems = orderItemRepository.findAllByHeadOfficeOrder_HeadOfficeOrderIdIn(orderIds);
 
         if (orderItems == null || orderItems.isEmpty()) {
@@ -233,7 +232,7 @@ public class HQOrderService {
         return orderItems.stream()
                 .collect(Collectors.groupingBy(
                         item -> item.getHeadOfficeOrder().getHeadOfficeOrderId(),
-                        Collectors.mapping(HQOrderItemCommand::from, Collectors.toList())
+                        Collectors.mapping(com.chaing.domain.orders.dto.command.HQOrderItemCommand::from, Collectors.toList())
                 ));
     }
 
@@ -328,5 +327,22 @@ public class HQOrderService {
                     );
                 })
                 .toList();
+    }
+
+    // return: Map<orderId, List<HQOrderItemCommand>>
+    public Map<Long, List<HQOrderItemCommand>> getOrderItemsByOrderId(Long orderId) {
+        List<HeadOfficeOrderItem> items = orderItemRepository.findAllByHeadOfficeOrder_HeadOfficeOrderId(orderId);
+
+        if (items == null || items.isEmpty()) {
+            throw new HQOrderException(HQOrderErrorCode.ORDER_ITEM_NOT_FOUND);
+        }
+
+        Map<Long, List<HQOrderItemCommand>> response = new HashMap<>();
+        List<HQOrderItemCommand> itemCommands = items.stream()
+                .map(HQOrderItemCommand::from)
+                .toList();
+        response.put(orderId, itemCommands);
+
+        return response;
     }
 }

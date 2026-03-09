@@ -3,11 +3,10 @@ package com.chaing.api.facade.factory;
 import com.chaing.domain.businessunits.service.impl.FranchiseServiceImpl;
 import com.chaing.domain.orders.dto.command.FranchiseOrderDetailCommand;
 import com.chaing.domain.orders.dto.command.FranchiseOrderItemCommand;
-import com.chaing.domain.orders.dto.command.HQOrderItemCommand;
 import com.chaing.domain.orders.dto.request.HQOrderCreateRequest;
 import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.domain.orders.dto.info.HQOrderCommand;
-import com.chaing.domain.orders.dto.info.HQOrderItemInfo;
+import com.chaing.domain.orders.dto.info.HQOrderItemCommand;
 import com.chaing.domain.orders.dto.request.HQOrderItemCreateInfo;
 import com.chaing.domain.orders.dto.request.HQOrderUpdateRequest;
 import com.chaing.domain.orders.dto.request.HQOrderUpdateStatusRequest;
@@ -25,7 +24,6 @@ import com.chaing.domain.orders.service.FranchiseOrderService;
 import com.chaing.domain.orders.service.HQOrderService;
 import com.chaing.domain.products.service.ProductService;
 import com.chaing.domain.users.service.UserManagementService;
-import io.lettuce.core.protocol.Command;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -74,13 +72,13 @@ public class HQOrderFacade {
         List<Long> orderIds = orders.keySet().stream().toList();
 
         // Map<orderId, List<HQOrderItemCommand>>
-        Map<Long, List<HQOrderItemCommand>> orderItemsByOrderId = hqOrderService.getOrderItemIdsByOrderId(orderIds);
+        Map<Long, List<com.chaing.domain.orders.dto.command.HQOrderItemCommand>> orderItemsByOrderId = hqOrderService.getOrderItemIdsByOrderId(orderIds);
 
         // Map<orderItemId, HQOrderItemCommand>
-        Map<Long, HQOrderItemCommand> orderItemByOrderItemId = orderItemsByOrderId.values().stream()
+        Map<Long, com.chaing.domain.orders.dto.command.HQOrderItemCommand> orderItemByOrderItemId = orderItemsByOrderId.values().stream()
                 .flatMap(List::stream)
                 .collect(Collectors.toMap(
-                        HQOrderItemCommand::orderItemId,
+                        com.chaing.domain.orders.dto.command.HQOrderItemCommand::orderItemId,
                         Function.identity()
                 ));
 
@@ -88,8 +86,8 @@ public class HQOrderFacade {
         Map<Long, Long> productIdByOrderItemId = orderItemsByOrderId.values().stream()
                 .flatMap(List::stream)
                 .collect(Collectors.toMap(
-                        HQOrderItemCommand::orderItemId,
-                        HQOrderItemCommand::productId
+                        com.chaing.domain.orders.dto.command.HQOrderItemCommand::orderItemId,
+                        com.chaing.domain.orders.dto.command.HQOrderItemCommand::productId
                 ));
 
         // List<productId>
@@ -106,8 +104,8 @@ public class HQOrderFacade {
                         Map.Entry::getKey,
                         entry -> entry.getValue().stream()
                                 .collect(Collectors.groupingBy(
-                                        HQOrderItemCommand::productId,
-                                        Collectors.mapping(HQOrderItemCommand::orderItemId, Collectors.toList())
+                                        com.chaing.domain.orders.dto.command.HQOrderItemCommand::productId,
+                                        Collectors.mapping(com.chaing.domain.orders.dto.command.HQOrderItemCommand::orderItemId, Collectors.toList())
                                 ))
                 ));
 
@@ -125,11 +123,11 @@ public class HQOrderFacade {
                                 Long userId = order.userId();
                                 String username = usernameByUserId.get(userId);
                                 String phoneNumber = phoneNumberByUserId.get(userId);
-                                List<HQOrderItemCommand> orderItems = orderItemIds.stream()
+                                List<com.chaing.domain.orders.dto.command.HQOrderItemCommand> orderItems = orderItemIds.stream()
                                         .map(orderItemByOrderItemId::get)
                                         .toList();
                                 Integer quantity = orderItems.stream()
-                                        .map(HQOrderItemCommand::quantity)
+                                        .map(com.chaing.domain.orders.dto.command.HQOrderItemCommand::quantity)
                                         .reduce(0, Integer::sum);
                                 ProductInfo productInfo = productInfoByProductId.get(productId);
 
@@ -154,50 +152,58 @@ public class HQOrderFacade {
     }
 
     // 특정 발주 조회
-    public HQOrderDetailResponse getOrderDetail(String username, String orderCode) {
-        // hqId username으로 꺼내오는 로직 추가
-        Long hqId = 10L;
-
+    public HQOrderDetailResponse getOrderDetail(String orderCode) {
         // 발주 정보 조회
-        HQOrderCommand orderInfo = hqOrderService.getOrder(hqId, orderCode);
+        HQOrderCommand order = hqOrderService.getOrder(orderCode);
 
-        // 발주 제품 정보 조회
-        // 1. List<productId> productId 조회
-        List<Long> productIds = hqOrderService.getOrderItemProductId(hqId, orderInfo.orderId());
-        // 2. Map<productId, List<ProductInfo>> 제품 정보 조회
-        Map<Long, ProductInfo> productInfoByProductId = productService.getProductInfos(productIds);
-        // 3. Map<productId, quantity> 제품 별 개수 조회
-        Map<Long, Integer> quantityByProductId = productIds.stream()
-                .collect(Collectors.groupingBy(
-                        Function.identity(),
-                        Collectors.collectingAndThen(
-                                Collectors.counting(),
-                                Math::toIntExact
-                        )
+        // UserInfo
+        Long userId = order.userId();
+        String username = userManagementService.getUsernameByUserId(userId);
+        String phoneNumber = userManagementService.getPhoneNumberByUserId(userId);
+
+        // Map<orderId, List<HQOrderItemCommand>>
+        Map<Long, List<HQOrderItemCommand>> orderItemsByOrderId = hqOrderService.getOrderItemsByOrderId(order.orderId());
+
+        // Map<orderItemId, HQOrderItemCommand>
+        Map<Long, HQOrderItemCommand> orderItemByOrderItemId = orderItemsByOrderId.values().stream()
+                .flatMap(List::stream)
+                .collect(Collectors.toMap(
+                        HQOrderItemCommand::orderItemId,
+                        Function.identity()
                 ));
-        // 4. List<HQOrderItemInfo>
-        List<HQOrderItemInfo> orderItemInfos = productInfoByProductId.keySet().stream()
-                .map(productId -> {
-                            ProductInfo productInfo = productInfoByProductId.get(productId);
-                            Integer quantity = quantityByProductId.get(productId);
-                            BigDecimal unitPrice = productInfo.costPrice();
-                            BigDecimal totalPrice = unitPrice.multiply(BigDecimal.valueOf(quantity));
 
-                            return HQOrderItemInfo.builder()
-                                    .productId(productId)
-                                    .productCode(productInfo.productCode())
-                                    .productName(productInfo.productName())
-                                    .quantity(quantity)
-                                    .unitPrice(unitPrice)
-                                    .totalPrice(totalPrice)
-                                    .build();
-                        }
-                ).toList();
+        // List<productId>
+        List<Long> productIds = orderItemsByOrderId.values().stream()
+                .flatMap(List::stream)
+                .map(HQOrderItemCommand::productId)
+                .toList();
+
+        // Map<productId, ProductInfo>
+        Map<Long, ProductInfo> productInfoByProductId = productService.getProductInfos(productIds);
+
+        // Map<productId, List<orderItemId>>
+        Map<Long, List<Long>> orderItemIdByProductId = orderItemsByOrderId.values().stream()
+                .flatMap(List::stream)
+                .collect(Collectors.groupingBy(
+                        HQOrderItemCommand::productId,
+                        Collectors.mapping(HQOrderItemCommand::orderItemId, Collectors.toList())
+                ));
+
+        // List<HQOrderItemCommand>
+        List<HQOrderItemCommand> items = orderItemByOrderItemId.values().stream().toList();
 
         // 반환
         return HQOrderDetailResponse.builder()
-                .orderInfo(orderInfo)
-                .items(orderItemInfos)
+                .orderCode(order.orderCode())
+                .status(order.status())
+                .username(username)
+                .phoneNumber(phoneNumber)
+                .requestedDate(order.requestedDate())
+                .manufacturedDate(order.manufacturedDate())
+                .storedDate(order.storedDate())
+                .description(order.description())
+                .isRegular(order.isRegular())
+                .items(items)
                 .build();
     }
 
@@ -208,7 +214,7 @@ public class HQOrderFacade {
         Long hqId = 10L;
 
         // orderCode로 발주 조회
-        HQOrderCommand orderInfo = hqOrderService.getOrder(hqId, orderCode);
+        HQOrderCommand orderInfo = hqOrderService.getOrder(orderCode);
 
         // 발주 제품의 productIds 조회
         List<Long> productIds = hqOrderService.getOrderItemProductId(hqId, orderInfo.orderId());
@@ -217,7 +223,7 @@ public class HQOrderFacade {
         Map<Long, ProductInfo> productInfoByProductId = productService.getProductInfos(productIds);
 
         // 발주 제품 데이터 수정
-        List<HQOrderItemInfo> itemInfos = hqOrderService.updateOrderItems(hqId, orderCode, request.items(), productInfoByProductId);
+        List<HQOrderItemCommand> itemInfos = hqOrderService.updateOrderItems(hqId, orderCode, request.items(), productInfoByProductId);
 
         // 발주 정보 수정
         HQOrderCommand updatedOrderInfo = hqOrderService.updateOrder(hqId, orderCode, request.manufactureDate());
@@ -285,7 +291,7 @@ public class HQOrderFacade {
         HQOrderCommand orderInfo = hqOrderService.createOrder(hqId, request, totalQuantity, totalAmount);
 
         // 발주 제품 생성
-        List<HQOrderItemInfo> items = hqOrderService.createOrderItems(orderInfo.orderId(), productInfoByProductId, request.items());
+        List<HQOrderItemCommand> items = hqOrderService.createOrderItems(orderInfo.orderId(), productInfoByProductId, request.items());
 
         // 반환
         return HQOrderCreateResponse.builder()

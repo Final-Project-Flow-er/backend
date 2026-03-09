@@ -47,13 +47,11 @@ public class HQOrderController {
 
     @Operation(summary = "특정 발주 조회", description = "발주 번호로 특정 발주 조회")
     @GetMapping("/{order-code}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HQ')")
     public ResponseEntity<ApiResponse<HQOrderDetailResponse>> getOrder(
             @PathVariable("order-code") String orderCode
     ) {
-        //TODO: Spring Security Context에서 값 꺼내오는 걸로 수정해야 함
-        String username = "test";
-
-        return ResponseEntity.ok(ApiResponse.success(hqOrderFacade.getOrderDetail(username, orderCode)));
+        return ResponseEntity.ok(ApiResponse.success(hqOrderFacade.getOrderDetail(orderCode)));
     }
 
     @Operation(summary = "발주 수정", description = "발주 번호로 특정 발주 수정")

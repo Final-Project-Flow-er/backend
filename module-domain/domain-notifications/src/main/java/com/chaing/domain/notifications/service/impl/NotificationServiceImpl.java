@@ -48,8 +48,6 @@ public class NotificationServiceImpl implements NotificationService {
     // 전체 공지사항 처리
     @Override
     public void sendToAll(NotificationEvent event) {
-        emitters.forEach((userId, emitter) -> sendSse(emitter, userId, event));
-
         Notification notification = Notification.builder()
                 .userId(0L)
                 .type(event.type())
@@ -57,6 +55,8 @@ public class NotificationServiceImpl implements NotificationService {
                 .targetId(event.targetId())
                 .build();
         notificationRepository.save(notification);
+
+        emitters.forEach((userId, emitter) -> sendSse(emitter, userId, event));
     }
 
     // 단일 유저 알림 처리

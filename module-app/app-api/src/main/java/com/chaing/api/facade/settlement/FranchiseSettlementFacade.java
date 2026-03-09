@@ -20,6 +20,7 @@ import com.chaing.domain.settlements.entity.DailySettlementReceipt;
 import com.chaing.domain.settlements.entity.MonthlySettlement;
 import com.chaing.domain.settlements.enums.PeriodType;
 import com.chaing.domain.settlements.enums.VoucherType;
+import com.chaing.domain.settlements.enums.DocumentType;
 import com.chaing.domain.settlements.service.DailySettlementService;
 import com.chaing.domain.settlements.service.MonthlySettlementService;
 import com.chaing.domain.settlements.service.SettlementDocumentService;
@@ -240,7 +241,7 @@ public class FranchiseSettlementFacade {
                                                         .reduce(BigDecimal.ZERO, BigDecimal::add);
                                         BigDecimal displayPrice = group.get(0).getUnitPrice();
                                         return new FranchiseSalesItemResponse(0, name, totalQty, displayPrice, total);
-                                })
+                                }) // 단가가 변경될 경우
                                 .sorted((a, b) -> b.totalSales().compareTo(a.totalSales()))
                                 .toList();
                 // 순위 부여 + limit 적용
@@ -312,9 +313,13 @@ public class FranchiseSettlementFacade {
                 List<com.chaing.domain.settlements.entity.SettlementDocument> documents = documentService
                                 .getMonthlyDocuments(settlement.getMonthlySettlementId());
 
-                // 3. 임시: 첫 번째 문서의 URL을 반환
-                if (documents != null && !documents.isEmpty()) {
-                        return documents.get(0).getFileUrl();
+                // 3. DocumentType.RECEIPT_PDF 인 문서만 필터링하여 URL 반환
+                if (documents != null) {
+                        return documents.stream()
+                                        .filter(doc -> doc.getDocumentType() == DocumentType.RECEIPT_PDF)
+                                        .findFirst()
+                                        .map(com.chaing.domain.settlements.entity.SettlementDocument::getFileUrl)
+                                        .orElse("문서가 존재하지 않습니다.");
                 }
                 return "문서가 존재하지 않습니다.";
         }
@@ -326,10 +331,14 @@ public class FranchiseSettlementFacade {
                 List<com.chaing.domain.settlements.entity.SettlementDocument> documents = documentService
                                 .getMonthlyDocuments(settlement.getMonthlySettlementId());
 
-                if (documents != null && !documents.isEmpty()) {
-                        // 우선 첫 번째 문서 반환 로직 적용
+                if (documents != null) {
+                        // DocumentType.VOUCHER_EXCEL 인 문서만 필터링하여 URL 반환
                         // 필요시 VOUCHER_EXCEL 타입 등 상세 조건으로 필터링
-                        return documents.get(0).getFileUrl();
+                        return documents.stream()
+                                        .filter(doc -> doc.getDocumentType() == DocumentType.VOUCHER_EXCEL)
+                                        .findFirst()
+                                        .map(com.chaing.domain.settlements.entity.SettlementDocument::getFileUrl)
+                                        .orElse("문서가 존재하지 않습니다.");
                 }
                 return "문서가 존재하지 않습니다.";
         }

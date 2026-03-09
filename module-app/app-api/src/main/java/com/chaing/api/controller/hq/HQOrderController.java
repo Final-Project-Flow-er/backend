@@ -70,6 +70,7 @@ public class HQOrderController {
 
     @Operation(summary = "가맹점 발주 요청 조회", description = "가맹점이 생성한 발주 요청 전체 조회")
     @GetMapping("/requested")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HQ')")
     public ResponseEntity<ApiResponse<List<HQRequestedOrderResponse>>> getRequestedOrders(
             @RequestParam(defaultValue = "false") boolean isPending
     ) {

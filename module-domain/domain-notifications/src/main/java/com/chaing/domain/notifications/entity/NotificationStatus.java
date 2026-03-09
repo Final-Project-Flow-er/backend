@@ -1,14 +1,13 @@
 package com.chaing.domain.notifications.entity;
 
 import com.chaing.core.entity.BaseEntity;
-import com.chaing.domain.notifications.enums.NotificationType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -20,24 +19,31 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
-public class Notification extends BaseEntity {
+@Table(
+        name = "notification_status",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_notification_status_user_notification",
+                        columnNames = {"userId", "notificationId"}
+                )
+        }
+)
+public class NotificationStatus extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long notificationId;
+    private Long statusId;
 
+    @Column(nullable = false)
     private Long userId;
 
     @Column(nullable = false)
-    @Enumerated(EnumType.STRING)
-    private NotificationType type;
+    private Long notificationId;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
-    private String message;
+    @Column(nullable = false)
+    private boolean isRead;
 
-    private Long targetId;
-
-    public void updateContent(String message) {
-        this.message = message;
+    public void read() {
+        this.isRead = true;
     }
 }

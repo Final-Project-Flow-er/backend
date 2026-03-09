@@ -210,6 +210,14 @@ public class InventoryService {
         hqInventoryRepository.deleteHQInventory(serialCodes);
     }
 
+    public List<FactoryInventory> getFactoryInventoriesByOrderId(Long orderId) {
+        return factoryInventoryRepository.findAllByOrderId(orderId);
+    }
+
+    public List<FranchiseInventory> getFranchiseInventoriesByOrderId(Long orderId) {
+        return franchiseInventoryRepository.findAllByOrderId(orderId);
+    }
+
     // 수정 예정
     public List<ReturnToInventoryRequest> getProducts(List<String> serialCodes) {
         return List.of(

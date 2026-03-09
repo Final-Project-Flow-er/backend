@@ -69,11 +69,21 @@ public class HQOrderService {
     }
 
     // 특정 발주 정보 조회
+    public HeadOfficeOrder getOrderByOrderId(Long orderId) {
+        return orderRepository.findByHeadOfficeOrderId(orderId)
+                .orElseThrow(() -> new HQOrderException(HQOrderErrorCode.ORDER_NOT_FOUND));
+    }
+
+    // 특정 발주 정보 조회
     public HQOrderInfo getOrder(Long hqId, String orderCode) {
         HeadOfficeOrder order = orderRepository.findByHqIdAndOrderCode(hqId, orderCode)
                 .orElseThrow(() -> new HQOrderException(HQOrderErrorCode.ORDER_NOT_FOUND));
 
         return HQOrderInfo.from(order);
+    }
+
+    public List<HeadOfficeOrderItem> getOrderItemsByOrderId(Long orderId) {
+        return orderItemRepository.findAllByHeadOfficeOrder_HeadOfficeOrderIdAndDeletedAtIsNull(orderId);
     }
 
     // 발주 제품 productId 조회

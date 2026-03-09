@@ -208,6 +208,16 @@ public class FranchiseOrderService {
         return HQOrderStatusUpdateResponse.from(orders);
     }
 
+    // OrderId 조회
+    public FranchiseOrder getOrderByOrderId(Long orderId) {
+        return franchiseOrderRepository.findById(orderId)
+                .orElseThrow(() -> new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_NOT_FOUND));
+    }
+
+    public List<FranchiseOrderItem> getFranchiseOrderItemsByOrderId(Long orderId) {
+        return franchiseOrderItemRepository.findAllByFranchiseOrder_FranchiseOrderIdAndDeletedAtIsNull(orderId);
+    }
+
     // OrderCode 조회
     public String getOrderCodeByOrderId(Long orderId) {
         return franchiseOrderRepository.findById(orderId).orElseThrow(() -> new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_NOT_FOUND)).getOrderCode();

@@ -209,6 +209,8 @@ public class FranchiseInventoryFacade {
         return result;
     }
 
+    @Transactional
+
     public Void disposalInventory(DisposalRequest request) {
         inventoryService.disposalInventory(request);
         // 로그 기록 추가

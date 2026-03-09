@@ -9,7 +9,6 @@ import com.chaing.api.security.principal.CustomUserDetailsService;
 import com.chaing.api.security.principal.UserPrincipal;
 import com.chaing.domain.users.entity.User;
 import com.chaing.domain.users.enums.UserAction;
-import com.chaing.domain.users.enums.UserRole;
 import com.chaing.domain.users.exception.UserErrorCode;
 import com.chaing.domain.users.exception.UserException;
 import com.chaing.domain.users.service.AuthService;
@@ -72,7 +71,7 @@ public class AuthFacade {
 
     // 토큰 재발급
     @Transactional(rollbackFor = Exception.class)
-    public LoginResponse reissue(String refreshToken, UserRole userRole) {
+    public LoginResponse reissue(String refreshToken) {
 
         if (!jwtProvider.validateToken(refreshToken)) {
             throw new UserException(UserErrorCode.INVALID_TOKEN);
@@ -92,7 +91,7 @@ public class AuthFacade {
 
         authService.saveRefreshToken(user.getUserId(), newRefreshToken, jwtProvider.getRefreshTokenExpireTime() / 1000);
 
-        return new LoginResponse(newAccessToken, newRefreshToken, userRole);
+        return new LoginResponse(newAccessToken, newRefreshToken, user.getRole());
     }
 
     // 로그아웃

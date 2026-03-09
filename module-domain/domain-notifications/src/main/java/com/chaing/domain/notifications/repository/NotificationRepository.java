@@ -11,21 +11,26 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
-import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 
 @Repository
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
 
-    Page<Notification> findAllByUserIdInOrderByUpdatedAtDesc(Collection<Long> userIds, Pageable pageable);
-    List<Notification> findAllByUserIdInAndIsReadFalse(Collection<Long> userIds);
-    void deleteAllByTypeAndTargetId(NotificationType type, Long targetId);
+    @Query("SELECT n FROM Notification n " +
+            "LEFT JOIN NotificationStatus s ON n.notificationId = s.notificationId AND s.userId = :userId " +
+            "WHERE (n.userId = :userId OR n.userId = 0) " +
+            "ORDER BY n.createdAt DESC")
+    Page<Notification> findAllMyNotifications(@Param("userId") Long userId, Pageable pageable);
 
-    @Query("SELECT n FROM Notification n WHERE n.notificationId = :notificationId AND (n.userId = :userId OR n.userId = 0)")
-    Optional<Notification> findByNotificationIdAndUserId(@Param("notificationId") Long notificationId, @Param("userId") Long userId);
+    @Query("SELECT n FROM Notification n " +
+            "LEFT JOIN NotificationStatus s ON n.notificationId = s.notificationId AND s.userId = :userId " +
+            "WHERE (n.userId = :userId OR n.userId = 0) " +
+            "AND (s.isRead IS NULL OR s.isRead = false)")
+    List<Notification> findAllUnreadNotificationsList(@Param("userId") Long userId);
 
     @Modifying
-    @Query("DELETE FROM Notification n WHERE n.isRead = true AND n.createdAt < :targetDate")
+    @Query("DELETE FROM Notification n WHERE n.createdAt < :targetDate")
     void deleteOldNotifications(@Param("targetDate") LocalDateTime targetDate);
+
+    void deleteAllByTypeAndTargetId(NotificationType type, Long targetId);
 }

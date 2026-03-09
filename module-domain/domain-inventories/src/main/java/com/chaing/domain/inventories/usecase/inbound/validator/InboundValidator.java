@@ -1,4 +1,4 @@
-package com.chaing.domain.inventories.usecase.inbound.valiator;
+package com.chaing.domain.inventories.usecase.inbound.validator;
 
 import com.chaing.core.enums.LogType;
 import jakarta.validation.constraints.NotBlank;

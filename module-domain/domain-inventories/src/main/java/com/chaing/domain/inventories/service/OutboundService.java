@@ -130,6 +130,7 @@ public class OutboundService {
                         inventory.getBoxCode(),     // 박스 코드
                         inventory.getProductId() // 제품 id
                 ))
+                .distinct()
                 .toList();
     }
 

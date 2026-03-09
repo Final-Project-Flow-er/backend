@@ -21,7 +21,6 @@ public class OutboundValidatorImpl implements OutboundValidator{
         }
 
         for(FactoryInventory target:targets){
-            if(target.getSerialCode()==null || target.getSerialCode().isEmpty()){
                 if(target.getStatus() == null) {
                     throw new InventoriesException(InventoriesErrorCode.INVENTORIES_IS_INVALID);
                 }
@@ -33,7 +32,7 @@ public class OutboundValidatorImpl implements OutboundValidator{
                 }
             }
         }
-    }
+
 
     @Override
     public void checkValidStatus(LogType status, LogType logType) {

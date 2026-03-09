@@ -1,8 +1,8 @@
-package com.chaing.domain.inventories.usecase.inbound.valiator;
+package com.chaing.domain.inventories.usecase.inbound.validator;
 
 import com.chaing.core.enums.LogType;
-import com.chaing.domain.inventories.dto.command.FactoryInboundCreateCommand;
-import com.chaing.domain.inventories.dto.raw.FactoryInventoryRawData;
+import com.chaing.domain.inventories.dto.command.FranchiseInboundCreateCommand;
+import com.chaing.domain.inventories.dto.raw.FranchiseInventoryRawData;
 import com.chaing.domain.inventories.exception.InventoriesErrorCode;
 import com.chaing.domain.inventories.exception.InventoriesException;
 import com.chaing.domain.inventories.usecase.inbound.reader.InboundReader;
@@ -14,12 +14,12 @@ import java.time.LocalDate;
 import java.util.List;
 
 @Component
-@Qualifier("factory")
+@Qualifier("franchise")
 @RequiredArgsConstructor
-public class FactoryInboundValidatorImpl implements InboundValidator<FactoryInboundCreateCommand, FactoryInventoryRawData> {
+public class FranchiseInboundValidatorImpl implements InboundValidator<FranchiseInboundCreateCommand, FranchiseInventoryRawData> {
 
-    @Qualifier("factory")
-    private final InboundReader<FactoryInventoryRawData> inboundReader;
+    @Qualifier("franchise")
+    private final InboundReader<FranchiseInventoryRawData> inboundReader;
 
     public final int SERIAL_CODE_LENGTH = 10;
 
@@ -34,20 +34,9 @@ public class FactoryInboundValidatorImpl implements InboundValidator<FactoryInbo
     }
 
     @Override
-    public void checkScanValidity(FactoryInboundCreateCommand command) {
+    public void checkScanValidity(FranchiseInboundCreateCommand command) {
 
-        String serialCode = command.serialCode();
         LocalDate date = command.manufactureDate();
-
-        // 식별 코드 누락 확인
-        if(serialCode == null || serialCode.isBlank()) {
-            throw new InventoriesException(InventoriesErrorCode.INVENTORIES_SERIAL_CODE_IS_NULL);
-        }
-
-        // 식별 코드 유효성 확인
-        if(serialCode.length() != SERIAL_CODE_LENGTH) {
-            throw new InventoriesException(InventoriesErrorCode.INVALID_SERIAL_CODE);
-        }
 
         // 날짜 누락 확인
         if(date == null) {
@@ -58,15 +47,37 @@ public class FactoryInboundValidatorImpl implements InboundValidator<FactoryInbo
         if(date.isAfter(LocalDate.now())){
             throw new InventoriesException(InventoriesErrorCode.INVALID_MANUFACTURED_DATE);
         }
+
+        List<String> serialCodes = command.serialCodes();
+
+        // 리스트 누락 확인
+        if(serialCodes == null || serialCodes.isEmpty()) {
+            throw new InventoriesException(InventoriesErrorCode.INVENTORIES_SERIAL_CODE_IS_NULL);
+        }
+
+        serialCodes.forEach(serialCode -> {
+            // 식별 코드 누락 확인
+            if (serialCode == null || serialCode.isBlank()) {
+                throw new InventoriesException(InventoriesErrorCode.INVENTORIES_SERIAL_CODE_IS_NULL);
+            }
+
+            // 식별 코드 유효성 확인
+            if (serialCode.length() != SERIAL_CODE_LENGTH) {
+                throw new InventoriesException(InventoriesErrorCode.INVALID_SERIAL_CODE);
+            }
+        });
     }
 
     @Override
-    public void checkPendingDataExistence(List<FactoryInventoryRawData> entities) {
+    public void checkPendingDataExistence(List<FranchiseInventoryRawData> entities) {
         if(entities.isEmpty() || entities == null) {
             throw new InventoriesException(InventoriesErrorCode.INVENTORIES_IS_NULL);
         }
 
-        for (FactoryInventoryRawData entity : entities) {
+        for (FranchiseInventoryRawData entity : entities) {
+            if(entity.franchiseId() == null) {
+                throw new InventoriesException(InventoriesErrorCode.INVENTORIES_IS_INVALID);
+            }
             if(entity.status() == null) {
                 throw new InventoriesException(InventoriesErrorCode.INVENTORIES_IS_INVALID);
             }
@@ -74,6 +85,9 @@ public class FactoryInboundValidatorImpl implements InboundValidator<FactoryInbo
                 throw new InventoriesException(InventoriesErrorCode.INVENTORIES_IS_INVALID);
             }
             if(entity.manufactureDate() == null) {
+                throw new InventoriesException(InventoriesErrorCode.INVENTORIES_IS_INVALID);
+            }
+            if(entity.boxCode() == null) {
                 throw new InventoriesException(InventoriesErrorCode.INVENTORIES_IS_INVALID);
             }
         }

@@ -5,7 +5,7 @@ import com.chaing.domain.inventories.dto.command.FactoryInboundCreateCommand;
 import com.chaing.domain.inventories.dto.raw.FactoryInventoryRawData;
 import com.chaing.domain.inventories.usecase.inbound.executor.InboundExecutor;
 import com.chaing.domain.inventories.usecase.inbound.reader.InboundReader;
-import com.chaing.domain.inventories.usecase.inbound.valiator.InboundValidator;
+import com.chaing.domain.inventories.usecase.inbound.validator.InboundValidator;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 

@@ -5,7 +5,7 @@ import com.chaing.domain.inventories.dto.info.PendingItemInfo;
 import com.chaing.domain.inventories.dto.raw.InboundRawData;
 import com.chaing.domain.inventories.usecase.inbound.executor.InboundExecutor;
 import com.chaing.domain.inventories.usecase.inbound.reader.InboundReader;
-import com.chaing.domain.inventories.usecase.inbound.valiator.InboundValidator;
+import com.chaing.domain.inventories.usecase.inbound.validator.InboundValidator;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;

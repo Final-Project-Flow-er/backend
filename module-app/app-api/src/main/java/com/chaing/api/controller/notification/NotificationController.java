@@ -22,6 +22,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.util.Map;
+
 @RestController
 @RequiredArgsConstructor
 @Tag(name = "Notification API", description = "알림 API")
@@ -50,7 +52,7 @@ public class NotificationController {
 
     @Operation(summary = "미읽음 알림 수 조회", description = "읽지 않은 알림의 개수를 반환")
     @GetMapping("/unread-count")
-    public ResponseEntity<ApiResponse<Long>> getUnreadCount(
+    public ResponseEntity<ApiResponse<Map<String, Map<String, Long>>>> getUnreadCount(
             @AuthenticationPrincipal UserPrincipal principal) {
         return ResponseEntity.ok(ApiResponse.success(notificationFacade.getUnreadCount(principal.getId())));
     }

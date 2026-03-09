@@ -180,8 +180,22 @@ public class NotificationServiceImpl implements NotificationService {
 
     // 미읽음 알림 수 조회
     @Override
-    public long getUnreadCount(Long userId) {
-        return notificationRepository.countUnreadNotifications(userId);
+    public Map<String, Map<String, Long>> getUnreadCount(Long userId) {
+        Map<String, Map<String, Long>> counts = new java.util.HashMap<>();
+
+        Map<String, Long> allCounts = new java.util.HashMap<>();
+        allCounts.put("unread", notificationRepository.countUnreadByType(userId, null));
+        allCounts.put("total", notificationRepository.countTotalByType(userId, null));
+        counts.put("all", allCounts);
+
+        for (NotificationType type : NotificationType.values()) {
+            Map<String, Long> typeCounts = new java.util.HashMap<>();
+            typeCounts.put("unread", notificationRepository.countUnreadByType(userId, type));
+            typeCounts.put("total", notificationRepository.countTotalByType(userId, type));
+            counts.put(type.name(), typeCounts);
+        }
+
+        return counts;
     }
 
     // 알림 수정

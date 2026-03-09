@@ -32,12 +32,19 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     List<Notification> findAllUnreadNotificationsList(@Param("userId") Long userId);
 
     @Query("SELECT COUNT(n) FROM Notification n " +
-            "LEFT JOIN NotificationStatus s ON n.notificationId = s.notificationId AND s.userId = :userId "
-            +
+            "LEFT JOIN NotificationStatus s ON n.notificationId = s.notificationId AND s.userId = :userId " +
             "WHERE (n.userId = :userId OR n.userId = 0) " +
-            "AND (s.deletedAt IS NULL) " +
-            "AND (s.isRead IS NULL OR s.isRead = false)")
-    long countUnreadNotifications(@Param("userId") Long userId);
+            "AND (:type IS NULL OR n.type = :type) " +
+            "AND (s IS NULL OR s.deletedAt IS NULL) " +
+            "AND (s IS NULL OR s.isRead = false)")
+    long countUnreadByType(@Param("userId") Long userId, @Param("type") NotificationType type);
+
+    @Query("SELECT COUNT(n) FROM Notification n " +
+            "LEFT JOIN NotificationStatus s ON n.notificationId = s.notificationId AND s.userId = :userId " +
+            "WHERE (n.userId = :userId OR n.userId = 0) " +
+            "AND (:type IS NULL OR n.type = :type) " +
+            "AND (s IS NULL OR s.deletedAt IS NULL)")
+    long countTotalByType(@Param("userId") Long userId, @Param("type") NotificationType type);
 
     @Query("SELECT n FROM Notification n " +
             "WHERE n.notificationId = :notificationId " +

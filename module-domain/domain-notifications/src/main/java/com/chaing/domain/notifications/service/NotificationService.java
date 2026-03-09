@@ -24,5 +24,5 @@ public interface NotificationService {
     void markAllAsRead(Long userId);
     void updateNotification(NotificationType type, Long targetId, String newMessage);
     void deleteNotification(Long notificationId, Long userId);
-    long getUnreadCount(Long userId);
+    Map<String, Map<String, Long>> getUnreadCount(Long userId);
 }

@@ -64,7 +64,7 @@ public class NotificationFacade {
     }
 
     // 미읽음 알림 수 조회
-    public long getUnreadCount(Long userId) {
+    public Map<String, Map<String, Long>> getUnreadCount(Long userId) {
         return notificationService.getUnreadCount(userId);
     }
 }

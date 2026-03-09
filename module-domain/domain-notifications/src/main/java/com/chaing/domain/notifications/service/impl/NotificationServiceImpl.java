@@ -10,6 +10,7 @@ import com.chaing.domain.notifications.repository.NotificationRepository;
 import com.chaing.domain.notifications.repository.NotificationStatusRepository;
 import com.chaing.domain.notifications.service.NotificationService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.retry.annotation.Backoff;
@@ -20,6 +21,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -30,6 +32,7 @@ public class NotificationServiceImpl implements NotificationService {
     private final NotificationRepository notificationRepository;
     private final NotificationStatusRepository notificationStatusRepository;
     private final Map<Long, SseEmitter> emitters = new ConcurrentHashMap<>();
+    private final ObjectProvider<NotificationService> selfProvider;
 
     // SSE 스트림
     @Override
@@ -49,11 +52,6 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     // 전체 공지사항 처리
-    @Retryable(
-            retryFor = { Exception.class },
-            maxAttempts = 3,
-            backoff = @Backoff(delay = 2000)
-    )
     @Override
     public void sendToAll(NotificationEvent event) {
         Notification notification = Notification.builder()
@@ -63,7 +61,17 @@ public class NotificationServiceImpl implements NotificationService {
                 .targetId(event.targetId())
                 .build();
         notificationRepository.save(notification);
+        Objects.requireNonNull(selfProvider.getIfAvailable()).retryableSseSendToAll(event);
+    }
 
+    // 재시도 전용 메서드
+    @Retryable(
+            retryFor = { Exception.class },
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 2000)
+    )
+    @Override
+    public void retryableSseSendToAll(NotificationEvent event) {
         emitters.forEach((userId, emitter) -> sendSse(emitter, userId, event));
     }
 

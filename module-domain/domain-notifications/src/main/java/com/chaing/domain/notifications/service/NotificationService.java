@@ -15,6 +15,7 @@ public interface NotificationService {
     SseEmitter stream(Long userId);
     void sendToAll(NotificationEvent event);
     void sendToUser(NotificationEvent event);
+    void retryableSseSendToAll(NotificationEvent event);
     void deleteNotificationsByTarget(NotificationType type, Long targetId);
     Page<Notification> getNotificationList(Long userId, Pageable pageable);
     Notification readNotification(Long notificationId, Long userId);

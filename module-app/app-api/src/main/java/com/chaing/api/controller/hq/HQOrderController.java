@@ -1,5 +1,6 @@
 package com.chaing.api.controller.hq;
 
+import com.chaing.api.security.principal.UserPrincipal;
 import com.chaing.domain.orders.dto.request.HQOrderCreateRequest;
 import com.chaing.domain.orders.dto.request.HQOrderUpdateStatusRequest;
 import com.chaing.api.facade.factory.HQOrderFacade;
@@ -11,11 +12,13 @@ import com.chaing.domain.orders.dto.response.HQOrderDetailResponse;
 import com.chaing.domain.orders.dto.response.HQOrderResponse;
 import com.chaing.domain.orders.dto.response.HQOrderStatusUpdateResponse;
 import com.chaing.domain.orders.dto.response.HQOrderUpdateResponse;
+import com.chaing.domain.orders.dto.response.HQRequestedOrderResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -64,6 +67,16 @@ public class HQOrderController {
         String username = "test";
 
         return ResponseEntity.ok(ApiResponse.success(hqOrderFacade.updateOrder(username, orderCode, request)));
+    }
+
+    @Operation(summary = "가맹점 발주 요청 조회", description = "가맹점이 생성한 발주 요청 전체 조회")
+    @GetMapping("/requested")
+    public ResponseEntity<ApiResponse<List<HQRequestedOrderResponse>>> getRequestedOrders(
+            @AuthenticationPrincipal UserPrincipal userPrincipal
+    ) {
+        Long userId = userPrincipal.getId();
+
+        return ResponseEntity.ok(ApiResponse.success(hqOrderFacade.getRequestedOrders(userId)));
     }
 
     @Operation(summary = "가맹점의 발주 상태 변경", description = "가맹점의 발주의 상태를 접수/반려로 변경")

@@ -19,11 +19,38 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
 
+import com.chaing.domain.settlements.entity.SettlementDocument;
+import com.chaing.domain.settlements.service.SettlementDocumentService;
+
 @RestController
 @Tag(name = "HQSettlement API", description = "본사 정산 관련 API")
 @RequestMapping("/api/v1/hq/settlements")
 @RequiredArgsConstructor
 public class HQSettlementController {
+
+        private final SettlementDocumentService documentService;
+
+        // ---------------------------------------------------------
+        // Settlement Document 조회 (새로 추가됨)
+        // ---------------------------------------------------------
+
+        @Operation(summary = "일별 정산 영수증 문서 조회", description = "dailyReceiptId로 해당하는 문서를 가져옵니다.")
+        @GetMapping("/daily-documents/{dailyReceiptId}")
+        public ResponseEntity<ApiResponse<SettlementDocument>> getDailyDocument(
+                        @PathVariable("dailyReceiptId") Long dailyReceiptId) {
+
+                SettlementDocument document = documentService.getDailyDocument(dailyReceiptId);
+                return ResponseEntity.ok(ApiResponse.success(document));
+        }
+
+        @Operation(summary = "월별 정산 문서 목록 조회", description = "monthlySettlementId로 해당하는 문서 목록을 가져옵니다.")
+        @GetMapping("/monthly-documents/{monthlySettlementId}")
+        public ResponseEntity<ApiResponse<List<SettlementDocument>>> getMonthlyDocuments(
+                        @PathVariable("monthlySettlementId") Long monthlySettlementId) {
+
+                List<SettlementDocument> documents = documentService.getMonthlyDocuments(monthlySettlementId);
+                return ResponseEntity.ok(ApiResponse.success(documents));
+        }
 
         // 일별
         @Operation(summary = "본사 일별 정산 요약 조회(합산)", description = "본사 관점 일별 정산 요약(최종 정산 금액, 발주 매출, 수수료 수익, 배송 수익, 반품 차감액, 본사 손실)")

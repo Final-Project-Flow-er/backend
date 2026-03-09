@@ -11,6 +11,8 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Min;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -35,13 +37,7 @@ public class HeadOfficeOrder extends BaseEntity {
     private String orderCode;
 
     @Column(nullable = false)
-    private Long hqId;
-
-    @Column(nullable = false)
-    private String username;
-
-    @Column(nullable = false)
-    private String phoneNumber;
+    private Long userId;
 
     @Column(nullable = false)
     private LocalDateTime manufactureDate;
@@ -59,9 +55,11 @@ public class HeadOfficeOrder extends BaseEntity {
     private HQOrderStatus orderStatus = HQOrderStatus.PENDING;
 
     @Column(nullable = false)
+    @Min(1)
     private Integer totalQuantity;
 
     @Column(nullable = false, precision = 19, scale = 2)
+    @DecimalMin("3000")
     private BigDecimal totalAmount;
 
     @Column(nullable = false)
@@ -94,5 +92,19 @@ public class HeadOfficeOrder extends BaseEntity {
             throw new HQOrderException(HQOrderErrorCode.ORDER_NOT_PENDING);
         }
         this.orderStatus = HQOrderStatus.REJECTED;
+    }
+
+    public void updateTotalQuantity(Integer totalQuantity) {
+        if (totalQuantity == null || totalQuantity < 1) {
+            throw new HQOrderException(HQOrderErrorCode.INVALID_INPUT);
+        }
+        this.totalQuantity = totalQuantity;
+    }
+
+    public void updateTotalPrice(BigDecimal totalPrice) {
+        if (totalPrice == null || totalPrice.compareTo(BigDecimal.ZERO) < 0) {
+            throw new HQOrderException(HQOrderErrorCode.INVALID_INPUT);
+        }
+        this.totalAmount = totalPrice;
     }
 }

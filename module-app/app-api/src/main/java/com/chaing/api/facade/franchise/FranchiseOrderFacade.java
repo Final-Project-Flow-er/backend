@@ -55,7 +55,7 @@ public class FranchiseOrderFacade {
         String username = userManagementService.getUsernameByUserId(userId);
 
         // Map<orderId, FranchiseOrderCommand>
-        Map<Long, FranchiseOrderCommand> orders = franchiseOrderService.getAllOrders(franchiseId, userId);
+        Map<Long, FranchiseOrderCommand> orders = franchiseOrderService.getAllOrdersByFranchiseIdAndUserId(franchiseId, userId);
         log.info("orders: {}", orders);
 
         // List<orderId>

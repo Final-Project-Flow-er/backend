@@ -7,16 +7,14 @@ import lombok.Builder;
 import java.time.LocalDateTime;
 
 @Builder
-public record HQOrderInfo(
+public record HQOrderCommand(
         Long orderId,
 
         String orderCode,
 
         HQOrderStatus status,
 
-        String username,
-
-        String phoneNumber,
+        Long userId,
 
         LocalDateTime requestedDate,
 
@@ -28,13 +26,12 @@ public record HQOrderInfo(
 
         Boolean isRegular
 ) {
-    public static HQOrderInfo from(HeadOfficeOrder order) {
-        return HQOrderInfo.builder()
+    public static HQOrderCommand from(HeadOfficeOrder order) {
+        return HQOrderCommand.builder()
                 .orderId(order.getHeadOfficeOrderId())
                 .orderCode(order.getOrderCode())
                 .status(order.getOrderStatus())
-                .username(order.getUsername())
-                .phoneNumber(order.getPhoneNumber())
+                .userId(order.getUserId())
                 .requestedDate(order.getCreatedAt())
                 .manufacturedDate(order.getManufactureDate())
                 .storedDate(order.getStoredDate())

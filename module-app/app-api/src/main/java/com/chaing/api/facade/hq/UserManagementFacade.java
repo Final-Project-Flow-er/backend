@@ -8,9 +8,13 @@ import com.chaing.api.dto.hq.user.response.CreateUserResponse;
 import com.chaing.api.dto.hq.user.response.UserDetailResponse;
 import com.chaing.api.dto.hq.user.response.UserLogResponse;
 import com.chaing.api.dto.hq.user.response.UserSummaryResponse;
+import com.chaing.domain.businessunits.service.BusinessUnitService;
+import com.chaing.domain.users.enums.UserRole;
 import com.chaing.domain.users.event.ProfileImageDeleteEvent;
 import com.chaing.domain.users.event.UserInfoResendEvent;
 import com.chaing.domain.users.event.UserRegisteredEvent;
+import com.chaing.domain.businessunits.service.BusinessUnitManagementService;
+import com.chaing.domain.businessunits.service.impl.FranchiseServiceImpl;
 import com.chaing.core.enums.BucketName;
 import com.chaing.core.service.MinioService;
 import com.chaing.domain.users.dto.condition.UserLogSearchCondition;
@@ -41,6 +45,9 @@ public class UserManagementFacade {
     private final UserLogService userLogService;
     private final ApplicationEventPublisher eventPublisher;
     private final MinioService minioService;
+    private final BusinessUnitService headquarterServiceImpl;
+    private final FranchiseServiceImpl franchiseServiceImpl;
+    private final BusinessUnitManagementService factoryServiceImpl;
 
     // 회원 등록
     @Transactional(rollbackFor = Exception.class)
@@ -77,7 +84,8 @@ public class UserManagementFacade {
 
             userManagementService.registerUser(user, tempPassword);
             userLogService.saveLog(user, actorId, UserAction.REGISTER);
-            eventPublisher.publishEvent(new UserRegisteredEvent(user.getEmail(), loginId, tempPassword, employeeNumber));
+            eventPublisher
+                    .publishEvent(new UserRegisteredEvent(user.getEmail(), loginId, tempPassword, employeeNumber));
             return CreateUserResponse.from(user);
 
         } catch (Exception e) {
@@ -102,14 +110,15 @@ public class UserManagementFacade {
     // 회원 목록 조회
     public Page<UserSummaryResponse> getUserList(UserSearchRequest request, Pageable pageable) {
         UserSearchCondition condition = request.toCondition();
-        return userManagementService.getUserList(condition, pageable).map(UserSummaryResponse::from);
+        return userManagementService.getUserList(condition, pageable)
+                .map(user -> UserSummaryResponse.from(user, getBusinessUnitName(user)));
     }
 
     // 회원 상세 조회
     public UserDetailResponse getUserById(Long userId) {
         User user = userManagementService.getUserById(userId);
         String profileImageUrl = minioService.getFileUrl(user.getProfileImageUrl(), BucketName.PROFILES);
-        return UserDetailResponse.from(user, profileImageUrl);
+        return UserDetailResponse.from(user, profileImageUrl, getBusinessUnitName(user));
     }
 
     // 회원 정보 수정
@@ -139,7 +148,7 @@ public class UserManagementFacade {
         }
         User updatedUser = userManagementService.getUserById(userId);
         String profileImageUrl = minioService.getFileUrl(updatedUser.getProfileImageUrl(), BucketName.PROFILES);
-        return UserDetailResponse.from(updatedUser, profileImageUrl);
+        return UserDetailResponse.from(updatedUser, profileImageUrl, getBusinessUnitName(updatedUser));
     }
 
     // 회원 상태 변경
@@ -156,7 +165,7 @@ public class UserManagementFacade {
         userLogService.saveLog(user, actorId, action);
 
         String profileImageUrl = minioService.getFileUrl(user.getProfileImageUrl(), BucketName.PROFILES);
-        return UserDetailResponse.from(user, profileImageUrl);
+        return UserDetailResponse.from(user, profileImageUrl, getBusinessUnitName(user));
     }
 
     // 회원 로그 조회
@@ -177,6 +186,25 @@ public class UserManagementFacade {
 
         if (fileName != null) {
             eventPublisher.publishEvent(new ProfileImageDeleteEvent(fileName, BucketName.PROFILES));
+        }
+    }
+
+    private String getBusinessUnitName(User user) {
+        Long unitId = user.getBusinessUnitId();
+
+        if (unitId == null) {
+            return "-";
+        }
+
+        try {
+            return switch (user.getRole()) {
+                case HQ -> headquarterServiceImpl.getById(unitId).name();
+                case FRANCHISE -> franchiseServiceImpl.getById(unitId).name();
+                case FACTORY -> factoryServiceImpl.getById(unitId).name();
+                default -> "-";
+            };
+        } catch (Exception e) {
+            return "-";
         }
     }
 }

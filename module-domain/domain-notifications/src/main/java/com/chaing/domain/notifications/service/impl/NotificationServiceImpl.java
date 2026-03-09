@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -131,6 +132,19 @@ public class NotificationServiceImpl implements NotificationService {
         status.read();
         notificationStatusRepository.save(status);
         return notification;
+    }
+
+    // 조회 상태 매핑
+    @Override
+    public Map<Long, Boolean> getReadStatusMap(Long userId, List<Long> notificationIds) {
+        List<NotificationStatus> statuses = notificationStatusRepository
+                .findAllByUserIdAndNotificationIdIn(userId, notificationIds);
+
+        return statuses.stream()
+                .collect(Collectors.toMap(
+                        NotificationStatus::getNotificationId,
+                        NotificationStatus::isRead
+                ));
     }
 
     // 알림 전체 읽음 처리

@@ -11,6 +11,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.util.List;
+import java.util.Map;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -26,14 +29,20 @@ public class NotificationFacade {
     // 알림 목록 조회
     public Page<NotificationListResponse> getNotificationList(Long userId, Pageable pageable) {
         Page<Notification> notifications = notificationService.getNotificationList(userId, pageable);
-        return notifications.map(NotificationListResponse::from);
+        List<Long> notificationIds = notifications.getContent().stream().map(Notification::getNotificationId).toList();
+        Map<Long, Boolean> readStatusMap = notificationService.getReadStatusMap(userId, notificationIds);
+
+        return notifications.map(notification -> {
+            boolean isRead = readStatusMap.getOrDefault(notification.getNotificationId(), false);
+            return NotificationListResponse.of(notification, isRead);
+        });
     }
 
     // 알림 단건 읽음 처리
     @Transactional
     public NotificationListResponse readNotification(Long notificationId, Long userId) {
         Notification notification = notificationService.readNotification(notificationId, userId);
-        return NotificationListResponse.from(notification);
+        return NotificationListResponse.of(notification, true);
     }
 
     // 알림 전체 읽음 처리

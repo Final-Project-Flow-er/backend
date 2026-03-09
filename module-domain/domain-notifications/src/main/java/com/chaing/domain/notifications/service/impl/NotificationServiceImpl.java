@@ -32,11 +32,13 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public SseEmitter stream(Long userId) {
         SseEmitter emitter = new SseEmitter(60L * 1000 * 60);
-        emitters.put(userId, emitter);
+        SseEmitter previous = emitters.put(userId, emitter);
 
-        emitter.onCompletion(() -> emitters.remove(userId));
-        emitter.onTimeout(() -> emitters.remove(userId));
-        emitter.onError((e) -> emitters.remove(userId));
+        if (previous != null) previous.complete();
+
+        emitter.onCompletion(() -> emitters.remove(userId, emitter));
+        emitter.onTimeout(() -> emitters.remove(userId, emitter));
+        emitter.onError((e) -> emitters.remove(userId, emitter));
 
         sendToClient(userId);
 
@@ -82,7 +84,7 @@ public class NotificationServiceImpl implements NotificationService {
                     .name("notification")
                     .data(event.message()));
         } catch (IOException e) {
-            emitters.remove(userId);
+            emitters.remove(userId, emitter);
         }
     }
 
@@ -93,7 +95,7 @@ public class NotificationServiceImpl implements NotificationService {
             try {
                 emitter.send(SseEmitter.event().name("connect").data((Object) "connected!"));
             } catch (IOException e) {
-                emitters.remove(userId);
+                emitters.remove(userId, emitter);
             }
         }
     }

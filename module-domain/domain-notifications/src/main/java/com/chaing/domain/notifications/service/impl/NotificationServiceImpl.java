@@ -181,7 +181,7 @@ public class NotificationServiceImpl implements NotificationService {
     // 알림 삭제
     @Override
     public void deleteNotification(Long notificationId, Long userId) {
-        Notification notification = notificationRepository.findById(notificationId)
+        Notification notification = notificationRepository.findByIdAndUserIdOrAll(notificationId, userId)
                 .orElseThrow(() -> new NotificationException(NotificationErrorCode.NOTIFICATION_NOT_FOUND));
 
         if (notification.getUserId() != 0) {

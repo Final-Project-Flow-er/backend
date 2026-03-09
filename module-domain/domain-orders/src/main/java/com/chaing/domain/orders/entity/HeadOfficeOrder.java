@@ -89,4 +89,18 @@ public class HeadOfficeOrder extends BaseEntity {
         }
         this.orderStatus = HQOrderStatus.REJECTED;
     }
+
+    public void updateTotalQuantity(Integer totalQuantity) {
+        if (totalQuantity == null || totalQuantity < 1) {
+            throw new HQOrderException(HQOrderErrorCode.INVALID_INPUT);
+        }
+        this.totalQuantity = totalQuantity;
+    }
+
+    public void updateTotalPrice(BigDecimal totalPrice) {
+        if (totalPrice == null || totalPrice.compareTo(BigDecimal.ZERO) < 0) {
+            throw new HQOrderException(HQOrderErrorCode.INVALID_INPUT);
+        }
+        this.totalAmount = totalPrice;
+    }
 }

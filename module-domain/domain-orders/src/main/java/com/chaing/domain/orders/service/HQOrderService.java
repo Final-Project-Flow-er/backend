@@ -150,6 +150,18 @@ public class HQOrderService {
         orderItemRepository.deleteAll(deletedItems);
         orderItemRepository.saveAll(upsertItems);
 
+        // 발주 정보 수정
+        Integer totalQuantity = upsertItems.stream()
+                .map(HeadOfficeOrderItem::getQuantity)
+                .reduce(0, Integer::sum);
+        BigDecimal totalPrice = upsertItems.stream()
+                .map(item ->
+                        item.getTotalPrice().multiply(BigDecimal.valueOf(item.getQuantity()))
+                )
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        order.updateTotalQuantity(totalQuantity);
+        order.updateTotalPrice(totalPrice);
+
         // 반환
         return upsertItems.stream()
                 .map(HQOrderItemCommand::from)
@@ -246,18 +258,18 @@ public class HQOrderService {
         // 발주 제품 생성
         List<HeadOfficeOrderItem> orderItems = items.stream()
                 .map(item -> {
-                    String productCode = item.productCode();
-                    Integer quantity = item.quantity();
-                    ProductInfo productInfo = productInfoByProductCode.get(productCode);
-                    BigDecimal unitPrice = productInfo.costPrice();
+                            String productCode = item.productCode();
+                            Integer quantity = item.quantity();
+                            ProductInfo productInfo = productInfoByProductCode.get(productCode);
+                            BigDecimal unitPrice = productInfo.costPrice();
 
-                    return HeadOfficeOrderItem.builder()
-                            .headOfficeOrder(order)
-                            .productId(productInfo.productId())
-                            .quantity(quantity)
-                            .unitPrice(unitPrice)
-                            .totalPrice(unitPrice.multiply(BigDecimal.valueOf(quantity)))
-                            .build();
+                            return HeadOfficeOrderItem.builder()
+                                    .headOfficeOrder(order)
+                                    .productId(productInfo.productId())
+                                    .quantity(quantity)
+                                    .unitPrice(unitPrice)
+                                    .totalPrice(unitPrice.multiply(BigDecimal.valueOf(quantity)))
+                                    .build();
                         }
                 )
                 .toList();

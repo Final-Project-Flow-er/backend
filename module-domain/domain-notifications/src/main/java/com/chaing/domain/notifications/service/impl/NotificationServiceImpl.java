@@ -65,11 +65,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     // 재시도 전용 메서드
-    @Retryable(
-            retryFor = { IOException.class, Exception.class },
-            maxAttempts = 3,
-            backoff = @Backoff(delay = 2000)
-    )
+    @Retryable(retryFor = { IOException.class, Exception.class }, maxAttempts = 3, backoff = @Backoff(delay = 2000))
     @Override
     public void retryableSseSendToAll(NotificationEvent event) {
         emitters.forEach((userId, emitter) -> {
@@ -123,6 +119,14 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public void deleteNotificationsByTarget(NotificationType type, Long targetId) {
         notificationRepository.deleteAllByTypeAndTargetId(type, targetId);
+
+        emitters.forEach((userId, emitter) -> {
+            try {
+                emitter.send(SseEmitter.event().name("refresh").data("refresh"));
+            } catch (IOException e) {
+                emitters.remove(userId, emitter);
+            }
+        });
     }
 
     // 알림 목록 조회
@@ -154,9 +158,7 @@ public class NotificationServiceImpl implements NotificationService {
         List<NotificationStatus> statuses = notificationStatusRepository
                 .findAllByUserIdAndNotificationIdIn(userId, notificationIds);
 
-        statuses.forEach(status ->
-                readStatusMap.put(status.getNotificationId(), status.isRead())
-        );
+        statuses.forEach(status -> readStatusMap.put(status.getNotificationId(), status.isRead()));
 
         return readStatusMap;
     }

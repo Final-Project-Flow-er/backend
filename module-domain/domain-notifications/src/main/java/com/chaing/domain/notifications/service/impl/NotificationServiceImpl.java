@@ -66,18 +66,25 @@ public class NotificationServiceImpl implements NotificationService {
 
     // 재시도 전용 메서드
     @Retryable(
-            retryFor = { Exception.class },
+            retryFor = { IOException.class, Exception.class },
             maxAttempts = 3,
             backoff = @Backoff(delay = 2000)
     )
     @Override
     public void retryableSseSendToAll(NotificationEvent event) {
-        emitters.forEach((userId, emitter) -> sendSse(emitter, userId, event));
+        emitters.forEach((userId, emitter) -> {
+            try {
+                sendSse(emitter, userId, event);
+            } catch (IOException e) {
+                emitters.remove(userId, emitter);
+                throw new NotificationException(NotificationErrorCode.SSE_SEND_FAIL);
+            }
+        });
     }
 
     // 단일 유저 알림 처리
     @Override
-    public void sendToUser(NotificationEvent event) {
+    public void sendToUser(NotificationEvent event) throws IOException {
         Notification notification = Notification.builder()
                 .userId(event.userId())
                 .type(event.type())
@@ -92,16 +99,12 @@ public class NotificationServiceImpl implements NotificationService {
         }
     }
 
-    // SSE 실제 전송 로직 분리
-    private void sendSse(SseEmitter emitter, Long userId, NotificationEvent event) {
-        try {
-            emitter.send(SseEmitter.event()
-                    .id(String.valueOf(event.targetId()))
-                    .name("notification")
-                    .data(event.message()));
-        } catch (IOException e) {
-            emitters.remove(userId, emitter);
-        }
+    // SSE 실제 전송 로직
+    private void sendSse(SseEmitter emitter, Long userId, NotificationEvent event) throws IOException {
+        emitter.send(SseEmitter.event()
+                .id(String.valueOf(event.targetId()))
+                .name("notification")
+                .data(event.message()));
     }
 
     // 연결 확인용 더미 데이터 전송 메서드
@@ -183,7 +186,7 @@ public class NotificationServiceImpl implements NotificationService {
         notificationStatusRepository.deleteAllByNotificationId(notification.getNotificationId());
 
         NotificationEvent event = NotificationEvent.ofAll(notification.getType(), newMessage, notification.getTargetId());
-        emitters.forEach((userId, emitter) -> sendSse(emitter, userId, event));
+        Objects.requireNonNull(selfProvider.getIfAvailable()).retryableSseSendToAll(event);
     }
 
     // 알림 삭제

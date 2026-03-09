@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -14,7 +15,7 @@ public interface NotificationService {
 
     SseEmitter stream(Long userId);
     void sendToAll(NotificationEvent event);
-    void sendToUser(NotificationEvent event);
+    void sendToUser(NotificationEvent event) throws IOException;
     void retryableSseSendToAll(NotificationEvent event);
     void deleteNotificationsByTarget(NotificationType type, Long targetId);
     Page<Notification> getNotificationList(Long userId, Pageable pageable);

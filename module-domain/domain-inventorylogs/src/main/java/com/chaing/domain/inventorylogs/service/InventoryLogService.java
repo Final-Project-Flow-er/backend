@@ -5,6 +5,8 @@ import com.chaing.domain.inventorylogs.dto.request.FactoryLogRequest;
 import com.chaing.domain.inventorylogs.dto.request.FranchiseLogRequest;
 import com.chaing.domain.inventorylogs.dto.request.InventoryLogCreateRequest;
 import com.chaing.domain.inventorylogs.dto.request.LogRequest;
+import com.chaing.domain.inventorylogs.dto.response.BoxCodeResponse;
+import com.chaing.domain.inventorylogs.dto.response.FactoryInventoryLogListResponse;
 import com.chaing.domain.inventorylogs.dto.response.FranchiseInventoryLogListResponse;
 import com.chaing.domain.inventorylogs.dto.response.ActorProductSalesResponse;
 import com.chaing.domain.inventorylogs.dto.response.InventoryLogListResponse;
@@ -44,7 +46,7 @@ public class InventoryLogService {
         return inventoryLogRepository.findFranchiseSalesRefundLogs(franchiseId, request);
     }
 
-    public InventoryLogListResponse findFactoryInventoryLogs(Long factoryId, FactoryLogRequest request) {
+    public FactoryInventoryLogListResponse findFactoryInventoryLogs(Long factoryId, FactoryLogRequest request) {
         return inventoryLogRepository.findFactoryInventoryLogs(factoryId, request);
     }
 
@@ -76,5 +78,9 @@ public class InventoryLogService {
                 .actorType(request.actorType())
                 .actorId(request.actorId())
                 .build();
+    }
+
+    public List<BoxCodeResponse> findBoxCodesByTransactionCode(String transactionCode) {
+        return inventoryLogRepository.findBoxCodesByTransactionCode(transactionCode);
     }
 }

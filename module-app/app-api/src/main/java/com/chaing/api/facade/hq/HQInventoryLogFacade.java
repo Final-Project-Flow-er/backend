@@ -4,6 +4,7 @@ package com.chaing.api.facade.hq;
 import com.chaing.domain.inventorylogs.dto.request.FactoryLogRequest;
 import com.chaing.domain.inventorylogs.dto.request.FranchiseLogRequest;
 import com.chaing.domain.inventorylogs.dto.request.LogRequest;
+import com.chaing.domain.inventorylogs.dto.response.FactoryInventoryLogListResponse;
 import com.chaing.domain.inventorylogs.dto.response.FranchiseInventoryLogListResponse;
 import com.chaing.domain.inventorylogs.dto.response.InventoryLogListResponse;
 import com.chaing.domain.inventorylogs.service.InventoryLogService;
@@ -43,7 +44,7 @@ public class HQInventoryLogFacade {
         return inventoryLogService.findFranchiseSalesRefundLogs(franchiseId, request);
     }
 
-    public InventoryLogListResponse findFactoryInventoryLogs(Long factoryId, FactoryLogRequest request) {
+    public FactoryInventoryLogListResponse findFactoryInventoryLogs(Long factoryId, FactoryLogRequest request) {
         return inventoryLogService.findFactoryInventoryLogs(factoryId, request);
     }
 }

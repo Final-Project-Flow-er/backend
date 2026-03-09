@@ -4,7 +4,10 @@ import com.chaing.core.enums.LogType;
 import com.chaing.domain.inventorylogs.dto.request.FactoryLogRequest;
 import com.chaing.domain.inventorylogs.dto.request.FranchiseLogRequest;
 import com.chaing.domain.inventorylogs.dto.request.LogRequest;
+import com.chaing.domain.inventorylogs.dto.response.BoxCodeResponse;
 import com.chaing.domain.inventorylogs.dto.response.DailySales;
+import com.chaing.domain.inventorylogs.dto.response.FactoryInventoryLogListResponse;
+import com.chaing.domain.inventorylogs.dto.response.FactoryInventoryLogResponse;
 import com.chaing.domain.inventorylogs.dto.response.FranchiseInventoryLogListResponse;
 import com.chaing.domain.inventorylogs.dto.response.FranchiseInventoryLogResponse;
 import com.chaing.domain.inventorylogs.dto.response.ActorProductSalesResponse;
@@ -106,11 +109,10 @@ public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom 
                                                 FranchiseInventoryLogResponse.class,
                                                 log.createdAt,
                                                 log.transactionCode,
-                                                log.boxCode,
                                                 log.productName,
                                                 log.logType,
-                                                log.supplyPrice,
-                                                log.quantity))
+                                                log.boxCode.countDistinct(),
+                                                log.quantity.sum()))
                                 .from(log)
                                 .where(
                                                 log.logType.eq(LogType.INBOUND).or(log.logType.eq(LogType.OUTBOUND)),
@@ -118,6 +120,11 @@ public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom 
                                                 containsTransactionCode(request.transactionCode()),
                                                 actorContains("FRANCHISE", franchiseId),
                                                 containsProductName(request.productName()))
+                        .groupBy(
+                                log.transactionCode,
+                                log.productName,
+                                log.logType
+                        )
                                 .orderBy(log.createdAt.desc())
                                 .fetch();
                 return FranchiseInventoryLogListResponse.builder()
@@ -126,6 +133,19 @@ public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom 
         }
 
         @Override
+        public List<BoxCodeResponse> findBoxCodesByTransactionCode(String transactionCode) {
+            return queryFactory
+                    .select(Projections.constructor(
+                            BoxCodeResponse.class,
+                            log.boxCode
+                    ))
+                    .from(log)
+                    .where(log.transactionCode.eq(transactionCode))
+                    .distinct()
+                    .fetch();
+        }
+
+    @Override
         public FranchiseInventoryLogListResponse findFranchiseSalesRefundLogs(Long franchiseId,
                         FranchiseLogRequest request) {
                 List<FranchiseInventoryLogResponse> franchiseInventoryLogResponseList = queryFactory
@@ -155,20 +175,32 @@ public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom 
         }
 
         @Override
-        public InventoryLogListResponse findFactoryInventoryLogs(Long factoryId, FactoryLogRequest request) {
-                List<InventoryLogResponse> inventoryLogResponses = queryFactory
-                                .select(inventoryLogProjection())
-                                .from(log)
+        public FactoryInventoryLogListResponse findFactoryInventoryLogs(Long factoryId, FactoryLogRequest request) {
+                List<FactoryInventoryLogResponse> inventoryLogResponses = queryFactory
+                        .select(Projections.constructor(
+                                FactoryInventoryLogResponse.class,
+                                log.createdAt,
+                                log.transactionCode,
+                                log.productName,
+                                log.logType,
+                                log.boxCode.countDistinct(),
+                                log.quantity.sum()))
+                        .from(log)
                                 .where(
                                                 actorContains("FACTORY", factoryId),
                                                 containsProductName(request.productName()),
                                                 betweenDate(request.startDate(), request.endDate()),
                                                 containsTransactionCode(request.transactionCode()),
                                                 containsLogType(request.logType()))
+                        .groupBy(
+                                log.transactionCode,
+                                log.productName,
+                                log.logType
+                        )
                                 .orderBy(log.createdAt.desc())
                                 .fetch();
-                return InventoryLogListResponse.builder()
-                                .inventoryLogResponses(inventoryLogResponses)
+                return FactoryInventoryLogListResponse.builder()
+                                .factoryInventoryLogResponseList(inventoryLogResponses)
                                 .build();
         }
 
@@ -258,7 +290,6 @@ public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom 
                                 log.logType,
                                 log.fromLocationId,
                                 log.toLocationId,
-                                log.supplyPrice,
                                 log.quantity);
         }
 

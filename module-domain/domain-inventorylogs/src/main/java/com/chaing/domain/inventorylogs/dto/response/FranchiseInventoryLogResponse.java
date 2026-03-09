@@ -14,9 +14,6 @@ public record FranchiseInventoryLogResponse(
         // 반품 코드 (발주코드/반품코드/없을 수도 있음)
         String transactionCode,
 
-        // 박스 코드
-        String boxCode,
-
         // 제품 명
         String productName,
 
@@ -25,9 +22,6 @@ public record FranchiseInventoryLogResponse(
 
         // 수량 (박스), 개
         Integer quantity,
-
-        // 공급가, 판매가
-        BigDecimal price,
 
         // 변경 수량 (개)
         Integer changedQuantity

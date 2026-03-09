@@ -1,6 +1,7 @@
 package com.chaing.api.facade.factory;
 
 import com.chaing.domain.inventorylogs.dto.request.FactoryLogRequest;
+import com.chaing.domain.inventorylogs.dto.response.FactoryInventoryLogListResponse;
 import com.chaing.domain.inventorylogs.dto.response.InventoryLogListResponse;
 import com.chaing.domain.inventorylogs.service.InventoryLogService;
 import lombok.RequiredArgsConstructor;
@@ -13,7 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class FactoryInventoryLogFacade {
     private final InventoryLogService inventoryLogService;
 
-    public InventoryLogListResponse findFactoryInventoryLogs(Long factoryId, FactoryLogRequest request) {
+    public FactoryInventoryLogListResponse findFactoryInventoryLogs(Long factoryId, FactoryLogRequest request) {
         return inventoryLogService.findFactoryInventoryLogs(factoryId, request);
     }
 }

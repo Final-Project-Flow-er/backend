@@ -3,7 +3,7 @@ package com.chaing.api.controller.factory;
 import com.chaing.api.facade.factory.FactoryInventoryLogFacade;
 import com.chaing.core.dto.ApiResponse;
 import com.chaing.domain.inventorylogs.dto.request.FactoryLogRequest;
-import com.chaing.domain.inventorylogs.dto.response.InventoryLogListResponse;
+import com.chaing.domain.inventorylogs.dto.response.FactoryInventoryLogListResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +26,7 @@ public class FactoryInventoryLogController {
     private final FactoryInventoryLogFacade factoryInventoryLogFacade;
     @Operation(summary = "공장 재고 이력 조회", description = "공장의 재고 이력을 확인합니다.")
     @GetMapping("/{factoryId}")
-    public ResponseEntity<ApiResponse<InventoryLogListResponse>> findFactoryInventoryLogs(
+    public ResponseEntity<ApiResponse<FactoryInventoryLogListResponse>> findFactoryInventoryLogs(
             @PathVariable Long factoryId,
             @RequestParam(required = false) String productName,
             @RequestParam(required = false) String logType,

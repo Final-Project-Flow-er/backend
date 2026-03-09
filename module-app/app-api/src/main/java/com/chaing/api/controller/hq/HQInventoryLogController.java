@@ -1,10 +1,13 @@
 package com.chaing.api.controller.hq;
 
 import com.chaing.api.facade.hq.HQInventoryLogFacade;
+import com.chaing.api.facade.inventorylogs.InventoryLogFacade;
 import com.chaing.core.dto.ApiResponse;
 import com.chaing.domain.inventorylogs.dto.request.FactoryLogRequest;
 import com.chaing.domain.inventorylogs.dto.request.FranchiseLogRequest;
 import com.chaing.domain.inventorylogs.dto.request.LogRequest;
+import com.chaing.domain.inventorylogs.dto.response.BoxCodeResponse;
+import com.chaing.domain.inventorylogs.dto.response.FactoryInventoryLogListResponse;
 import com.chaing.domain.inventorylogs.dto.response.FranchiseInventoryLogListResponse;
 import com.chaing.domain.inventorylogs.dto.response.InventoryLogListResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -19,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @RequiredArgsConstructor
 @RestController
@@ -27,6 +31,7 @@ import java.time.LocalDate;
 public class HQInventoryLogController {
 
     private final HQInventoryLogFacade hqInventoryLogFacade;
+    private final InventoryLogFacade inventoryLogFacade;
 
     @Operation(summary = "본사 반품 입고 이력 조회", description = "본사의 반품 입고 이력을 확인합니다.")
     @GetMapping("/return-inbound")
@@ -101,6 +106,11 @@ public class HQInventoryLogController {
         return ResponseEntity.ok(ApiResponse.success(hqInventoryLogFacade.findFranchiseInboundOutboundLogs(franchiseId, request)));
     }
 
+    @GetMapping("/logs/boxes")
+    public ResponseEntity<ApiResponse<List<BoxCodeResponse>>> getBoxes(@RequestParam String transactionCode) {
+        return ResponseEntity.ok(ApiResponse.success(inventoryLogFacade.getBoxCodes(transactionCode)));
+    }
+
     @Operation(summary = "가맹점 판매 환불 이력 조회", description = "본사에서 가맹점 판매 환불 이력을 확인합니다.")
     @GetMapping("/franchise-sales/{franchiseId}")
     public ResponseEntity<ApiResponse<FranchiseInventoryLogListResponse>> findFranchiseSalesRefundLogs(
@@ -125,7 +135,7 @@ public class HQInventoryLogController {
 
     @Operation(summary = "공장 재고 이력 조회", description = "본사에서 공장의 재고 이력을 확인합니다.")
     @GetMapping("/factory/{factoryId}")
-    public ResponseEntity<ApiResponse<InventoryLogListResponse>> findFactoryInventoryLogs(
+    public ResponseEntity<ApiResponse<FactoryInventoryLogListResponse>> findFactoryInventoryLogs(
             @PathVariable Long factoryId,
             @RequestParam(required = false) String productName,
             @RequestParam(required = false) String logType,

@@ -234,9 +234,12 @@ public class FranchiseSettlementFacade {
                                         List<SalesItem> group = entry.getValue();
                                         int totalQty = group.stream()
                                                         .mapToInt(SalesItem::getQuantity).sum();
-                                        BigDecimal price = group.get(0).getUnitPrice();
-                                        BigDecimal total = price.multiply(BigDecimal.valueOf(totalQty));
-                                        return new FranchiseSalesItemResponse(0, name, totalQty, price, total);
+                                        BigDecimal total = group.stream()
+                                                        .map(item -> item.getUnitPrice().multiply(
+                                                                        BigDecimal.valueOf(item.getQuantity())))
+                                                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+                                        BigDecimal displayPrice = group.get(0).getUnitPrice();
+                                        return new FranchiseSalesItemResponse(0, name, totalQty, displayPrice, total);
                                 })
                                 .sorted((a, b) -> b.totalSales().compareTo(a.totalSales()))
                                 .toList();
@@ -267,9 +270,13 @@ public class FranchiseSettlementFacade {
                                         List<FranchiseOrderItem> group = entry.getValue();
                                         int totalQty = group.stream()
                                                         .mapToInt(FranchiseOrderItem::getQuantity).sum();
-                                        BigDecimal price = group.get(0).getUnitPrice();
-                                        BigDecimal total = price.multiply(BigDecimal.valueOf(totalQty));
-                                        return new FranchiseOrderItemResponse(0, productName, totalQty, price, total);
+                                        BigDecimal total = group.stream()
+                                                        .map(item -> item.getUnitPrice().multiply(
+                                                                        BigDecimal.valueOf(item.getQuantity())))
+                                                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+                                        BigDecimal displayPrice = group.get(0).getUnitPrice();
+                                        return new FranchiseOrderItemResponse(0, productName, totalQty, displayPrice,
+                                                        total);
                                 })
                                 .sorted((a, b) -> b.totalAmount().compareTo(a.totalAmount()))
                                 .toList();

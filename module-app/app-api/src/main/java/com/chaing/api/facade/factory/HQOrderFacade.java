@@ -268,8 +268,9 @@ public class HQOrderFacade {
     // 발주 생성
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public HQOrderCreateResponse create(Long userId, HQOrderCreateRequest request) {
-        // HQCode - 수정요망
-        String hqCode = "hqCode";
+        // HQCode
+        Long hqId = userManagementService.getBusinessUnitIdByUserId(userId);
+        String hqCode = headquarterService.getHqCode(hqId);
 
         // UserInfo
         String username = userManagementService.getUsernameByUserId(userId);

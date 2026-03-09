@@ -26,7 +26,10 @@ public class DailySettlementServiceImpl implements DailySettlementService {
     private final DailyReceiptLineRepository lineRepository;
 
     @Override
-    public List<DailySettlementReceipt> getAllByDate(LocalDate date) {
+    public List<DailySettlementReceipt> getAllByDate(LocalDate date, String keyword) {
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            return receiptRepository.findAllBySettlementDateAndFranchiseNameContaining(date, keyword);
+        }
         return receiptRepository.findAllBySettlementDate(date);
     } // 본사에서 3/5일 전체 가맹점 정산을 조회하려 할 때
 

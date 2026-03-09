@@ -1,5 +1,9 @@
 package com.chaing.api.facade.factory;
 
+import com.chaing.domain.businessunits.service.BusinessUnitService;
+import com.chaing.domain.businessunits.service.impl.FranchiseServiceImpl;
+import com.chaing.domain.orders.dto.command.FranchiseOrderDetailCommand;
+import com.chaing.domain.orders.dto.command.FranchiseOrderItemCommand;
 import com.chaing.domain.orders.dto.request.HQOrderCreateRequest;
 import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.domain.orders.dto.info.HQOrderInfo;
@@ -13,12 +17,14 @@ import com.chaing.domain.orders.dto.response.HQOrderDetailResponse;
 import com.chaing.domain.orders.dto.response.HQOrderResponse;
 import com.chaing.domain.orders.dto.response.HQOrderStatusUpdateResponse;
 import com.chaing.domain.orders.dto.response.HQOrderUpdateResponse;
+import com.chaing.domain.orders.dto.response.HQRequestedOrderResponse;
 import com.chaing.domain.orders.enums.HQOrderStatus;
 import com.chaing.domain.orders.exception.HQOrderErrorCode;
 import com.chaing.domain.orders.exception.HQOrderException;
 import com.chaing.domain.orders.service.FranchiseOrderService;
 import com.chaing.domain.orders.service.HQOrderService;
 import com.chaing.domain.products.service.ProductService;
+import com.chaing.domain.users.service.UserManagementService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -38,6 +44,8 @@ public class HQOrderFacade {
     private final HQOrderService hqOrderService;
     private final FranchiseOrderService franchiseOrderService;
     private final ProductService productService;
+    private final UserManagementService userManagementService;
+    private final FranchiseServiceImpl franchiseService;
 
     // 발주 조회
     public List<HQOrderResponse> getAllOrders(String username) {
@@ -220,5 +228,119 @@ public class HQOrderFacade {
                 .orderInfo(orderInfo)
                 .items(items)
                 .build();
+    }
+
+    // 가맹점 발주 요청 조회
+    public List<HQRequestedOrderResponse> getRequestedOrders(Long userId) {
+        // Map<orderId, FranchiseOrderDetail>
+        Map<Long, FranchiseOrderDetailCommand> orders = franchiseOrderService.getAllRequestedOrders();
+
+        // List<orderId>
+        List<Long> orderIds = orders.keySet().stream().toList();
+
+        // Map<orderId, List<FranchiseOrderItemCommand>>
+        Map<Long, List<FranchiseOrderItemCommand>> orderItemByOrderId = franchiseOrderService.getAllRequestedOrderItem(orderIds);
+
+        // Map<userId, username>
+        Map<Long, String> usernameByUserId = orders.values().stream()
+                .collect(Collectors.toMap(
+                        FranchiseOrderDetailCommand::userId,
+                        order -> userManagementService.getUsernameByUserId(order.userId()),
+                        (a, b) -> a
+                ));
+
+        // Map<userId, franchiseCode>
+        Map<Long, String> franchiseCodeByUserId = orders.values().stream()
+                .collect(Collectors.toMap(
+                        FranchiseOrderDetailCommand::userId,
+                        order -> franchiseService.getById(userManagementService.getFranchiseIdByUserId(order.userId())).code(),
+                        (a, b) -> a
+                ));
+
+        // Map<orderItemId, FranchiseOrderItemCommand>
+        Map<Long, FranchiseOrderItemCommand> orderItemByOrderItemId = orderItemByOrderId.values().stream()
+                .flatMap(List::stream)
+                .collect(Collectors.toMap(
+                        FranchiseOrderItemCommand::orderItemId,
+                        Function.identity()
+                ));
+
+        // Map<orderId, receiver>
+        Map<Long, String> receiverByOrderId = orders.values().stream()
+                .collect(Collectors.toMap(
+                        FranchiseOrderDetailCommand::orderId,
+                        command -> userManagementService.getUsernameByUserId(command.userId())
+                ));
+
+        // Map<orderId, List<orderItemId>>
+        Map<Long, List<Long>> orderItemIdsByOrderId = orderItemByOrderId.entrySet().stream()
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        entry -> entry.getValue().stream()
+                                .map(FranchiseOrderItemCommand::orderItemId)
+                                .toList()
+                ));
+
+        // Map<orderItemId, productId>
+        Map<Long, Long> productIdByOrderItemId = orderItemByOrderId.values().stream()
+                .flatMap(List::stream)
+                .collect(Collectors.toMap(
+                        FranchiseOrderItemCommand::orderItemId,
+                        FranchiseOrderItemCommand::productId
+                ));
+
+        // Map<orderId, Map<productId, List<orderItemId>>>
+        Map<Long, Map<Long, List<Long>>> productIdOrderItemIdByOrderId = orderItemByOrderId.entrySet().stream()
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        entry -> entry.getValue().stream()
+                                .collect(Collectors.groupingBy(
+                                        FranchiseOrderItemCommand::productId,
+                                        Collectors.mapping(FranchiseOrderItemCommand::orderItemId, Collectors.toList())
+                                ))
+                ));
+
+        // List<productId>
+        List<Long> productIds = productIdByOrderItemId.values().stream().toList();
+
+        // Map<productId, ProductInfo>
+        Map<Long, ProductInfo> productInfoByProductId = productService.getProductInfos(productIds);
+
+        // 반환
+        return productIdOrderItemIdByOrderId.entrySet().stream()
+                .flatMap(entry -> {
+                    Long orderId = entry.getKey();
+                    FranchiseOrderDetailCommand order = orders.get(orderId);
+                    Map<Long, List<Long>> orderItemIdsByProductId = entry.getValue();
+
+                    return orderItemIdsByProductId.entrySet().stream()
+                            .map(entrySet -> {
+                                Long productId = entrySet.getKey();
+                                List<Long> orderItemIds = entrySet.getValue();
+                                Long orderUserId = order.userId();
+                                String username = usernameByUserId.get(orderUserId);
+                                String franchiseCode = franchiseCodeByUserId.get(orderUserId);
+
+                                List<FranchiseOrderItemCommand> orderItems = orderItemIds.stream()
+                                        .map(orderItemByOrderItemId::get)
+                                        .toList();
+                                ProductInfo productInfo = productInfoByProductId.get(productId);
+
+                                Integer quantity = orderItems.stream()
+                                        .map(FranchiseOrderItemCommand::quantity)
+                                        .reduce(0, Integer::sum);
+
+                                return HQRequestedOrderResponse.builder()
+                                        .orderCode(order.orderCode())
+                                        .franchiseCode(franchiseCode)
+                                        .receiver(username)
+                                        .productCode(productInfo.productCode())
+                                        .status(order.orderStatus())
+                                        .quantity(quantity)
+                                        .deliveryDate(order.deliveryDate())
+                                        .build();
+                            });
+                })
+                .toList();
     }
 }

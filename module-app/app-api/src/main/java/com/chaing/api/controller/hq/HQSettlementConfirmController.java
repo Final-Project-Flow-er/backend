@@ -3,7 +3,7 @@ package com.chaing.api.controller.hq;
 import com.chaing.api.dto.hq.settlement.request.HQSettlementConfirmMonthlyRequest;
 import com.chaing.api.dto.hq.settlement.response.HQConfirmStatusCountResponse; // 새로 만들 DTO (상단 3개 카드 카운트)
 import com.chaing.api.dto.hq.settlement.response.HQConfirmFranchiseResponse; // 새로 만들 DTO (테이블 한 줄)
-import com.chaing.api.facade.settlement.HQSettlementConfirmFacade; // 새로 만들 Facade
+import com.chaing.api.facade.hq.HQSettlementConfirmFacade; // 새로 만들 Facade
 import com.chaing.core.dto.ApiResponse;
 import com.chaing.domain.settlements.enums.SettlementStatus;
 import io.swagger.v3.oas.annotations.Operation;
@@ -31,7 +31,7 @@ import java.util.List;
 @PreAuthorize("hasAnyRole('HQ', 'ADMIN')")
 public class HQSettlementConfirmController {
 
-        private final HQSettlementConfirmFacade confirmFacade; // [NEW] Facade 주입
+        private final HQSettlementConfirmFacade confirmFacade;
 
         // 상단 카드: 작성중/확정요청/최종확정 개수
         @Operation(summary = "정산 확정 현황 카드 조회", description = """
@@ -71,7 +71,6 @@ public class HQSettlementConfirmController {
         public ResponseEntity<ApiResponse<Void>> requestConfirm(
                         @PathVariable Long franchiseId,
                         @RequestParam("month") @DateTimeFormat(pattern = "yyyy-MM") YearMonth month) {
-                // [수정] 상태 변경 비즈니스 로직 위임
                 confirmFacade.requestConfirm(franchiseId, month);
                 return ResponseEntity.ok(ApiResponse.success(null));
         }

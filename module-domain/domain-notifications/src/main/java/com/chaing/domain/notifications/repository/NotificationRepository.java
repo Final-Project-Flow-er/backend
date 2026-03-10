@@ -5,17 +5,58 @@ import com.chaing.domain.notifications.enums.NotificationType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
 
-    Page<Notification> findAllByUserIdOrderByUpdatedAtDesc(Long userId, Pageable pageable);
-    List<Notification> findAllByUserIdAndIsReadFalse(Long userId);
-    List<Notification> findAllByTypeAndTargetId(NotificationType type, Long targetId);
-    Optional<Notification> findByNotificationIdAndUserId(Long notificationId, Long userId);
-    void deleteAllByTypeAndTargetId(NotificationType type, Long targetId);
+    @Query("SELECT n FROM Notification n " +
+            "LEFT JOIN NotificationStatus s ON n.notificationId = s.notificationId AND s.userId = :userId " +
+            "WHERE (n.userId = :userId OR n.userId = 0) " +
+            "AND (:type IS NULL OR n.type = :type) " +
+            "AND (s.deletedAt IS NULL) " +
+            "ORDER BY n.createdAt DESC")
+    Page<Notification> findAllMyNotificationsByType(@Param("userId") Long userId, @Param("type") NotificationType type, Pageable pageable);
+
+    @Query("SELECT n FROM Notification n " +
+            "LEFT JOIN NotificationStatus s ON n.notificationId = s.notificationId AND s.userId = :userId " +
+            "WHERE (n.userId = :userId OR n.userId = 0) " +
+            "AND (s.isRead IS NULL OR s.isRead = false)")
+    List<Notification> findAllUnreadNotificationsList(@Param("userId") Long userId);
+
+    @Query("SELECT COUNT(n) FROM Notification n " +
+            "LEFT JOIN NotificationStatus s ON n.notificationId = s.notificationId AND s.userId = :userId " +
+            "WHERE (n.userId = :userId OR n.userId = 0) " +
+            "AND (:type IS NULL OR n.type = :type) " +
+            "AND (s IS NULL OR s.deletedAt IS NULL) " +
+            "AND (s IS NULL OR s.isRead = false)")
+    long countUnreadByType(@Param("userId") Long userId, @Param("type") NotificationType type);
+
+    @Query("SELECT COUNT(n) FROM Notification n " +
+            "LEFT JOIN NotificationStatus s ON n.notificationId = s.notificationId AND s.userId = :userId " +
+            "WHERE (n.userId = :userId OR n.userId = 0) " +
+            "AND (:type IS NULL OR n.type = :type) " +
+            "AND (s IS NULL OR s.deletedAt IS NULL)")
+    long countTotalByType(@Param("userId") Long userId, @Param("type") NotificationType type);
+
+    @Query("SELECT n FROM Notification n " +
+            "WHERE n.notificationId = :notificationId " +
+            "AND (n.userId = :userId OR n.userId = 0)")
+    Optional<Notification> findByIdAndUserIdOrAll(@Param("notificationId") Long notificationId, @Param("userId") Long userId);
+
+    @Query("SELECT n.notificationId FROM Notification n WHERE n.type = :type AND n.targetId = :targetId")
+    List<Long> findAllIdsByTypeAndTargetId(@Param("type") NotificationType type, @Param("targetId") Long targetId);
+
+    @Modifying
+    @Query("DELETE FROM Notification n WHERE n.createdAt < :targetDate")
+    void deleteOldNotifications(@Param("targetDate") LocalDateTime targetDate);
+
+    Optional<Notification> findByTypeAndTargetId(NotificationType type, Long targetId);
 }

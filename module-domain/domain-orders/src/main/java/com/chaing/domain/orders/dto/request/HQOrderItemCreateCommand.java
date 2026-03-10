@@ -3,9 +3,9 @@ package com.chaing.domain.orders.dto.request;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 
-public record HQOrderItemCreateInfo(
+public record HQOrderItemCreateCommand(
         @NotNull
-        Long productId,
+        String productCode,
 
         @NotNull
         @Min(1)

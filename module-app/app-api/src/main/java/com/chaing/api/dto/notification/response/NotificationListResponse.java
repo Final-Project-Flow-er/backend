@@ -4,22 +4,28 @@ import com.chaing.domain.notifications.entity.Notification;
 import com.chaing.domain.notifications.enums.NotificationType;
 import lombok.Builder;
 
+import java.time.LocalDateTime;
+
 @Builder
 public record NotificationListResponse(
 
+        Long notificationId,
         Long userId,
         NotificationType type,
         String message,
         Long targetId,
-        boolean isRead
+        boolean isRead,
+        LocalDateTime createdAt
 ) {
-    public static NotificationListResponse from(Notification notification) {
-        return new NotificationListResponse(
-                notification.getUserId(),
-                notification.getType(),
-                notification.getMessage(),
-                notification.getTargetId(),
-                notification.isRead()
-        );
+    public static NotificationListResponse of(Notification notification, boolean isRead) {
+        return NotificationListResponse.builder()
+                .notificationId(notification.getNotificationId())
+                .userId(notification.getUserId())
+                .type(notification.getType())
+                .message(notification.getMessage())
+                .targetId(notification.getTargetId())
+                .isRead(isRead)
+                .createdAt(notification.getCreatedAt())
+                .build();
     }
 }

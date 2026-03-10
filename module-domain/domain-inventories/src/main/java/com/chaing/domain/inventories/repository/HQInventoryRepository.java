@@ -9,5 +9,6 @@ import java.util.List;
 
 @Repository
 public interface HQInventoryRepository extends JpaRepository<HQInventory, Long>, HQInventoryRepositoryCustom {
+    List<HQInventory> findAllByBoxCodeInAndDeletedAtIsNull(List<String> requestedBoxCodes);
     void deleteByInventoryIdIn(List<Long> longs);
 }

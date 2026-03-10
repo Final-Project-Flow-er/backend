@@ -3,7 +3,6 @@ package com.chaing.api.controller.hq;
 import com.chaing.api.dto.hq.response.HQReturnProductResponse;
 import com.chaing.api.dto.hq.response.HQReturnResponse;
 import com.chaing.api.facade.hq.HQReturnFacade;
-import com.chaing.api.security.principal.UserPrincipal;
 import com.chaing.core.dto.ApiResponse;
 import com.chaing.domain.returns.dto.request.HQReturnUpdateRequest;
 import com.chaing.domain.returns.dto.response.HQReturnDetailResponse;
@@ -15,7 +14,6 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -38,24 +36,18 @@ public class HQReturnController {
     @GetMapping
     @PreAuthorize("hasAnyRole('HQ', 'ADMIN')")
     public ResponseEntity<ApiResponse<List<HQReturnResponse>>> getAllReturns(
-            @RequestParam Boolean isAccepted,
-            @AuthenticationPrincipal UserPrincipal userPrincipal
+            @RequestParam boolean isAll
             ) {
-        String username = userPrincipal.getUsername();
-
-        return ResponseEntity.ok(ApiResponse.success(hqReturnFacade.getAllReturns(username, isAccepted)));
+        return ResponseEntity.ok(ApiResponse.success(hqReturnFacade.getAllReturns(isAll)));
     }
 
     @Operation(summary = "특정 반품 요청 조회", description = "특정 반품 요청 조회")
     @GetMapping("/{return-code}")
     @PreAuthorize("hasAnyRole('HQ', 'ADMIN')")
     public ResponseEntity<ApiResponse<HQReturnDetailResponse>> getReturn(
-            @PathVariable("return-code") String returnCode,
-            @AuthenticationPrincipal UserPrincipal userPrincipal
+            @PathVariable("return-code") String returnCode
     ) {
-        Long userId = userPrincipal.getId();
-
-        return ResponseEntity.ok(ApiResponse.success(hqReturnFacade.getReturn(userId, returnCode)));
+        return ResponseEntity.ok(ApiResponse.success(hqReturnFacade.getReturn(returnCode)));
     }
 
     @Operation(summary = "반품 요청 상태 접수", description = "가맹점의 반품 요청 상태 접수")
@@ -64,7 +56,7 @@ public class HQReturnController {
     public ResponseEntity<ApiResponse<List<HQReturnProductResponse>>> inspectProduct(
             @RequestBody List<@NotBlank String> returnCodes
     ) {
-        return ResponseEntity.ok(ApiResponse.success(hqReturnFacade.updateReturnStatus(returnCodes)));
+        return ResponseEntity.ok(ApiResponse.success(hqReturnFacade.acceptReturn(returnCodes)));
     }
 
     @Operation(summary = "반품 제품 검수", description = "반품 요청 들어온 상품 검수")
@@ -72,7 +64,7 @@ public class HQReturnController {
     @PreAuthorize("hasAnyRole('HQ', 'ADMIN')")
     public ResponseEntity<ApiResponse<HQReturnUpdateResponse>> updateReturn(
             @PathVariable("return-code") String returnCode,
-            @Valid @RequestBody List<HQReturnUpdateRequest> request
+            @Valid @RequestBody HQReturnUpdateRequest request
     ) {
         return ResponseEntity.ok(ApiResponse.success(hqReturnFacade.updateReturn(returnCode, request)));
     }

@@ -47,7 +47,7 @@ public class HQReturnFacade {
     private final UserManagementService userManagementService;
 
     // 반품 요청 조회
-    public List<HQReturnResponse> getAllReturns(Boolean isAll) {
+    public List<HQReturnResponse> getAllReturns(boolean isAll) {
         Map<Long, HQReturnCommand> returnByReturnCode;
         if (!isAll) {
             // 대기 상태 반품 요청 조회
@@ -240,7 +240,7 @@ public class HQReturnFacade {
         return HQReturnUpdateResponse.builder()
                 .returnCode(returns.returnCode())
                 .status(updatedStatus)
-                .inspectionBySerialCode(itemInspections)
+                .returnItemInspection(itemInspections)
                 .build();
     }
 

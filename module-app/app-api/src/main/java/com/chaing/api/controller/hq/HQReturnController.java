@@ -36,7 +36,7 @@ public class HQReturnController {
     @GetMapping
     @PreAuthorize("hasAnyRole('HQ', 'ADMIN')")
     public ResponseEntity<ApiResponse<List<HQReturnResponse>>> getAllReturns(
-            @RequestParam Boolean isAll
+            @RequestParam boolean isAll
             ) {
         return ResponseEntity.ok(ApiResponse.success(hqReturnFacade.getAllReturns(isAll)));
     }

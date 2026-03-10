@@ -132,18 +132,38 @@ class NotificationServiceImplTests {
     }
 
     @Test
+    @DisplayName("미읽음 알림 수 조회")
+    void getUnreadCount() {
+
+        // given
+        given(notificationRepository.countUnreadByType(eq(userId), any())).willReturn(5L);
+        given(notificationRepository.countTotalByType(eq(userId), any())).willReturn(10L);
+
+        // when
+        Map<String, Map<String, Long>> result = notificationService.getUnreadCount(userId);
+
+        // then
+        assertThat(result).containsKey("all");
+        assertThat(result.get("all").get("unread")).isEqualTo(5L);
+        assertThat(result).containsKey(NotificationType.NOTICE.name());
+        verify(notificationRepository, atLeastOnce()).countUnreadByType(eq(userId), any());
+    }
+
+    @Test
     @DisplayName("알림 수정")
     void updateNotification() {
 
         // given
-        given(notificationRepository.findByTypeAndTargetId(any(), any())).willReturn(Optional.of(noticeNotification));
+        given(notificationRepository.findByTypeAndTargetId(NotificationType.NOTICE, targetId)).willReturn(Optional.of(noticeNotification));
         given(selfProvider.getIfAvailable()).willReturn(selfProxy);
 
         // when
         notificationService.updateNotification(NotificationType.NOTICE, targetId, "수정 메시지");
 
         // then
+        verify(notificationRepository).delete(noticeNotification);
         verify(notificationStatusRepository).deleteAllByNotificationId(noticeNotification.getNotificationId());
+        verify(notificationRepository).save(argThat(n -> n.getMessage().equals("수정 메시지")));
         verify(selfProxy).retryableSseSendToAll(any());
     }
 
@@ -160,6 +180,22 @@ class NotificationServiceImplTests {
 
         // then
         verify(notificationStatusRepository).save(argThat(NotificationStatus::isRead));
+    }
+
+    @Test
+    @DisplayName("타겟 기반 알림 일괄 삭제")
+    void deleteNotificationsByTarget() {
+
+        // given
+        List<Long> ids = List.of(10L, 11L);
+        given(notificationRepository.findAllIdsByTypeAndTargetId(NotificationType.NOTICE, targetId)).willReturn(ids);
+
+        // when
+        notificationService.deleteNotificationsByTarget(NotificationType.NOTICE, targetId);
+
+        // then
+        verify(notificationStatusRepository).deleteAllByNotificationIdIn(ids);
+        verify(notificationRepository).deleteAllByIdInBatch(ids);
     }
 
     @Test
@@ -200,13 +236,13 @@ class NotificationServiceImplTests {
         // given
         PageRequest pageable = PageRequest.of(0, 10);
         Page<Notification> page = new PageImpl<>(List.of(personalNotification));
-        given(notificationRepository.findAllMyNotifications(userId, pageable)).willReturn(page);
+        given(notificationRepository.findAllMyNotificationsByType(userId, null, pageable)).willReturn(page);
 
         // when
-        Page<Notification> result = notificationService.getNotificationList(userId, pageable);
+        Page<Notification> result = notificationService.getNotificationList(userId, null, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(1);
-        verify(notificationRepository).findAllMyNotifications(userId, pageable);
+        verify(notificationRepository).findAllMyNotificationsByType(userId, null, pageable);
     }
 }

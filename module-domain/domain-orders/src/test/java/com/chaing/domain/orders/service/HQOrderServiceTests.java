@@ -1,13 +1,15 @@
-/*
 package com.chaing.domain.orders.service;
 
 import com.chaing.core.dto.info.ProductInfo;
-import com.chaing.domain.orders.dto.info.HQOrderInfo;
-import com.chaing.domain.orders.dto.info.HQOrderItemInfo;
+import com.chaing.domain.orders.dto.command.HQOrderCancelCommand;
+import com.chaing.domain.orders.dto.info.HQOrderCommand;
+import com.chaing.domain.orders.dto.info.HQOrderItemCommand;
 import com.chaing.domain.orders.dto.request.FactoryOrderRequest;
 import com.chaing.domain.orders.dto.request.HQOrderCreateRequest;
-import com.chaing.domain.orders.dto.request.HQOrderItemCreateInfo;
+import com.chaing.domain.orders.dto.request.HQOrderItemCreateCommand;
 import com.chaing.domain.orders.dto.request.HQOrderItemUpdateRequest;
+import com.chaing.domain.orders.dto.request.HQOrderUpdateRequest;
+import com.chaing.domain.orders.dto.response.HQOrderForTransitResponse;
 import com.chaing.domain.orders.entity.HeadOfficeOrder;
 import com.chaing.domain.orders.entity.HeadOfficeOrderItem;
 import com.chaing.domain.orders.enums.HQOrderStatus;
@@ -26,22 +28,20 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class HQOrderServiceTests {
+
     @InjectMocks
     private HQOrderService hqOrderService;
 
@@ -54,531 +54,692 @@ class HQOrderServiceTests {
     @Mock
     private HQOrderCodeGenerator generator;
 
+    Long userId;
     Long hqId;
-    String username;
-    String phoneNumber;
-    LocalDateTime manufactureDate;
-    String description;
-    String storedDate;
-    Integer totalQuantity;
-    BigDecimal totalAmount;
-
-    Long productId;
-    String productCode;
-    String productName;
-    Integer quantity;
-    BigDecimal unitPrice;
-
-    Long newProductId;
-    Integer newQuantity;
-
     Long orderId;
     Long orderItemId;
+    Long productId;
     String orderCode;
+    String productCode;
+    String hqCode;
+    Integer quantity;
+    BigDecimal unitPrice;
+    BigDecimal totalPrice;
+    LocalDateTime manufactureDate;
 
     HeadOfficeOrder order;
+    HeadOfficeOrder acceptedOrder;
+    HeadOfficeOrder canceledOrder;
     HeadOfficeOrderItem orderItem;
 
-    HQOrderItemUpdateRequest hqOrderItemUpdateRequest;
-
-    Map<Long, ProductInfo> productInfoByProductId;
-
     @BeforeEach
-    public void setUp() {
-        hqId = 1L;
-        username = "username";
-        phoneNumber = "phoneNumber";
-        manufactureDate = LocalDateTime.now();
-        description = "description";
-        storedDate = "storedDate";
-        totalQuantity = 10;
-        totalAmount = BigDecimal.valueOf(50000);
-
-        productId = 1L;
-        productCode = "productCode";
-        productName = "productName";
-
-        orderItemId = 1L;
-        quantity = 1;
-        unitPrice = BigDecimal.valueOf(5000);
-
-        orderId = 10L;
-        orderCode = "orderCode";
+    void setUp() {
+        userId = 1L;
+        hqId = 10L;
+        orderId = 1L;
+        orderItemId = 10L;
+        productId = 100L;
+        orderCode = "HQ-20260101-001";
+        productCode = "MA-001-1P";
+        hqCode = "HQ";
+        quantity = 10;
+        unitPrice = new BigDecimal("7000.00");
+        totalPrice = unitPrice.multiply(new BigDecimal(quantity));
+        manufactureDate = LocalDateTime.now().plusDays(7);
 
         order = HeadOfficeOrder.builder()
-                .hqId(hqId)
-                .username(username)
-                .phoneNumber(phoneNumber)
-                .manufactureDate(manufactureDate)
-                .description(description)
-                .storedDate(storedDate)
-                .orderStatus(HQOrderStatus.PENDING)
-                .totalQuantity(totalQuantity)
-                .totalAmount(totalAmount)
-                .isRegular(true)
                 .orderCode(orderCode)
+                .userId(userId)
+                .manufactureDate(manufactureDate)
+                .totalQuantity(quantity)
+                .totalAmount(totalPrice)
                 .build();
         ReflectionTestUtils.setField(order, "headOfficeOrderId", orderId);
+
+        acceptedOrder = HeadOfficeOrder.builder()
+                .orderCode(orderCode)
+                .userId(userId)
+                .manufactureDate(manufactureDate)
+                .orderStatus(HQOrderStatus.ACCEPTED)
+                .totalQuantity(quantity)
+                .totalAmount(totalPrice)
+                .build();
+
+        canceledOrder = HeadOfficeOrder.builder()
+                .orderCode(orderCode)
+                .userId(userId)
+                .manufactureDate(manufactureDate)
+                .orderStatus(HQOrderStatus.CANCELED)
+                .totalQuantity(quantity)
+                .totalAmount(totalPrice)
+                .build();
 
         orderItem = HeadOfficeOrderItem.builder()
                 .headOfficeOrder(order)
                 .productId(productId)
                 .quantity(quantity)
                 .unitPrice(unitPrice)
-                .totalPrice(unitPrice.multiply(BigDecimal.valueOf(quantity)))
+                .totalPrice(totalPrice)
                 .build();
         ReflectionTestUtils.setField(orderItem, "headOfficeOrderItemId", orderItemId);
-
-        newProductId = 20L;
-        newQuantity = 1000;
-        hqOrderItemUpdateRequest = new HQOrderItemUpdateRequest(
-                newProductId,
-                newQuantity
-        );
-
-        productInfoByProductId = new HashMap<>();
-        productInfoByProductId.put(1L, ProductInfo.builder()
-                        .productId(productId)
-                        .productCode(productCode)
-                        .productName(productName)
-                        .retailPrice(BigDecimal.valueOf(5000))
-                        .costPrice(BigDecimal.valueOf(3000))
-                        .tradePrice(BigDecimal.valueOf(10000))
-                .build());
-        productInfoByProductId.put(20L, ProductInfo.builder()
-                .productId(productId)
-                .productCode(productCode)
-                .productName(productName)
-                .retailPrice(BigDecimal.valueOf(5000))
-                .costPrice(BigDecimal.valueOf(3000))
-                .tradePrice(BigDecimal.valueOf(10000))
-                .build());
     }
 
     @Test
-    @DisplayName("발주 정보 조회 - 성공")
-    void getAllOrders() {
+    @DisplayName("본사 발주 전체 조회 - 성공")
+    void getAllOrders_Success() {
         // given
-        given(orderRepository.findAllByHqIdAndUsername(hqId, username)).willReturn(List.of(order));
+        given(orderRepository.findAllByDeletedAtIsNull()).willReturn(List.of(order));
 
         // when
-        Map<Long, HQOrderInfo> response = hqOrderService.getAllOrders(hqId, username);
+        Map<Long, HQOrderCommand> result = hqOrderService.getAllOrders();
 
         // then
-        verify(orderRepository, times(1)).findAllByHqIdAndUsername(hqId, username);
-        assertEquals(orderId, response.get(orderId).orderId());
+        verify(orderRepository, times(1)).findAllByDeletedAtIsNull();
+        assertEquals(1, result.size());
+        assertEquals(orderCode, result.get(orderId).orderCode());
     }
 
     @Test
-    @DisplayName("발주 제품 정보 조회 - 성공")
-    void getAllOrderItemProductId_Success() {
+    @DisplayName("발주 없을 때 전체 조회 시 예외 발생")
+    void getAllOrders_Failure_ORDER_NOT_FOUND() {
         // given
-        given(orderItemRepository.findAllByHeadOfficeOrder_HqIdAndHeadOfficeOrder_HeadOfficeOrderIdIn(hqId, List.of(orderId))).willReturn(List.of(orderItem));
-
-        // when
-        Map<Long, List<Long>> response = hqOrderService.getAllOrderItemProductId(hqId, List.of(orderId));
-
-        // then
-        verify(orderItemRepository, times(1)).findAllByHeadOfficeOrder_HqIdAndHeadOfficeOrder_HeadOfficeOrderIdIn(hqId, List.of(orderId));
-        assertEquals(1L, response.get(orderId).get(0));
-    }
-
-    @Test
-    @DisplayName("잘못된 orderId로 headOfficeOrder 조회 시 예외 발생")
-    void getAllOrderItems_Failure_ORDER_NOT_FOUND() {
-        // given
-        given(orderItemRepository.findAllByHeadOfficeOrder_HqIdAndHeadOfficeOrder_HeadOfficeOrderIdIn(hqId, List.of(orderId))).willReturn(List.of());
+        given(orderRepository.findAllByDeletedAtIsNull()).willReturn(List.of());
 
         // when & then
-        HQOrderException exception = assertThrows(HQOrderException.class, () -> {
-            hqOrderService.getAllOrderItemProductId(hqId, List.of(orderId));
-        });
-        verify(orderItemRepository, times(1)).findAllByHeadOfficeOrder_HqIdAndHeadOfficeOrder_HeadOfficeOrderIdIn(hqId, List.of(orderId));
-        assertEquals(HQOrderErrorCode.ORDER_ITEM_NOT_FOUND, exception.getErrorCode());
-    }
-
-    @Test
-    @DisplayName("특정 발주 정보 조회 - 성공")
-    void getOrder_Success() {
-        // given
-        given(orderRepository.findByHqIdAndOrderCode(hqId, orderCode)).willReturn(Optional.of(order));
-
-        // when
-        HQOrderInfo response = hqOrderService.getOrder(hqId, orderCode);
-
-        // then
-        verify(orderRepository, times(1)).findByHqIdAndOrderCode(hqId, orderCode);
-        assertEquals(orderId, response.orderId());
-        assertEquals(orderCode, response.orderCode());
-    }
-
-    @Test
-    @DisplayName("잘못된 orderCode로 발주 정보 조회 시 예외 발생")
-    void getOrder_Failure_ORDER_NOT_FOUND() {
-        // given
-        given(orderRepository.findByHqIdAndOrderCode(hqId, orderCode)).willReturn(Optional.empty());
-
-        // when & then
-        HQOrderException exception = assertThrows(HQOrderException.class, () -> {
-            hqOrderService.getOrder(hqId, orderCode);
-        });
-        verify(orderRepository, times(1)).findByHqIdAndOrderCode(hqId, orderCode);
+        HQOrderException exception = assertThrows(HQOrderException.class, () ->
+                hqOrderService.getAllOrders());
         assertEquals(HQOrderErrorCode.ORDER_NOT_FOUND, exception.getErrorCode());
     }
 
     @Test
-    @DisplayName("발주 제품 productId 조회 - 성공")
-    void getOrderItemProductId_Success() {
+    @DisplayName("발주 코드로 특정 발주 조회 - 성공")
+    void getOrder_GivenValidOrderCode_ShouldReturnOrder() {
         // given
-        given(orderItemRepository.findAllByHeadOfficeOrder_HqIdAndHeadOfficeOrder_HeadOfficeOrderId(hqId, orderId)).willReturn(List.of(orderItem));
+        given(orderRepository.findByOrderCodeAndDeletedAtIsNull(orderCode)).willReturn(Optional.of(order));
 
         // when
-        List<Long> response = hqOrderService.getOrderItemProductId(hqId, orderId);
+        HQOrderCommand result = hqOrderService.getOrder(orderCode);
 
         // then
-        verify(orderItemRepository, times(1)).findAllByHeadOfficeOrder_HqIdAndHeadOfficeOrder_HeadOfficeOrderId(hqId, orderId);
-        assertEquals(productId, response.get(0));
+        verify(orderRepository, times(1)).findByOrderCodeAndDeletedAtIsNull(orderCode);
+        assertEquals(orderCode, result.orderCode());
+        assertEquals(HQOrderStatus.PENDING, result.status());
     }
 
     @Test
-    @DisplayName("잘못된 orderId로 발주 제품 조회 시 예외 발생")
-    void getOrderItems_Failure_ORDER_ITEM_NOT_FOUND() {
+    @DisplayName("존재하지 않는 발주 코드로 조회 시 예외 발생")
+    void getOrder_GivenInvalidOrderCode_ShouldThrowORDER_NOT_FOUND() {
         // given
-        given(orderItemRepository.findAllByHeadOfficeOrder_HqIdAndHeadOfficeOrder_HeadOfficeOrderId(hqId, orderId)).willReturn(List.of());
+        given(orderRepository.findByOrderCodeAndDeletedAtIsNull(orderCode)).willReturn(Optional.empty());
 
         // when & then
-        HQOrderException exception = assertThrows(HQOrderException.class, () -> {
-            hqOrderService.getOrderItemProductId(hqId, orderId);
-        });
-        verify(orderItemRepository, times(1)).findAllByHeadOfficeOrder_HqIdAndHeadOfficeOrder_HeadOfficeOrderId(hqId, orderId);
+        HQOrderException exception = assertThrows(HQOrderException.class, () ->
+                hqOrderService.getOrder(orderCode));
+        assertEquals(HQOrderErrorCode.ORDER_NOT_FOUND, exception.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("발주 ID로 발주 제품 productId 목록 조회 - 성공")
+    void getOrderItemProductId_GivenValidOrderId_ShouldReturnProductIds() {
+        // given
+        given(orderItemRepository.findAllByHeadOfficeOrder_HeadOfficeOrderIdAndDeletedAtIsNull(orderId)).willReturn(List.of(orderItem));
+
+        // when
+        List<Long> result = hqOrderService.getOrderItemProductId(hqId, orderId);
+
+        // then
+        verify(orderItemRepository, times(1)).findAllByHeadOfficeOrder_HeadOfficeOrderIdAndDeletedAtIsNull(orderId);
+        assertEquals(1, result.size());
+        assertEquals(productId, result.get(0));
+    }
+
+    @Test
+    @DisplayName("발주 제품 없을 때 productId 조회 시 예외 발생")
+    void getOrderItemProductId_GivenNoItems_ShouldThrowORDER_ITEM_NOT_FOUND() {
+        // given
+        given(orderItemRepository.findAllByHeadOfficeOrder_HeadOfficeOrderIdAndDeletedAtIsNull(orderId)).willReturn(List.of());
+
+        // when & then
+        HQOrderException exception = assertThrows(HQOrderException.class, () ->
+                hqOrderService.getOrderItemProductId(hqId, orderId));
         assertEquals(HQOrderErrorCode.ORDER_ITEM_NOT_FOUND, exception.getErrorCode());
     }
 
     @Test
     @DisplayName("발주 제품 수정 - 성공")
-    void updateOrderItems_Success() {
+    void updateOrderItems_GivenValidRequest_ShouldReturnUpdatedItems() {
         // given
-        given(orderRepository.findByHqIdAndOrderCode(hqId, orderCode)).willReturn(Optional.of(order));
-        given(orderItemRepository.findAllByHeadOfficeOrder_HqIdAndHeadOfficeOrder_OrderCodeAndDeletedAtIsNull(hqId, orderCode)).willReturn(List.of(orderItem));
+        HQOrderItemUpdateRequest itemRequest = new HQOrderItemUpdateRequest(productCode, 20);
+        HQOrderUpdateRequest request = new HQOrderUpdateRequest(manufactureDate, List.of(itemRequest));
+        Map<String, ProductInfo> productInfoByProductCode = Map.of(productCode, ProductInfo.builder()
+                .productId(productId)
+                .productCode(productCode)
+                .costPrice(unitPrice)
+                .build());
+
+        given(orderRepository.findByUserIdAndOrderCodeAndOrderStatusAndDeletedAtIsNull(userId, orderCode, HQOrderStatus.PENDING))
+                .willReturn(Optional.of(order));
+        given(orderItemRepository.findAllByHeadOfficeOrder_UserIdAndHeadOfficeOrder_OrderCodeAndDeletedAtIsNull(userId, orderCode))
+                .willReturn(List.of(orderItem));
 
         // when
-        List<HQOrderItemInfo> response = hqOrderService.updateOrderItems(hqId, orderCode, List.of(hqOrderItemUpdateRequest), productInfoByProductId);
+        List<HQOrderItemCommand> result = hqOrderService.updateOrderItems(userId, orderCode, request, productInfoByProductCode);
 
         // then
-        verify(orderRepository, times(1)).findByHqIdAndOrderCode(hqId, orderCode);
-        verify(orderItemRepository, times(1)).findAllByHeadOfficeOrder_HqIdAndHeadOfficeOrder_OrderCodeAndDeletedAtIsNull(hqId, orderCode);
-        assertTrue(response.stream()
-                .anyMatch(info -> info.productId().equals(newProductId)));
-        assertTrue(response.stream()
-                .anyMatch(info -> info.quantity().equals(newQuantity)));
-        assertFalse(response.stream()
-                .noneMatch(info -> info.productId().equals(newProductId)));
-        assertFalse(response.stream()
-                .noneMatch(info -> info.quantity().equals(newQuantity)));
+        verify(orderRepository, times(1)).findByUserIdAndOrderCodeAndOrderStatusAndDeletedAtIsNull(userId, orderCode, HQOrderStatus.PENDING);
+        verify(orderItemRepository, times(1)).findAllByHeadOfficeOrder_UserIdAndHeadOfficeOrder_OrderCodeAndDeletedAtIsNull(userId, orderCode);
+        assertEquals(1, result.size());
+        assertEquals(productId, result.get(0).productId());
     }
 
     @Test
-    @DisplayName("잘못된 값으로 발주 조회 시 예외 발생")
-    void updateOrderItems_Failure_ORDER_NOT_FOUND() {
+    @DisplayName("PENDING 상태가 아닌 발주 수정 시 예외 발생")
+    void updateOrderItems_GivenNonPendingOrder_ShouldThrowINVALID_STATUS() {
         // given
-        given(orderRepository.findByHqIdAndOrderCode(hqId, orderCode)).willReturn(Optional.empty());
+        HQOrderItemUpdateRequest itemRequest = new HQOrderItemUpdateRequest(productCode, 20);
+        HQOrderUpdateRequest request = new HQOrderUpdateRequest(manufactureDate, List.of(itemRequest));
+        Map<String, ProductInfo> productInfoByProductCode = Map.of(productCode, ProductInfo.builder()
+                .productId(productId)
+                .productCode(productCode)
+                .costPrice(unitPrice)
+                .build());
+
+        given(orderRepository.findByUserIdAndOrderCodeAndOrderStatusAndDeletedAtIsNull(userId, orderCode, HQOrderStatus.PENDING))
+                .willReturn(Optional.empty());
 
         // when & then
-        HQOrderException exception = assertThrows(HQOrderException.class, () -> {
-            hqOrderService.updateOrderItems(hqId, orderCode, List.of(hqOrderItemUpdateRequest), productInfoByProductId);
-        });
-        verify(orderRepository, times(1)).findByHqIdAndOrderCode(hqId, orderCode);
-        verify(orderItemRepository, times(0)).findAllByHeadOfficeOrder_HqIdAndHeadOfficeOrder_OrderCodeAndDeletedAtIsNull(hqId, orderCode);
-        assertEquals(HQOrderErrorCode.ORDER_NOT_FOUND, exception.getErrorCode());
+        HQOrderException exception = assertThrows(HQOrderException.class, () ->
+                hqOrderService.updateOrderItems(userId, orderCode, request, productInfoByProductCode));
+        assertEquals(HQOrderErrorCode.INVALID_STATUS, exception.getErrorCode());
     }
 
     @Test
-    @DisplayName("잘못된 값으로 발주 제품 조회 시 예외 발생")
-    void updateOrderItems_Failure_ORDER_ITEM_NOT_FOUND() {
+    @DisplayName("발주 제품 없는 발주 수정 시 예외 발생")
+    void updateOrderItems_GivenNoItems_ShouldThrowORDER_ITEM_NOT_FOUND() {
         // given
-        given(orderRepository.findByHqIdAndOrderCode(hqId, orderCode)).willReturn(Optional.of(order));
-        given(orderItemRepository.findAllByHeadOfficeOrder_HqIdAndHeadOfficeOrder_OrderCodeAndDeletedAtIsNull(hqId, orderCode)).willReturn(List.of());
+        HQOrderItemUpdateRequest itemRequest = new HQOrderItemUpdateRequest(productCode, 20);
+        HQOrderUpdateRequest request = new HQOrderUpdateRequest(manufactureDate, List.of(itemRequest));
+        Map<String, ProductInfo> productInfoByProductCode = Map.of(productCode, ProductInfo.builder()
+                .productId(productId)
+                .productCode(productCode)
+                .costPrice(unitPrice)
+                .build());
+
+        given(orderRepository.findByUserIdAndOrderCodeAndOrderStatusAndDeletedAtIsNull(userId, orderCode, HQOrderStatus.PENDING))
+                .willReturn(Optional.of(order));
+        given(orderItemRepository.findAllByHeadOfficeOrder_UserIdAndHeadOfficeOrder_OrderCodeAndDeletedAtIsNull(userId, orderCode))
+                .willReturn(List.of());
 
         // when & then
-        HQOrderException exception = assertThrows(HQOrderException.class, () -> {
-            hqOrderService.updateOrderItems(hqId, orderCode, List.of(hqOrderItemUpdateRequest), productInfoByProductId);
-        });
-        verify(orderRepository, times(1)).findByHqIdAndOrderCode(hqId, orderCode);
-        verify(orderItemRepository, times(1)).findAllByHeadOfficeOrder_HqIdAndHeadOfficeOrder_OrderCodeAndDeletedAtIsNull(hqId, orderCode);
+        HQOrderException exception = assertThrows(HQOrderException.class, () ->
+                hqOrderService.updateOrderItems(userId, orderCode, request, productInfoByProductCode));
         assertEquals(HQOrderErrorCode.ORDER_ITEM_NOT_FOUND, exception.getErrorCode());
     }
 
     @Test
-    @DisplayName("발주 정보 수정 - 성공")
-    void updateOrder_Success() {
+    @DisplayName("존재하지 않는 제품 코드로 발주 수정 시 예외 발생")
+    void updateOrderItems_GivenUnknownProductCode_ShouldThrowPRODUCT_NOT_FOUND() {
         // given
-        given(orderRepository.findByHqIdAndOrderCode(hqId, orderCode)).willReturn(Optional.of(order));
-        LocalDateTime manufactureDate = LocalDateTime.of(2026, 2, 20, 10, 0);
+        HQOrderItemUpdateRequest itemRequest = new HQOrderItemUpdateRequest("unknownCode", 20);
+        HQOrderUpdateRequest request = new HQOrderUpdateRequest(manufactureDate, List.of(itemRequest));
+        Map<String, ProductInfo> emptyProductInfoMap = Map.of();
 
-        // when
-        HQOrderInfo response = hqOrderService.updateOrder(hqId, orderCode, manufactureDate);
+        given(orderRepository.findByUserIdAndOrderCodeAndOrderStatusAndDeletedAtIsNull(userId, orderCode, HQOrderStatus.PENDING))
+                .willReturn(Optional.of(order));
+        given(orderItemRepository.findAllByHeadOfficeOrder_UserIdAndHeadOfficeOrder_OrderCodeAndDeletedAtIsNull(userId, orderCode))
+                .willReturn(List.of(orderItem));
 
-        // then
-        verify(orderRepository, times(1)).findByHqIdAndOrderCode(hqId, orderCode);
-        assertEquals(manufactureDate, response.manufacturedDate());
+        // when & then
+        HQOrderException exception = assertThrows(HQOrderException.class, () ->
+                hqOrderService.updateOrderItems(userId, orderCode, request, emptyProductInfoMap));
+        assertEquals(HQOrderErrorCode.PRODUCT_NOT_FOUND, exception.getErrorCode());
     }
 
     @Test
-    @DisplayName("잘못된 정보로 발주 조회 시 예외 발생")
-    void updateOrder_Failure_ORDER_NOT_FOUND() {
+    @DisplayName("발주 제조일 수정 - 성공")
+    void updateOrder_GivenValidOrderCode_ShouldReturnUpdatedOrder() {
         // given
-        given(orderRepository.findByHqIdAndOrderCode(hqId, orderCode)).willReturn(Optional.empty());
+        LocalDateTime newDate = manufactureDate.plusDays(1);
+        given(orderRepository.findByOrderCodeAndDeletedAtIsNull(orderCode)).willReturn(Optional.of(order));
+
+        // when
+        HQOrderCommand result = hqOrderService.updateOrder(orderCode, newDate);
+
+        // then
+        verify(orderRepository, times(1)).findByOrderCodeAndDeletedAtIsNull(orderCode);
+        assertEquals(orderCode, result.orderCode());
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 발주 코드로 수정 시 예외 발생")
+    void updateOrder_GivenInvalidOrderCode_ShouldThrowORDER_NOT_FOUND() {
+        // given
+        given(orderRepository.findByOrderCodeAndDeletedAtIsNull(orderCode)).willReturn(Optional.empty());
 
         // when & then
-        HQOrderException exception = assertThrows(HQOrderException.class, () -> {
-            hqOrderService.updateOrder(hqId, orderCode, manufactureDate);
-        });
-        verify(orderRepository, times(1)).findByHqIdAndOrderCode(hqId, orderCode);
+        HQOrderException exception = assertThrows(HQOrderException.class, () ->
+                hqOrderService.updateOrder(orderCode, manufactureDate));
         assertEquals(HQOrderErrorCode.ORDER_NOT_FOUND, exception.getErrorCode());
     }
 
     @Test
     @DisplayName("발주 취소 - 성공")
-    void cancelOrder_Success() {
+    void cancel_GivenPendingOrder_ShouldReturnCanceledStatus() {
         // given
-        given(orderRepository.findByHqIdAndOrderCode(hqId, orderCode)).willReturn(Optional.of(order));
+        given(orderRepository.findByUserIdAndOrderCodeAndDeletedAtIsNull(userId, orderCode)).willReturn(Optional.of(order));
 
         // when
-        Map<String, HQOrderStatus> response = hqOrderService.cancel(hqId, orderCode);
+        HQOrderCancelCommand result = hqOrderService.cancel(userId, orderCode);
 
         // then
-        verify(orderRepository, times(1)).findByHqIdAndOrderCode(hqId, orderCode);
-        assertEquals(HQOrderStatus.CANCELED, response.values().iterator().next());
-        assertEquals(orderCode, response.keySet().iterator().next());
+        verify(orderRepository, times(1)).findByUserIdAndOrderCodeAndDeletedAtIsNull(userId, orderCode);
+        assertEquals(HQOrderStatus.CANCELED, result.status());
     }
 
     @Test
-    @DisplayName("발주 상태가 CANCELLED일 때 취소 시도 시 예외 발생")
-    void cancelOrder_Failure_ORDER_ALREADY_CANCELLED() {
+    @DisplayName("존재하지 않는 발주 취소 시 예외 발생")
+    void cancel_GivenInvalidOrderCode_ShouldThrowORDER_NOT_FOUND() {
         // given
-        HeadOfficeOrder cancelledOrder = HeadOfficeOrder.builder()
-                .orderStatus(HQOrderStatus.CANCELED)
-                .build();
-        given(orderRepository.findByHqIdAndOrderCode(hqId, orderCode)).willReturn(Optional.of(cancelledOrder));
+        given(orderRepository.findByUserIdAndOrderCodeAndDeletedAtIsNull(userId, orderCode)).willReturn(Optional.empty());
 
         // when & then
-        HQOrderException exception = assertThrows(HQOrderException.class, () -> {
-            hqOrderService.cancel(hqId, orderCode);
-        });
-        verify(orderRepository, times(1)).findByHqIdAndOrderCode(hqId, orderCode);
-        assertEquals(HQOrderErrorCode.ORDER_ALREADY_CANCELED, exception.getErrorCode());
+        HQOrderException exception = assertThrows(HQOrderException.class, () ->
+                hqOrderService.cancel(userId, orderCode));
+        assertEquals(HQOrderErrorCode.ORDER_NOT_FOUND, exception.getErrorCode());
     }
 
     @Test
-    @DisplayName("발주 상태가 PENDING이 아닐 때 취소 요청 시 예외 발생")
-    void cancelOrder_Failure_ORDER_NOT_PENDING() {
+    @DisplayName("PENDING이 아닌 발주 취소 시 예외 발생")
+    void cancel_GivenNonPendingOrder_ShouldThrowORDER_NOT_PENDING() {
         // given
-        HeadOfficeOrder shippingOrder = HeadOfficeOrder.builder()
-                .orderStatus(HQOrderStatus.SHIPPING)
-                .build();
-        given(orderRepository.findByHqIdAndOrderCode(hqId, orderCode)).willReturn(Optional.of(shippingOrder));
+        given(orderRepository.findByUserIdAndOrderCodeAndDeletedAtIsNull(userId, orderCode)).willReturn(Optional.of(acceptedOrder));
 
         // when & then
-        HQOrderException exception = assertThrows(HQOrderException.class, () -> {
-            hqOrderService.cancel(hqId, orderCode);
-        });
-        verify(orderRepository, times(1)).findByHqIdAndOrderCode(hqId, orderCode);
+        HQOrderException exception = assertThrows(HQOrderException.class, () ->
+                hqOrderService.cancel(userId, orderCode));
         assertEquals(HQOrderErrorCode.ORDER_NOT_PENDING, exception.getErrorCode());
     }
 
     @Test
-    @DisplayName("잘못된 값으로 발주 조회 시 예외 발생")
-    void cancelOrder_Failure_ORDER_NOT_FOUND() {
+    @DisplayName("이미 취소된 발주 재취소 시 예외 발생")
+    void cancel_GivenAlreadyCanceledOrder_ShouldThrowORDER_ALREADY_CANCELED() {
         // given
-        given(orderRepository.findByHqIdAndOrderCode(hqId, orderCode)).willReturn(Optional.empty());
+        given(orderRepository.findByUserIdAndOrderCodeAndDeletedAtIsNull(userId, orderCode)).willReturn(Optional.of(canceledOrder));
 
         // when & then
-        HQOrderException exception = assertThrows(HQOrderException.class, () -> {
-            hqOrderService.cancel(hqId, orderCode);
-        });
-        verify(orderRepository, times(1)).findByHqIdAndOrderCode(hqId, orderCode);
-        assertEquals(HQOrderErrorCode.ORDER_NOT_FOUND, exception.getErrorCode());
+        HQOrderException exception = assertThrows(HQOrderException.class, () ->
+                hqOrderService.cancel(userId, orderCode));
+        assertEquals(HQOrderErrorCode.ORDER_ALREADY_CANCELED, exception.getErrorCode());
     }
 
     @Test
     @DisplayName("발주 생성 - 성공")
-    void createOrder_Success() {
+    void createOrder_GivenValidRequest_ShouldReturnPendingOrder() {
         // given
-        HQOrderItemCreateInfo itemCreateInfo = new HQOrderItemCreateInfo(
-                1L,
-                10
-        );
-
+        HQOrderItemCreateCommand itemCommand = new HQOrderItemCreateCommand(productCode, quantity);
         HQOrderCreateRequest request = new HQOrderCreateRequest(
-                "username",
-                "phoneNumber",
-                "description",
-                true,
-                LocalDateTime.now(),
-                List.of(itemCreateInfo)
-        );
+                "hq_manager", "010-1234-5678", "테스트 발주", true, manufactureDate, List.of(itemCommand));
+        Map<Long, ProductInfo> productInfoByProductId = Map.of(productId, ProductInfo.builder()
+                .productId(productId)
+                .productCode(productCode)
+                .costPrice(unitPrice)
+                .build());
 
-        when(generator.generate("")).thenReturn("HEAD-001");
+        given(generator.generate(hqCode)).willReturn(orderCode);
 
         // when
-        HQOrderInfo response = hqOrderService.createOrder(hqId, request, 10, BigDecimal.valueOf(30000));
+        HQOrderCommand result = hqOrderService.createOrder(userId, request, hqCode, productInfoByProductId);
 
         // then
-        assertEquals(description, response.description());
-        assertEquals(HQOrderStatus.PENDING, response.status());
-        assertEquals("-", response.storedDate());
-        assertEquals("HEAD-001", response.orderCode());
+        verify(generator, times(1)).generate(hqCode);
+        verify(orderRepository, times(1)).save(any(HeadOfficeOrder.class));
+        assertEquals(HQOrderStatus.PENDING, result.status());
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 제품 코드로 발주 생성 시 예외 발생")
+    void createOrder_GivenUnknownProductCode_ShouldThrowPRODUCT_NOT_FOUND() {
+        // given
+        HQOrderItemCreateCommand itemCommand = new HQOrderItemCreateCommand("unknownCode", quantity);
+        HQOrderCreateRequest request = new HQOrderCreateRequest(
+                "hq_manager", "010-1234-5678", "테스트 발주", true, manufactureDate, List.of(itemCommand));
+        Map<Long, ProductInfo> emptyProductInfoMap = Map.of();
+
+        // when & then
+        HQOrderException exception = assertThrows(HQOrderException.class, () ->
+                hqOrderService.createOrder(userId, request, hqCode, emptyProductInfoMap));
+        assertEquals(HQOrderErrorCode.PRODUCT_NOT_FOUND, exception.getErrorCode());
     }
 
     @Test
     @DisplayName("발주 제품 생성 - 성공")
-    void createOrderItems_Success() {
+    void createOrderItems_GivenValidOrderId_ShouldReturnCreatedItems() {
         // given
-        HQOrderItemCreateInfo itemCreateInfo = new HQOrderItemCreateInfo(
-                1L,
-                10
-        );
+        HQOrderItemCreateCommand itemCommand = new HQOrderItemCreateCommand(productCode, quantity);
+        Map<Long, ProductInfo> productInfoByProductId = Map.of(productId, ProductInfo.builder()
+                .productId(productId)
+                .productCode(productCode)
+                .costPrice(unitPrice)
+                .build());
 
-        given(orderRepository.findByHeadOfficeOrderId(orderId)).willReturn(Optional.of(order));
+        given(orderRepository.findByHeadOfficeOrderIdAndDeletedAtIsNull(orderId)).willReturn(Optional.of(order));
 
         // when
-        List<HQOrderItemInfo> responses = hqOrderService.createOrderItems(orderId, productInfoByProductId, List.of(itemCreateInfo));
+        List<HQOrderItemCommand> result = hqOrderService.createOrderItems(orderId, productInfoByProductId, List.of(itemCommand));
 
         // then
-        verify(orderRepository, times(1)).findByHeadOfficeOrderId(orderId);
-        assertEquals(BigDecimal.valueOf(30000), responses.get(0).totalPrice());
-        assertEquals(BigDecimal.valueOf(3000), responses.get(0).unitPrice());
-        assertEquals(productCode, responses.get(0).productCode());
+        verify(orderRepository, times(1)).findByHeadOfficeOrderIdAndDeletedAtIsNull(orderId);
+        assertEquals(1, result.size());
+        assertEquals(productId, result.get(0).productId());
+        assertEquals(quantity, result.get(0).quantity());
+        assertEquals(unitPrice, result.get(0).unitPrice());
     }
 
     @Test
-    @DisplayName("대기 상태 발주 제품 정보 조회 - 성공")
-    void getOrderItemIdsByOrderIdAndStatus_Success() {
+    @DisplayName("존재하지 않는 발주 ID로 발주 제품 생성 시 예외 발생")
+    void createOrderItems_GivenInvalidOrderId_ShouldThrowORDER_NOT_FOUND() {
         // given
-        given(orderItemRepository.findAllByHeadOfficeOrder_HeadOfficeOrderIdIn(List.of(orderId))).willReturn(List.of(orderItem));
+        HQOrderItemCreateCommand itemCommand = new HQOrderItemCreateCommand(productCode, quantity);
+        Map<Long, ProductInfo> productInfoByProductId = Map.of(productId, ProductInfo.builder()
+                .productId(productId)
+                .productCode(productCode)
+                .costPrice(unitPrice)
+                .build());
 
-        // when
-        Map<Long, List<Long>> response = hqOrderService.getOrderItemIdsByOrderIdAndStatus(List.of(orderId));
-
-        // then
-        verify(orderItemRepository, times(1)).findAllByHeadOfficeOrder_HeadOfficeOrderIdIn(List.of(orderId));
-        assertEquals(orderId, response.keySet().stream().findFirst().get());
-        assertEquals(orderItemId, response.values().stream().findFirst().get().get(0));
-    }
-
-    @Test
-    @DisplayName("잘못된 값으로 HeadOfficeOrderItem 조회 시 예외 발생")
-    void getOrderItemIdsByOrderIdAndStatus_Failure_ORDER_ITEM_NOT_FOUND() {
-        // given
-        given(orderItemRepository.findAllByHeadOfficeOrder_HeadOfficeOrderIdIn(List.of(orderId))).willReturn(List.of());
+        given(orderRepository.findByHeadOfficeOrderIdAndDeletedAtIsNull(orderId)).willReturn(Optional.empty());
 
         // when & then
-        HQOrderException exception = assertThrows(HQOrderException.class, () -> {
-            hqOrderService.getOrderItemIdsByOrderIdAndStatus(List.of(orderId));
-        });
-        verify(orderItemRepository, times(1)).findAllByHeadOfficeOrder_HeadOfficeOrderIdIn(List.of(orderId));
+        HQOrderException exception = assertThrows(HQOrderException.class, () ->
+                hqOrderService.createOrderItems(orderId, productInfoByProductId, List.of(itemCommand)));
+        assertEquals(HQOrderErrorCode.ORDER_NOT_FOUND, exception.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("대기 중인 발주 전체 조회 - 성공")
+    void getAllPendingOrders_ShouldReturnPendingOrders() {
+        // given
+        given(orderRepository.findAllByOrderStatusAndDeletedAtIsNull(HQOrderStatus.PENDING)).willReturn(List.of(order));
+
+        // when
+        Map<Long, HQOrderCommand> result = hqOrderService.getAllPendingOrders();
+
+        // then
+        verify(orderRepository, times(1)).findAllByOrderStatusAndDeletedAtIsNull(HQOrderStatus.PENDING);
+        assertEquals(1, result.size());
+        assertEquals(orderCode, result.get(orderId).orderCode());
+    }
+
+    @Test
+    @DisplayName("발주 ID 목록으로 발주 제품 조회 - 성공")
+    void getOrderItemIdsByOrderId_GivenValidOrderIds_ShouldReturnItemMap() {
+        // given
+        List<Long> orderIds = List.of(orderId);
+        given(orderItemRepository.findAllByHeadOfficeOrder_HeadOfficeOrderIdIn(orderIds)).willReturn(List.of(orderItem));
+
+        // when
+        Map<Long, List<com.chaing.domain.orders.dto.command.HQOrderItemCommand>> result =
+                hqOrderService.getOrderItemIdsByOrderId(orderIds);
+
+        // then
+        verify(orderItemRepository, times(1)).findAllByHeadOfficeOrder_HeadOfficeOrderIdIn(orderIds);
+        assertEquals(1, result.get(orderId).size());
+        assertEquals(orderItemId, result.get(orderId).get(0).orderItemId());
+    }
+
+    @Test
+    @DisplayName("발주 제품 없을 때 발주 ID 목록 조회 시 예외 발생")
+    void getOrderItemIdsByOrderId_GivenNoItems_ShouldThrowORDER_ITEM_NOT_FOUND() {
+        // given
+        List<Long> orderIds = List.of(orderId);
+        given(orderItemRepository.findAllByHeadOfficeOrder_HeadOfficeOrderIdIn(orderIds)).willReturn(List.of());
+
+        // when & then
+        HQOrderException exception = assertThrows(HQOrderException.class, () ->
+                hqOrderService.getOrderItemIdsByOrderId(orderIds));
         assertEquals(HQOrderErrorCode.ORDER_ITEM_NOT_FOUND, exception.getErrorCode());
     }
 
     @Test
-    @DisplayName("orderItemId로 productId 반환 - 성공")
-    void getProductIdsByOrderIds_Success() {
+    @DisplayName("발주 제품 ID 목록으로 상품 ID 맵 조회 - 성공")
+    void getProductIdsByOrderItemIds_GivenValidIds_ShouldReturnProductIdMap() {
         // given
-        given(orderItemRepository.findAllByHeadOfficeOrderItemIdIn(List.of(orderItemId))).willReturn(List.of(orderItem));
+        List<Long> orderItemIds = List.of(orderItemId);
+        given(orderItemRepository.findAllByHeadOfficeOrderItemIdInAndDeletedAtIsNull(orderItemIds)).willReturn(List.of(orderItem));
 
         // when
-        Map<Long, Long> response = hqOrderService.getProductIdsByOrderItemIds(List.of(orderItemId));
+        Map<Long, Long> result = hqOrderService.getProductIdsByOrderItemIds(orderItemIds);
 
         // then
-        verify(orderItemRepository, times(1)).findAllByHeadOfficeOrderItemIdIn(List.of(orderItemId));
-        assertEquals(orderItemId, response.keySet().stream().findFirst().get());
-        assertEquals(productId, response.values().stream().findFirst().get());
+        verify(orderItemRepository, times(1)).findAllByHeadOfficeOrderItemIdInAndDeletedAtIsNull(orderItemIds);
+        assertEquals(productId, result.get(orderItemId));
     }
 
     @Test
-    @DisplayName("잘못된 값으로 HeadOfficeOrderItem 조회 시 예외 발생")
-    void getProductIdsByOrderIds_Failure_ORDER_ITEM_NOT_FOUND() {
+    @DisplayName("발주 제품 없을 때 상품 ID 맵 조회 시 예외 발생")
+    void getProductIdsByOrderItemIds_GivenNoItems_ShouldThrowORDER_ITEM_NOT_FOUND() {
         // given
-        given(orderItemRepository.findAllByHeadOfficeOrderItemIdIn(List.of(orderItemId))).willReturn(List.of());
+        List<Long> orderItemIds = List.of(orderItemId);
+        given(orderItemRepository.findAllByHeadOfficeOrderItemIdInAndDeletedAtIsNull(orderItemIds)).willReturn(List.of());
 
         // when & then
-        HQOrderException exception = assertThrows(HQOrderException.class, () -> {
-            hqOrderService.getProductIdsByOrderItemIds(List.of(orderItemId));
-        });
-        verify(orderItemRepository, times(1)).findAllByHeadOfficeOrderItemIdIn(List.of(orderItemId));
+        HQOrderException exception = assertThrows(HQOrderException.class, () ->
+                hqOrderService.getProductIdsByOrderItemIds(orderItemIds));
         assertEquals(HQOrderErrorCode.ORDER_ITEM_NOT_FOUND, exception.getErrorCode());
     }
 
     @Test
-    @DisplayName("발주 전체 조회 - 성공")
-    void getAllOrdersByFactory_Success() {
+    @DisplayName("공장 용 전체 발주 조회 - 성공")
+    void getAllOrdersByFactory_ShouldReturnAllOrders() {
         // given
         given(orderRepository.findAll()).willReturn(List.of(order));
 
         // when
-        Map<Long, HQOrderInfo> response = hqOrderService.getAllOrdersByFactory();
+        Map<Long, HQOrderCommand> result = hqOrderService.getAllOrdersByFactory();
 
         // then
         verify(orderRepository, times(1)).findAll();
-        assertEquals(orderId, response.keySet().stream().findFirst().get());
+        assertEquals(1, result.size());
+        assertEquals(orderCode, result.get(orderId).orderCode());
     }
 
     @Test
-    @DisplayName("발주 접수 - 성공")
-    void updateOrderStatus_Accept_Success() {
+    @DisplayName("공장 발주 접수 처리 - 성공")
+    void updateOrderStatus_GivenAcceptRequest_ShouldReturnAcceptedStatus() {
         // given
-        given(orderRepository.findAllByOrderCodeIn(List.of(orderCode))).willReturn(List.of(order));
-
-        FactoryOrderRequest request = new FactoryOrderRequest(
-                true,
-                List.of(orderCode)
-        );
+        FactoryOrderRequest request = new FactoryOrderRequest(true, List.of(orderCode));
+        given(orderRepository.findAllByOrderCodeInAndDeletedAtIsNull(List.of(orderCode))).willReturn(List.of(order));
 
         // when
-        Map<String, HQOrderStatus> response = hqOrderService.updateOrderStatus(request);
+        Map<String, HQOrderStatus> result = hqOrderService.updateOrderStatus(request);
 
         // then
-        verify(orderRepository, times(1)).findAllByOrderCodeIn(List.of(orderCode));
-        assertEquals(orderCode, response.keySet().stream().findFirst().get());
-        assertEquals(HQOrderStatus.ACCEPTED, response.get(orderCode));
+        verify(orderRepository, times(1)).findAllByOrderCodeInAndDeletedAtIsNull(List.of(orderCode));
+        assertEquals(HQOrderStatus.ACCEPTED, result.get(orderCode));
     }
 
     @Test
-    @DisplayName("발주 반려 - 성공")
-    void updateOrderStatus_Reject_Success() {
+    @DisplayName("공장 발주 반려 처리 - 성공")
+    void updateOrderStatus_GivenRejectRequest_ShouldReturnRejectedStatus() {
         // given
-        given(orderRepository.findAllByOrderCodeIn(List.of(orderCode))).willReturn(List.of(order));
-
-        FactoryOrderRequest request = new FactoryOrderRequest(
-                false,
-                List.of(orderCode)
-        );
+        FactoryOrderRequest request = new FactoryOrderRequest(false, List.of(orderCode));
+        given(orderRepository.findAllByOrderCodeInAndDeletedAtIsNull(List.of(orderCode))).willReturn(List.of(order));
 
         // when
-        Map<String, HQOrderStatus> response = hqOrderService.updateOrderStatus(request);
+        Map<String, HQOrderStatus> result = hqOrderService.updateOrderStatus(request);
 
         // then
-        verify(orderRepository, times(1)).findAllByOrderCodeIn(List.of(orderCode));
-        assertEquals(orderCode, response.keySet().stream().findFirst().get());
-        assertEquals(HQOrderStatus.REJECTED, response.get(orderCode));
+        verify(orderRepository, times(1)).findAllByOrderCodeInAndDeletedAtIsNull(List.of(orderCode));
+        assertEquals(HQOrderStatus.REJECTED, result.get(orderCode));
     }
 
     @Test
-    @DisplayName("잘못된 값으로 발주 조회 시 예외 발생")
-    void updateOrderStatus_Failure_ORDER_NOT_FOUND() {
+    @DisplayName("존재하지 않는 발주 코드로 상태 변경 시 예외 발생")
+    void updateOrderStatus_GivenInvalidOrderCode_ShouldThrowORDER_NOT_FOUND() {
         // given
-        given(orderRepository.findAllByOrderCodeIn(List.of(orderCode))).willReturn(List.of());
-
-        FactoryOrderRequest request = new FactoryOrderRequest(
-                false,
-                List.of(orderCode)
-        );
+        FactoryOrderRequest request = new FactoryOrderRequest(true, List.of(orderCode));
+        given(orderRepository.findAllByOrderCodeInAndDeletedAtIsNull(List.of(orderCode))).willReturn(List.of());
 
         // when & then
-        HQOrderException exception = assertThrows(HQOrderException.class, () -> {
-            hqOrderService.updateOrderStatus(request);
-        });
-        verify(orderRepository, times(1)).findAllByOrderCodeIn(List.of(orderCode));
+        HQOrderException exception = assertThrows(HQOrderException.class, () ->
+                hqOrderService.updateOrderStatus(request));
         assertEquals(HQOrderErrorCode.ORDER_NOT_FOUND, exception.getErrorCode());
     }
-}*/
+
+    @Test
+    @DisplayName("PENDING 상태가 아닌 발주 접수 처리 시 예외 발생")
+    void updateOrderStatus_GivenNonPendingOrder_ShouldThrowORDER_NOT_PENDING() {
+        // given
+        FactoryOrderRequest request = new FactoryOrderRequest(true, List.of(orderCode));
+        given(orderRepository.findAllByOrderCodeInAndDeletedAtIsNull(List.of(orderCode))).willReturn(List.of(acceptedOrder));
+
+        // when & then
+        HQOrderException exception = assertThrows(HQOrderException.class, () ->
+                hqOrderService.updateOrderStatus(request));
+        assertEquals(HQOrderErrorCode.ORDER_NOT_PENDING, exception.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("운송을 위한 발주 조회 - 성공")
+    void getOrdersForTransit_GivenValidOrderIds_ShouldReturnTransitOrders() {
+        // given
+        List<Long> orderIds = List.of(orderId);
+        HeadOfficeOrder awaitingOrder = HeadOfficeOrder.builder()
+                .orderCode(orderCode)
+                .userId(userId)
+                .manufactureDate(manufactureDate)
+                .orderStatus(HQOrderStatus.AWAITING)
+                .totalQuantity(quantity)
+                .totalAmount(totalPrice)
+                .build();
+        ReflectionTestUtils.setField(awaitingOrder, "headOfficeOrderId", orderId);
+        HeadOfficeOrderItem awaitingItem = HeadOfficeOrderItem.builder()
+                .headOfficeOrder(awaitingOrder)
+                .productId(productId)
+                .quantity(quantity)
+                .unitPrice(unitPrice)
+                .totalPrice(totalPrice)
+                .build();
+
+        given(orderItemRepository.findByHeadOfficeOrder_HeadOfficeOrderIdInAndHeadOfficeOrder_OrderStatusAndDeletedAtIsNull(
+                orderIds, HQOrderStatus.AWAITING)).willReturn(List.of(awaitingItem));
+
+        // when
+        List<HQOrderForTransitResponse> result = hqOrderService.getOrdersForTransit(orderIds);
+
+        // then
+        assertEquals(1, result.size());
+        assertEquals(orderCode, result.get(0).orderCode());
+        assertEquals(1, result.get(0).items().size());
+        assertEquals(productId, result.get(0).items().get(0).productId());
+    }
+
+    @Test
+    @DisplayName("빈 발주 ID 목록으로 운송 발주 조회 시 예외 발생")
+    void getOrdersForTransit_GivenEmptyOrderIds_ShouldThrowINVALID_INPUT() {
+        // when & then
+        HQOrderException exception = assertThrows(HQOrderException.class, () ->
+                hqOrderService.getOrdersForTransit(List.of()));
+        assertEquals(HQOrderErrorCode.INVALID_INPUT, exception.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("운송 대기 제품 없을 때 조회 시 예외 발생")
+    void getOrdersForTransit_GivenNoAwaitingItems_ShouldThrowORDER_ITEM_NOT_FOUND() {
+        // given
+        List<Long> orderIds = List.of(orderId);
+        given(orderItemRepository.findByHeadOfficeOrder_HeadOfficeOrderIdInAndHeadOfficeOrder_OrderStatusAndDeletedAtIsNull(
+                orderIds, HQOrderStatus.AWAITING)).willReturn(List.of());
+
+        // when & then
+        HQOrderException exception = assertThrows(HQOrderException.class, () ->
+                hqOrderService.getOrdersForTransit(orderIds));
+        assertEquals(HQOrderErrorCode.ORDER_ITEM_NOT_FOUND, exception.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("요청한 발주보다 조회된 발주가 적을 때 예외 발생")
+    void getOrdersForTransit_GivenPartialOrders_ShouldThrowORDER_NOT_FOUND() {
+        // given
+        List<Long> orderIds = List.of(orderId, 2L);
+        HeadOfficeOrder awaitingOrder = HeadOfficeOrder.builder()
+                .orderCode(orderCode)
+                .userId(userId)
+                .manufactureDate(manufactureDate)
+                .orderStatus(HQOrderStatus.AWAITING)
+                .totalQuantity(quantity)
+                .totalAmount(totalPrice)
+                .build();
+        ReflectionTestUtils.setField(awaitingOrder, "headOfficeOrderId", orderId);
+        HeadOfficeOrderItem awaitingItem = HeadOfficeOrderItem.builder()
+                .headOfficeOrder(awaitingOrder)
+                .productId(productId)
+                .quantity(quantity)
+                .unitPrice(unitPrice)
+                .totalPrice(totalPrice)
+                .build();
+
+        given(orderItemRepository.findByHeadOfficeOrder_HeadOfficeOrderIdInAndHeadOfficeOrder_OrderStatusAndDeletedAtIsNull(
+                orderIds, HQOrderStatus.AWAITING)).willReturn(List.of(awaitingItem));
+
+        // when & then
+        HQOrderException exception = assertThrows(HQOrderException.class, () ->
+                hqOrderService.getOrdersForTransit(orderIds));
+        assertEquals(HQOrderErrorCode.ORDER_NOT_FOUND, exception.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("발주 ID로 발주 제품 맵 조회 - 성공")
+    void getOrderItemsByOrderId_GivenValidOrderId_ShouldReturnItemMap() {
+        // given
+        given(orderItemRepository.findAllByHeadOfficeOrder_HeadOfficeOrderIdAndDeletedAtIsNull(orderId)).willReturn(List.of(orderItem));
+
+        // when
+        Map<Long, List<HQOrderItemCommand>> result = hqOrderService.getOrderItemsByOrderId(orderId);
+
+        // then
+        verify(orderItemRepository, times(1)).findAllByHeadOfficeOrder_HeadOfficeOrderIdAndDeletedAtIsNull(orderId);
+        assertEquals(1, result.get(orderId).size());
+        assertEquals(orderItemId, result.get(orderId).get(0).orderItemId());
+    }
+
+    @Test
+    @DisplayName("발주 제품 없을 때 발주 ID 조회 시 예외 발생")
+    void getOrderItemsByOrderId_GivenNoItems_ShouldThrowORDER_ITEM_NOT_FOUND() {
+        // given
+        given(orderItemRepository.findAllByHeadOfficeOrder_HeadOfficeOrderIdAndDeletedAtIsNull(orderId)).willReturn(List.of());
+
+        // when & then
+        HQOrderException exception = assertThrows(HQOrderException.class, () ->
+                hqOrderService.getOrderItemsByOrderId(orderId));
+        assertEquals(HQOrderErrorCode.ORDER_ITEM_NOT_FOUND, exception.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("userId와 발주 코드로 PENDING 발주 조회 - 성공")
+    void getOrderByUserIdAndOrderCodeAndPending_GivenPendingOrder_ShouldReturnOrder() {
+        // given
+        given(orderRepository.findByUserIdAndOrderCodeAndOrderStatusAndDeletedAtIsNull(userId, orderCode, HQOrderStatus.PENDING))
+                .willReturn(Optional.of(order));
+
+        // when
+        HQOrderCommand result = hqOrderService.getOrderByUserIdAndOrderCodeAndPending(userId, orderCode);
+
+        // then
+        verify(orderRepository, times(1)).findByUserIdAndOrderCodeAndOrderStatusAndDeletedAtIsNull(userId, orderCode, HQOrderStatus.PENDING);
+        assertEquals(orderCode, result.orderCode());
+        assertEquals(HQOrderStatus.PENDING, result.status());
+    }
+
+    @Test
+    @DisplayName("PENDING이 아닌 발주를 userId와 발주 코드로 조회 시 예외 발생")
+    void getOrderByUserIdAndOrderCodeAndPending_GivenNonPendingOrder_ShouldThrowINVALID_STATUS() {
+        // given
+        given(orderRepository.findByUserIdAndOrderCodeAndOrderStatusAndDeletedAtIsNull(userId, orderCode, HQOrderStatus.PENDING))
+                .willReturn(Optional.empty());
+
+        // when & then
+        HQOrderException exception = assertThrows(HQOrderException.class, () ->
+                hqOrderService.getOrderByUserIdAndOrderCodeAndPending(userId, orderCode));
+        assertEquals(HQOrderErrorCode.INVALID_STATUS, exception.getErrorCode());
+    }
+}

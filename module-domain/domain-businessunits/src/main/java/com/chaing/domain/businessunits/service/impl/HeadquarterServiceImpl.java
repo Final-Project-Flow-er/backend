@@ -32,4 +32,12 @@ public class HeadquarterServiceImpl implements BusinessUnitService {
         hq.updateHqInfo(command);
         return BusinessUnitInternal.from(hq);
     }
+
+    // 본사 코드 조회
+    public String getHqCode(Long hqId) {
+        Headquarter hq = headquarterRepository.findById(hqId)
+                .orElseThrow(() -> new BusinessUnitException(BusinessUnitErrorCode.BUSINESS_UNIT_NOT_FOUND));
+
+        return hq.getHqCode();
+    }
 }

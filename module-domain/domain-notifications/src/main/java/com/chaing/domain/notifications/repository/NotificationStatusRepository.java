@@ -16,6 +16,7 @@ public interface NotificationStatusRepository extends CrudRepository<Notificatio
 
     Optional<NotificationStatus> findByUserIdAndNotificationId(Long userId, Long notificationId);
     void deleteByUserIdAndNotificationId(Long userId, Long notificationId);
+    void deleteAllByNotificationIdIn(List<Long> notificationIds);
     void deleteAllByNotificationId(Long notificationId);
     List<NotificationStatus> findAllByUserIdAndNotificationIdIn(Long userId, List<Long> notificationIds);
 

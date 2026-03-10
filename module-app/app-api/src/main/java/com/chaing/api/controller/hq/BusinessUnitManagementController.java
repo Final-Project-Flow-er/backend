@@ -15,6 +15,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -50,7 +51,7 @@ public class BusinessUnitManagementController {
     public ResponseEntity<ApiResponse<Page<BusinessUnitSummaryResponse>>> getBusinessUnits(
             @Schema(allowableValues = {"franchise", "factory"})
             @PathVariable BusinessUnitType type,
-            Pageable pageable
+            @PageableDefault(size = 20) Pageable pageable
     ) {
         return ResponseEntity.ok(ApiResponse.success(businessUnitManagementFacade.getList(type, pageable)));
     }

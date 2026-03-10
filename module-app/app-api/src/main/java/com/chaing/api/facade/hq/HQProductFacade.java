@@ -49,6 +49,7 @@ public class HQProductFacade {
                         .components(p.component().stream()
                                 .map(c -> c.getName())
                                 .toList())
+                        .status(p.product().getStatus() != null ? p.product().getStatus().name() : null)
                         .build())
                 .toList();
 

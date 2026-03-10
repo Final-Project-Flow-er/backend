@@ -26,10 +26,8 @@ public class FranchiseProductFacade {
         ProductSearchRequest productSearchRequest = convertProductSearchRequest(request);
         ProductListResponse productListResponse = productService.getProducts(productSearchRequest);
 
-
-        List<FranchiseProductResponse> franchiseProductResponses =
-                productListResponse.products().stream()
-                .map( p -> FranchiseProductResponse.builder()
+        List<FranchiseProductResponse> franchiseProductResponses = productListResponse.products().stream()
+                .map(p -> FranchiseProductResponse.builder()
                         .name(p.product().getName())
                         .productCode(p.product().getProductCode())
                         .description(p.product().getDescription())
@@ -45,8 +43,9 @@ public class FranchiseProductFacade {
                         .components(p.component().stream()
                                 .map(c -> c.getName())
                                 .toList())
+                        .status(p.product().getStatus() != null ? p.product().getStatus().name() : null)
                         .build())
-                        .toList();
+                .toList();
 
         return FranchiseProductListResponse.builder()
                 .franchiseProductList(franchiseProductResponses)
@@ -62,10 +61,10 @@ public class FranchiseProductFacade {
                 .build();
     }
 
-    private String spicyValid(String productCode){
-        String spicy = productCode.substring(2,4);
-        return switch (spicy){
-            case "01"  -> "순한맛";
+    private String spicyValid(String productCode) {
+        String spicy = productCode.substring(2, 4);
+        return switch (spicy) {
+            case "01" -> "순한맛";
             case "02" -> "기본맛";
             case "03" -> "매운맛";
             case "04" -> "아주 매운맛";
@@ -73,9 +72,8 @@ public class FranchiseProductFacade {
         };
     }
 
-
-    private String sizeValid(String productCode){
-        String size = productCode.substring(4,6);
+    private String sizeValid(String productCode) {
+        String size = productCode.substring(4, 6);
         return switch (size) {
             case "01" -> "1~2인분";
             case "03" -> "3~4인분";

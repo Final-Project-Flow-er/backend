@@ -4,6 +4,7 @@ import com.chaing.core.enums.UsableStatus;
 import com.chaing.domain.transports.dto.command.VehicleCreateCommand;
 import com.chaing.domain.transports.dto.command.VehicleUpdateCommand;
 import com.chaing.domain.transports.entity.Vehicle;
+import com.chaing.domain.transports.enums.VehicleType;
 import com.chaing.domain.transports.exception.TransportErrorCode;
 import com.chaing.domain.transports.exception.TransportException;
 import com.chaing.domain.transports.repository.VehicleRepository;
@@ -45,7 +46,7 @@ class VehicleManagementServiceTests {
     void setUp() {
         vehicle = Vehicle.builder()
                 .vehicleNumber("12가 3456")
-                .vehicleType("트럭")
+                .vehicleType(VehicleType.CARGO)
                 .status(UsableStatus.ACTIVE)
                 .build();
     }
@@ -157,14 +158,14 @@ class VehicleManagementServiceTests {
     }
 
     @Test
-    @DisplayName("운송 업체 비활성화 시 소속 차량 일괄 비활성화")
+    @DisplayName("운송 업체 상태 변경 시 소속 차량 일괄 상태 변경")
     void deactivateVehiclesByTransportId() {
 
         // given
         Long transportId = 1L;
 
         // when
-        vehicleManagementService.deactivateVehiclesByTransportId(transportId);
+        vehicleManagementService.deactivateVehiclesByTransportId(transportId, UsableStatus.INACTIVE);
 
         // then
         verify(vehicleRepository, times(1))

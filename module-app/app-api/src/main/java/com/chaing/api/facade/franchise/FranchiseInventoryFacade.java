@@ -1,6 +1,8 @@
 package com.chaing.api.facade.franchise;
 
 import com.chaing.core.dto.info.ProductInfo;
+import com.chaing.core.enums.LogType;
+import com.chaing.domain.inventories.entity.FranchiseInventory;
 import com.chaing.domain.inventories.dto.request.FranchiseInventoryItemsRequest;
 import com.chaing.domain.inventories.dto.request.InventoryBatchRequest;
 import com.chaing.domain.inventories.dto.request.InventoryBoxRequest;
@@ -102,7 +104,6 @@ public class FranchiseInventoryFacade {
         // 해당 재고 삭제
         LocationType fromType = LocationType.valueOf(inventoryBatchRequest.fromLocationType().toUpperCase());
 
-
         List<String> serialCode = convertsSerialCode(inventoryBatchRequest.boxes());
         if (fromType == LocationType.FRANCHISE) {
             inventoryService.deleteFranchiseInventory(inventoryBatchRequest.fromLocationId(), serialCode);
@@ -114,6 +115,7 @@ public class FranchiseInventoryFacade {
 
         return null;
     }
+
     // 제품 식별코드 반환
     public List<String> convertsSerialCode(List<InventoryBoxRequest> boxes) {
         return boxes.stream()
@@ -210,10 +212,41 @@ public class FranchiseInventoryFacade {
     }
 
     @Transactional
-
     public Void disposalInventory(DisposalRequest request) {
+        String actorTypeRaw = request.actorType().toUpperCase();
+        List<InventoryLogCreateRequest> logs = new ArrayList<>();
+
+        if (actorTypeRaw.equals("FRANCHISE")) {
+            List<FranchiseInventory> inventories = inventoryService
+                    .getFranchiseInventoriesByIds(request.inventoryIds());
+            Map<Long, ProductInfo> productInfos = productService.getProductInfos(
+                    inventories.stream().map(FranchiseInventory::getProductId).distinct().toList());
+
+            for (FranchiseInventory inv : inventories) {
+                ProductInfo pInfo = productInfos.get(inv.getProductId());
+                logs.add(new InventoryLogCreateRequest(
+                        inv.getProductId(),
+                        pInfo != null ? pInfo.productName() : "Unknown",
+                        inv.getBoxCode(),
+                        null,
+                        LogType.DISPOSAL,
+                        1,
+                        pInfo != null ? pInfo.tradePrice() : null,
+                        pInfo != null ? pInfo.retailPrice() : null,
+                        LocationType.FRANCHISE,
+                        inv.getFranchiseId(),
+                        null,
+                        null,
+                        ActorType.FRANCHISE,
+                        inv.getFranchiseId()));
+            }
+        }
+
+        if (!logs.isEmpty()) {
+            inventoryLogService.recordInventoryLog(logs);
+        }
+
         inventoryService.disposalInventory(request);
-        // 로그 기록 추가
         return null;
     }
 

@@ -310,4 +310,22 @@ public class FranchiseReturnService {
                         ReturnItemCommand::from
                 ));
     }
+
+
+    // InventoryLogFacade에서 사용 - 반품 엔티티 조회 (returnId 기반)
+    public Returns getReturnByReturnId(Long returnId) {
+        return franchiseReturnRepository.findByReturnIdAndDeletedAtIsNull(returnId)
+                .orElseThrow(() -> new FranchiseReturnException(
+                        FranchiseReturnErrorCode.RETURN_NOT_FOUND));
+    }
+
+    // InventoryLogFacade에서 사용 - 반품 아이템 리스트 조회 (returnId 기반)
+    public List<ReturnItem> getReturnItemListByReturnId(Long returnId) {
+        List<ReturnItem> items = franchiseReturnItemRepository
+                .findByReturns_ReturnIdAndDeletedAtIsNull(returnId);
+        if (items == null || items.isEmpty()) {
+            throw new FranchiseReturnException(FranchiseReturnErrorCode.RETURN_ITEM_NOT_FOUND);
+        }
+        return items;
+    }
 }

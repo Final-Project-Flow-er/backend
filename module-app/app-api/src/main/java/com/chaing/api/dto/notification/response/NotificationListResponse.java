@@ -4,6 +4,8 @@ import com.chaing.domain.notifications.entity.Notification;
 import com.chaing.domain.notifications.enums.NotificationType;
 import lombok.Builder;
 
+import java.time.LocalDateTime;
+
 @Builder
 public record NotificationListResponse(
 
@@ -12,7 +14,8 @@ public record NotificationListResponse(
         NotificationType type,
         String message,
         Long targetId,
-        boolean isRead
+        boolean isRead,
+        LocalDateTime createdAt
 ) {
     public static NotificationListResponse of(Notification notification, boolean isRead) {
         return NotificationListResponse.builder()
@@ -22,6 +25,7 @@ public record NotificationListResponse(
                 .message(notification.getMessage())
                 .targetId(notification.getTargetId())
                 .isRead(isRead)
+                .createdAt(notification.getCreatedAt())
                 .build();
     }
 }

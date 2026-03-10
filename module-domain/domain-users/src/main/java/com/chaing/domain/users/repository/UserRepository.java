@@ -16,10 +16,24 @@
 
         Optional<User> findByLoginId(String loginId);
 
-        @Query(value = "SELECT MAX(employee_number) FROM user WHERE role = :#{#role.name()} FOR UPDATE", nativeQuery = true)
+        @Query(value = """
+            SELECT employee_number
+            FROM user
+            WHERE role = :#{#role.name()}
+            ORDER BY employee_number DESC
+            LIMIT 1
+            FOR UPDATE
+            """, nativeQuery = true)
         Optional<String> findMaxEmployeeNumberByRole(@Param("role") UserRole role);
 
-        @Query(value = "SELECT MAX(login_id) FROM user WHERE login_id LIKE CONCAT(:pattern, '%') FOR UPDATE", nativeQuery = true)
+        @Query(value = """
+            SELECT login_id
+            FROM user
+            WHERE login_id LIKE CONCAT(:pattern, '%')
+            ORDER BY login_id DESC
+            LIMIT 1
+            FOR UPDATE
+            """, nativeQuery = true)
         Optional<String> findMaxLoginIdByPattern(@Param("pattern") String pattern);
 
         boolean existsByEmail(String email);

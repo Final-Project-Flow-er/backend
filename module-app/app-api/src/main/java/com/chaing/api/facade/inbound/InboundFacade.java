@@ -117,8 +117,8 @@ public class InboundFacade {
                     return InboundDetailResponse.of(
                             item.serialCode(),
                             item.productId(),
-                            product.productCode(),
                             product.productName(), // Map에서 꺼낸 상품명
+                            product.productCode(),
                             item.manufactureDate());
                 })
                 .toList();

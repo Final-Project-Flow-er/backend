@@ -474,14 +474,14 @@ class HQOrderServiceTests {
     void getOrderItemIdsByOrderId_GivenValidOrderIds_ShouldReturnItemMap() {
         // given
         List<Long> orderIds = List.of(orderId);
-        given(orderItemRepository.findAllByHeadOfficeOrder_HeadOfficeOrderIdIn(orderIds)).willReturn(List.of(orderItem));
+        given(orderItemRepository.findAllByHeadOfficeOrder_HeadOfficeOrderIdInAndDeletedAtIsNull(orderIds)).willReturn(List.of(orderItem));
 
         // when
         Map<Long, List<com.chaing.domain.orders.dto.command.HQOrderItemCommand>> result =
                 hqOrderService.getOrderItemIdsByOrderId(orderIds);
 
         // then
-        verify(orderItemRepository, times(1)).findAllByHeadOfficeOrder_HeadOfficeOrderIdIn(orderIds);
+        verify(orderItemRepository, times(1)).findAllByHeadOfficeOrder_HeadOfficeOrderIdInAndDeletedAtIsNull(orderIds);
         assertEquals(1, result.get(orderId).size());
         assertEquals(orderItemId, result.get(orderId).get(0).orderItemId());
     }
@@ -491,7 +491,7 @@ class HQOrderServiceTests {
     void getOrderItemIdsByOrderId_GivenNoItems_ShouldThrowORDER_ITEM_NOT_FOUND() {
         // given
         List<Long> orderIds = List.of(orderId);
-        given(orderItemRepository.findAllByHeadOfficeOrder_HeadOfficeOrderIdIn(orderIds)).willReturn(List.of());
+        given(orderItemRepository.findAllByHeadOfficeOrder_HeadOfficeOrderIdInAndDeletedAtIsNull(orderIds)).willReturn(List.of());
 
         // when & then
         HQOrderException exception = assertThrows(HQOrderException.class, () ->

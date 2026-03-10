@@ -88,10 +88,10 @@ public class HQSettlementConfirmController {
                 return ResponseEntity.ok(ApiResponse.success(null));
         }
 
-        // 최종확정/확정요청 -> 작성중 (수정 버튼, 되돌리기)
+        // 확정요청 -> 정산완료 (수정 버튼, 되돌리기)
         @Operation(summary = "확정요청 수정(되돌리기)", description = """
                         확정 상태를 작성중으로 되돌림
-                        (확정요청 -> 작성중)
+                        (확정요청 -> 정산완료)
                         """)
         @PostMapping("/monthly/franchises/{franchiseId}/rollback")
         public ResponseEntity<ApiResponse<Void>> rollbackToDraft(

@@ -47,20 +47,9 @@ public class ReturnItem extends BaseEntity {
     private ReturnItemStatus returnItemStatus = ReturnItemStatus.BEFORE_INSPECTION;
 
     public void updateStatus(ReturnItemStatus status) {
+        if (this.returnItemStatus != ReturnItemStatus.BEFORE_INSPECTION) {
+            throw new FranchiseReturnException(FranchiseReturnErrorCode.INVALID_RETURN_ITEM_STATUS);
+        }
         this.returnItemStatus = status;
-    }
-
-    public void updateStatusDefective() {
-        if (this.returnItemStatus != ReturnItemStatus.BEFORE_INSPECTION) {
-            throw new FranchiseReturnException(FranchiseReturnErrorCode.INVALID_RETURN_ITEM_STATUS);
-        }
-        this.returnItemStatus = ReturnItemStatus.DEFECTIVE;
-    }
-
-    public void updateStatusNormal() {
-        if (this.returnItemStatus != ReturnItemStatus.BEFORE_INSPECTION) {
-            throw new FranchiseReturnException(FranchiseReturnErrorCode.INVALID_RETURN_ITEM_STATUS);
-        }
-        this.returnItemStatus = ReturnItemStatus.NORMAL;
     }
 }

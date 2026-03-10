@@ -63,7 +63,7 @@ public class FactoryInboundValidatorImpl
 
     @Override
     public void checkPendingDataExistence(List<FactoryInventoryRawData> entities) {
-        if (entities.isEmpty() || entities == null) {
+        if (entities == null || entities.isEmpty()) {
             throw new InventoriesException(InventoriesErrorCode.INVENTORIES_IS_NULL);
         }
 

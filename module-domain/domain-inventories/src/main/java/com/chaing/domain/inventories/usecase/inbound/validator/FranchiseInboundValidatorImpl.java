@@ -71,7 +71,7 @@ public class FranchiseInboundValidatorImpl
 
     @Override
     public void checkPendingDataExistence(List<FranchiseInventoryRawData> entities) {
-        if (entities.isEmpty() || entities == null) {
+        if (entities == null || entities.isEmpty()) {
             throw new InventoriesException(InventoriesErrorCode.INVENTORIES_IS_NULL);
         }
 

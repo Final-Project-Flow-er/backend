@@ -2,6 +2,7 @@ package com.chaing.domain.inventories.entity;
 
 import com.chaing.core.entity.BaseEntity;
 import com.chaing.core.enums.LogType;
+import com.chaing.core.enums.ReturnItemStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -60,4 +61,15 @@ public class HQInventory extends BaseEntity {
     @Column
     LocalDateTime receivedAt;       // 입고 완료 일자
 
+    @Column
+    Boolean isInspected;
+
+    @Column
+    @Enumerated(EnumType.STRING)
+    ReturnItemStatus returnItemStatus;
+
+    public void updateInspection(Boolean isInspected, ReturnItemStatus status) {
+        this.isInspected = isInspected;
+        this.returnItemStatus = status;
+    }
 }

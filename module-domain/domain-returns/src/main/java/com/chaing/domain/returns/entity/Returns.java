@@ -71,11 +71,19 @@ public class Returns extends BaseEntity {
         this.returnStatus = ReturnStatus.CANCELED;
     }
 
-    public void updateStatus() {
+    public void acceptReturn() {
         if (!this.returnStatus.equals(ReturnStatus.PENDING)) {
             throw new FranchiseReturnException(FranchiseReturnErrorCode.ALREADY_ACCEPTED);
         }
 
         this.returnStatus = ReturnStatus.ACCEPTED;
+    }
+
+    public void updateStatusInInspection(ReturnStatus returnStatus) {
+        if (!returnStatus.equals(ReturnStatus.PENDING)) {
+            throw new FranchiseReturnException(FranchiseReturnErrorCode.INVALID_RETURN_STATUS);
+        }
+
+        this.returnStatus = returnStatus;
     }
 }

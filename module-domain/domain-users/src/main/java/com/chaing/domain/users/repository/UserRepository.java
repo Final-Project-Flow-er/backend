@@ -3,9 +3,7 @@
     import com.chaing.domain.users.entity.User;
     import com.chaing.domain.users.enums.UserRole;
     import com.chaing.domain.users.repository.interfaces.UserRepositoryCustom;
-    import jakarta.persistence.LockModeType;
     import org.springframework.data.jpa.repository.JpaRepository;
-    import org.springframework.data.jpa.repository.Lock;
     import org.springframework.data.jpa.repository.Query;
     import org.springframework.data.repository.query.Param;
     import org.springframework.stereotype.Repository;
@@ -18,12 +16,24 @@
 
         Optional<User> findByLoginId(String loginId);
 
-        @Lock(LockModeType.PESSIMISTIC_WRITE)
-        @Query("SELECT MAX(u.employeeNumber) FROM User u WHERE u.role = :role")
+        @Query(value = """
+            SELECT employee_number
+            FROM user
+            WHERE role = :#{#role.name()}
+            ORDER BY employee_number DESC
+            LIMIT 1
+            FOR UPDATE
+            """, nativeQuery = true)
         Optional<String> findMaxEmployeeNumberByRole(@Param("role") UserRole role);
 
-        @Lock(LockModeType.PESSIMISTIC_WRITE)
-        @Query("SELECT MAX(u.loginId) FROM User u WHERE u.loginId LIKE :pattern%")
+        @Query(value = """
+            SELECT login_id
+            FROM user
+            WHERE login_id LIKE CONCAT(:pattern, '%')
+            ORDER BY login_id DESC
+            LIMIT 1
+            FOR UPDATE
+            """, nativeQuery = true)
         Optional<String> findMaxLoginIdByPattern(@Param("pattern") String pattern);
 
         boolean existsByEmail(String email);

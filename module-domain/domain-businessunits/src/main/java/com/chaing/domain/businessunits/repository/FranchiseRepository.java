@@ -18,4 +18,7 @@ public interface FranchiseRepository extends JpaRepository<Franchise, Long> {
             "FOR UPDATE",
             nativeQuery = true)
     List<Franchise> findMaxCodeByPrefix(@Param("prefix") String prefix, Pageable pageable);
+
+    @Query("SELECT f.franchiseId, f.name FROM Franchise f WHERE f.franchiseId IN :ids")
+    List<Object[]> findNamesByIds(@Param("ids") List<Long> ids);
 }

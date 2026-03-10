@@ -21,13 +21,16 @@ public interface VehicleRepository extends JpaRepository<Vehicle, Long> {
 
     @Modifying(clearAutomatically = true)
     @Query("UPDATE Vehicle v SET " +
+            "v.updatedAt = CURRENT_TIMESTAMP, " +
             "v.status = com.chaing.core.enums.UsableStatus.INACTIVE, " +
             "v.dispatchable = com.chaing.domain.transports.enums.Dispatchable.UNAVAILABLE " +
             "WHERE v.transportId = :transportId AND v.deletedAt IS NULL")
     void deactivateVehiclesByTransportId(@Param("transportId") Long transportId);
 
     @Modifying(clearAutomatically = true)
-    @Query("UPDATE Vehicle v SET v.deletedAt = CURRENT_TIMESTAMP, " +
+    @Query("UPDATE Vehicle v SET " +
+            "v.deletedAt = CURRENT_TIMESTAMP, " +
+            "v.updatedAt = CURRENT_TIMESTAMP, " +
             "v.status = com.chaing.core.enums.UsableStatus.INACTIVE, " +
             "v.dispatchable = com.chaing.domain.transports.enums.Dispatchable.UNAVAILABLE " +
             "WHERE v.transportId = :transportId AND v.deletedAt IS NULL")

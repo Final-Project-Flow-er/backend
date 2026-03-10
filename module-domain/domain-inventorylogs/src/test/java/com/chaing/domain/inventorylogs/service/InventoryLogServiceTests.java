@@ -46,11 +46,11 @@ class InventoryLogServiceTests {
         void findReturnInboundLogs() {
                 // given
                 InventoryLogListResponse response = mock(InventoryLogListResponse.class);
-                when(inventoryLogRepository.findReturnInboundLogs(any(), any(Pageable.class)))
+                when(inventoryLogRepository.findReturnInboundLogs(any(), any(), any(Pageable.class)))
                                 .thenReturn(response);
 
                 // when
-                InventoryLogListResponse result = inventoryLogService.findReturnInboundLogs(logRequest,
+                InventoryLogListResponse result = inventoryLogService.findReturnInboundLogs(1L, logRequest,
                                 mock(Pageable.class));
 
                 // then
@@ -61,10 +61,10 @@ class InventoryLogServiceTests {
         @Test
         void findReturnOutboundLogs() {
                 InventoryLogListResponse response = mock(InventoryLogListResponse.class);
-                when(inventoryLogRepository.findReturnOutboundLogs(any(), any(Pageable.class)))
+                when(inventoryLogRepository.findReturnOutboundLogs(any(), any(), any(Pageable.class)))
                                 .thenReturn(response);
 
-                InventoryLogListResponse result = inventoryLogService.findReturnOutboundLogs(logRequest,
+                InventoryLogListResponse result = inventoryLogService.findReturnOutboundLogs(1L, logRequest,
                                 mock(Pageable.class));
 
                 assertSame(response, result);
@@ -74,10 +74,10 @@ class InventoryLogServiceTests {
         @Test
         void findDisposalLogs() {
                 InventoryLogListResponse response = mock(InventoryLogListResponse.class);
-                when(inventoryLogRepository.findDisposalLogs(any(), any(Pageable.class)))
+                when(inventoryLogRepository.findDisposalLogs(any(), any(), any(Pageable.class)))
                                 .thenReturn(response);
 
-                InventoryLogListResponse result = inventoryLogService.findDisposalLogs(logRequest,
+                InventoryLogListResponse result = inventoryLogService.findDisposalLogs(1L, logRequest,
                                 mock(Pageable.class));
 
                 assertSame(response, result);

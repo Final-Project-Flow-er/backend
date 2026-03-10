@@ -246,7 +246,7 @@ public class FranchiseReturnService {
     public List<ReturnCommand> acceptReturn(List<@NotBlank String> returnCodes) {
         List<Returns> items = franchiseReturnRepository.findAllByReturnCodeInAndDeletedAtIsNull(returnCodes);
 
-        if (items == null || items.isEmpty()) {
+        if (items == null || items.isEmpty() || items.size() != returnCodes.size()) {
             throw new FranchiseReturnException(FranchiseReturnErrorCode.RETURN_NOT_FOUND);
         }
 

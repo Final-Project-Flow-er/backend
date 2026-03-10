@@ -186,11 +186,16 @@ class NotificationServiceImplTests {
     @DisplayName("타겟 기반 알림 일괄 삭제")
     void deleteNotificationsByTarget() {
 
+        // given
+        List<Long> ids = List.of(10L, 11L);
+        given(notificationRepository.findAllIdsByTypeAndTargetId(NotificationType.NOTICE, targetId)).willReturn(ids);
+
         // when
         notificationService.deleteNotificationsByTarget(NotificationType.NOTICE, targetId);
 
         // then
-        verify(notificationRepository).deleteAllByTypeAndTargetId(NotificationType.NOTICE, targetId);
+        verify(notificationStatusRepository).deleteAllByNotificationIdIn(ids);
+        verify(notificationRepository).deleteAllByIdInBatch(ids);
     }
 
     @Test

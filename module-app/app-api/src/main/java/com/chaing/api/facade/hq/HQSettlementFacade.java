@@ -9,7 +9,10 @@ import com.chaing.domain.settlements.enums.VoucherType;
 import com.chaing.domain.settlements.service.DailySettlementService;
 import com.chaing.domain.settlements.service.MonthlySettlementService;
 import com.chaing.api.service.settlement.SettlementFileService;
+import com.chaing.core.enums.BucketName;
+import com.chaing.core.service.MinioService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +26,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -31,6 +35,7 @@ public class HQSettlementFacade {
         private final DailySettlementService dailyService;
         private final MonthlySettlementService monthlyService;
         private final SettlementFileService fileService;
+        private final MinioService minioService;
 
         // 1. 일별 조회
 
@@ -252,10 +257,13 @@ public class HQSettlementFacade {
                 // 3. 파일 생성 서비스 호출 (PDF 생성)
                 byte[] pdfBytes = fileService.createDailyReceiptPdf(firstReceipt, lines);
 
-                // TODO: MinIO 연동 시 pdfBytes를 업로드하고 실제 URL을 반환해야 함
-                System.out.println("PDF 생성 완료: " + pdfBytes.length + " bytes");
+                // 4. MinIO 업로드
+                String fileName = "settlement/daily/HQ_Daily_Settlement_" + request.date() + "_"
+                                + System.currentTimeMillis() + ".pdf";
+                minioService.uploadFile(pdfBytes, fileName, "application/pdf", BucketName.SETTLEMENTS);
 
-                return "https://dummy-url.com/daily-all-summary-generated.pdf (실제 데이터 반영됨)";
+                // 5. 실제 연동된 URL 반환
+                return minioService.getFileUrl(fileName, BucketName.SETTLEMENTS);
         }
 
         public String getMonthlyAllSummaryPdf(HQSettlementMonthlyAllPdfRequest request) {
@@ -284,9 +292,14 @@ public class HQSettlementFacade {
                 // 2. 파일 생성 서비스 호출 (Excel 생성)
                 byte[] excelBytes = fileService.createMonthlySettlementExcel(settlements);
 
-                // TODO: MinIO 연동 시 excelBytes를 업로드하고 실제 URL을 반환해야 함
-                System.out.println("Excel 생성 완료: " + excelBytes.length + " bytes");
+                // 3. MinIO 업로드
+                String fileName = "settlement/monthly/HQ_Monthly_Settlement_" + request.month() + "_"
+                                + System.currentTimeMillis() + ".xlsx";
+                minioService.uploadFile(excelBytes, fileName,
+                                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                BucketName.SETTLEMENTS);
 
-                return "https://dummy-url.com/monthly-excel-generated.xlsx (실제 데이터 반영됨)";
+                // 4. 실제 연동된 URL 반환
+                return minioService.getFileUrl(fileName, BucketName.SETTLEMENTS);
         }
 }

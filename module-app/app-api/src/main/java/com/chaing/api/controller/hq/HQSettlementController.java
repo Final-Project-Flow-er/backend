@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springdoc.core.annotations.ParameterObject;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -54,11 +55,10 @@ public class HQSettlementController {
         }
 
         // 일별
-        @Operation(summary = "본사 일별 정산 요약 조회(합산)", 
-                        description = "본사 관점 일별 정산 요약(최종 정산 금액, 발주 매출, 수수료 수익, 배송 수익, 반품 차감액, 본사 손실)")
+        @Operation(summary = "본사 일별 정산 요약 조회(합산)", description = "본사 관점 일별 정산 요약(최종 정산 금액, 발주 매출, 수수료 수익, 배송 수익, 반품 차감액, 본사 손실)")
         @GetMapping("/daily/summary")
         public ResponseEntity<ApiResponse<HQSettlementSummaryResponse>> getDailySummary(
-                        @Valid HQSettlementDailySummaryRequest request) {
+                        @ParameterObject @Valid HQSettlementDailySummaryRequest request) {
                 HQSettlementSummaryResponse response = hqFacade.getDailySummary(request);
                 return ResponseEntity.ok(ApiResponse.success(response));
         }
@@ -66,7 +66,7 @@ public class HQSettlementController {
         @Operation(summary = "본사 일별 가맹점별 정산 목록 조회", description = "선택한 일자에 대한 가맹점별 정산 목록(검색/상태 필터/페이징)")
         @GetMapping("/daily/franchises")
         public ResponseEntity<ApiResponse<Page<HQFranchiseSettlementResponse>>> getDailyFranchiseSettlements(
-                        @Valid HQSettlementDailyFranchisesRequest request) {
+                        @ParameterObject @Valid HQSettlementDailyFranchisesRequest request) {
                 Page<HQFranchiseSettlementResponse> response = hqFacade.getDailyFranchises(request);
                 return ResponseEntity.ok(ApiResponse.success(response));
         }
@@ -74,7 +74,7 @@ public class HQSettlementController {
         @Operation(summary = "본사 일별 전체 가맹점 정산 추이(그래프)", description = "기간(start~end) 동안 전체 가맹점 합계 추이(일자별)")
         @GetMapping("/daily/daily-sales-graph")
         public ResponseEntity<ApiResponse<List<HQDailyGraphResponse>>> getDailyTrend(
-                        @Valid HQSettlementDailyGraphRequest request) {
+                        @ParameterObject @Valid HQSettlementDailyGraphRequest request) {
                 List<HQDailyGraphResponse> response = hqFacade.getDailyTrend(request);
                 return ResponseEntity.ok(ApiResponse.success(response));
         }
@@ -84,7 +84,7 @@ public class HQSettlementController {
         @Operation(summary = "본사 월별 정산 요약 조회(합산)", description = "본사 관점 월별 정산 요약(최종 정산 금액, 발주 매출, 수수료 수익, 배송 수익, 반품 차감액, 본사 손실)")
         @GetMapping("/monthly/summary")
         public ResponseEntity<ApiResponse<HQSettlementSummaryResponse>> getMonthlySummary(
-                        @Valid HQSettlementMonthlySummaryRequest request) {
+                        @ParameterObject @Valid HQSettlementMonthlySummaryRequest request) {
                 HQSettlementSummaryResponse response = hqFacade.getMonthlySummary(request);
                 return ResponseEntity.ok(ApiResponse.success(response));
         }
@@ -92,7 +92,7 @@ public class HQSettlementController {
         @Operation(summary = "본사 월별 가맹점별 정산 목록 조회", description = "선택한 월에 대한 가맹점별 정산 목록(검색/상태 필터/페이징)")
         @GetMapping("/monthly/franchises")
         public ResponseEntity<ApiResponse<Page<HQFranchiseSettlementResponse>>> getMonthlyFranchiseSettlements(
-                        @Valid HQSettlementMonthlyFranchisesRequest request) {
+                        @ParameterObject @Valid HQSettlementMonthlyFranchisesRequest request) {
                 Page<HQFranchiseSettlementResponse> response = hqFacade.getMonthlyFranchises(request);
                 return ResponseEntity.ok(ApiResponse.success(response));
         }
@@ -100,7 +100,7 @@ public class HQSettlementController {
         @Operation(summary = "본사 월별 전체 가맹점 정산 추이(그래프)", description = "기간(start~end) 동안 전체 가맹점 합계 추이(월별 또는 선택 월 내부 일자별은 일별 trend로 처리)")
         @GetMapping("/monthly/monthly-sales-graph")
         public ResponseEntity<ApiResponse<List<HQMonthlyGraphResponse>>> getMonthlyTrend(
-                        @Valid HQSettlementMonthlyGraphRequest request) {
+                        @ParameterObject @Valid HQSettlementMonthlyGraphRequest request) {
                 List<HQMonthlyGraphResponse> response = hqFacade.getMonthlyTrend(request);
                 return ResponseEntity.ok(ApiResponse.success(response));
         }
@@ -111,7 +111,7 @@ public class HQSettlementController {
         @GetMapping("/daily/franchises/{franchiseId}/summary")
         public ResponseEntity<ApiResponse<FranchiseSettlementSummaryResponse>> getDailyFranchiseSummary(
                         @PathVariable Long franchiseId,
-                        @Valid HQSettlementFranchiseDailyDetailRequest request) {
+                        @ParameterObject @Valid HQSettlementFranchiseDailyDetailRequest request) {
                 FranchiseSettlementSummaryResponse response = hqFacade.getDailyFranchiseSummary(franchiseId, request);
                 return ResponseEntity.ok(ApiResponse.success(response));
         }
@@ -120,7 +120,7 @@ public class HQSettlementController {
         @GetMapping("/monthly/franchises/{franchiseId}/summary")
         public ResponseEntity<ApiResponse<FranchiseSettlementSummaryResponse>> getMonthlyFranchiseSummary(
                         @PathVariable Long franchiseId,
-                        @Valid HQSettlementFranchiseMonthlyDetailRequest request) {
+                        @ParameterObject @Valid HQSettlementFranchiseMonthlyDetailRequest request) {
                 FranchiseSettlementSummaryResponse response = hqFacade.getMonthlyFranchiseSummary(franchiseId, request);
                 return ResponseEntity.ok(ApiResponse.success(response));
         }
@@ -152,7 +152,7 @@ public class HQSettlementController {
         @Operation(summary = "본사 전체 가맹점 요약 PDF 조회(일별)", description = "선택한 일자 기준 전체 가맹점 요약 PDF")
         @GetMapping("/daily/receipt-all/pdf")
         public ResponseEntity<ApiResponse<String>> getDailyAllSummaryPdf(
-                        @Valid HQSettlementDailyAllPdfRequest request) {
+                        @ParameterObject @Valid HQSettlementDailyAllPdfRequest request) {
                 String url = hqFacade.getDailyAllSummaryPdf(request);
                 return ResponseEntity.ok(ApiResponse.success(url));
         }
@@ -160,7 +160,7 @@ public class HQSettlementController {
         @Operation(summary = "본사 전체 가맹점 요약 PDF 조회(월별)", description = "선택한 월 기준 전체 가맹점 요약 PDF")
         @GetMapping("/monthly/receipt-all/pdf")
         public ResponseEntity<ApiResponse<String>> getMonthlyAllSummaryPdf(
-                        @Valid HQSettlementMonthlyAllPdfRequest request) {
+                        @ParameterObject @Valid HQSettlementMonthlyAllPdfRequest request) {
                 String url = hqFacade.getMonthlyAllSummaryPdf(request);
                 return ResponseEntity.ok(ApiResponse.success(url));
         }
@@ -169,7 +169,7 @@ public class HQSettlementController {
         @GetMapping("/daily/franchises/{franchiseId}/receipt/pdf")
         public ResponseEntity<ApiResponse<String>> getDailyFranchiseReceiptPdf(
                         @PathVariable Long franchiseId,
-                        @Valid HQSettlementFranchiseDailyReceiptPdfRequest request) {
+                        @ParameterObject @Valid HQSettlementFranchiseDailyReceiptPdfRequest request) {
                 String url = hqFacade.getDailyFranchiseReceiptPdf(franchiseId, request);
                 return ResponseEntity.ok(ApiResponse.success(url));
         }
@@ -178,7 +178,7 @@ public class HQSettlementController {
         @GetMapping("/monthly/franchises/{franchiseId}/receipt/pdf")
         public ResponseEntity<ApiResponse<String>> getMonthlyFranchiseReceiptPdf(
                         @PathVariable Long franchiseId,
-                        @Valid HQSettlementFranchiseMonthlyReceiptPdfRequest request) {
+                        @ParameterObject @Valid HQSettlementFranchiseMonthlyReceiptPdfRequest request) {
                 String url = hqFacade.getMonthlyFranchiseReceiptPdf(franchiseId, request);
                 return ResponseEntity.ok(ApiResponse.success(url));
         }
@@ -186,7 +186,7 @@ public class HQSettlementController {
         @Operation(summary = "본사 월별 전표 다운로드", description = "선택한 월 기준 본사 정산 Excel(요약/목록) 다운로드")
         @GetMapping("/monthly/vouchers/excel")
         public ResponseEntity<ApiResponse<String>> getMonthlyExcel(
-                        @Valid HQSettlementMonthlyExcelRequest request) {
+                        @ParameterObject @Valid HQSettlementMonthlyExcelRequest request) {
                 String url = hqFacade.getMonthlyExcel(request);
                 return ResponseEntity.ok(ApiResponse.success(url));
         }

@@ -87,7 +87,7 @@ public class OutboundService {
         List<FactoryInventory> selectedList = getListAndValidate(serialCodes);
 
         // 요소들의 boxCode 확인
-        for(FactoryInventory f : selectedList) {
+        for (FactoryInventory f : selectedList) {
             outboundValidator.isTargetMatched(f.getBoxCode(), boxCode);
         }
 
@@ -101,7 +101,7 @@ public class OutboundService {
                 case OUTBOUND:
                     break;
                 default:
-                    throw new  InventoriesException(InventoriesErrorCode.INVALID_OUTBOUND_CANCEL_STATUS);
+                    throw new InventoriesException(InventoriesErrorCode.INVALID_OUTBOUND_CANCEL_STATUS);
             }
         });
 
@@ -126,6 +126,7 @@ public class OutboundService {
 
     public List<OutboundGetBoxInfo> getBoxInfos() {
         List<FactoryInventory> pendingList = outboundReader.getAllByBoxCodeAndStatus(null);
+        System.out.println("DB에서 가져온 원본 데이터 개수: " + pendingList.size());
         return pendingList.stream()
                 .collect(Collectors.groupingBy(
                         FactoryInventory::getBoxCode // 박스 코드 기준으로 그룹핑
@@ -152,8 +153,7 @@ public class OutboundService {
                         inventory.getProductId(), // 제품 id
                         inventory.getSerialCode(),
                         inventory.getManufactureDate(),
-                        inventory.getStatus() == LogType.PICKING
-                ))
+                        inventory.getStatus() == LogType.PICKING))
                 .toList();
     }
 }

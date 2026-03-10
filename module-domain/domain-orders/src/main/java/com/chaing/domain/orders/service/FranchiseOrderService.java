@@ -402,6 +402,52 @@ public class FranchiseOrderService {
                 ));
     }
 
+    public List<FranchiseOrderForTransitResponse> getOrdersForOutbound(List<Long> orderIds) {
+
+        if(orderIds == null || orderIds.isEmpty()) {
+            throw new OrderException(OrderErrorCode.ORDER_NOT_FOUND);
+        }
+
+        List<FranchiseOrderItem> allItems = franchiseOrderItemRepository
+                .findAllByFranchiseOrder_FranchiseOrderIdInAndDeletedAtIsNull(
+                        orderIds
+                );
+
+        if (allItems.isEmpty()) {
+            throw new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_ITEM_NOT_FOUND);
+        }
+
+        Map<FranchiseOrder, List<FranchiseOrderItem>> itemsByOrder = allItems.stream()
+                .collect(Collectors.groupingBy(FranchiseOrderItem::getFranchiseOrder));
+
+        long requestedCount = orderIds.stream().distinct().count();
+
+        if (itemsByOrder.size() != requestedCount) {
+            throw new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_NOT_FOUND);
+        }
+
+        return itemsByOrder.entrySet().stream()
+                .map(entry -> {
+                    FranchiseOrder order = entry.getKey();
+                    List<FranchiseOrderItem> items = entry.getValue();
+
+                    List<FranchiseOrderForTransitResponse.OrderItemForTransit> itemResponses = items.stream()
+                            .map(item -> new FranchiseOrderForTransitResponse.OrderItemForTransit(
+                                    item.getProductId(),
+                                    item.getQuantity()
+                            ))
+                            .toList();
+
+                    return new FranchiseOrderForTransitResponse(
+                            order.getFranchiseOrderId(),
+                            order.getOrderCode(),
+                            itemResponses,
+                            order.getFranchiseId()
+                    );
+                })
+                .toList();
+    }
+
     public List<FranchiseOrderForTransitResponse> getOrdersForTransit(List<Long> orderIds) {
 
         if(orderIds == null || orderIds.isEmpty()) {

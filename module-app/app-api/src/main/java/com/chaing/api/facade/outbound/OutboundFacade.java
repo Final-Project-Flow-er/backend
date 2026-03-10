@@ -5,8 +5,8 @@ import com.chaing.api.dto.outbound.response.OutboundBoxSummaryResponse;
 import com.chaing.api.dto.outbound.response.OutboundItemResponse;
 import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.core.enums.LogType;
-import com.chaing.domain.businessunits.dto.internal.BusinessUnitInternal;
 import com.chaing.domain.businessunits.service.BusinessUnitService;
+import com.chaing.domain.businessunits.service.impl.FranchiseServiceImpl;
 import com.chaing.domain.inventories.dto.info.OutboundGetBoxInfo;
 import com.chaing.domain.inventories.dto.info.OutboundGetItemsInfo;
 import com.chaing.domain.inventories.exception.InventoriesErrorCode;
@@ -38,7 +38,7 @@ public class OutboundFacade {
     private final OutboundService outboundService;
     private final ProductService productService;
     private final FranchiseOrderService orderService;
-    private final BusinessUnitService businessUnitService;
+    private final BusinessUnitService franchiseServiceImpl;
 
     // 재고 상태 변경
     @Transactional
@@ -66,32 +66,41 @@ public class OutboundFacade {
         List<Long> orderIds = getBoxInfos.stream().map(OutboundGetBoxInfo::orderId).distinct().toList();
 
         Map<Long, ProductInfo> productMap = productService.getProductInfos(productIds);
-        Map<Long, FranchiseOrderForTransitResponse> orderMap = orderService.getOrdersForTransit(orderIds)
-                .stream().collect(Collectors.toMap(FranchiseOrderForTransitResponse::orderId, o -> o));
+
+        // 안전하게 Map 만들기 (중복 Key 방지)
+        Map<Long, FranchiseOrderForTransitResponse> orderMap = orderService.getOrdersForOutbound(orderIds)
+                .stream().collect(Collectors.toMap(
+                        FranchiseOrderForTransitResponse::orderId,
+                        o -> o,
+                        (existing, replacement) -> existing // 중복 시 기존 것 유지
+                ));
 
         Map<String, OutboundBoxSummaryResponse> distinctBoxes = new HashMap<>();
 
         for (OutboundGetBoxInfo box : getBoxInfos) {
+            // 이미 담은 박스면 패스
             if (distinctBoxes.containsKey(box.boxCode())) continue;
 
             ProductInfo product = productMap.get(box.productId());
-            if (product == null) throw new InventoriesException(InventoriesErrorCode.INVENTORIES_IS_NULL);
-
             FranchiseOrderForTransitResponse order = orderMap.get(box.orderId());
-            String franchiseName = "";
+
+            // 주문 정보가 없을 때를 대비한 안전코드
+            String orderCode = (order != null) ? order.orderCode() : "주문 정보 없음";
+            String franchiseName = "가맹점 정보 없음";
+
             if (order != null) {
-                franchiseName = businessUnitService.getById(order.franchiseId()).name();
+                franchiseName = franchiseServiceImpl.getById(order.franchiseId()).name();
             }
 
-            // Response 객체 생성
+            if (product == null) throw new InventoriesException(InventoriesErrorCode.INVENTORIES_IS_NULL);
+
             distinctBoxes.put(box.boxCode(), OutboundBoxSummaryResponse.of(
                     box.boxCode(),
-                    order.orderCode(),
+                    orderCode,
                     product.productName(),
                     product.productCode(),
                     franchiseName,
-                    box.countItem()
-            ));
+                    box.countItem()));
         }
 
         return new ArrayList<>(distinctBoxes.values());
@@ -108,9 +117,9 @@ public class OutboundFacade {
         Map<Long, ProductInfo> productMap = productService.getProductInfos(productIds);
 
         return itemInfos.stream()
-                .map(box ->{
-                    ProductInfo product =  productMap.get(box.productId());
-                    if(product == null){
+                .map(box -> {
+                    ProductInfo product = productMap.get(box.productId());
+                    if (product == null) {
                         throw new InventoriesException(InventoriesErrorCode.INVENTORIES_IS_NULL);
                     }
                     return OutboundItemResponse.of(
@@ -118,8 +127,7 @@ public class OutboundFacade {
                             box.productId(),
                             product.productName(),
                             box.manufactureDate(),
-                            box.isPicking()
-                    );
+                            box.isPicking());
                 })
                 .toList();
     }

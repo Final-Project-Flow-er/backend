@@ -86,7 +86,7 @@ public class InboundController {
     }
 
     // 입고 승인
-    @PreAuthorize("hasRole('FACTORY')")
+    @PreAuthorize("hasAnyRole('FACTORY', 'FRANCHISE')")
     @PatchMapping("/confirm")
     @Operation(summary = "입고 승인", description = "해당 제품의 입고를 승인합니다.")
     public ResponseEntity<ApiResponse<Void>> updateInboundStatus(

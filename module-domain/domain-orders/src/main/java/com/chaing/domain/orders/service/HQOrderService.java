@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -348,5 +349,30 @@ public class HQOrderService {
                         HeadOfficeOrder::getOrderCode,
                         HeadOfficeOrder::getOrderStatus
                 ));
+    }
+
+    // return: Map<orderId, List<HQOrderItemCommand>>
+    public Map<Long, List<HQOrderItemCommand>> getOrderItemsByOrderId(Long orderId) {
+        List<HeadOfficeOrderItem> items = orderItemRepository.findAllByHeadOfficeOrder_HeadOfficeOrderIdAndDeletedAtIsNull(orderId);
+
+        if (items == null || items.isEmpty()) {
+            throw new HQOrderException(HQOrderErrorCode.ORDER_ITEM_NOT_FOUND);
+        }
+
+        Map<Long, List<HQOrderItemCommand>> response = new HashMap<>();
+        List<HQOrderItemCommand> itemCommands = items.stream()
+                .map(HQOrderItemCommand::from)
+                .toList();
+        response.put(orderId, itemCommands);
+
+        return response;
+    }
+
+    // return: HQOrderCommand
+    public HQOrderCommand getOrderByUserIdAndOrderCodeAndPending(Long userId, String orderCode) {
+        HeadOfficeOrder order = orderRepository.findByUserIdAndOrderCodeAndOrderStatusAndDeletedAtIsNull(userId, orderCode, HQOrderStatus.PENDING)
+                .orElseThrow(() -> new HQOrderException(HQOrderErrorCode.INVALID_STATUS));
+
+        return HQOrderCommand.from(order);
     }
 }

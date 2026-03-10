@@ -7,7 +7,8 @@ public record InboundDetailResponse(
         Long productId,
         String productCode,
         String productName,
-        LocalDate manufactureDate) {
+        LocalDate manufactureDate
+) {
     public static InboundDetailResponse of(
             String serialCode,
             Long productId,

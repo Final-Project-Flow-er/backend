@@ -12,7 +12,7 @@ public enum FranchiseOrderStatus {
     PARTIAL("PARTIAL", "부분 접수"),
     AWAITING("AWAITING", "배송 대기"),
     SHIPPING("SHIPPING", "배송중"),
-    COMPLETED("COMPLETED", "배송 대기"),
+    COMPLETED("COMPLETED", "배송 완료"),
     CANCELED("CANCELED", "취소"),
     REJECTED("REJECTED", "반려");
 

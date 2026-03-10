@@ -139,14 +139,15 @@ class TransportManagementServiceTests {
         // given
         Long id = 1L;
         UsableStatus newStatus = UsableStatus.INACTIVE;
-        given(transportRepository.findById(id)).willReturn(Optional.of(transport));
+        Transport updatedTransport = Transport.builder().companyName("업체").officePhone("010-1234-5678").status(newStatus).build();
+        given(transportRepository.findById(id)).willReturn(Optional.of(updatedTransport));
 
         // when
         Transport result = transportManagementService.updateStatus(id, newStatus);
 
         // then
         verify(transportRepository).updateStatus(id, newStatus);
-        assertThat(result).isNotNull();
+        assertThat(result.getStatus()).isEqualTo(newStatus);
     }
 
     @Test

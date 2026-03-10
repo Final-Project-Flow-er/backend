@@ -165,11 +165,11 @@ class VehicleManagementServiceTests {
         Long transportId = 1L;
 
         // when
-        vehicleManagementService.deactivateVehiclesByTransportId(transportId, UsableStatus.INACTIVE);
+        vehicleManagementService.deactivateVehiclesByTransportId(transportId);
 
         // then
         verify(vehicleRepository, times(1))
-                .updateStatusByTransportId(transportId, UsableStatus.INACTIVE);
+                .deactivateVehiclesByTransportId(transportId);
     }
 
     @Test

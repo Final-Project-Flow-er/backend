@@ -20,12 +20,11 @@ public interface VehicleRepository extends JpaRepository<Vehicle, Long> {
     Long findMaxLoad(@Param("vehicleId") Long vehicleId);
 
     @Modifying(clearAutomatically = true)
-    @Query("UPDATE Vehicle v SET v.status = :status, v.dispatchable = (CASE " +
-            "WHEN :status = com.chaing.core.enums.UsableStatus.ACTIVE " +
-            "THEN com.chaing.domain.transports.enums.Dispatchable.AVAILABLE " +
-            "ELSE com.chaing.domain.transports.enums.Dispatchable.UNAVAILABLE END) " +
+    @Query("UPDATE Vehicle v SET " +
+            "v.status = com.chaing.core.enums.UsableStatus.INACTIVE, " +
+            "v.dispatchable = com.chaing.domain.transports.enums.Dispatchable.UNAVAILABLE " +
             "WHERE v.transportId = :transportId AND v.deletedAt IS NULL")
-    void updateStatusByTransportId(@Param("transportId") Long transportId, @Param("status") UsableStatus status);
+    void deactivateVehiclesByTransportId(@Param("transportId") Long transportId);
 
     @Modifying(clearAutomatically = true)
     @Query("UPDATE Vehicle v SET v.deletedAt = CURRENT_TIMESTAMP, " +

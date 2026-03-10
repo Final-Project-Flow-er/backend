@@ -35,6 +35,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -453,6 +454,14 @@ public class InventoryService {
             Map<String, Boolean> isInspectedBySerialCode
     ) {
         List<HQInventory> inventories = hqInventoryRepository.findAllByBoxCodeInAndDeletedAtIsNull(boxCodes);
+
+        Set<String> existingBoxCodes = inventories.stream()
+                .map(HQInventory::getBoxCode)
+                .collect(Collectors.toSet());
+
+        if (existingBoxCodes.isEmpty() || existingBoxCodes.containsAll(new HashSet<>(boxCodes))) {
+            throw new InventoriesException(InventoriesErrorCode.DATA_OMISSION);
+        }
 
         for (HQInventory item : inventories) {
             Boolean isInspected = isInspectedBySerialCode.get(item.getSerialCode());

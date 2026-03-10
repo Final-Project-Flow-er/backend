@@ -306,7 +306,8 @@ public class FranchiseReturnService {
         Map<String, ReturnItemStatus> returnItemStatusByBoxCode = request.items().stream()
                 .collect(Collectors.toMap(
                         HQReturnItemUpdateRequest::boxCode,
-                        HQReturnItemUpdateRequest::status
+                        HQReturnItemUpdateRequest::status,
+                        (a, b) -> a
                 ));
 
         returnItemStatusByBoxCode.forEach((boxCode, status) -> {

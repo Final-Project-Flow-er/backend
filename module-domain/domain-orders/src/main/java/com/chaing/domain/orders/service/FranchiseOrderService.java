@@ -181,7 +181,6 @@ public class FranchiseOrderService {
         return UUID.randomUUID().toString();
     }
 
-
     // 반품 대상이 되는 발주 반환
     public List<FranchiseReturnTargetResponse> getAllTargetOrders(Long franchiseId, Long userId, String username) {
         // 발주 조회
@@ -212,6 +211,21 @@ public class FranchiseOrderService {
         }
 
         return HQOrderStatusUpdateResponse.from(orders);
+    }
+
+    // OrderId 조회
+    public FranchiseOrder getOrderByOrderId(Long orderId) {
+        return franchiseOrderRepository.findByFranchiseOrderIdAndDeletedAtIsNull(orderId)
+                .orElseThrow(() -> new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_NOT_FOUND));
+    }
+
+    public List<FranchiseOrderItem> getFranchiseOrderItemsByOrderId(Long orderId) {
+        List<FranchiseOrderItem> items = franchiseOrderItemRepository
+                .findAllByFranchiseOrder_FranchiseOrderIdAndDeletedAtIsNull(orderId);
+        if (items.isEmpty()) {
+            throw new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_ITEM_NOT_FOUND);
+        }
+        return items;
     }
 
     // OrderCode 조회
@@ -441,7 +455,7 @@ public class FranchiseOrderService {
     }
 
     // 대기 상태 발주 요청 조회
-    // return: Map<orderId, FranchiseOrderDetailCommand>
+    // return: Map<orderId, FranchiseOrderDetailCommand> 
     public Map<Long, FranchiseOrderDetailCommand> getAllRequestedOrders() {
         List<FranchiseOrder> orders = franchiseOrderRepository.findAllByOrderStatusAndDeletedAtIsNull(FranchiseOrderStatus.PENDING);
 
@@ -485,5 +499,4 @@ public class FranchiseOrderService {
                         FranchiseOrderDetailCommand::from
                 ));
     }
-
 }

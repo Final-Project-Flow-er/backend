@@ -5,7 +5,8 @@ import lombok.Builder;
 import java.util.List;
 
 @Builder
-public record FranchiseInventoryLogListResponse (
-        List<FranchiseInventoryLogResponse> franchiseInventoryLogResponseList
-){
+public record FranchiseInventoryLogListResponse(
+                List<FranchiseInventoryLogResponse> franchiseInventoryLogResponseList,
+                long totalElements,
+                int totalPages) {
 }

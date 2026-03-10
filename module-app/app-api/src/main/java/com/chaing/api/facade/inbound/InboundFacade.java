@@ -139,8 +139,8 @@ public class InboundFacade {
                     return InboundDetailResponse.of(
                             item.serialCode(),
                             item.productId(),
-                            product.productCode(),
                             product.productName(),
+                            product.productCode(),
                             item.manufactureDate());
                 })
                 .toList();

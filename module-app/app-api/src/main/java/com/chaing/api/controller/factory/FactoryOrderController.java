@@ -32,9 +32,9 @@ public class FactoryOrderController {
     @GetMapping("/accepted")
     @PreAuthorize("hasAnyRole('FACTORY', 'ADMIN')")
     public ResponseEntity<ApiResponse<List<FactoryOrderResponse>>> getAllOrders(
-            @RequestParam Boolean isAccepted
+            @RequestParam boolean isAll
     ) {
-        return ResponseEntity.ok(ApiResponse.success(factoryFacade.getAllOrders(isAccepted)));
+        return ResponseEntity.ok(ApiResponse.success(factoryFacade.getAllOrders(isAll)));
     }
 
     @Operation(summary = "발주 상태 변경", description = "발주 상태를 접수/반려로 변경")

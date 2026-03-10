@@ -335,27 +335,6 @@ public class FranchiseReturnService {
         items.forEach(item -> item.updateStatus(status));
     }
 
-    // returnItemStatus를 각 상태에 맞게 수정
-    public void updateReturnItemByStatus(List<String> requestedBoxCodes, Map<String, ReturnItemStatus> returnItemStatusByBoxCode) {
-        List<ReturnItem> items = franchiseReturnItemRepository.findAllByBoxCodeInAndDeletedAtIsNull(requestedBoxCodes);
-
-        if (items == null || items.isEmpty()) {
-            throw new FranchiseReturnException(FranchiseReturnErrorCode.RETURN_ITEM_NOT_FOUND);
-        }
-
-        // Map<boxCode, List<ReturnItem>>
-        Map<String, List<ReturnItem>> returnItemByBoxCode = items.stream()
-                .collect(Collectors.groupingBy(
-                        ReturnItem::getBoxCode,
-                        Collectors.mapping(item -> item, Collectors.toList())
-                ));
-
-        returnItemByBoxCode.forEach((boxCode, returnItems) -> {
-            ReturnItemStatus status = returnItemStatusByBoxCode.get(boxCode);
-            returnItems.forEach(item -> item.updateStatus(status));
-        });
-    }
-
     public ReturnStatus updateReturnStatusInInspection(Long returnId, ReturnStatus returnStatus) {
         Returns returns = franchiseReturnRepository.findByReturnIdAndDeletedAtIsNull(returnId)
                 .orElseThrow(() -> new FranchiseReturnException(FranchiseReturnErrorCode.RETURN_NOT_FOUND));

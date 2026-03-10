@@ -48,7 +48,7 @@ public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom 
         private final QInventoryLog log = QInventoryLog.inventoryLog;
 
         @Override
-        public InventoryLogListResponse findReturnInboundLogs(LogRequest request, Pageable pageable) {
+        public InventoryLogListResponse findReturnInboundLogs(Long hqId, LogRequest request, Pageable pageable) {
 
                 List<InventoryLogResponse> inventoryLogResponses = queryFactory
                                 .select(Projections.constructor(
@@ -64,7 +64,7 @@ public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom 
                                 .from(log)
                                 .where(
                                                 log.logType.eq(LogType.RETURN_INBOUND),
-                                                locationContains("HQ", 1L), // 본사Id
+                                                locationContains("HQ", hqId), // 본사Id
                                                 betweenDate(request.startDate(), request.endDate()),
                                                 containsTransactionCode(request.transactionCode()))
                                 .groupBy(
@@ -81,6 +81,55 @@ public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom 
                                 .from(log)
                                 .where(
                                                 log.logType.eq(LogType.RETURN_INBOUND),
+                                                locationContains("HQ", hqId), // 본사Id
+                                                betweenDate(request.startDate(), request.endDate()),
+                                                containsTransactionCode(request.transactionCode()))
+                                .groupBy(
+                                                log.transactionCode,
+                                                log.productName,
+                                                log.logType)
+                                .fetch().size();
+
+                return InventoryLogListResponse.builder()
+                                .inventoryLogResponses(inventoryLogResponses)
+                                .totalElements(total)
+                                .totalPages((int) Math.ceil((double) total / pageable.getPageSize()))
+                                .build();
+        }
+
+        @Override
+        public InventoryLogListResponse findReturnOutboundLogs(Long hqId, LogRequest request, Pageable pageable) {
+                List<InventoryLogResponse> inventoryLogResponses = queryFactory
+                                .select(Projections.constructor(
+                                                InventoryLogResponse.class,
+                                                log.createdAt.max(),
+                                                log.transactionCode,
+                                                Expressions.asString(""), // 박스 코드 - 펼쳤을때 조회하므로 빈값
+                                                log.productName,
+                                                log.logType,
+                                                log.fromLocationId.max(),
+                                                log.toLocationId.max(),
+                                                log.quantity.sum().intValue()))
+                                .from(log)
+                                .where(
+                                                log.logType.eq(LogType.RETURN_OUTBOUND),
+                                                locationContains("HQ", hqId), // 본사Id
+                                                betweenDate(request.startDate(), request.endDate()),
+                                                containsTransactionCode(request.transactionCode()))
+                                .groupBy(
+                                                log.transactionCode,
+                                                log.productName,
+                                                log.logType)
+                                .orderBy(log.createdAt.max().desc(), log.transactionCode.desc())
+                                .offset(pageable.getOffset())
+                                .limit(pageable.getPageSize())
+                                .fetch();
+
+                long total = queryFactory
+                                .select(log.transactionCode, log.productName, log.logType)
+                                .from(log)
+                                .where(
+                                                log.logType.eq(LogType.RETURN_OUTBOUND),
                                                 locationContains("HQ", 1L), // 본사Id
                                                 betweenDate(request.startDate(), request.endDate()),
                                                 containsTransactionCode(request.transactionCode()))
@@ -98,56 +147,7 @@ public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom 
         }
 
         @Override
-        public InventoryLogListResponse findReturnOutboundLogs(LogRequest request, Pageable pageable) {
-                List<InventoryLogResponse> inventoryLogResponses = queryFactory
-                                .select(Projections.constructor(
-                                                InventoryLogResponse.class,
-                                                log.createdAt.max(),
-                                                log.transactionCode,
-                                                Expressions.asString(""), // 박스 코드 - 펼쳤을때 조회하므로 빈값
-                                                log.productName,
-                                                log.logType,
-                                                log.fromLocationId.max(),
-                                                log.toLocationId.max(),
-                                                log.quantity.sum().intValue()))
-                                .from(log)
-                                .where(
-                                                log.logType.eq(LogType.RETURN_OUTBOUND),
-                                                locationContains("HQ", 1L), // 본사Id
-                                                betweenDate(request.startDate(), request.endDate()),
-                                                containsTransactionCode(request.transactionCode()))
-                                .groupBy(
-                                                log.transactionCode,
-                                                log.productName,
-                                                log.logType)
-                                .orderBy(log.createdAt.max().desc(), log.transactionCode.desc())
-                                .offset(pageable.getOffset())
-                                .limit(pageable.getPageSize())
-                                .fetch();
-
-                long total = queryFactory
-                                .select(log.transactionCode, log.productName, log.logType)
-                                .from(log)
-                                .where(
-                                                log.logType.eq(LogType.RETURN_OUTBOUND),
-                                                locationContains("HQ", 1L), // 본사Id
-                                                betweenDate(request.startDate(), request.endDate()),
-                                                containsTransactionCode(request.transactionCode()))
-                                .groupBy(
-                                                log.transactionCode,
-                                                log.productName,
-                                                log.logType)
-                                .fetch().size();
-
-                return InventoryLogListResponse.builder()
-                                .inventoryLogResponses(inventoryLogResponses)
-                                .totalElements(total)
-                                .totalPages((int) Math.ceil((double) total / pageable.getPageSize()))
-                                .build();
-        }
-
-        @Override
-        public InventoryLogListResponse findDisposalLogs(LogRequest request, Pageable pageable) {
+        public InventoryLogListResponse findDisposalLogs(Long hqId, LogRequest request, Pageable pageable) {
                 List<InventoryLogResponse> inventoryLogResponses = queryFactory
                                 .select(Projections.constructor(
                                                 InventoryLogResponse.class,
@@ -162,7 +162,7 @@ public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom 
                                 .from(log)
                                 .where(
                                                 log.logType.eq(LogType.DISPOSAL),
-                                                locationContains("HQ", 1L), // 본사Id
+                                                locationContains("HQ", hqId), // 본사Id
                                                 betweenDate(request.startDate(), request.endDate()),
                                                 containsTransactionCode(request.transactionCode()))
                                 .groupBy(

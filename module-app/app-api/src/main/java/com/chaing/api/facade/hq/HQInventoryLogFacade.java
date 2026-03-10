@@ -19,16 +19,16 @@ import org.springframework.transaction.annotation.Transactional;
 public class HQInventoryLogFacade {
     private final InventoryLogService inventoryLogService;
 
-    public InventoryLogListResponse findReturnInboundLogs(LogRequest request, Pageable pageable) {
-        return inventoryLogService.findReturnInboundLogs(request, pageable);
+    public InventoryLogListResponse findReturnInboundLogs(Long hqId, LogRequest request, Pageable pageable) {
+        return inventoryLogService.findReturnInboundLogs(hqId, request, pageable);
     }
 
-    public InventoryLogListResponse findReturnOutboundLogs(LogRequest request, Pageable pageable) {
-        return inventoryLogService.findReturnOutboundLogs(request, pageable);
+    public InventoryLogListResponse findReturnOutboundLogs(Long hqId, LogRequest request, Pageable pageable) {
+        return inventoryLogService.findReturnOutboundLogs(hqId, request, pageable);
     }
 
-    public InventoryLogListResponse findDisposalLogs(LogRequest request, Pageable pageable) {
-        return inventoryLogService.findDisposalLogs(request, pageable);
+    public InventoryLogListResponse findDisposalLogs(Long hqId, LogRequest request, Pageable pageable) {
+        return inventoryLogService.findDisposalLogs(hqId, request, pageable);
     }
 
     // 얜 Request 사용함, 저장될 때는 상품이름이 같이 저징이 되지만 아마 로그 기록할 때 상품참조할 듯

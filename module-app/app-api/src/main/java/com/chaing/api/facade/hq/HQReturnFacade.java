@@ -6,8 +6,6 @@ import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.core.enums.ReturnItemStatus;
 import com.chaing.domain.businessunits.service.impl.FranchiseServiceImpl;
 import com.chaing.domain.inventories.service.InventoryService;
-import com.chaing.domain.orders.exception.HQOrderErrorCode;
-import com.chaing.domain.orders.exception.HQOrderException;
 import com.chaing.domain.orders.service.FranchiseOrderService;
 import com.chaing.domain.products.service.ProductService;
 import com.chaing.domain.returns.dto.command.HQReturnCommand;
@@ -187,7 +185,7 @@ public class HQReturnFacade {
 
         // 데이터 누락 검증
         if (inventoryService.verifyOmission(requestedBoxCodes)) {
-            throw new HQOrderException(HQOrderErrorCode.DATA_OMISSION);
+            throw new FranchiseReturnException(FranchiseReturnErrorCode.DATA_OMISSION);
         }
 
         // 검수 결과 저장

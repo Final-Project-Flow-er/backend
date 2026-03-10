@@ -26,6 +26,7 @@ public enum FranchiseReturnErrorCode implements ErrorCode {
     INVALID_REQUEST(400, "RE007", "올바르지 않은 요청입니다."),
     INVALID_RETURN_ITEM_STATUS(400, "", "반품 제품이 검수 전이 아닙니다."),
     INVALID_RETURN_STATUS(400, "", "반품의 상태가 배송완료가 아닙니다."),
+    DATA_OMISSION(400, "", "데이터 누락이 존재합니다."),
 
     // 401 FORBIDDEN
     USER_FORBIDDEN(401, "RE007", "사용자 권한이 없습니다.");

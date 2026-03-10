@@ -155,12 +155,12 @@ class FranchiseOrderServiceTests {
 
     @Test
     @DisplayName("가맹점 발주 목록 조회 - 성공")
-    void getAllOrders_Success() {
+    void getAllOrders_ByFranchiseIdAndUserId_Success() {
         // given
         given(franchiseOrderRepository.findAllByFranchiseIdAndUserId(franchiseId, userId)).willReturn(List.of(franchiseOrder));
 
         // when
-        Map<Long, FranchiseOrderCommand> orders = franchiseOrderService.getAllOrders(franchiseId, userId);
+        Map<Long, FranchiseOrderCommand> orders = franchiseOrderService.getAllOrdersByFranchiseIdAndUserId(franchiseId, userId);
 
         // then
         verify(franchiseOrderRepository, times(1)).findAllByFranchiseIdAndUserId(franchiseId, userId);
@@ -175,7 +175,7 @@ class FranchiseOrderServiceTests {
 
         // when & then
         OrderException exception = assertThrows(OrderException.class, () -> {
-            franchiseOrderService.getAllOrders(franchiseId, userId);
+            franchiseOrderService.getAllOrdersByFranchiseIdAndUserId(franchiseId, userId);
         });
         verify(franchiseOrderRepository, times(1)).findAllByFranchiseIdAndUserId(franchiseId, userId);
         assertEquals(OrderErrorCode.ORDER_NOT_FOUND, exception.getErrorCode());

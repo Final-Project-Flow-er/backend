@@ -144,4 +144,10 @@ public class UserManagementService {
         User user = getUserById(userId);
         return user.getPhone();
     }
+
+    // businessUnitId 조회
+    public Long getBusinessUnitIdByUserId(Long userId) {
+        User user = getUserById(userId);
+        return user.getBusinessUnitId();
+    }
 }

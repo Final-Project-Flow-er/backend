@@ -16,8 +16,10 @@ import com.chaing.domain.orders.entity.FranchiseOrder;
 import com.chaing.domain.orders.entity.FranchiseOrderItem;
 import com.chaing.domain.orders.entity.HeadOfficeOrder;
 import com.chaing.domain.orders.entity.HeadOfficeOrderItem;
-import com.chaing.domain.orders.service.FranchiseOrderService;
-import com.chaing.domain.orders.service.HQOrderService;
+import com.chaing.domain.orders.repository.FranchiseOrderItemRepository;
+import com.chaing.domain.orders.repository.FranchiseOrderRepository;
+import com.chaing.domain.orders.repository.HeadOfficeOrderItemRepository;
+import com.chaing.domain.orders.repository.HeadOfficeOrderRepository;
 import com.chaing.domain.products.service.ProductService;
 import com.chaing.domain.returns.entity.ReturnItem;
 import com.chaing.domain.returns.entity.Returns;
@@ -37,22 +39,28 @@ import java.util.stream.Collectors;
 public class InventoryLogFacade {
 
     private final InventoryLogService inventoryLogService;
-    private final HQOrderService hqOrderService;
-    private final FranchiseOrderService franchiseOrderService;
+    private final HeadOfficeOrderRepository headOfficeOrderRepository;
+    private final HeadOfficeOrderItemRepository headOfficeOrderItemRepository;
+    private final FranchiseOrderRepository franchiseOrderRepository;
+    private final FranchiseOrderItemRepository franchiseOrderItemRepository;
     private final FranchiseReturnService franchiseReturnService;
     private final ProductService productService;
     private final InventoryService inventoryService;
 
     public void recordOrderLogs(Long orderId, String orderType, LogType logType, ActorType actorType, Long actorId) {
         if ("FRANCHISE".equalsIgnoreCase(orderType)) {
-            FranchiseOrder franchiseOrder = franchiseOrderService.getOrderByOrderId(orderId);
-            List<FranchiseOrderItem> franchiseItems = franchiseOrderService.getFranchiseOrderItemsByOrderId(orderId);
+            FranchiseOrder franchiseOrder = franchiseOrderRepository.findByFranchiseOrderIdAndDeletedAtIsNull(orderId)
+                    .orElseThrow(() -> new InventoryLogException(InventoryLogtErrorCode.INVALID_INPUT));
+            List<FranchiseOrderItem> franchiseItems = franchiseOrderItemRepository
+                    .findAllByFranchiseOrder_FranchiseOrderIdAndDeletedAtIsNull(orderId);
             List<FranchiseInventory> franchiseInventories = inventoryService.getFranchiseInventoriesByOrderId(orderId);
 
             recordFranchiseOrderLogs(franchiseOrder, franchiseItems, franchiseInventories, logType, actorType, actorId);
         } else if ("HQ".equalsIgnoreCase(orderType)) {
-            HeadOfficeOrder hqOrder = hqOrderService.getOrderByOrderId(orderId);
-            List<HeadOfficeOrderItem> hqItems = hqOrderService.getOrderItemsByOrderId(orderId);
+            HeadOfficeOrder hqOrder = headOfficeOrderRepository.findByHeadOfficeOrderIdAndDeletedAtIsNull(orderId)
+                    .orElseThrow(() -> new InventoryLogException(InventoryLogtErrorCode.INVALID_INPUT));
+            List<HeadOfficeOrderItem> hqItems = headOfficeOrderItemRepository
+                    .findAllByHeadOfficeOrder_HeadOfficeOrderIdAndDeletedAtIsNull(orderId);
             List<FactoryInventory> factoryInventories = inventoryService.getFactoryInventoriesByOrderId(orderId);
 
             recordHqOrderLogs(hqOrder, hqItems, factoryInventories, logType, actorType, actorId);
@@ -81,7 +89,7 @@ public class InventoryLogFacade {
                     1,
                     null, null,
                     LocationType.FACTORY, null,
-                    LocationType.HQ, order.getHqId(),
+                    LocationType.HQ, 1L,
                     actorType,
                     actorId));
         }

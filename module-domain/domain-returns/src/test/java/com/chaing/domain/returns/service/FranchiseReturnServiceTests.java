@@ -530,7 +530,7 @@ class FranchiseReturnServiceTests {
                 .orderItemId(orderItemId)
                 .boxCode(boxCode)
                 .build();
-        Map<Long, FranchiseInventoryCommand> inventoryByBoxCode = Map.of(inventoryId, inventory);
+        Map<String, FranchiseInventoryCommand> inventoryByBoxCode = Map.of(boxCode, inventory);
         given(franchiseReturnRepository.findByReturnCodeAndDeletedAtIsNull(returnCode)).willReturn(Optional.of(returns));
         given(franchiseReturnItemRepository.findAllByReturns_ReturnCodeAndDeletedAtIsNull(returnCode))
                 .willReturn(List.of(returnItem));
@@ -554,7 +554,7 @@ class FranchiseReturnServiceTests {
                 .orderItemId(orderItemId)
                 .boxCode(boxCode)
                 .build();
-        Map<Long, FranchiseInventoryCommand> inventoryByBoxCode = Map.of(inventoryId, inventory);
+        Map<String, FranchiseInventoryCommand> inventoryByBoxCode = Map.of(boxCode, inventory);
         given(franchiseReturnRepository.findByReturnCodeAndDeletedAtIsNull(returnCode)).willReturn(Optional.empty());
 
         // when & then
@@ -573,7 +573,7 @@ class FranchiseReturnServiceTests {
                 .orderItemId(orderItemId)
                 .boxCode(boxCode)
                 .build();
-        Map<Long, FranchiseInventoryCommand> inventoryByBoxCode = Map.of(inventoryId, inventory);
+        Map<String, FranchiseInventoryCommand> inventoryByBoxCode = Map.of(boxCode, inventory);
         given(franchiseReturnRepository.findByReturnCodeAndDeletedAtIsNull(returnCode)).willReturn(Optional.of(returns));
         given(franchiseReturnItemRepository.findAllByReturns_ReturnCodeAndDeletedAtIsNull(returnCode)).willReturn(List.of());
 

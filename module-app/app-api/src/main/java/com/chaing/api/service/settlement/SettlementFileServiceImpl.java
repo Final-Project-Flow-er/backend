@@ -32,21 +32,30 @@ public class SettlementFileServiceImpl implements SettlementFileService {
             Document document = new Document(pdf);
 
             document.add(new Paragraph("Daily Settlement Receipt").setBold().setFontSize(20));
-            document.add(new Paragraph("Franchise ID: " + receipt.getFranchiseId()));
-            document.add(new Paragraph("Date: " + receipt.getSettlementDate()));
-            document.add(new Paragraph("Total Sales: " + receipt.getTotalSaleAmount()));
-            document.add(new Paragraph("Final Amount: " + receipt.getFinalAmount()));
+            document.add(new Paragraph("가맹점 ID: " + receipt.getFranchiseId()));
+            document.add(new Paragraph("정산 일자: " + receipt.getSettlementDate()));
+            document.add(new Paragraph("--------------------------------------------"));
+            document.add(new Paragraph("1. 총 매출액: " + receipt.getTotalSaleAmount() + "원"));
+            document.add(new Paragraph("2. 차감 내역:"));
+            document.add(new Paragraph("   - 발주 대금: -" + receipt.getOrderAmount() + "원"));
+            document.add(new Paragraph("   - 정산 수수료: -" + receipt.getCommissionFee() + "원"));
+            document.add(new Paragraph("   - 배송비: -" + receipt.getDeliveryFee() + "원"));
+            document.add(new Paragraph("   - 본사 손실액: -" + receipt.getLossAmount() + "원"));
+            document.add(new Paragraph("3. 가산 내역:"));
+            document.add(new Paragraph("   - 반품 환급액: +" + receipt.getRefundAmount() + "원"));
+            document.add(new Paragraph("--------------------------------------------"));
+            document.add(new Paragraph("최종 정산 금액: " + receipt.getFinalAmount() + "원").setBold().setFontSize(14));
 
-            document.add(new Paragraph("\nDetail Lines:"));
+            document.add(new Paragraph("\n[상세 전표 내역]"));
             Table table = new Table(UnitValue.createPointArray(new float[] { 100, 200, 100 }));
-            table.addCell("Type");
-            table.addCell("Description");
-            table.addCell("Amount");
+            table.addCell("유형");
+            table.addCell("설명");
+            table.addCell("금액");
 
             for (DailyReceiptLine line : lines) {
                 table.addCell(line.getLineType().name());
                 table.addCell(line.getDescription());
-                table.addCell(line.getAmount().toString());
+                table.addCell(line.getAmount().toString() + "원");
             }
 
             document.add(table);
@@ -65,12 +74,16 @@ public class SettlementFileServiceImpl implements SettlementFileService {
 
             // Header
             Row header = sheet.createRow(0);
-            header.createCell(0).setCellValue("Franchise ID");
-            header.createCell(1).setCellValue("Month");
-            header.createCell(2).setCellValue("Total Sales");
-            header.createCell(3).setCellValue("Order Amount");
-            header.createCell(4).setCellValue("Final Amount");
-            header.createCell(5).setCellValue("Status");
+            header.createCell(0).setCellValue("가맹점 ID");
+            header.createCell(1).setCellValue("정산월");
+            header.createCell(2).setCellValue("총 매출액");
+            header.createCell(3).setCellValue("발주 대금(-)");
+            header.createCell(4).setCellValue("수수료 수익(-)");
+            header.createCell(5).setCellValue("배송 수익(-)");
+            header.createCell(6).setCellValue("반품 차감액(+)");
+            header.createCell(7).setCellValue("본사 손실액(-)");
+            header.createCell(8).setCellValue("최종 정산 금액");
+            header.createCell(9).setCellValue("정산 상태");
 
             int rowIdx = 1;
             for (MonthlySettlement s : settlements) {
@@ -79,8 +92,12 @@ public class SettlementFileServiceImpl implements SettlementFileService {
                 row.createCell(1).setCellValue(s.getSettlementMonth().toString());
                 row.createCell(2).setCellValue(s.getTotalSaleAmount().doubleValue());
                 row.createCell(3).setCellValue(s.getOrderAmount().doubleValue());
-                row.createCell(4).setCellValue(s.getFinalSettlementAmount().doubleValue());
-                row.createCell(5).setCellValue(s.getStatus().name());
+                row.createCell(4).setCellValue(s.getCommissionFee().doubleValue());
+                row.createCell(5).setCellValue(s.getDeliveryFee().doubleValue());
+                row.createCell(6).setCellValue(s.getRefundAmount().doubleValue());
+                row.createCell(7).setCellValue(s.getLossAmount().doubleValue());
+                row.createCell(8).setCellValue(s.getFinalSettlementAmount().doubleValue());
+                row.createCell(9).setCellValue(s.getStatus().name());
             }
 
             workbook.write(baos);

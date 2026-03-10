@@ -234,7 +234,28 @@ public class HQSettlementFacade {
         // 4. PDF 및 엑셀 다운로드 (URL 반환)
 
         public String getDailyAllSummaryPdf(HQSettlementDailyAllPdfRequest request) {
-                return "https://dummy-url.com/daily-all-summary.pdf";
+                // 1. 해당 날짜의 모든 가맹점 정산 요약 데이터 조회
+                List<com.chaing.domain.settlements.entity.DailySettlementReceipt> receipts = dailyService
+                                .getAllByDate(request.date(), null);
+
+                // 2. 각 영수증별로 상세 내역(전표)을 가져와서 PDF 생성 (여기서는 예시로 첫 번째 가맹점의 상세 내역을 활용하거나 전체 요약 PDF
+                // 구조에 맞게 확장 가능)
+                // 일단 구조 확인을 위해 첫 번째 영수증과 그 상세 내역을 가져오는 방식의 뼈대를 잡습니다.
+                if (receipts.isEmpty()) {
+                        return "데이터가 없어 PDF를 생성할 수 없습니다.";
+                }
+
+                com.chaing.domain.settlements.entity.DailySettlementReceipt firstReceipt = receipts.get(0);
+                List<com.chaing.domain.settlements.entity.DailyReceiptLine> lines = dailyService
+                                .getAllReceiptLines(firstReceipt.getDailyReceiptId());
+
+                // 3. 파일 생성 서비스 호출 (PDF 생성)
+                byte[] pdfBytes = fileService.createDailyReceiptPdf(firstReceipt, lines);
+
+                // TODO: MinIO 연동 시 pdfBytes를 업로드하고 실제 URL을 반환해야 함
+                System.out.println("PDF 생성 완료: " + pdfBytes.length + " bytes");
+
+                return "https://dummy-url.com/daily-all-summary-generated.pdf (실제 데이터 반영됨)";
         }
 
         public String getMonthlyAllSummaryPdf(HQSettlementMonthlyAllPdfRequest request) {
@@ -252,6 +273,20 @@ public class HQSettlementFacade {
         }
 
         public String getMonthlyExcel(HQSettlementMonthlyExcelRequest request) {
-                return "https://dummy-url.com/monthly-excel.xlsx";
+                // 1. 해당 월의 모든 가맹점 정산 데이터 조회
+                List<com.chaing.domain.settlements.entity.MonthlySettlement> settlements = monthlyService
+                                .getAllByMonth(request.month(), null);
+
+                if (settlements.isEmpty()) {
+                        return "데이터가 없어 엑셀을 생성할 수 없습니다.";
+                }
+
+                // 2. 파일 생성 서비스 호출 (Excel 생성)
+                byte[] excelBytes = fileService.createMonthlySettlementExcel(settlements);
+
+                // TODO: MinIO 연동 시 excelBytes를 업로드하고 실제 URL을 반환해야 함
+                System.out.println("Excel 생성 완료: " + excelBytes.length + " bytes");
+
+                return "https://dummy-url.com/monthly-excel-generated.xlsx (실제 데이터 반영됨)";
         }
 }

@@ -60,6 +60,8 @@ public class HQProductFacade {
     }
 
     private String spicyValid(String productCode) {
+        if (productCode == null || productCode.length() < 4)
+            throw new ProductException(ProductErrorCode.INVALID_PRODUCT_CODE_FORMAT);
         String spicy = productCode.substring(2, 4);
         return switch (spicy) {
             case "01" -> "순한맛";
@@ -71,6 +73,8 @@ public class HQProductFacade {
     }
 
     private String sizeValid(String productCode) {
+        if (productCode == null || productCode.length() < 6)
+            throw new ProductException(ProductErrorCode.INVALID_PRODUCT_CODE_FORMAT);
         String size = productCode.substring(4, 6);
         return switch (size) {
             case "01" -> "1~2인분";

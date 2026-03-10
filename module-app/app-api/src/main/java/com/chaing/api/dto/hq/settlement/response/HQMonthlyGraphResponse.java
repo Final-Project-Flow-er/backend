@@ -7,12 +7,9 @@ import java.time.YearMonth;
 
 @Builder
 public record HQMonthlyGraphResponse(
-        @Schema(description = "월(yyyy-MM)", example = "2026-02") 
-        YearMonth month,
-        
-        @Schema(description = "합산 매출액", example = "45000000") 
-        Long totalSaleAmount
-) {
+        @Schema(description = "월(yyyy-MM)", example = "2026-02") YearMonth month,
+
+        @Schema(description = "합산 매출액", example = "45000000") Long totalSaleAmount) {
     public static HQMonthlyGraphResponse of(YearMonth month, Long totalSaleAmount) {
         return HQMonthlyGraphResponse.builder()
                 .month(month)

@@ -414,12 +414,12 @@ public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom 
 
                 BooleanExpression fromExp = log.fromLocationType.eq(type);
                 if (locationId != null) {
-                        fromExp = fromExp.and(log.fromLocationId.eq(locationId).or(log.fromLocationId.isNull()));
+                        fromExp = fromExp.and(log.fromLocationId.eq(locationId));
                 }
 
                 BooleanExpression toExp = log.toLocationType.eq(type);
                 if (locationId != null) {
-                        toExp = toExp.and(log.toLocationId.eq(locationId).or(log.toLocationId.isNull()));
+                        toExp = toExp.and(log.toLocationId.eq(locationId));
                 }
 
                 return fromExp.or(toExp);

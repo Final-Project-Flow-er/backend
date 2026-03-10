@@ -1,6 +1,8 @@
 package com.chaing.core.enums;
 
 public enum LogType {
+    INBOUND,
+    OUTBOUND,
     RETURN_OUTBOUND,  // 반품출고
     RETURN_INBOUND,   // 반품입고
     SALE,             // 판매

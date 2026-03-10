@@ -53,7 +53,7 @@ public class OutboundService {
                 case PICKING:
                     outboundValidator.checkValidStatus(status, LogType.PICKING);
                     outboundValidator.checkBoxCode(target.getBoxCode());
-                    targetStatus.set(LogType.AVAILABLE);
+                    targetStatus.set(LogType.SHIPPING);
                     break;
                 default:
                     throw new InventoriesException(InventoriesErrorCode.INVALID_OUTBOUND_STATUS);
@@ -98,7 +98,6 @@ public class OutboundService {
             switch (status) {
                 case PICKING_WAIT:
                 case PICKING:
-                case OUTBOUND:
                     break;
                 default:
                     throw new InventoriesException(InventoriesErrorCode.INVALID_OUTBOUND_CANCEL_STATUS);

@@ -56,8 +56,7 @@ class HeadquarterServiceImplTests {
 
         BusinessUnitUpdateCommand command = new BusinessUnitUpdateCommand(
                 "변경된 본사", null, null, null, null,
-                null, null, null
-        );
+                null, null, null);
         when(headquarterRepository.findById(id)).thenReturn(Optional.of(hq));
 
         // when

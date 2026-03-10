@@ -17,6 +17,8 @@ import com.chaing.domain.orders.exception.HQOrderErrorCode;
 import com.chaing.domain.orders.exception.HQOrderException;
 import com.chaing.domain.orders.repository.HeadOfficeOrderItemRepository;
 import com.chaing.domain.orders.repository.HeadOfficeOrderRepository;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -335,27 +337,6 @@ public class HQOrderService {
                 ));
     }
 
-    // 발주 접수/반려
-    public Map<String, HQOrderStatus> updateOrderStatus(FactoryOrderRequest request) {
-        List<HeadOfficeOrder> orders = orderRepository.findAllByOrderCodeInAndDeletedAtIsNull(request.orderCodes());
-
-        if (orders == null || orders.isEmpty() || orders.size() != request.orderCodes().size()) {
-            throw new HQOrderException(HQOrderErrorCode.ORDER_NOT_FOUND);
-        }
-
-        if (request.isAccept()) {
-            orders.forEach(HeadOfficeOrder::accept);
-        } else {
-            orders.forEach(HeadOfficeOrder::reject);
-        }
-
-        return orders.stream()
-                .collect(Collectors.toMap(
-                        HeadOfficeOrder::getOrderCode,
-                        HeadOfficeOrder::getOrderStatus
-                ));
-    }
-
     public List<HQOrderForTransitResponse> getOrdersForTransit(List<Long> orderIds) {
 
         if (orderIds == null || orderIds.isEmpty()) {
@@ -425,5 +406,26 @@ public class HQOrderService {
                 .orElseThrow(() -> new HQOrderException(HQOrderErrorCode.INVALID_STATUS));
 
         return HQOrderCommand.from(order);
+    }
+
+    // return: Map<orderCode, HQOrderStatus>
+    public Map<String, HQOrderStatus> updateOrders(List<String> orderCodes, boolean isAccept) {
+        List<HeadOfficeOrder> orders = orderRepository.findAllByOrderCodeInAndDeletedAtIsNull(orderCodes);
+
+        if (orders == null || orders.isEmpty() || orders.size() != orderCodes.size()) {
+            throw new HQOrderException(HQOrderErrorCode.ORDER_NOT_FOUND);
+        }
+
+        if (isAccept) {
+            orders.forEach(HeadOfficeOrder::accept);
+        } else {
+            orders.forEach(HeadOfficeOrder::reject);
+        }
+
+        return orders.stream()
+                .collect(Collectors.toMap(
+                        HeadOfficeOrder::getOrderCode,
+                        HeadOfficeOrder::getOrderStatus
+                ));
     }
 }

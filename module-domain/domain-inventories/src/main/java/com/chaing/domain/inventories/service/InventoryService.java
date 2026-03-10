@@ -37,6 +37,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -436,7 +437,11 @@ public class InventoryService {
     public boolean verifyOmission(List<String> requestedBoxCodes) {
         List<HQInventory> inventories = hqInventoryRepository.findAllByBoxCodeInAndDeletedAtIsNull(requestedBoxCodes);
 
-        if (inventories == null || inventories.isEmpty() || inventories.size() != requestedBoxCodes.size()) {
+        Set<String> boxCodes = inventories.stream()
+                .map(HQInventory::getBoxCode)
+                .collect(Collectors.toSet());
+
+        if (boxCodes.isEmpty() || boxCodes.size() != requestedBoxCodes.size()) {
             throw new InventoriesException(InventoriesErrorCode.DATA_OMISSION);
         } else {
             return false;

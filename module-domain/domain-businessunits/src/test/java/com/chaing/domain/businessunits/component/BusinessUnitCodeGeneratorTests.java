@@ -41,13 +41,14 @@ class BusinessUnitCodeGeneratorTests {
         // given
         Region region = Region.SEOUL;
         String prefix = region.getCode();
-        Franchise lastFranchise = Franchise.builder().franchiseCode(prefix + "05").build();
+        Franchise lastFranchise = Franchise.builder()
+                .franchiseCode(prefix + "05")
+                .build();
 
         // when
         when(franchiseRepository.findMaxCodeByPrefix(eq(prefix), any(Pageable.class)))
-                .thenReturn(Collections.emptyList(), List.of(lastFranchise));
-
-        // then
+                .thenReturn(Collections.emptyList())
+                .thenReturn(List.of(lastFranchise));
         assertEquals(prefix + "01", codeGenerator.generateFranchiseCode(region));
         assertEquals(prefix + "06", codeGenerator.generateFranchiseCode(region));
     }
@@ -58,11 +59,14 @@ class BusinessUnitCodeGeneratorTests {
 
         // given
         String prefix = "FA";
-        Factory lastFactory = Factory.builder().factoryCode("FA12").build();
+        Factory lastFactory = Factory.builder()
+                .factoryCode("FA12")
+                .build();
 
         // when
         when(factoryRepository.findMaxCodeByPrefix(eq(prefix), any(Pageable.class)))
-                .thenReturn(Collections.emptyList(), List.of(lastFactory));
+                .thenReturn(Collections.emptyList())
+                .thenReturn(List.of(lastFactory));
 
         // then
         assertEquals("FA01", codeGenerator.generateFactoryCode());

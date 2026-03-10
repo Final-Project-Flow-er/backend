@@ -32,6 +32,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
 @Service
@@ -60,39 +62,31 @@ public class UserManagementFacade {
         if (profileImage != null && !profileImage.isEmpty()) {
             savedFileName = minioService.generateFileName(profileImage);
             minioService.uploadFile(profileImage, savedFileName, BucketName.PROFILES);
+            registerFileRollback(savedFileName, BucketName.PROFILES);
         }
 
-        try {
-            String loginId = userManagementService.generateLoginId(request.role());
-            String employeeNumber = userManagementService.generateEmployeeNumber(request.role());
-            String tempPassword = authService.generateTempPassword();
+        String loginId = userManagementService.generateLoginId(request.role());
+        String employeeNumber = userManagementService.generateEmployeeNumber(request.role());
+        String tempPassword = authService.generateTempPassword();
 
-            User user = User.builder()
-                    .loginId(loginId)
-                    .employeeNumber(employeeNumber)
-                    .username(request.username())
-                    .email(request.email())
-                    .phone(request.phone())
-                    .birthDate(request.birthDate())
-                    .role(request.role())
-                    .position(request.position())
-                    .profileImageUrl(savedFileName)
-                    .businessUnitId(request.businessUnitId())
-                    .status(UserStatus.ACTIVE)
-                    .build();
+        User user = User.builder()
+                .loginId(loginId)
+                .employeeNumber(employeeNumber)
+                .username(request.username())
+                .email(request.email())
+                .phone(request.phone())
+                .birthDate(request.birthDate())
+                .role(request.role())
+                .position(request.position())
+                .profileImageUrl(savedFileName)
+                .businessUnitId(request.businessUnitId())
+                .status(UserStatus.ACTIVE)
+                .build();
 
-            userManagementService.registerUser(user, tempPassword);
-            userLogService.saveLog(user, actorId, UserAction.REGISTER);
-            eventPublisher
-                    .publishEvent(new UserRegisteredEvent(user.getEmail(), loginId, tempPassword, employeeNumber));
-            return CreateUserResponse.from(user);
-
-        } catch (Exception e) {
-            if (savedFileName != null) {
-                minioService.deleteFile(savedFileName, BucketName.PROFILES);
-            }
-            throw e;
-        }
+        userManagementService.registerUser(user, tempPassword);
+        userLogService.saveLog(user, actorId, UserAction.REGISTER);
+        eventPublisher.publishEvent(new UserRegisteredEvent(user.getEmail(), loginId, tempPassword, employeeNumber));
+        return CreateUserResponse.from(user);
     }
 
     // 회원 정보 재발송
@@ -130,21 +124,16 @@ public class UserManagementFacade {
         if (profileImage != null && !profileImage.isEmpty()) {
             savedFileName = minioService.generateFileName(profileImage);
             minioService.uploadFile(profileImage, savedFileName, BucketName.PROFILES);
+            registerFileRollback(savedFileName, BucketName.PROFILES);
         }
 
-        try {
-            userManagementService.updateUser(userId, request.toCommand(savedFileName));
-            userLogService.saveLog(user, actorId, UserAction.INFO_UPDATE);
+        userManagementService.updateUser(userId, request.toCommand(savedFileName));
+        userLogService.saveLog(user, actorId, UserAction.INFO_UPDATE);
 
-            if (savedFileName != null && oldFileName != null) {
-                eventPublisher.publishEvent(new ProfileImageDeleteEvent(oldFileName, BucketName.PROFILES));
-            }
-        } catch (Exception e) {
-            if (savedFileName != null) {
-                minioService.deleteFile(savedFileName, BucketName.PROFILES);
-            }
-            throw e;
+        if (savedFileName != null && oldFileName != null) {
+            eventPublisher.publishEvent(new ProfileImageDeleteEvent(oldFileName, BucketName.PROFILES));
         }
+
         User updatedUser = userManagementService.getUserById(userId);
         String profileImageUrl = minioService.getFileUrl(updatedUser.getProfileImageUrl(), BucketName.PROFILES);
         return UserDetailResponse.from(updatedUser, profileImageUrl, getBusinessUnitName(updatedUser));
@@ -204,6 +193,20 @@ public class UserManagementFacade {
             };
         } catch (Exception e) {
             return "-";
+        }
+    }
+
+    // 트랜잭션 롤백 시 minio 파일 삭제
+    private void registerFileRollback(String fileName, BucketName bucket) {
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCompletion(int status) {
+                    if (status == TransactionSynchronization.STATUS_ROLLED_BACK) {
+                        minioService.deleteFile(fileName, bucket);
+                    }
+                }
+            });
         }
     }
 }

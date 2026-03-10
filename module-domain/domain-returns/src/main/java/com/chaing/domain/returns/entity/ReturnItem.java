@@ -1,7 +1,7 @@
 package com.chaing.domain.returns.entity;
 
 import com.chaing.core.entity.BaseEntity;
-import com.chaing.domain.returns.enums.ReturnItemStatus;
+import com.chaing.core.enums.ReturnItemStatus;
 import com.chaing.domain.returns.exception.FranchiseReturnErrorCode;
 import com.chaing.domain.returns.exception.FranchiseReturnException;
 import jakarta.persistence.Column;

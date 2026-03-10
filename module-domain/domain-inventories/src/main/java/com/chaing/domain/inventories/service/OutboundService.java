@@ -136,9 +136,10 @@ public class OutboundService {
                     List<FactoryInventory> itemsInBox = entry.getValue();
                     // 제품 id
                     Long productId = itemsInBox.get(0).getProductId();
+                    Long orderId = itemsInBox.get(0).getOrderId();
                     // 제품의 수량
                     long countItem = itemsInBox.size();
-                    return new OutboundGetBoxInfo(boxCode, productId, countItem);
+                    return new OutboundGetBoxInfo(boxCode, productId, countItem, orderId);
                 })
                 .toList();
     }
@@ -150,7 +151,8 @@ public class OutboundService {
                 .map(inventory -> new OutboundGetItemsInfo(
                         inventory.getProductId(), // 제품 id
                         inventory.getSerialCode(),
-                        inventory.getManufactureDate()
+                        inventory.getManufactureDate(),
+                        inventory.getStatus() == LogType.PICKING
                 ))
                 .toList();
     }

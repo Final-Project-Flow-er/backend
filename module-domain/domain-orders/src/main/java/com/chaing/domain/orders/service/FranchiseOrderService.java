@@ -485,4 +485,5 @@ public class FranchiseOrderService {
                         FranchiseOrderDetailCommand::from
                 ));
     }
+
 }

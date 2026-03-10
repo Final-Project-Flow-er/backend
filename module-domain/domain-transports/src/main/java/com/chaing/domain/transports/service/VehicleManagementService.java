@@ -55,9 +55,9 @@ public class VehicleManagementService {
         vehicle.delete();
     }
 
-    // 운송 업체 비활성화 시 소속 차량 일괄 비활성화
-    public void deactivateVehiclesByTransportId(Long transportId) {
-        vehicleRepository.updateStatusByTransportId(transportId, UsableStatus.INACTIVE);
+    // 운송 업체 상태 변경 시 소속 차량 일괄 상태 변경
+    public void deactivateVehiclesByTransportId(Long transportId, UsableStatus status) {
+        vehicleRepository.updateStatusByTransportId(transportId, status);
     }
 
     // 운송 업체 삭제 시 소속 차량 일괄 삭제

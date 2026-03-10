@@ -79,11 +79,13 @@ public class Vehicle extends BaseEntity {
         if (command.driverPhone() != null) this.driverPhone = command.driverPhone();
         if (command.maxLoad() != null) this.maxLoad = command.maxLoad();
         if (command.dispatchable() != null) this.dispatchable = command.dispatchable();
-        if (command.status() != null) this.status = command.status();
-        if (this.status == UsableStatus.ACTIVE) {
-            this.dispatchable = Dispatchable.AVAILABLE;
-        } else if (this.status == UsableStatus.INACTIVE) {
-            this.dispatchable = Dispatchable.UNAVAILABLE;
+        if (command.status() != null) {
+            this.status = command.status();
+            if (this.status == UsableStatus.ACTIVE) {
+                this.dispatchable = Dispatchable.AVAILABLE;
+            } else if (this.status == UsableStatus.INACTIVE) {
+                this.dispatchable = Dispatchable.UNAVAILABLE;
+            }
         }
     }
 

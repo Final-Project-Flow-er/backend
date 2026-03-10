@@ -14,8 +14,10 @@ import java.util.List;
 @Repository
 public interface FactoryRepository extends JpaRepository<Factory, Long> {
 
-    @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("SELECT f FROM Factory f WHERE f.factoryCode LIKE :prefix% " +
-            "ORDER BY CAST(SUBSTRING(f.factoryCode, LENGTH(:prefix) + 1) AS int) DESC")
+    @Query(value = "SELECT * FROM factory f " +
+            "WHERE f.factory_code LIKE CONCAT(:prefix, '%') " +
+            "ORDER BY CAST(SUBSTR(f.factory_code, LENGTH(:prefix) + 1) AS UNSIGNED) DESC " +
+            "FOR UPDATE",
+            nativeQuery = true)
     List<Factory> findMaxCodeByPrefix(@Param("prefix") String prefix, Pageable pageable);
 }

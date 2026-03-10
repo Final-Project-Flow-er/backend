@@ -15,4 +15,7 @@ public interface SettlementLogService {
 
     // 유형별 필터 조회
     Page<SettlementLog> getAllByType(SettlementLogType type, Pageable pageable);
+
+    // 본사용 조건별 통합 조회 (가맹점, 로그 유형 복합 페이징)
+    Page<SettlementLog> getAllByConditions(Long franchiseId, SettlementLogType type, Pageable pageable);
 }

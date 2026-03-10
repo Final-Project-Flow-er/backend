@@ -1,6 +1,6 @@
 package com.chaing.api.controller.franchise;
 
-import com.chaing.api.facade.settlement.FranchiseSettlementFacade;
+import com.chaing.api.facade.franchise.FranchiseSettlementFacade;
 import com.chaing.core.dto.ApiResponse;
 import com.chaing.api.security.principal.UserPrincipal;
 import com.chaing.domain.settlements.enums.PeriodType;

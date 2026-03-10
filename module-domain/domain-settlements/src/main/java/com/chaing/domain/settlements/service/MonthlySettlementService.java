@@ -8,8 +8,8 @@ import java.util.Map;
 
 public interface MonthlySettlementService {
 
-    // 특정 월 전체 가맹점
-    List<MonthlySettlement> getAllByMonth(YearMonth month);
+    // 특정 월 전체 가맹점 (keyword 검색 지원)
+    List<MonthlySettlement> getAllByMonth(YearMonth month, String keyword);
 
     // 특정 가맹점 + 월
     MonthlySettlement getByFranchiseAndMonth(Long franchiseId, YearMonth month);

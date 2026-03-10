@@ -27,9 +27,6 @@ public record InventoryLogResponse(
         // 받는 곳
         Long toLocationId,
 
-        // 공급가
-        BigDecimal supplyPrice,
-
         // 변경 수량 (개)
         Integer changedQuantity
 ) {

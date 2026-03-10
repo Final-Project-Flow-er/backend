@@ -1,4 +1,4 @@
-package com.chaing.api.facade.settlement;
+package com.chaing.api.facade.franchise;
 
 import com.chaing.api.dto.franchise.settlement.response.FranchiseDailyGraphResponse;
 import com.chaing.api.dto.franchise.settlement.response.FranchiseOrderItemResponse;

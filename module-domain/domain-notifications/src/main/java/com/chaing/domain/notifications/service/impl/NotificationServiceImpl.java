@@ -65,11 +65,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     // 재시도 전용 메서드
-    @Retryable(
-            retryFor = { IOException.class, Exception.class },
-            maxAttempts = 3,
-            backoff = @Backoff(delay = 2000)
-    )
+    @Retryable(retryFor = { IOException.class, Exception.class }, maxAttempts = 3, backoff = @Backoff(delay = 2000))
     @Override
     public void retryableSseSendToAll(NotificationEvent event) {
         emitters.forEach((userId, emitter) -> {
@@ -122,13 +118,26 @@ public class NotificationServiceImpl implements NotificationService {
     // 해당 타입과 타겟 ID를 가진 알림들을 일괄 삭제
     @Override
     public void deleteNotificationsByTarget(NotificationType type, Long targetId) {
-        notificationRepository.deleteAllByTypeAndTargetId(type, targetId);
+        List<Long> notificationIds = notificationRepository.findAllIdsByTypeAndTargetId(type, targetId);
+
+        if (!notificationIds.isEmpty()) {
+            notificationStatusRepository.deleteAllByNotificationIdIn(notificationIds);
+            notificationRepository.deleteAllByIdInBatch(notificationIds);
+        }
+
+        emitters.forEach((userId, emitter) -> {
+            try {
+                emitter.send(SseEmitter.event().name("refresh").data("refresh"));
+            } catch (IOException e) {
+                emitters.remove(userId, emitter);
+            }
+        });
     }
 
     // 알림 목록 조회
     @Override
-    public Page<Notification> getNotificationList(Long userId, Pageable pageable) {
-        return notificationRepository.findAllMyNotifications(userId, pageable);
+    public Page<Notification> getNotificationList(Long userId, NotificationType type, Pageable pageable) {
+        return notificationRepository.findAllMyNotificationsByType(userId, type, pageable);
     }
 
     // 알림 상세 조회
@@ -154,9 +163,7 @@ public class NotificationServiceImpl implements NotificationService {
         List<NotificationStatus> statuses = notificationStatusRepository
                 .findAllByUserIdAndNotificationIdIn(userId, notificationIds);
 
-        statuses.forEach(status ->
-                readStatusMap.put(status.getNotificationId(), status.isRead())
-        );
+        statuses.forEach(status -> readStatusMap.put(status.getNotificationId(), status.isRead()));
 
         return readStatusMap;
     }
@@ -178,18 +185,36 @@ public class NotificationServiceImpl implements NotificationService {
         }
     }
 
+    // 미읽음 알림 수 조회
+    @Override
+    public Map<String, Map<String, Long>> getUnreadCount(Long userId) {
+        Map<String, Map<String, Long>> counts = new java.util.HashMap<>();
+
+        Map<String, Long> allCounts = new java.util.HashMap<>();
+        allCounts.put("unread", notificationRepository.countUnreadByType(userId, null));
+        allCounts.put("total", notificationRepository.countTotalByType(userId, null));
+        counts.put("all", allCounts);
+
+        for (NotificationType type : NotificationType.values()) {
+            Map<String, Long> typeCounts = new java.util.HashMap<>();
+            typeCounts.put("unread", notificationRepository.countUnreadByType(userId, type));
+            typeCounts.put("total", notificationRepository.countTotalByType(userId, type));
+            counts.put(type.name(), typeCounts);
+        }
+
+        return counts;
+    }
+
     // 알림 수정
     @Override
     public void updateNotification(NotificationType type, Long targetId, String newMessage) {
-        Notification notification = notificationRepository.findByTypeAndTargetId(type, targetId)
-                .orElseThrow(() -> new NotificationException(NotificationErrorCode.NOTIFICATION_NOT_FOUND));
+        notificationRepository.findByTypeAndTargetId(type, targetId).ifPresent(notification -> {
+            notificationStatusRepository.deleteAllByNotificationId(notification.getNotificationId());
+            notificationRepository.delete(notification);
+        });
 
-        notification.updateContent(newMessage);
-
-        notificationStatusRepository.deleteAllByNotificationId(notification.getNotificationId());
-
-        NotificationEvent event = NotificationEvent.ofAll(notification.getType(), newMessage, notification.getTargetId());
-        Objects.requireNonNull(selfProvider.getIfAvailable()).retryableSseSendToAll(event);
+        NotificationEvent event = NotificationEvent.ofAll(type, newMessage, targetId);
+        sendToAll(event);
     }
 
     // 알림 삭제

@@ -1,5 +1,6 @@
 package com.chaing.api.controller.hq;
 
+import com.chaing.api.security.principal.UserPrincipal;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 
@@ -18,6 +19,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -39,6 +41,8 @@ public class HQInventoryLogController {
     @Operation(summary = "본사 반품 입고 이력 조회", description = "본사의 반품 입고 이력을 확인합니다.")
     @GetMapping("/return-inbound")
     public ResponseEntity<ApiResponse<InventoryLogListResponse>> findReturnInboundLogs(
+            @AuthenticationPrincipal UserPrincipal principal,
+
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
 
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
@@ -47,12 +51,14 @@ public class HQInventoryLogController {
 
             @PageableDefault(size = 10) Pageable pageable) {
         LogRequest request = new LogRequest(startDate, endDate, transactionCode);
-        return ResponseEntity.ok(ApiResponse.success(hqInventoryLogFacade.findReturnInboundLogs(request, pageable)));
+        return ResponseEntity.ok(ApiResponse.success(hqInventoryLogFacade.findReturnInboundLogs(principal.getBusinessUnitId(), request, pageable)));
     }
 
     @Operation(summary = "본사 반품 출고 이력 조회", description = "본사의 반품 출고 이력을 확인합니다.")
     @GetMapping("/return-outbound")
     public ResponseEntity<ApiResponse<InventoryLogListResponse>> findReturnOutboundLogs(
+            @AuthenticationPrincipal UserPrincipal principal,
+
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
 
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
@@ -61,12 +67,14 @@ public class HQInventoryLogController {
 
             @PageableDefault(size = 10) Pageable pageable) {
         LogRequest request = new LogRequest(startDate, endDate, transactionCode);
-        return ResponseEntity.ok(ApiResponse.success(hqInventoryLogFacade.findReturnOutboundLogs(request, pageable)));
+        return ResponseEntity.ok(ApiResponse.success(hqInventoryLogFacade.findReturnOutboundLogs(principal.getBusinessUnitId(), request, pageable)));
     }
 
     @Operation(summary = "본사 폐기 이력 조회", description = "본사의 폐기 이력을 확인합니다.")
     @GetMapping("/disposal")
     public ResponseEntity<ApiResponse<InventoryLogListResponse>> findDisposalLogs(
+            @AuthenticationPrincipal UserPrincipal principal,
+
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
 
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
@@ -75,7 +83,7 @@ public class HQInventoryLogController {
 
             @PageableDefault(size = 10) Pageable pageable) {
         LogRequest request = new LogRequest(startDate, endDate, transactionCode);
-        return ResponseEntity.ok(ApiResponse.success(hqInventoryLogFacade.findDisposalLogs(request, pageable)));
+        return ResponseEntity.ok(ApiResponse.success(hqInventoryLogFacade.findDisposalLogs(principal.getBusinessUnitId(), request, pageable)));
     }
 
     @Operation(summary = "가맹점 물류 입출고 이력 조회", description = "본사에서 가맹점 물류 입출고 이력을 확인합니다.")

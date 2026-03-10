@@ -120,7 +120,7 @@ public class HQProductFacade {
                 .weight(request.weight())
                 .startDate(request.startDate())
                 .endDate(request.endDate())
-                .componentIds(request.componentIds())
+                .components(request.components())
                 .build();
     }
 
@@ -137,8 +137,7 @@ public class HQProductFacade {
                 request.endDate(),
                 request.description(),
                 request.imageUrl(),
-                request.componentIds()
-        );
+                request.components());
     }
 
 }

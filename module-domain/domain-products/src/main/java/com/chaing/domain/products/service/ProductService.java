@@ -12,6 +12,7 @@ import com.chaing.domain.products.entity.ProductType;
 import com.chaing.domain.products.enums.ProductStatus;
 import com.chaing.domain.products.exception.ProductErrorCode;
 import com.chaing.domain.products.exception.ProductException;
+import com.chaing.domain.products.repository.ComponentRepository;
 import com.chaing.domain.products.repository.ProductComponentRepository;
 import com.chaing.domain.products.repository.ProductRepository;
 import com.chaing.domain.products.repository.ProductTypeRepository;
@@ -32,6 +33,7 @@ public class ProductService {
     private final ProductRepository productRepository;
     private final ProductTypeRepository productTypeRepository;
     private final ProductComponentRepository productComponentRepository;
+    private final ComponentRepository componentRepository;
 
     public ProductListResponse getProducts(ProductSearchRequest productSearchRequest) {
         return productRepository.getProducts(productSearchRequest);
@@ -66,15 +68,14 @@ public class ProductService {
         productRepository.save(product);
 
         // 4. 구성품 매핑 생성
-        if (request.componentIds() != null && !request.componentIds().isEmpty()) {
-
-            List<ProductComponent> mappings =
-                    request.componentIds().stream()
-                            .map(componentId -> ProductComponent.builder()
-                                    .productId(product.getProductId())
-                                    .componentId(componentId)
-                                    .build())
-                            .toList();
+        if (request.components() != null && !request.components().isEmpty()) {
+            List<Long> componentIds = resolveComponentIds(request.components());
+            List<ProductComponent> mappings = componentIds.stream()
+                    .map(componentId -> ProductComponent.builder()
+                            .productId(product.getProductId())
+                            .componentId(componentId)
+                            .build())
+                    .toList();
 
             productComponentRepository.saveAll(mappings);
         }
@@ -89,8 +90,9 @@ public class ProductService {
         product.update(req);
 
         // 2. 구성품 동기화
-        if (req.componentIds() != null) {
-            syncComponents(productId, req.componentIds());
+        if (req.components() != null) {
+            List<Long> componentIds = resolveComponentIds(req.components());
+            syncComponents(productId, componentIds);
         }
     }
 
@@ -115,6 +117,28 @@ public class ProductService {
         return productTypeRepository.findByProductType(productType)
                 .orElseThrow(() -> new ProductException(ProductErrorCode.PRODUCT_TYPE_NOT_FOUND))
                 .getId();
+    }
+
+    private List<Long> resolveComponentIds(List<String> names) {
+        if (names == null || names.isEmpty()) {
+            return List.of();
+        }
+
+        return names.stream()
+                .map(String::trim)
+                .filter(name -> !name.isEmpty())
+                .map(name -> {
+                    return componentRepository.findByName(name)
+                            .orElseGet(() -> {
+                                com.chaing.domain.products.entity.Component newComp = com.chaing.domain.products.entity.Component
+                                        .builder()
+                                        .name(name)
+                                        .build();
+                                return componentRepository.save(newComp);
+                            }).getComponentId();
+                })
+                .distinct()
+                .toList();
     }
 
     private void syncComponents(Long productId, List<Long> requestIds) {
@@ -153,8 +177,7 @@ public class ProductService {
 
         try {
             return ProductStatus.valueOf(
-                    rawStatus.trim().toUpperCase(java.util.Locale.ROOT)
-            );
+                    rawStatus.trim().toUpperCase(java.util.Locale.ROOT));
         } catch (IllegalArgumentException e) {
             throw new ProductException(ProductErrorCode.INVALID_PRODUCT_STATUS);
         }
@@ -176,8 +199,7 @@ public class ProductService {
                                 .retailPrice(entry.getPrice())
                                 .costPrice(entry.getCostPrice())
                                 .tradePrice(entry.getSupplyPrice())
-                                .build()
-                ));
+                                .build()));
     }
 
     // 제품 정보 전체 반환
@@ -199,8 +221,7 @@ public class ProductService {
                                 .retailPrice(product.getPrice())
                                 .costPrice(product.getCostPrice())
                                 .tradePrice(product.getSupplyPrice())
-                                .build()
-                ));
+                                .build()));
     }
 
     public Map<Long, Integer> getWeightsByProductIds(List<Long> productIds) {

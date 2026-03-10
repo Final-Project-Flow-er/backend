@@ -9,6 +9,7 @@ import com.chaing.api.dto.hq.user.response.UserDetailResponse;
 import com.chaing.api.dto.hq.user.response.UserLogResponse;
 import com.chaing.api.dto.hq.user.response.UserSummaryResponse;
 import com.chaing.domain.businessunits.service.BusinessUnitService;
+import com.chaing.domain.users.enums.UserRole;
 import com.chaing.domain.users.event.ProfileImageDeleteEvent;
 import com.chaing.domain.users.event.UserInfoResendEvent;
 import com.chaing.domain.users.event.UserRegisteredEvent;
@@ -35,6 +36,11 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -103,8 +109,32 @@ public class UserManagementFacade {
     // 회원 목록 조회
     public Page<UserSummaryResponse> getUserList(UserSearchRequest request, Pageable pageable) {
         UserSearchCondition condition = request.toCondition();
-        return userManagementService.getUserList(condition, pageable)
-                .map(user -> UserSummaryResponse.from(user, getBusinessUnitName(user)));
+        Page<User> userPage = userManagementService.getUserList(condition, pageable);
+
+        Map<UserRole, List<Long>> roleUnitIdsMap = userPage.getContent().stream()
+                .filter(user -> user.getBusinessUnitId() != null)
+                .collect(Collectors.groupingBy(
+                        User::getRole,
+                        Collectors.mapping(User::getBusinessUnitId, Collectors.toList())
+                ));
+
+        Map<Long, String> unitNameMap = new HashMap<>();
+
+        if (roleUnitIdsMap.containsKey(UserRole.HQ)) {
+            unitNameMap.putAll(headquarterServiceImpl.getNamesByIds(roleUnitIdsMap.get(UserRole.HQ)));
+        }
+        if (roleUnitIdsMap.containsKey(UserRole.FRANCHISE)) {
+            unitNameMap.putAll(franchiseServiceImpl.getNamesByIds(roleUnitIdsMap.get(UserRole.FRANCHISE)));
+        }
+        if (roleUnitIdsMap.containsKey(UserRole.FACTORY)) {
+            unitNameMap.putAll(factoryServiceImpl.getNamesByIds(roleUnitIdsMap.get(UserRole.FACTORY)));
+        }
+
+        // 3. 이제 루프 돌 때는 DB 조회 없이 Map에서 꺼내기 (N+1 해결!)
+        return userPage.map(user -> {
+            String unitName = unitNameMap.getOrDefault(user.getBusinessUnitId(), "-");
+            return UserSummaryResponse.from(user, unitName);
+        });
     }
 
     // 회원 상세 조회

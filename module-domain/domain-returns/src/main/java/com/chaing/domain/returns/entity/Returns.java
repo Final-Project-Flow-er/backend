@@ -71,7 +71,7 @@ public class Returns extends BaseEntity {
         this.returnStatus = ReturnStatus.CANCELED;
     }
 
-    public void updateStatus() {
+    public void acceptReturn() {
         if (!this.returnStatus.equals(ReturnStatus.PENDING)) {
             throw new FranchiseReturnException(FranchiseReturnErrorCode.ALREADY_ACCEPTED);
         }

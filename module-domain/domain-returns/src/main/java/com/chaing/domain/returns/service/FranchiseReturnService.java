@@ -10,7 +10,6 @@ import com.chaing.domain.returns.dto.command.ReturnItemInspection;
 import com.chaing.domain.returns.dto.request.FranchiseReturnCreateRequest;
 import com.chaing.domain.returns.dto.request.HQReturnItemUpdateRequest;
 import com.chaing.domain.returns.dto.request.HQReturnUpdateRequest;
-import com.chaing.domain.returns.dto.response.ReturnInfo;
 import com.chaing.domain.returns.entity.ReturnItem;
 import com.chaing.domain.returns.entity.Returns;
 import com.chaing.domain.returns.enums.ReturnStatus;
@@ -23,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -326,14 +326,14 @@ public class FranchiseReturnService {
     }
 
     // returnItemStatus를 전부 같은 상태로 수정
-    public void updateAllReturnItemByStatus(List<String> requestedBoxCodes, ReturnItemStatus status) {
-        List<ReturnItem> items = franchiseReturnItemRepository.findAllByBoxCodeInAndDeletedAtIsNull(requestedBoxCodes);
+    public Map<String, ReturnItemStatus> updateReturnItemByStatus(String boxCode, ReturnItemStatus status) {
+        ReturnItem returnItem = franchiseReturnItemRepository.findByBoxCodeAndDeletedAtIsNull(boxCode)
+                .orElseThrow(() -> new FranchiseReturnException(FranchiseReturnErrorCode.RETURN_ITEM_NOT_FOUND));
 
-        if (items == null || items.isEmpty()) {
-            throw new FranchiseReturnException(FranchiseReturnErrorCode.RETURN_ITEM_NOT_FOUND);
-        }
-
-        items.forEach(item -> item.updateStatus(status));
+        return Map.of(
+                returnItem.getBoxCode(),
+                returnItem.getReturnItemStatus()
+        );
     }
 
     public ReturnStatus updateReturnStatusInInspection(Long returnId, ReturnStatus returnStatus) {

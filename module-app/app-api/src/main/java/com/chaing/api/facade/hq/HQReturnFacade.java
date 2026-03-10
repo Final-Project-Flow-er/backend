@@ -29,6 +29,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -198,29 +199,22 @@ public class HQReturnFacade {
                 ));
 
         // 물건 전부 검수되면 ReturnItem의 returnItemStatus 수정
-        boolean allInspected = !isInspectedBySerialCodeRequest.containsValue(false);
-        boolean hasDefective = returnItemStatusByBoxCode.values().stream()
-                .anyMatch(ReturnItemStatus.DEFECTIVE::equals);
-
-        if (allInspected) {
-            if (hasDefective) {
-                // ReturnItem의 returnItemStatus DEFECTIVE로 수정
-                franchiseReturnService.updateAllReturnItemByStatus(requestedBoxCodes, ReturnItemStatus.DEFECTIVE);
-            } else {
-                // ReturnItem의 returnItemStatus NORMAL로 수정
-                franchiseReturnService.updateAllReturnItemByStatus(requestedBoxCodes, ReturnItemStatus.NORMAL);
+        Map<String, ReturnItemStatus> finalStatusByBoxCode = new HashMap<>();
+        returnItemStatusByBoxCode.forEach((boxCode, status) -> {
+            if (status == null || boxCode == null) {
+                throw new FranchiseReturnException(FranchiseReturnErrorCode.INVALID_RETURN_STATUS);
             }
-        }
+
+            if (status.equals(ReturnItemStatus.DEFECTIVE)) {
+                finalStatusByBoxCode.putAll(franchiseReturnService.updateReturnItemByStatus(boxCode, status));
+            } else if (status.equals(ReturnItemStatus.NORMAL)) {
+                finalStatusByBoxCode.putAll(franchiseReturnService.updateReturnItemByStatus(boxCode, status));
+            } else {
+                throw new FranchiseReturnException(FranchiseReturnErrorCode.INVALID_RETURN_STATUS);
+            }
+        });
 
         // HQInventory 검수 결과 반영
-        Map<String, ReturnItemStatus> finalStatusByBoxCode;
-        if (allInspected) {
-            ReturnItemStatus groupStatus = hasDefective ? ReturnItemStatus.DEFECTIVE : ReturnItemStatus.NORMAL;
-            finalStatusByBoxCode = requestedBoxCodes.stream()
-                    .collect(Collectors.toMap(bc -> bc, bc -> groupStatus));
-        } else {
-            finalStatusByBoxCode = returnItemStatusByBoxCode;
-        }
         inventoryService.saveInspectionResults(requestedBoxCodes, finalStatusByBoxCode, isInspectedBySerialCodeRequest);
 
         // ReturnStatus 수정

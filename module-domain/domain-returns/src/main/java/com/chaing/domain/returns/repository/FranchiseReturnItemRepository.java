@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface FranchiseReturnItemRepository extends JpaRepository<ReturnItem, Long> {
@@ -23,5 +24,5 @@ public interface FranchiseReturnItemRepository extends JpaRepository<ReturnItem,
 
     List<ReturnItem> findAllByReturns_ReturnIdAndDeletedAtIsNull(Long returnId);
 
-    List<ReturnItem> findAllByBoxCodeInAndDeletedAtIsNull(List<String> requestedBoxCodes);
+    Optional<ReturnItem> findByBoxCodeAndDeletedAtIsNull(String boxCode);
 }

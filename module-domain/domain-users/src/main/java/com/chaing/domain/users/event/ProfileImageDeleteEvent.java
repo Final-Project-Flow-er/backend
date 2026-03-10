@@ -1,4 +1,4 @@
-package com.chaing.api.dto.user.event;
+package com.chaing.domain.users.event;
 
 import com.chaing.core.enums.BucketName;
 

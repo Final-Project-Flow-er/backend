@@ -437,7 +437,7 @@ public class InventoryService {
         List<HQInventory> inventories = hqInventoryRepository.findAllByBoxCodeInAndDeletedAtIsNull(requestedBoxCodes);
 
         if (inventories == null || inventories.isEmpty() || inventories.size() != requestedBoxCodes.size()) {
-            throw new InventoriesException(InventoryErrorCode.DATA_OMISSION);
+            throw new InventoriesException(InventoriesErrorCode.DATA_OMISSION);
         } else {
             return false;
         }

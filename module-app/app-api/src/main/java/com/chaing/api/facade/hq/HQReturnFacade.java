@@ -32,6 +32,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -104,6 +105,13 @@ public class HQReturnFacade {
         // Map<returnItemId, returnItemInspection>
         Map<Long, ReturnItemInspection> returnItemInspectionByReturnItemId = franchiseReturnService.getReturnItemInspection(returnItemIds);
 
+        // Map<boxCode, ReturnItemInspection>
+        Map<String, ReturnItemInspection> itemInspectionByBoxCode = returnItemInspectionByReturnItemId.values().stream()
+                .collect(Collectors.toMap(
+                        ReturnItemInspection::boxCode,
+                        Function.identity()
+                ));
+
         // 재고 정보 조회
         // Map<serialCode, orderItemId>
         Map<String, Long> orderItemIdBySerialCode = inventoryService.getSerialCodesByOrderItemIds(orderItemIds);
@@ -122,13 +130,6 @@ public class HQReturnFacade {
         Map<Long, ProductInfo> productInfoByProductId = productService.getProductInfos(productIds);
         log.info("productInfoByProductId: {}", productInfoByProductId);
 
-        // Map<orderItemId, returnItemId>
-        Map<Long, Long> returnItemIdByOrderItemId = orderItemIdByReturnItemId.entrySet().stream()
-                .collect(Collectors.toMap(
-                        Map.Entry::getValue,
-                        Map.Entry::getKey
-                ));
-
         // 반품 제품 DTO
         List<FranchiseReturnItemDetailResponse> items = boxCodeBySerialCode.entrySet().stream()
                 .map(entry -> {
@@ -138,9 +139,7 @@ public class HQReturnFacade {
                     ProductInfo productInfo = productInfoByProductId.get(productId);
                     log.info("productInfo: {}", productInfo);
 
-                    Long orderItemId = orderItemIdBySerialCode.get(entry.getKey());
-                    Long returnItemId = returnItemIdByOrderItemId.get(orderItemId);
-                    ReturnItemInspection inspection = returnItemInspectionByReturnItemId.get(returnItemId);
+                    ReturnItemInspection inspection = itemInspectionByBoxCode.get(entry.getValue());
 
                     if (productInfo == null) {
                         throw new FranchiseReturnException(FranchiseReturnErrorCode.PRODUCT_NOT_FOUND);

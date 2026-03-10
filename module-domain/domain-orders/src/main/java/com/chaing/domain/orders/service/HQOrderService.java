@@ -16,8 +16,6 @@ import com.chaing.domain.orders.exception.HQOrderErrorCode;
 import com.chaing.domain.orders.exception.HQOrderException;
 import com.chaing.domain.orders.repository.HeadOfficeOrderItemRepository;
 import com.chaing.domain.orders.repository.HeadOfficeOrderRepository;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -330,52 +328,6 @@ public class HQOrderService {
                         HeadOfficeOrder::getHeadOfficeOrderId,
                         HQOrderCommand::from
                 ));
-    }
-
-    public List<HQOrderForTransitResponse> getOrdersForTransit(List<Long> orderIds) {
-
-        if (orderIds == null || orderIds.isEmpty()) {
-            throw new HQOrderException(HQOrderErrorCode.INVALID_INPUT);
-        }
-
-        List<HeadOfficeOrderItem> allItems = orderItemRepository
-                .findByHeadOfficeOrder_HeadOfficeOrderIdInAndHeadOfficeOrder_OrderStatusAndDeletedAtIsNull(
-                        orderIds,
-                        HQOrderStatus.AWAITING
-                );
-
-        if (allItems.isEmpty()) {
-            throw new HQOrderException(HQOrderErrorCode.ORDER_ITEM_NOT_FOUND);
-        }
-
-        Map<HeadOfficeOrder, List<HeadOfficeOrderItem>> itemsByOrder = allItems.stream()
-                .collect(Collectors.groupingBy(HeadOfficeOrderItem::getHeadOfficeOrder));
-
-        long requestedCount = orderIds.stream().distinct().count();
-
-        if (itemsByOrder.size() != requestedCount) {
-            throw new HQOrderException(HQOrderErrorCode.ORDER_NOT_FOUND);
-        }
-
-        return itemsByOrder.entrySet().stream()
-                .map(entry -> {
-                    HeadOfficeOrder order = entry.getKey();
-                    List<HeadOfficeOrderItem> items = entry.getValue();
-
-                    List<HQOrderForTransitResponse.OrderItemForTransit> itemResponses = items.stream()
-                            .map(item -> new HQOrderForTransitResponse.OrderItemForTransit(
-                                    item.getProductId(),
-                                    item.getQuantity()
-                            ))
-                            .toList();
-
-                    return new HQOrderForTransitResponse(
-                            order.getHeadOfficeOrderId(),
-                            order.getOrderCode(),
-                            itemResponses
-                    );
-                })
-                .toList();
     }
 
     // return: Map<orderId, List<HQOrderItemCommand>>

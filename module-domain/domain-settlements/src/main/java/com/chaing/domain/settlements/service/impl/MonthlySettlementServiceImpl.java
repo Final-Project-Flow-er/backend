@@ -27,7 +27,7 @@ public class MonthlySettlementServiceImpl implements MonthlySettlementService {
             return repository.findAllBySettlementMonthAndFranchiseNameContaining(month, keyword);
         }
         return repository.findAllBySettlementMonth(month);
-    } // 본사에서 해당'월'의 가맹점 정사 조회할 때
+    } // 본사에서 해당'월'의 가맹점 정산 조회할 때
 
     @Override
     public MonthlySettlement getByFranchiseAndMonth(Long franchiseId, YearMonth month) {

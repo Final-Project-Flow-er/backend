@@ -116,6 +116,7 @@ public class MonthlySettlement extends BaseEntity {
             throw new SettlementException(SettlementErrorCode.INVALID_SETTLEMENT_STATUS);
         }
         this.status = SettlementStatus.CONFIRMED;
+        this.confirmedAt = LocalDateTime.now();
     }
 
     public void rollback() {

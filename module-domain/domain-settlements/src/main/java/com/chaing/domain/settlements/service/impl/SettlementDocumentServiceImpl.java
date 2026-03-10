@@ -20,7 +20,8 @@ public class SettlementDocumentServiceImpl implements SettlementDocumentService 
     public SettlementDocument getDailyDocument(Long dailyReceiptId) {
         // 일별 문서는 1개라고 가정하고 단건 조회 (findByDailyReceiptId)
         return documentRepository.findByDailyReceiptId(dailyReceiptId)
-                .orElseThrow(() -> new IllegalArgumentException("해당 일별 영수증 문서를 찾을 수 없습니다."));
+                .orElse(null);
+                //.orElseThrow(() -> new IllegalArgumentException("해당 일별 영수증 문서를 찾을 수 없습니다."));
     }
 
     @Override

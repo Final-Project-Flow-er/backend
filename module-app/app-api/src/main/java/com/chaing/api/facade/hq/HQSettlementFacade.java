@@ -25,11 +25,10 @@ import org.springframework.data.domain.Pageable;
 @Transactional(readOnly = true)
 public class HQSettlementFacade {
 
-    // 향후 실 데이터를 가져오기 위해 주입될 Service들 (예: HQSummaryService 등)
     private final com.chaing.domain.settlements.service.DailySettlementService dailyService;
     private final com.chaing.domain.settlements.service.MonthlySettlementService monthlyService;
 
-    // 1. 일별 (Daily) 조회
+    // 1. 일별 조회
 
     public HQSettlementSummaryResponse getDailySummary(HQSettlementDailySummaryRequest request) {
         List<com.chaing.domain.settlements.entity.DailySettlementReceipt> receipts = dailyService
@@ -48,14 +47,10 @@ public class HQSettlementFacade {
     }
 
     public Page<HQFranchiseSettlementResponse> getDailyFranchises(HQSettlementDailyFranchisesRequest request) {
-        // 1. 도메인 서비스에서 날짜 및 키워드로 전체 목록 조회 (임시로 리스트 처리 -> 향후 Repository에서 Page 직접 반환하도록
-        // 리팩토링 권장)
+        // 1. 도메인 서비스에서 날짜 및 키워드로 전체 목록 조회 
         List<com.chaing.domain.settlements.entity.DailySettlementReceipt> receipts = dailyService
                 .getAllByDate(request.date(), request.keyword());
 
-        // 2. 상태 필터링 (DailySettlement는 상태가 별도로 없으므로 생략하거나 추후 추가)
-
-        // 3. DTO 변환
         List<HQFranchiseSettlementResponse> dtos = receipts.stream()
                 .map(r -> HQFranchiseSettlementResponse.of(
                         r.getFranchiseId(),
@@ -66,7 +61,6 @@ public class HQSettlementFacade {
                         r.getSettlementDate()))
                 .collect(Collectors.toList());
 
-        // 4. 페이징 처리하여 반환
         int page = request.page() != null ? request.page() : 0;
         int size = request.size() != null ? request.size() : 20;
         Pageable pageable = PageRequest.of(page, size);
@@ -97,7 +91,7 @@ public class HQSettlementFacade {
                 .collect(Collectors.toList());
     }
 
-    // 2. 월별 (Monthly) 조회
+    // 2. 월별 조회
 
     public HQSettlementSummaryResponse getMonthlySummary(HQSettlementMonthlySummaryRequest request) {
         List<com.chaing.domain.settlements.entity.MonthlySettlement> settlements = monthlyService
@@ -152,15 +146,10 @@ public class HQSettlementFacade {
 
     public List<HQMonthlyGraphResponse> getMonthlyTrend(HQSettlementMonthlyGraphRequest request) {
         // start ~ end 기간 사이의 모든 월별 정산 데이터 조회
-        // (주의: start와 end가 LocalDate로 들어오지만, DB의 settlement_month는 YearMonth입니다.
-        // 현재 MonthlySettlementService에는 기간 조회 기능이 없으므로, 향후 Repository 추가가 필요할 수 있습니다.
-        // 임시로 start~end 에 해당하는 YearMonth들로 순회하며 가져오거나, DB 전체에서 필터링합니다.)
-
+    
         YearMonth startMonth = YearMonth.from(request.start());
         YearMonth endMonth = YearMonth.from(request.end());
 
-        // TODO: MonthlySettlementService에 기간 조회 메서드 추가 후 성능 개선
-        // 현재는 startMonth ~ endMonth 까지 루프를 돌며 가져오도록 임시 구현
         List<HQMonthlyGraphResponse> result = new java.util.ArrayList<>();
         YearMonth current = startMonth;
 
@@ -178,7 +167,7 @@ public class HQSettlementFacade {
         return result;
     }
 
-    // 3. 단건 가맹점 상세 내역 (Drill-down) & 전표 조회
+    // 3. 단건 가맹점 상세 내역 (Drill-down), 전표 조회
 
     public FranchiseSettlementSummaryResponse getDailyFranchiseSummary(Long franchiseId,
             HQSettlementFranchiseDailyDetailRequest request) {
@@ -231,10 +220,7 @@ public class HQSettlementFacade {
                     line.getOccurredAt()));
 
         } else {
-            // 월별: MonthlySettlement 관련 전표들을 변환
-            // 현재 MonthlySettlementService에는 전표 목록 페이징 조회가 없으므로,
-            // Vouchers를 별도로 가져오는 서비스나 Repository 연동이 필요합니다.
-            // TODO: 월별 전표 조회 도메인 서비스 연동
+
             return Page.empty();
         }
     }

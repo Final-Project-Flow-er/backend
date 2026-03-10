@@ -10,7 +10,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 public interface DailySettlementService {
-    // 특정 날짜 전체 가맹점 일별 정산 목록 (keyword 검색 지원)
+    // 특정 날짜 전체 가맹점 일별 정산 목록 (keyword -> 가맹점)
     List<DailySettlementReceipt> getAllByDate(LocalDate date, String keyword);
 
     // 특정 가맹점 + 날짜

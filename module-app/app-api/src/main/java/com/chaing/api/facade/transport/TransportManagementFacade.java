@@ -5,7 +5,6 @@ import com.chaing.api.dto.transport.management.request.UpdateTransportRequest;
 import com.chaing.api.dto.transport.management.request.UpdateTransportStatusRequest;
 import com.chaing.api.dto.transport.management.response.TransportDetailResponse;
 import com.chaing.api.dto.transport.management.response.TransportSummaryResponse;
-import com.chaing.core.enums.UsableStatus;
 import com.chaing.domain.transports.entity.Transport;
 import com.chaing.domain.transports.service.TransportManagementService;
 import com.chaing.domain.transports.service.VehicleManagementService;
@@ -46,6 +45,11 @@ public class TransportManagementFacade {
     @Transactional
     public TransportDetailResponse updateTransport(Long id, UpdateTransportRequest request) {
         Transport transport = transportManagementService.updateTransport(id, request.toCommand());
+
+        if (request.status() != null) {
+            vehicleManagementService.deactivateVehiclesByTransportId(id, request.status());
+        }
+
         return TransportDetailResponse.from(transport);
     }
 
@@ -54,8 +58,8 @@ public class TransportManagementFacade {
     public TransportDetailResponse updateTransportStatus(Long id, UpdateTransportStatusRequest request) {
         Transport transport = transportManagementService.updateStatus(id, request.status());
 
-        if (request.status() == UsableStatus.INACTIVE) {
-            vehicleManagementService.deactivateVehiclesByTransportId(id);
+        if (request.status() != null) {
+            vehicleManagementService.deactivateVehiclesByTransportId(id, request.status());
         }
 
         return TransportDetailResponse.from(transport);

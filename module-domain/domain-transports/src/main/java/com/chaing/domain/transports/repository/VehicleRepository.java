@@ -12,7 +12,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface VehicleRepository extends JpaRepository<Vehicle,Long> {
+public interface VehicleRepository extends JpaRepository<Vehicle, Long> {
 
     List<Vehicle> findAllByStatusAndDispatchable(UsableStatus status, Dispatchable dispatchable);
 
@@ -20,10 +20,17 @@ public interface VehicleRepository extends JpaRepository<Vehicle,Long> {
     Long findMaxLoad(@Param("vehicleId") Long vehicleId);
 
     @Modifying(clearAutomatically = true)
-    @Query("UPDATE Vehicle v SET v.status = :status WHERE v.transportId = :transportId AND v.deletedAt IS NULL")
-    void updateStatusByTransportId(Long transportId, UsableStatus status);
+    @Query("UPDATE Vehicle v SET v.status = :status, v.dispatchable = (CASE " +
+            "WHEN :status = com.chaing.core.enums.UsableStatus.ACTIVE " +
+            "THEN com.chaing.domain.transports.enums.Dispatchable.AVAILABLE " +
+            "ELSE com.chaing.domain.transports.enums.Dispatchable.UNAVAILABLE END) " +
+            "WHERE v.transportId = :transportId AND v.deletedAt IS NULL")
+    void updateStatusByTransportId(@Param("transportId") Long transportId, @Param("status") UsableStatus status);
 
     @Modifying(clearAutomatically = true)
-    @Query("UPDATE Vehicle v SET v.deletedAt = CURRENT_TIMESTAMP WHERE v.transportId = :transportId AND v.deletedAt IS NULL")
-    void deleteVehiclesByTransportId(Long transportId);
+    @Query("UPDATE Vehicle v SET v.deletedAt = CURRENT_TIMESTAMP, " +
+            "v.status = com.chaing.core.enums.UsableStatus.INACTIVE, " +
+            "v.dispatchable = com.chaing.domain.transports.enums.Dispatchable.UNAVAILABLE " +
+            "WHERE v.transportId = :transportId AND v.deletedAt IS NULL")
+    void deleteVehiclesByTransportId(@Param("transportId") Long transportId);
 }

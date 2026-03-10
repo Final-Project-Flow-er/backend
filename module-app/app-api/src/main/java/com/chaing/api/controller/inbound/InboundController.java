@@ -45,6 +45,7 @@ public class InboundController {
     }
 
     // 입고 스캔(가맹)
+    @PreAuthorize("hasRole('FRANCHISE')")
     @PostMapping("/scan/box")
     @Operation(summary = "가맹점 입고 스캔", description = "입고된 박스의 바코드를 스캔하여 정보를 확인합니다.")
     public ResponseEntity<ApiResponse<Void>> scanInboundBoxes(
@@ -56,6 +57,7 @@ public class InboundController {
     }
 
     // 가맹점 입고 대기 박스 목록 조회
+    @PreAuthorize("hasRole('FRANCHISE')")
     @GetMapping("/boxes")
     @Operation(summary = "입고 대기 박스 목록 조회", description = "현재 입고 대기 중인 박스들의 요약 목록을 조회합니다.")
     public ResponseEntity<ApiResponse<List<InboundBoxSummaryResponse>>> getInboundBoxList(
@@ -66,6 +68,7 @@ public class InboundController {
     }
 
     // 가맹점 입고 대기 세부 목록 조회
+    @PreAuthorize("hasRole('FRANCHISE')")
     @GetMapping("/boxes/{boxCode}")
     @Operation(summary = "입고 대기 세부 목록 조회", description = "입고 대기 중인 박스나 상세 품목 리스트를 조회합니다.")
     public ResponseEntity<ApiResponse<List<InboundDetailResponse>>> getInboundItemDetails(

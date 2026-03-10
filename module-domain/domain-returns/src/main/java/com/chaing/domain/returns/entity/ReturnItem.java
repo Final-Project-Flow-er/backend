@@ -38,7 +38,7 @@ public class ReturnItem extends BaseEntity {
     @Column(nullable = false)
     private Long franchiseOrderItemId;  // fk
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String boxCode;
 
     @Column(nullable = false)

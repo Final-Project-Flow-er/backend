@@ -5,6 +5,7 @@ import com.chaing.core.dto.info.ReturnItemInfo;
 import com.chaing.core.dto.request.FranchiseReturnUpdateRequest;
 import com.chaing.core.dto.returns.request.ReturnToInventoryRequest;
 import com.chaing.core.enums.LogType;
+import com.chaing.core.enums.ReturnItemStatus;
 import com.chaing.domain.inventories.dto.request.DisposalRequest;
 import com.chaing.domain.inventories.dto.request.FranchiseInventoryItemsRequest;
 import com.chaing.domain.inventories.dto.request.HQInventoryItemsRequest;
@@ -436,9 +437,26 @@ public class InventoryService {
         List<HQInventory> inventories = hqInventoryRepository.findAllByBoxCodeInAndDeletedAtIsNull(requestedBoxCodes);
 
         if (inventories == null || inventories.isEmpty() || inventories.size() != requestedBoxCodes.size()) {
-            throw new InventoryException(InventoryErrorCode.DATA_OMISSION);
+            throw new InventoriesException(InventoryErrorCode.DATA_OMISSION);
         } else {
             return false;
         }
+    }
+
+    // 제품 검수 결과 저장
+    public void saveInspectionResults(
+            List<String> boxCodes,
+            Map<String, ReturnItemStatus> finalStatusByBoxCode,
+            Map<String, Boolean> isInspectedBySerialCode
+    ) {
+        List<HQInventory> inventories = hqInventoryRepository.findAllByBoxCodeInAndDeletedAtIsNull(boxCodes);
+
+        for (HQInventory item : inventories) {
+            Boolean isInspected = isInspectedBySerialCode.get(item.getSerialCode());
+            ReturnItemStatus returnItemStatus = finalStatusByBoxCode.get(item.getBoxCode());
+            item.updateInspection(isInspected, returnItemStatus);
+        }
+
+        hqInventoryRepository.saveAll(inventories);
     }
 }

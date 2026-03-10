@@ -1,7 +1,7 @@
 package com.chaing.domain.returns.dto.command;
 
+import com.chaing.core.enums.ReturnItemStatus;
 import com.chaing.domain.returns.entity.ReturnItem;
-import com.chaing.domain.returns.enums.ReturnItemStatus;
 import lombok.Builder;
 
 @Builder

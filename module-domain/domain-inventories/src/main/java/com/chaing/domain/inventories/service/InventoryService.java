@@ -434,7 +434,7 @@ public class InventoryService {
     }
 
     // return: 데이터 누락 있는지 없는지
-    public boolean verifyOmission(List<String> requestedBoxCodes) {
+    public void verifyOmission(List<String> requestedBoxCodes) {
         List<HQInventory> inventories = hqInventoryRepository.findAllByBoxCodeInAndDeletedAtIsNull(requestedBoxCodes);
 
         Set<String> boxCodes = inventories.stream()
@@ -443,8 +443,6 @@ public class InventoryService {
 
         if (boxCodes.isEmpty() || boxCodes.size() != requestedBoxCodes.size()) {
             throw new InventoriesException(InventoriesErrorCode.DATA_OMISSION);
-        } else {
-            return false;
         }
     }
 

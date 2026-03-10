@@ -184,9 +184,7 @@ public class HQReturnFacade {
                 .toList();
 
         // 데이터 누락 검증
-        if (inventoryService.verifyOmission(requestedBoxCodes)) {
-            throw new FranchiseReturnException(FranchiseReturnErrorCode.DATA_OMISSION);
-        }
+        inventoryService.verifyOmission(requestedBoxCodes);
 
         // 검수 결과 저장
         // Map<boxCode, ReturnItemStatus>

@@ -58,7 +58,7 @@ public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom 
                                                 actorContains("HQ", 1L), // 본사Id
                                                 betweenDate(request.startDate(), request.endDate()),
                                                 containsTransactionCode(request.transactionCode()))
-                                .orderBy(log.createdAt.desc())
+                                .orderBy(log.createdAt.desc(), log.transactionCode.desc(), log.boxCode.desc())
                                 .offset(pageable.getOffset())
                                 .limit(pageable.getPageSize())
                                 .fetch();
@@ -101,7 +101,7 @@ public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom 
                                                 actorContains("HQ", 1L), // 본사Id
                                                 betweenDate(request.startDate(), request.endDate()),
                                                 containsTransactionCode(request.transactionCode()))
-                                .orderBy(log.createdAt.desc())
+                                .orderBy(log.createdAt.desc(), log.transactionCode.desc(), log.boxCode.desc())
                                 .offset(pageable.getOffset())
                                 .limit(pageable.getPageSize())
                                 .fetch();
@@ -144,7 +144,7 @@ public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom 
                                                 actorContains("HQ", 1L), // 본사Id
                                                 betweenDate(request.startDate(), request.endDate()),
                                                 containsTransactionCode(request.transactionCode()))
-                                .orderBy(log.createdAt.desc())
+                                .orderBy(log.createdAt.desc(), log.transactionCode.desc(), log.boxCode.desc())
                                 .offset(pageable.getOffset())
                                 .limit(pageable.getPageSize())
                                 .fetch();
@@ -200,7 +200,8 @@ public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom 
                                                 log.transactionCode,
                                                 log.productName,
                                                 log.logType)
-                                .orderBy(log.createdAt.max().desc())
+                                .orderBy(log.createdAt.max().desc(), log.transactionCode.desc(), log.productName.desc(),
+                                                log.logType.desc())
                                 .offset(pageable.getOffset())
                                 .limit(pageable.getPageSize())
                                 .fetch();
@@ -259,7 +260,7 @@ public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom 
                                                 containsTransactionCode(request.transactionCode()),
                                                 actorContains("FRANCHISE", franchiseId),
                                                 containsProductName(request.productName()))
-                                .orderBy(log.createdAt.desc())
+                                .orderBy(log.createdAt.desc(), log.transactionCode.desc(), log.boxCode.desc())
                                 .offset(pageable.getOffset())
                                 .limit(pageable.getPageSize())
                                 .fetch();
@@ -319,7 +320,8 @@ public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom 
                                                 log.transactionCode,
                                                 log.productName,
                                                 log.logType)
-                                .orderBy(log.createdAt.max().desc())
+                                .orderBy(log.createdAt.max().desc(), log.transactionCode.desc(), log.productName.desc(),
+                                                log.logType.desc())
                                 .offset(pageable.getOffset())
                                 .limit(pageable.getPageSize())
                                 .fetch();

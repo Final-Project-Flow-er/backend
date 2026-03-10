@@ -355,8 +355,12 @@ public class HQInventoryFacade {
 
         if (actorTypeRaw.equals("HQ")) {
             List<HQInventory> inventories = inventoryService.getHqInventoriesByIds(request.inventoryIds());
-            Map<Long, ProductInfo> productInfos = productService.getProductInfos(
-                    inventories.stream().map(HQInventory::getProductId).distinct().toList());
+            List<Long> productIds = inventories.stream()
+                    .map(HQInventory::getProductId)
+                    .distinct()
+                    .toList();
+            Map<Long, ProductInfo> productInfos = productIds.isEmpty() ? Map.of()
+                    : productService.getProductInfos(productIds);
 
             for (HQInventory inv : inventories) {
                 ProductInfo pInfo = productInfos.get(inv.getProductId());
@@ -378,8 +382,12 @@ public class HQInventoryFacade {
             }
         } else if (actorTypeRaw.equals("FACTORY")) {
             List<FactoryInventory> inventories = inventoryService.getFactoryInventoriesByIds(request.inventoryIds());
-            Map<Long, ProductInfo> productInfos = productService.getProductInfos(
-                    inventories.stream().map(FactoryInventory::getProductId).distinct().toList());
+            List<Long> productIds = inventories.stream()
+                    .map(FactoryInventory::getProductId)
+                    .distinct()
+                    .toList();
+            Map<Long, ProductInfo> productInfos = productIds.isEmpty() ? Map.of()
+                    : productService.getProductInfos(productIds);
 
             for (FactoryInventory inv : inventories) {
                 ProductInfo pInfo = productInfos.get(inv.getProductId());
@@ -402,8 +410,12 @@ public class HQInventoryFacade {
         } else if (actorTypeRaw.equals("FRANCHISE")) {
             List<FranchiseInventory> inventories = inventoryService
                     .getFranchiseInventoriesByIds(request.inventoryIds());
-            Map<Long, ProductInfo> productInfos = productService.getProductInfos(
-                    inventories.stream().map(FranchiseInventory::getProductId).distinct().toList());
+            List<Long> productIds = inventories.stream()
+                    .map(FranchiseInventory::getProductId)
+                    .distinct()
+                    .toList();
+            Map<Long, ProductInfo> productInfos = productIds.isEmpty() ? Map.of()
+                    : productService.getProductInfos(productIds);
 
             for (FranchiseInventory inv : inventories) {
                 ProductInfo pInfo = productInfos.get(inv.getProductId());

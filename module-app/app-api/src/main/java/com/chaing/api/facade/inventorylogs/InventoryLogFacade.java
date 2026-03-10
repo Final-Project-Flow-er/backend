@@ -151,6 +151,9 @@ public class InventoryLogFacade {
 
         for (ReturnItem item : returnItems) {
             Long productId = productIdByBoxCode.get(item.getBoxCode());
+            if (productId == null) {
+                continue;
+            }
             ProductInfo pInfo = productId != null ? productInfos.get(productId) : null;
 
             logs.add(new InventoryLogCreateRequest(

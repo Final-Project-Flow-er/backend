@@ -60,13 +60,6 @@ public class InventoryLog extends BaseEntity {
     @Column(nullable = false)
     private Integer quantity;
 
-    // 당시 공급가
-    private BigDecimal supplyPrice;
-
-    // 당시 판매가
-    @NotNull
-    private BigDecimal price;
-
     // 출발지 -판매같은 경우 출발지 도착지 컬럼이 없으므로 제약조건 제외
     @Enumerated(EnumType.STRING)
     private LocationType fromLocationType;

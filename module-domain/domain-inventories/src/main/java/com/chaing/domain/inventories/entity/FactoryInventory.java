@@ -32,6 +32,8 @@ public class FactoryInventory extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long inventoryId;
 
+    private Long orderId;
+
     // 제품식별코드
     @NotBlank
     @Column(nullable = false)

@@ -3,11 +3,10 @@ package com.chaing.domain.inventorylogs.dto.response;
 import com.chaing.core.enums.LogType;
 import lombok.Builder;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Builder
-public record FranchiseInventoryLogResponse(
+public record FactoryInventoryLogResponse(
         // 날짜
         LocalDateTime date,
 

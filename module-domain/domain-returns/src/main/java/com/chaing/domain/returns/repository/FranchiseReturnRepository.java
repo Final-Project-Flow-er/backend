@@ -21,7 +21,7 @@ public interface FranchiseReturnRepository extends JpaRepository<Returns, Long> 
     List<Returns> findAllByFranchiseIdAndReturnStatusAndCreatedAtBetween(
             Long franchiseId, ReturnStatus returnStatus,
             LocalDateTime start, LocalDateTime end);
-    List<Returns> findAllByReturnCodeIn(List<String> returnCodes);
+    List<Returns> findAllByReturnCodeInAndDeletedAtIsNull(List<String> returnCodes);
 
     Optional<Returns> findByUserIdAndFranchiseIdAndReturnCodeAndDeletedAtIsNull(Long userId, Long franchiseId, String returnCode);
 

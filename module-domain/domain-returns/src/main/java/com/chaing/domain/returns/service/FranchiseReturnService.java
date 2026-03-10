@@ -310,7 +310,13 @@ public class FranchiseReturnService {
                 ));
 
         returnItemStatusByBoxCode.forEach((boxCode, status) -> {
-            returnItemByBoxCode.get(boxCode).updateStatus(status);
+            ReturnItem returnItem = returnItemByBoxCode.get(boxCode);
+
+            if (returnItem == null) {
+                throw new FranchiseReturnException(FranchiseReturnErrorCode.RETURN_ITEM_NOT_FOUND);
+            }
+
+            returnItem.updateStatus(status);
         });
 
         franchiseReturnItemRepository.saveAll(returnItemByBoxCode.values());

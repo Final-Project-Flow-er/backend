@@ -42,8 +42,5 @@ public class HeadquarterServiceImpl implements BusinessUnitService {
     }
 
     // HqId 조회
-    public Long getHqId() {
-        return 1L; // Note: Usually this should come from context or DB. Hardcoding 1L for compile
-                   // fix temporarily if needed, or query it. Wait, checking logic.
-    }
+    public Long getHqId()
 }

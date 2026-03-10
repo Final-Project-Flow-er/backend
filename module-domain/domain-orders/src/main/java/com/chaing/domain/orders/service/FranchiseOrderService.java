@@ -415,24 +415,25 @@ public class FranchiseOrderService {
     }
 
     // 대기 상태 발주 요청 조회
-    // return: Map<orderId, FranchiseOrderDetailCommand> 
+    // return: Map<orderId, FranchiseOrderDetailCommand>
     public Map<Long, FranchiseOrderDetailCommand> getAllRequestedOrders() {
-        List<FranchiseOrder> orders = franchiseOrderRepository.findAllByOrderStatusAndDeletedAtIsNull(FranchiseOrderStatus.PENDING);
-        
+        List<FranchiseOrder> orders = franchiseOrderRepository
+                .findAllByOrderStatusAndDeletedAtIsNull(FranchiseOrderStatus.PENDING);
+
         if (orders == null || orders.isEmpty()) {
             throw new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_NOT_FOUND);
         }
-        
+
         return orders.stream()
                 .collect(Collectors.toMap(
                         FranchiseOrder::getFranchiseOrderId,
-                        FranchiseOrderDetailCommand::from
-                ));
+                        FranchiseOrderDetailCommand::from));
     }
 
     // return: Map<orderId, List<FranchiseOrderItemCommand>>
     public Map<Long, List<FranchiseOrderItemCommand>> getAllRequestedOrderItem(List<Long> orderIds) {
-        List<FranchiseOrderItem> items = franchiseOrderItemRepository.findAllByFranchiseOrder_FranchiseOrderIdInAndDeletedAtIsNull(orderIds);
+        List<FranchiseOrderItem> items = franchiseOrderItemRepository
+                .findAllByFranchiseOrder_FranchiseOrderIdInAndDeletedAtIsNull(orderIds);
 
         if (items == null || items.isEmpty()) {
             throw new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_ITEM_NOT_FOUND);
@@ -441,8 +442,7 @@ public class FranchiseOrderService {
         return items.stream()
                 .collect(Collectors.groupingBy(
                         item -> item.getFranchiseOrder().getFranchiseOrderId(),
-                        Collectors.mapping(FranchiseOrderItemCommand::from, Collectors.toList())
-                ));
+                        Collectors.mapping(FranchiseOrderItemCommand::from, Collectors.toList())));
     }
 
     // return: Map<orderId, FranchiseOrderDetail>
@@ -456,7 +456,6 @@ public class FranchiseOrderService {
         return orders.stream()
                 .collect(Collectors.toMap(
                         FranchiseOrder::getFranchiseOrderId,
-                        FranchiseOrderDetailCommand::from
-                ));
+                        FranchiseOrderDetailCommand::from));
     }
 }

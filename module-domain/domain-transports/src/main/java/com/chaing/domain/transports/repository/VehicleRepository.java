@@ -35,4 +35,7 @@ public interface VehicleRepository extends JpaRepository<Vehicle, Long> {
             "v.dispatchable = com.chaing.domain.transports.enums.Dispatchable.UNAVAILABLE " +
             "WHERE v.transportId = :transportId AND v.deletedAt IS NULL")
     void deleteVehiclesByTransportId(@Param("transportId") Long transportId);
+
+    @Query("SELECT v.transportId FROM Vehicle v WHERE v.vehicleId = :vehicleId")
+    Long findTransportIdByVehicleId(Long vehicleId);
 }

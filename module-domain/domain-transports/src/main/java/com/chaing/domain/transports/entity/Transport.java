@@ -92,6 +92,7 @@ public class Transport extends BaseEntity {
         if (command.contractStartDate() != null) this.contractStartDate = command.contractStartDate();
         if (command.contractEndDate() != null) this.contractEndDate = command.contractEndDate();
         if (command.usableRegion() != null) this.usableRegion = command.usableRegion();
+        if (command.status() != null) this.status = command.status();
 
         if (this.contractEndDate.isBefore(this.contractStartDate)) {
             throw new TransportException(TransportErrorCode.INVALID_CONTRACT_PERIOD);

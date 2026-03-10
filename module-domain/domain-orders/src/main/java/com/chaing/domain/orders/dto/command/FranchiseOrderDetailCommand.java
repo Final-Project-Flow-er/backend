@@ -25,7 +25,9 @@ public record FranchiseOrderDetailCommand(
 
         String deliveryTime,
 
-        String address
+        String address,
+
+        Long userId
 ) {
     public static FranchiseOrderDetailCommand from(FranchiseOrder order) {
         return FranchiseOrderDetailCommand.builder()
@@ -38,6 +40,7 @@ public record FranchiseOrderDetailCommand(
                 .deliveryDate(order.getDeliveryDate())
                 .deliveryTime(order.getDeliveryTime())
                 .address(order.getAddress())
+                .userId(order.getUserId())
                 .build();
     }
 }

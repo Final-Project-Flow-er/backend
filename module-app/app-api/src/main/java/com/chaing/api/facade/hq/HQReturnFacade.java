@@ -246,14 +246,14 @@ public class HQReturnFacade {
                 .build();
     }
 
-    // 반품 요청 상태 변경
+    // 반품 요청 접수
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
-    public List<HQReturnProductResponse> updateReturnStatus(List<@NotBlank String> returnCodes) {
-        // 반품 상태 변경
-        List<ReturnInfo> updatedReturns = franchiseReturnService.updateReturnStatus(returnCodes);
+    public List<HQReturnProductResponse> acceptReturn(List<@NotBlank String> returnCodes) {
+        // 반품 요청 접수
+        List<ReturnCommand> acceptedReturns = franchiseReturnService.acceptReturn(returnCodes);
 
         // 반환
-        return updatedReturns.stream()
+        return acceptedReturns.stream()
                 .map(HQReturnProductResponse::from)
                 .toList();
     }

@@ -459,7 +459,7 @@ public class InventoryService {
                 .map(HQInventory::getBoxCode)
                 .collect(Collectors.toSet());
 
-        if (existingBoxCodes.isEmpty() || existingBoxCodes.containsAll(new HashSet<>(boxCodes))) {
+        if (existingBoxCodes.isEmpty() || !existingBoxCodes.containsAll(new HashSet<>(boxCodes))) {
             throw new InventoriesException(InventoriesErrorCode.DATA_OMISSION);
         }
 

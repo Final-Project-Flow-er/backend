@@ -25,6 +25,7 @@ import org.springframework.stereotype.Service;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -127,6 +128,7 @@ public class ProductService {
         }
 
         return names.stream()
+                .filter(Objects::nonNull)
                 .map(String::trim)
                 .filter(name -> !name.isEmpty())
                 .map(name -> getOrCreateComponent(name).getComponentId())

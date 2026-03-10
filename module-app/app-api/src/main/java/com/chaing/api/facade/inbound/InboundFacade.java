@@ -63,14 +63,13 @@ public class InboundFacade {
         return boxInfos.stream()
                 .map(box -> {
                     ProductInfo product = productMap.get(box.productId());
-                    if(product == null) {
+                    if (product == null) {
                         throw new InventoriesException(InventoriesErrorCode.INVENTORIES_IS_NULL);
                     }
                     return InboundBoxSummaryResponse.of(
                             box.boxCode(),
                             product.productName(),
-                            product.productCode()
-                    );
+                            product.productCode());
                 })
                 .toList();
     }
@@ -93,9 +92,9 @@ public class InboundFacade {
                     return InboundDetailResponse.of(
                             item.serialCode(),
                             item.productId(),
+                            product.productCode(),
                             product.productName(), // Map에서 꺼낸 상품명
-                            item.manufactureDate()
-                    );
+                            item.manufactureDate());
                 })
                 .toList();
     }
@@ -118,9 +117,9 @@ public class InboundFacade {
                     return InboundDetailResponse.of(
                             item.serialCode(),
                             item.productId(),
+                            product.productCode(),
                             product.productName(),
-                            item.manufactureDate()
-                    );
+                            item.manufactureDate());
                 })
                 .toList();
     }

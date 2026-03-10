@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -33,6 +34,7 @@ public class InboundController {
     private final InboundFacade inboundFacade;
 
     // 입고 스캔(공장)
+    @PreAuthorize("hasRole('FACTORY')")
     @PostMapping("/scan/item")
     @Operation(summary = "공장 입고 스캔", description = "생산된 제품의 바코드를 스캔하여 정보를 확인합니다.")
     public ResponseEntity<ApiResponse<Void>> scanInboundItems(
@@ -75,6 +77,7 @@ public class InboundController {
     }
 
     // 공장 입고 대기 세부 목록 조회
+    @PreAuthorize("hasRole('FACTORY')")
     @GetMapping("/items")
     @Operation(summary = "입고 대기 세부 목록 조회", description = "현재 입고 대기 중인 상세 품목 리스트를 조회합니다.")
     public ResponseEntity<ApiResponse<List<InboundDetailResponse>>> getInboundItemDetails() {
@@ -83,6 +86,7 @@ public class InboundController {
     }
 
     // 입고 승인
+    @PreAuthorize("hasRole('FACTORY')")
     @PatchMapping("/confirm")
     @Operation(summary = "입고 승인", description = "해당 제품의 입고를 승인합니다.")
     public ResponseEntity<ApiResponse<Void>> updateInboundStatus(

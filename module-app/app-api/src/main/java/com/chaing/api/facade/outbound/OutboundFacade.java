@@ -57,7 +57,7 @@ public class OutboundFacade {
                 .map(OutboundGetBoxInfo::productId)
                 .distinct()
                 .toList();
-
+        
         // productId로 productName, productCode 조회
         Map<Long, ProductInfo> productMap = productService.getProductInfos(productIds);
 

@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -126,11 +127,19 @@ public class OutboundService {
     public List<OutboundGetBoxInfo> getBoxInfos() {
         List<FactoryInventory> pendingList = outboundReader.getAllByBoxCodeAndStatus(null);
         return pendingList.stream()
-                .map(inventory -> new OutboundGetBoxInfo(
-                        inventory.getBoxCode(),     // 박스 코드
-                        inventory.getProductId() // 제품 id
+                .collect(Collectors.groupingBy(
+                        FactoryInventory::getBoxCode // 박스 코드 기준으로 그룹핑
                 ))
-                .distinct()
+                .entrySet().stream()
+                .map(entry -> {
+                    String boxCode = entry.getKey();
+                    List<FactoryInventory> itemsInBox = entry.getValue();
+                    // 제품 id
+                    Long productId = itemsInBox.get(0).getProductId();
+                    // 제품의 수량
+                    long countItem = itemsInBox.size();
+                    return new OutboundGetBoxInfo(boxCode, productId, countItem);
+                })
                 .toList();
     }
 

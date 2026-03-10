@@ -3,8 +3,8 @@ package com.chaing.api.facade.hq;
 import com.chaing.api.dto.hq.response.HQReturnProductResponse;
 import com.chaing.api.dto.hq.response.HQReturnResponse;
 import com.chaing.core.dto.info.ProductInfo;
+import com.chaing.core.enums.ReturnItemStatus;
 import com.chaing.domain.businessunits.service.impl.FranchiseServiceImpl;
-import com.chaing.domain.inventories.service.HQInventoryService;
 import com.chaing.domain.inventories.service.InventoryService;
 import com.chaing.domain.orders.exception.HQOrderErrorCode;
 import com.chaing.domain.orders.exception.HQOrderException;
@@ -12,20 +12,17 @@ import com.chaing.domain.orders.service.FranchiseOrderService;
 import com.chaing.domain.products.service.ProductService;
 import com.chaing.domain.returns.dto.command.HQReturnCommand;
 import com.chaing.domain.returns.dto.command.HQReturnDetailCommand;
-import com.chaing.domain.returns.dto.command.ReturnItemCommand;
+import com.chaing.domain.returns.dto.command.ReturnCommand;
 import com.chaing.domain.returns.dto.command.ReturnItemInspection;
 import com.chaing.domain.returns.dto.request.HQReturnItemUpdateRequest;
 import com.chaing.domain.returns.dto.request.HQReturnUpdateRequest;
 import com.chaing.domain.returns.dto.response.FranchiseReturnItemDetailResponse;
 import com.chaing.domain.returns.dto.response.HQReturnDetailResponse;
 import com.chaing.domain.returns.dto.response.HQReturnUpdateResponse;
-import com.chaing.domain.returns.dto.response.ReturnInfo;
-import com.chaing.domain.returns.enums.ReturnItemStatus;
 import com.chaing.domain.returns.enums.ReturnStatus;
 import com.chaing.domain.returns.exception.FranchiseReturnErrorCode;
 import com.chaing.domain.returns.exception.FranchiseReturnException;
 import com.chaing.domain.returns.service.FranchiseReturnService;
-import com.chaing.domain.returns.service.HQReturnService;
 import com.chaing.domain.users.service.UserManagementService;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
@@ -50,8 +47,6 @@ public class HQReturnFacade {
     private final FranchiseOrderService franchiseOrderService;
     private final FranchiseServiceImpl franchiseService;
     private final UserManagementService userManagementService;
-    private final HQReturnService hqReturnService;
-    private final HQInventoryService hqInventoryService;
 
     // 반품 요청 조회
     public List<HQReturnResponse> getAllReturns(Boolean isAll) {
@@ -180,6 +175,10 @@ public class HQReturnFacade {
     public HQReturnUpdateResponse updateReturn(String returnCode, HQReturnUpdateRequest request) {
         // 반품 조회
         HQReturnDetailCommand returns = franchiseReturnService.getHQReturnInfo(returnCode);
+
+        if (returns.status() != ReturnStatus.COMPLETED) {
+            throw new FranchiseReturnException(FranchiseReturnErrorCode.INVALID_RETURN_STATUS);
+        }
 
         // List<boxCode>
         List<String> requestedBoxCodes = request.items().stream()

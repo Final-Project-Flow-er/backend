@@ -459,6 +459,11 @@ public class InventoryService {
         for (HQInventory item : inventories) {
             Boolean isInspected = isInspectedBySerialCode.get(item.getSerialCode());
             ReturnItemStatus returnItemStatus = finalStatusByBoxCode.get(item.getBoxCode());
+
+            if (isInspected == null || returnItemStatus == null) {
+                throw new InventoriesException(InventoriesErrorCode.DATA_OMISSION);
+            }
+
             item.updateInspection(isInspected, returnItemStatus);
         }
 

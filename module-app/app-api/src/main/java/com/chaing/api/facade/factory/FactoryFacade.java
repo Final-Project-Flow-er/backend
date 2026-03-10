@@ -147,7 +147,7 @@ public class FactoryFacade {
 
     // 발주 접수/반려
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
-    public List<FactoryOrderUpdateResponse> updateOrders(@Valid FactoryOrderRequest request) {
+    public List<FactoryOrderUpdateResponse> updateOrders(FactoryOrderRequest request) {
         // 재고 확인
 
         // 접수/반려

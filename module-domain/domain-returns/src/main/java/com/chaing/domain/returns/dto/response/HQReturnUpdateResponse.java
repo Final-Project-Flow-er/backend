@@ -12,6 +12,6 @@ public record HQReturnUpdateResponse(
 
         ReturnStatus status,
 
-        List<ReturnItemInspection> inspectionBySerialCode
+        List<ReturnItemInspection> returnItemInspection
 ) {
 }

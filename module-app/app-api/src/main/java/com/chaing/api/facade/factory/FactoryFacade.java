@@ -150,9 +150,8 @@ public class FactoryFacade {
     public List<FactoryOrderUpdateResponse> updateOrders(FactoryOrderRequest request, boolean isAccept) {
         // 재고 확인
 
-        // 접수/반려
         // Map<orderCode, HQOrderStatus>
-        Map<String, HQOrderStatus> orderStatusByOrderCode = hqOrderService.updateOrderStatus(request);
+        Map<String, HQOrderStatus> orderStatusByOrderCode = hqOrderService.updateOrders(request.orderCodes(), isAccept);
 
         // 반환
         return orderStatusByOrderCode.entrySet().stream()

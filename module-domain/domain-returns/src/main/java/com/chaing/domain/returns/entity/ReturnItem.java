@@ -1,8 +1,7 @@
 package com.chaing.domain.returns.entity;
 
 import com.chaing.core.entity.BaseEntity;
-import com.chaing.domain.returns.dto.request.HQReturnUpdateRequest;
-import com.chaing.domain.returns.enums.ReturnItemStatus;
+import com.chaing.core.enums.ReturnItemStatus;
 import com.chaing.domain.returns.exception.FranchiseReturnErrorCode;
 import com.chaing.domain.returns.exception.FranchiseReturnException;
 import jakarta.persistence.Column;
@@ -39,11 +38,7 @@ public class ReturnItem extends BaseEntity {
     @Column(nullable = false)
     private Long franchiseOrderItemId;  // fk
 
-    @Column(nullable = false)
-    @Builder.Default
-    private Boolean isInspected = false;    // 삭제 예정
-
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String boxCode;
 
     @Column(nullable = false)
@@ -51,13 +46,10 @@ public class ReturnItem extends BaseEntity {
     @Builder.Default
     private ReturnItemStatus returnItemStatus = ReturnItemStatus.BEFORE_INSPECTION;
 
-    // 반품 제품 검수 상태 업데이트
-    public void update(HQReturnUpdateRequest hqReturnUpdateRequest) {
-        if (hqReturnUpdateRequest == null) {
-            throw new FranchiseReturnException(FranchiseReturnErrorCode.INVALID_REQUEST);
+    public void updateStatus(ReturnItemStatus status) {
+        if (this.returnItemStatus != ReturnItemStatus.BEFORE_INSPECTION) {
+            throw new FranchiseReturnException(FranchiseReturnErrorCode.INVALID_RETURN_ITEM_STATUS);
         }
-
-        this.isInspected = hqReturnUpdateRequest.isInspected();
-        this.returnItemStatus = hqReturnUpdateRequest.status();
+        this.returnItemStatus = status;
     }
 }

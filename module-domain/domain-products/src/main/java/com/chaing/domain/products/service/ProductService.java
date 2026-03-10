@@ -6,6 +6,7 @@ import com.chaing.domain.products.dto.request.ProductSearchRequest;
 import com.chaing.domain.products.dto.request.ProductUpdateRequest;
 import com.chaing.domain.products.dto.response.ProductInfoResponse;
 import com.chaing.domain.products.dto.response.ProductListResponse;
+import com.chaing.domain.products.entity.Component;
 import com.chaing.domain.products.entity.Product;
 import com.chaing.domain.products.entity.ProductComponent;
 import com.chaing.domain.products.entity.ProductType;
@@ -18,6 +19,7 @@ import com.chaing.domain.products.repository.ProductRepository;
 import com.chaing.domain.products.repository.ProductTypeRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
@@ -127,18 +129,24 @@ public class ProductService {
         return names.stream()
                 .map(String::trim)
                 .filter(name -> !name.isEmpty())
-                .map(name -> {
-                    return componentRepository.findByName(name)
-                            .orElseGet(() -> {
-                                com.chaing.domain.products.entity.Component newComp = com.chaing.domain.products.entity.Component
-                                        .builder()
-                                        .name(name)
-                                        .build();
-                                return componentRepository.save(newComp);
-                            }).getComponentId();
-                })
+                .map(name -> getOrCreateComponent(name).getComponentId())
                 .distinct()
                 .toList();
+    }
+
+    private Component getOrCreateComponent(String name) {
+        return componentRepository.findByName(name)
+                .orElseGet(() -> {
+                    try {
+                        return componentRepository.save(
+                                Component.builder()
+                                        .name(name)
+                                        .build());
+                    } catch (DataIntegrityViolationException e) {
+                        return componentRepository.findByName(name)
+                                .orElseThrow(() -> e);
+                    }
+                });
     }
 
     private void syncComponents(Long productId, List<Long> requestIds) {

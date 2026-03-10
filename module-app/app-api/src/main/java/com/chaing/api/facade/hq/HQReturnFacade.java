@@ -214,10 +214,18 @@ public class HQReturnFacade {
                 // ReturnItem의 returnItemStatus NORMAL로 수정
                 franchiseReturnService.updateAllReturnItemByStatus(requestedBoxCodes, ReturnItemStatus.NORMAL);
             }
-        } else {
-            // 검수된 것만 반영
-            franchiseReturnService.updateReturnItemByStatus(requestedBoxCodes, returnItemStatusByBoxCode);
         }
+
+        // HQInventory 검수 결과 반영
+        Map<String, ReturnItemStatus> finalStatusByBoxCode;
+        if (allInspected) {
+            ReturnItemStatus groupStatus = hasDefective ? ReturnItemStatus.DEFECTIVE : ReturnItemStatus.NORMAL;
+            finalStatusByBoxCode = requestedBoxCodes.stream()
+                    .collect(Collectors.toMap(bc -> bc, bc -> groupStatus));
+        } else {
+            finalStatusByBoxCode = returnItemStatusByBoxCode;
+        }
+        inventoryService.saveInspectionResults(requestedBoxCodes, finalStatusByBoxCode, isInspectedBySerialCodeRequest);
 
         // ReturnStatus 수정
         ReturnStatus updatedStatus = franchiseReturnService.updateReturnStatusInInspection(returns.returnId(), request.returnStatus());

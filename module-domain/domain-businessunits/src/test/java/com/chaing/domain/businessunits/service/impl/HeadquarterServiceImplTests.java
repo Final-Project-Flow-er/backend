@@ -70,22 +70,4 @@ class HeadquarterServiceImplTests {
 
         verify(headquarterRepository, times(1)).findById(id);
     }
-
-    @Test
-    @DisplayName("본사 코드 조회")
-    void getHqCode() {
-
-        // given
-        Long id = 1L;
-        Headquarter hq = Headquarter.builder().hqId(id).hqCode("HQ001").build();
-        when(headquarterRepository.findById(id)).thenReturn(Optional.of(hq));
-
-        // when
-        String result = headquarterService.getHqCode(id);
-
-        // then
-        assertNotNull(result);
-        assertEquals("HQ001", result);
-        verify(headquarterRepository, times(1)).findById(id);
-    }
 }

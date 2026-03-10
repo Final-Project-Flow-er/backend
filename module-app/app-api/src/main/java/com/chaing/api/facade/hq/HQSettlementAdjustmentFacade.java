@@ -32,6 +32,7 @@ public class HQSettlementAdjustmentFacade {
     @Transactional
     public void createAdjustment(HQSettlementAdjustmentVoucherRequest request) {
         // TODO: AdjustmentService 등을 통해 DB에 Insert 로직
+        throw new UnsupportedOperationException("조정 전표 등록 기능은 아직 구현되지 않았습니다.");
     }
 
     // 4. 조정 전표 목록 조회 (페이징)

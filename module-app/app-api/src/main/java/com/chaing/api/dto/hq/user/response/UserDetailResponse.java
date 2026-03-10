@@ -11,6 +11,7 @@ import java.time.LocalDate;
 @Builder
 public record UserDetailResponse(
 
+        Long userId,
         String loginId,
         String username,
         String email,
@@ -21,9 +22,10 @@ public record UserDetailResponse(
         UserRole role,
         UserPosition position,
         UserStatus status,
-        Long businessUnitId
+        Long businessUnitId,
+        String businessUnitName
 ) {
-    public static UserDetailResponse from(User user, String profileImageUrl) {
+    public static UserDetailResponse from(User user, String profileImageUrl, String businessUnitName) {
 
         Long businessUnitId = switch (user.getRole()) {
             case HQ -> user.getHqId();
@@ -33,6 +35,7 @@ public record UserDetailResponse(
         };
 
         return UserDetailResponse.builder()
+                .userId(user.getUserId())
                 .loginId(user.getLoginId())
                 .username(user.getUsername())
                 .email(user.getEmail())
@@ -44,6 +47,7 @@ public record UserDetailResponse(
                 .position(user.getPosition())
                 .status(user.getStatus())
                 .businessUnitId(businessUnitId)
+                .businessUnitName(businessUnitName)
                 .build();
     }
 }

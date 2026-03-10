@@ -5,6 +5,7 @@ import com.chaing.core.enums.UsableStatus;
 import com.chaing.domain.transports.dto.command.VehicleCreateCommand;
 import com.chaing.domain.transports.dto.command.VehicleUpdateCommand;
 import com.chaing.domain.transports.enums.Dispatchable;
+import com.chaing.domain.transports.enums.VehicleType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -38,7 +39,7 @@ public class Vehicle extends BaseEntity {
     private String vehicleNumber;
 
     @Column(nullable = false)
-    private String vehicleType;
+    private VehicleType vehicleType;
 
     @Column(nullable = false)
     private String driverName;

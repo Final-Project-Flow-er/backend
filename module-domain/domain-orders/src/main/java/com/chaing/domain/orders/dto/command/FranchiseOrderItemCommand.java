@@ -12,13 +12,16 @@ public record FranchiseOrderItemCommand(
 
         Long productId,
 
-        BigDecimal unitPrice
+        BigDecimal unitPrice,
+
+        Integer quantity
 ) {
     public static FranchiseOrderItemCommand from(FranchiseOrderItem franchiseOrderItem) {
         return FranchiseOrderItemCommand.builder()
                 .orderItemId(franchiseOrderItem.getFranchiseOrderItemId())
                 .productId(franchiseOrderItem.getProductId())
                 .unitPrice(franchiseOrderItem.getUnitPrice())
+                .quantity(franchiseOrderItem.getQuantity())
                 .build();
     }
 

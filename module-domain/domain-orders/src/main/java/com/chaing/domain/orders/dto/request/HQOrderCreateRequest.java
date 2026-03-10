@@ -24,6 +24,6 @@ public record HQOrderCreateRequest(
         LocalDateTime manufactureDate,
 
         @NotEmpty
-        List<@Valid HQOrderItemCreateInfo> items
+        List<@Valid HQOrderItemCreateCommand> items
 ) {
 }

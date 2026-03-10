@@ -16,6 +16,7 @@ import com.chaing.domain.products.repository.ProductComponentRepository;
 import com.chaing.domain.products.repository.ProductRepository;
 import com.chaing.domain.products.repository.ProductTypeRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
@@ -24,6 +25,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@Slf4j
 @RequiredArgsConstructor
 @Service
 public class ProductService {

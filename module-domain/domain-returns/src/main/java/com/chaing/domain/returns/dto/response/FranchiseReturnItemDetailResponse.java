@@ -1,6 +1,6 @@
 package com.chaing.domain.returns.dto.response;
 
-import com.chaing.domain.returns.enums.ReturnItemStatus;
+import com.chaing.core.enums.ReturnItemStatus;
 import lombok.Builder;
 
 @Builder

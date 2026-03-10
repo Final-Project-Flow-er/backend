@@ -1,4 +1,4 @@
-package com.chaing.domain.returns.enums;
+package com.chaing.core.enums;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

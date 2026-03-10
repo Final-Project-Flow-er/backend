@@ -80,6 +80,10 @@ public class Returns extends BaseEntity {
     }
 
     public void updateStatusInInspection(ReturnStatus returnStatus) {
+        if (!returnStatus.equals(ReturnStatus.PENDING)) {
+            throw new FranchiseReturnException(FranchiseReturnErrorCode.INVALID_RETURN_STATUS);
+        }
+
         this.returnStatus = returnStatus;
     }
 }

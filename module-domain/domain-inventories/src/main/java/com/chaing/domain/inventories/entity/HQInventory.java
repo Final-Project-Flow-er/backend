@@ -60,4 +60,6 @@ public class HQInventory extends BaseEntity {
     @Column
     LocalDateTime receivedAt;       // 입고 완료 일자
 
+    @Column
+    Boolean isInspected;
 }

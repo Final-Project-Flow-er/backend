@@ -430,4 +430,15 @@ public class InventoryService {
     public List<FactoryInventory> getFactoryInventoriesByIds(List<Long> inventoryIds) {
         return factoryInventoryRepository.findAllById(inventoryIds);
     }
+
+    // return: 데이터 누락 있는지 없는지
+    public boolean verifyOmission(List<String> requestedBoxCodes) {
+        List<HQInventory> inventories = hqInventoryRepository.findAllByBoxCodeInAndDeletedAtIsNull(requestedBoxCodes);
+
+        if (inventories == null || inventories.isEmpty() || inventories.size() != requestedBoxCodes.size()) {
+            throw new InventoryException(InventoryErrorCode.DATA_OMISSION);
+        } else {
+            return false;
+        }
+    }
 }

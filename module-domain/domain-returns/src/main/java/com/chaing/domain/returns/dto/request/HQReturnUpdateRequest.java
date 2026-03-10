@@ -1,22 +1,12 @@
 package com.chaing.domain.returns.dto.request;
 
-import com.chaing.domain.returns.enums.ReturnItemStatus;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import lombok.Builder;
+import com.chaing.domain.returns.enums.ReturnStatus;
 
-@Builder
+import java.util.List;
+
 public record HQReturnUpdateRequest(
-        @NotBlank
-        String boxCode,
+        ReturnStatus returnStatus,
 
-        @NotBlank
-        String serialCode,
-
-        @NotNull
-        Boolean isInspected,
-
-        @NotNull
-        ReturnItemStatus status
+        List<HQReturnItemUpdateRequest> items
 ) {
 }

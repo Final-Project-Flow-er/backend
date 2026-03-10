@@ -6,16 +6,14 @@ import lombok.Builder;
 
 @Builder
 public record ReturnItemInspection(
-        Boolean isInspected,
-
         ReturnItemStatus status,
 
-        String serialCode
+        String boxCode
 ) {
     public static ReturnItemInspection from(ReturnItem returnItem) {
         return ReturnItemInspection.builder()
-                .isInspected(returnItem.getIsInspected())
                 .status(returnItem.getReturnItemStatus())
+                .boxCode(returnItem.getBoxCode())
                 .build();
     }
 }

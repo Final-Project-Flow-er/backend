@@ -78,4 +78,8 @@ public class Returns extends BaseEntity {
 
         this.returnStatus = ReturnStatus.ACCEPTED;
     }
+
+    public void updateStatusInInspection(ReturnStatus returnStatus) {
+        this.returnStatus = returnStatus;
+    }
 }

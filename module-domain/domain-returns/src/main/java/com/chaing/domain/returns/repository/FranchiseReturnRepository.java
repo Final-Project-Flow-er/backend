@@ -15,7 +15,7 @@ public interface FranchiseReturnRepository extends JpaRepository<Returns, Long> 
 
     List<Returns> findAllByReturnStatus(ReturnStatus status);
 
-    List<Returns> findAllByReturnStatusNot(ReturnStatus returnStatus);
+    List<Returns> findAllByDeletedAtIsNull();
 
     // 특정 가맹점의 날짜 범위 반품 (ACCEPTED 일때)
     List<Returns> findAllByFranchiseIdAndReturnStatusAndCreatedAtBetween(

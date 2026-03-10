@@ -118,7 +118,12 @@ public class NotificationServiceImpl implements NotificationService {
     // 해당 타입과 타겟 ID를 가진 알림들을 일괄 삭제
     @Override
     public void deleteNotificationsByTarget(NotificationType type, Long targetId) {
-        notificationRepository.deleteAllByTypeAndTargetId(type, targetId);
+        List<Long> notificationIds = notificationRepository.findAllIdsByTypeAndTargetId(type, targetId);
+
+        if (!notificationIds.isEmpty()) {
+            notificationStatusRepository.deleteAllByNotificationIdIn(notificationIds);
+            notificationRepository.deleteAllByIdInBatch(notificationIds);
+        }
 
         emitters.forEach((userId, emitter) -> {
             try {

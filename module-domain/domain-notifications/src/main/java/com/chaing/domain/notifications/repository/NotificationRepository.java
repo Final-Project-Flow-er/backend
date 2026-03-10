@@ -51,11 +51,12 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
             "AND (n.userId = :userId OR n.userId = 0)")
     Optional<Notification> findByIdAndUserIdOrAll(@Param("notificationId") Long notificationId, @Param("userId") Long userId);
 
+    @Query("SELECT n.notificationId FROM Notification n WHERE n.type = :type AND n.targetId = :targetId")
+    List<Long> findAllIdsByTypeAndTargetId(@Param("type") NotificationType type, @Param("targetId") Long targetId);
+
     @Modifying
     @Query("DELETE FROM Notification n WHERE n.createdAt < :targetDate")
     void deleteOldNotifications(@Param("targetDate") LocalDateTime targetDate);
-
-    void deleteAllByTypeAndTargetId(NotificationType type, Long targetId);
 
     Optional<Notification> findByTypeAndTargetId(NotificationType type, Long targetId);
 }

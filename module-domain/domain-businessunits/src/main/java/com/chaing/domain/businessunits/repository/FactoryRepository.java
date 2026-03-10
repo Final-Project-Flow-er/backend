@@ -18,4 +18,7 @@ public interface FactoryRepository extends JpaRepository<Factory, Long> {
             "FOR UPDATE",
             nativeQuery = true)
     List<Factory> findMaxCodeByPrefix(@Param("prefix") String prefix, Pageable pageable);
+
+    @Query("SELECT f.factoryId, f.name FROM Factory f WHERE f.factoryId IN :ids")
+    List<Object[]> findNamesByIds(@Param("ids") List<Long> ids);
 }

@@ -1,4 +1,4 @@
-package com.chaing.api.dto.user.event;
+package com.chaing.domain.users.event;
 
 public record PasswordResetEvent(
         String email,

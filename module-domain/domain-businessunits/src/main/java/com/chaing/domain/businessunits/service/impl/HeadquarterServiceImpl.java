@@ -57,4 +57,5 @@ public class HeadquarterServiceImpl implements BusinessUnitService {
 
         return hq.getHqCode();
     }
+
 }

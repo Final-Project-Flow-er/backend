@@ -14,6 +14,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -26,6 +27,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @Tag(name="Outbound API", description = "출고 관련 API")
 @RequestMapping("/api/v1/outbounds")
+@PreAuthorize("hasRole('FACTORY')")
 public class OutboundController {
 
     private final OutboundFacade outboundFacade;

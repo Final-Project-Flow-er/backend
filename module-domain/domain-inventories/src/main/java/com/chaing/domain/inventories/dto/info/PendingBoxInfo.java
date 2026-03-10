@@ -6,9 +6,11 @@ import com.chaing.domain.inventories.dto.raw.InboundRawData;
 public record PendingBoxInfo(
         String boxCode,
         Long productId,
+        Long countItem,
+        Long orderId,
         LogType status
 ) {
-    public static PendingBoxInfo fromBox(InboundRawData raw) {
-        return new PendingBoxInfo(raw.getBoxCode(), raw.getProductId(), LogType.INBOUND_WAIT);
+    public static PendingBoxInfo fromBox(InboundRawData raw, Long countItem, Long orderId) {
+        return new PendingBoxInfo(raw.getBoxCode(), raw.getProductId(), countItem, orderId, LogType.INBOUND_WAIT);
     }
 }

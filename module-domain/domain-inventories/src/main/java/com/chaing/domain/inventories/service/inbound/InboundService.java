@@ -9,6 +9,7 @@ import com.chaing.domain.inventories.usecase.inbound.validator.InboundValidator;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 public abstract class InboundService<T, R extends InboundRawData> {
@@ -36,8 +37,22 @@ public abstract class InboundService<T, R extends InboundRawData> {
 
         return rawData.stream()
                 .filter(d -> isFranchise(d, franchiseId))
-                .map(d -> PendingBoxInfo.fromBox((InboundRawData) d))
-                .distinct()
+
+                .collect(Collectors.groupingBy(
+                        d -> ((InboundRawData) d).getBoxCode()
+                ))
+                .entrySet().stream()
+                .map(entry -> {
+                    String boxCode = entry.getKey();
+                    List<R> itemsInBox = entry.getValue();
+
+                    long countItem = itemsInBox.size();
+
+                    InboundRawData firstItem = (InboundRawData) itemsInBox.get(0);
+                    Long orderId = firstItem.getOrderId();
+
+                    return PendingBoxInfo.fromBox(firstItem, countItem, orderId);
+                })
                 .toList();
     }
 
@@ -46,9 +61,12 @@ public abstract class InboundService<T, R extends InboundRawData> {
         List<R> rawData = getRawPendingData();
 
         return rawData.stream()
-                .filter(d -> d.getBoxCode().equals(boxCode))
-                .map(d -> PendingItemInfo.fromItem((InboundRawData) d))
-                .distinct()
+                .filter(inventory -> inventory.getBoxCode().equals(boxCode))
+                .map(inventory -> new PendingItemInfo(
+                        inventory.getProductId(),
+                        inventory.getSerialCode(),
+                        inventory.getManufactureDate()
+                ))
                 .toList();
     }
 

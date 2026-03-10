@@ -26,4 +26,7 @@ public interface VehicleRepository extends JpaRepository<Vehicle,Long> {
     @Modifying(clearAutomatically = true)
     @Query("UPDATE Vehicle v SET v.deletedAt = CURRENT_TIMESTAMP WHERE v.transportId = :transportId AND v.deletedAt IS NULL")
     void deleteVehiclesByTransportId(Long transportId);
+
+    @Query("SELECT v.transportId FROM Vehicle v WHERE v.vehicleId = :vehicleId")
+    Long findTransportIdByVehicleId(Long vehicleId);
 }

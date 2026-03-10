@@ -32,10 +32,10 @@ public class FactoryOrderController {
     @GetMapping("/accepted")
     @PreAuthorize("hasAnyRole('FACTORY', 'ADMIN')")
     public ResponseEntity<ApiResponse<List<FactoryOrderResponse>>> getAllOrders(
-            @RequestParam boolean isAll
+            @RequestParam(defaultValue = "false") boolean isAll
     ) {
         return ResponseEntity.ok(ApiResponse.success(factoryFacade.getAllOrders(isAll)));
-    }
+    }   // 프론트에 API에 대한 변경점 반영해야함
 
     @Operation(summary = "발주 상태 변경", description = "발주 상태를 접수/반려로 변경")
     @PatchMapping

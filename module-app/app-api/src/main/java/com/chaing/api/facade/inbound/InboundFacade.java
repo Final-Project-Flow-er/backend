@@ -66,8 +66,11 @@ public class InboundFacade {
         // productId로 productName, productCode 조회
         Map<Long, ProductInfo> productMap = productService.getProductInfos(productIds);
 
-        Map<Long, FranchiseOrderForTransitResponse> orderMap = orderService.getOrdersForOutbound(orderIds)
-                .stream().collect(Collectors.toMap(
+        Map<Long, FranchiseOrderForTransitResponse> orderMap = orderIds.isEmpty()
+                ? Map.of()
+                : orderService.getOrdersForOutbound(orderIds)
+                .stream()
+                .collect(Collectors.toMap(
                         FranchiseOrderForTransitResponse::orderId,
                         o -> o,
                         (existing, replacement) -> existing // 중복 시 기존 것 유지

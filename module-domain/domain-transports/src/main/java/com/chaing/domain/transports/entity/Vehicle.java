@@ -82,7 +82,9 @@ public class Vehicle extends BaseEntity {
         if (command.status() != null) {
             this.status = command.status();
             if (this.status == UsableStatus.ACTIVE) {
-                this.dispatchable = Dispatchable.AVAILABLE;
+                if (this.dispatchable == Dispatchable.UNAVAILABLE) {
+                    this.dispatchable = Dispatchable.AVAILABLE;
+                }
             } else if (this.status == UsableStatus.INACTIVE) {
                 this.dispatchable = Dispatchable.UNAVAILABLE;
             }

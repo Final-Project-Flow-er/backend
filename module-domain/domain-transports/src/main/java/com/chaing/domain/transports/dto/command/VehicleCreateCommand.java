@@ -12,7 +12,7 @@ public record VehicleCreateCommand(
         @NotBlank(message = "차량 번호는 필수입니다.")
         String vehicleNumber,
 
-        @NotBlank(message = "차량 종류는 필수입니다.")
+        @NotNull(message = "차량 종류는 필수입니다.")
         VehicleType vehicleType,
 
         @NotBlank(message = "운전자 이름은 필수입니다.")

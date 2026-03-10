@@ -1,6 +1,7 @@
 package com.chaing.domain.returns.service;
 
 import com.chaing.core.dto.command.FranchiseInventoryCommand;
+import com.chaing.core.enums.ReturnItemStatus;
 import com.chaing.domain.returns.dto.command.HQReturnCommand;
 import com.chaing.domain.returns.dto.command.HQReturnDetailCommand;
 import com.chaing.domain.returns.dto.command.ReturnCommand;
@@ -12,7 +13,6 @@ import com.chaing.domain.returns.dto.request.HQReturnUpdateRequest;
 import com.chaing.domain.returns.dto.response.ReturnInfo;
 import com.chaing.domain.returns.entity.ReturnItem;
 import com.chaing.domain.returns.entity.Returns;
-import com.chaing.core.enums.ReturnItemStatus;
 import com.chaing.domain.returns.enums.ReturnStatus;
 import com.chaing.domain.returns.exception.FranchiseReturnErrorCode;
 import com.chaing.domain.returns.exception.FranchiseReturnException;
@@ -243,17 +243,17 @@ public class FranchiseReturnService {
     }
 
     // 반품 요청 상태 변경
-    public List<ReturnInfo> updateReturnStatus(List<@NotBlank String> returnCodes) {
-        List<Returns> items = franchiseReturnRepository.findAllByReturnCodeIn(returnCodes);
+    public List<ReturnCommand> acceptReturn(List<@NotBlank String> returnCodes) {
+        List<Returns> items = franchiseReturnRepository.findAllByReturnCodeInAndDeletedAtIsNull(returnCodes);
 
         if (items == null || items.isEmpty()) {
             throw new FranchiseReturnException(FranchiseReturnErrorCode.RETURN_NOT_FOUND);
         }
 
-        items.forEach(Returns::updateStatus);
+        items.forEach(Returns::acceptReturn);
 
         return items.stream()
-                .map(ReturnInfo::from)
+                .map(ReturnCommand::from)
                 .toList();
     }
 

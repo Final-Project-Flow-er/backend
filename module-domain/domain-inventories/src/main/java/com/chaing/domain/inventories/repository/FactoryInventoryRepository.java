@@ -19,8 +19,8 @@ public interface FactoryInventoryRepository extends JpaRepository<FactoryInvento
     List<FactoryInventory> findAllByOrderId(Long orderId);
 
     @Modifying
-    @Query("UPDATE FactoryInventory i SET i.status = 'INBOUND' WHERE i.serialCode IN :serials")
-    void updateAllStatusInboundBySerialCode(@Param("serials") List<String> serials);
+    @Query("UPDATE FactoryInventory i SET i.status = 'AVAILABLE' WHERE i.serialCode IN :serials")
+    void updateAllStatusAvailableBySerialCode(@Param("serials") List<String> serials);
 
     List<FactoryInventory> findAllBySerialCodeIn(List<String> selectedList);
 

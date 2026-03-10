@@ -26,16 +26,16 @@ public class InventoryLogService {
 
     private final InventoryLogRepository inventoryLogRepository;
 
-    public InventoryLogListResponse findReturnInboundLogs(LogRequest request, Pageable pageable) {
-        return inventoryLogRepository.findReturnInboundLogs(request, pageable);
+    public InventoryLogListResponse findReturnInboundLogs(Long hqId, LogRequest request, Pageable pageable) {
+        return inventoryLogRepository.findReturnInboundLogs(hqId, request, pageable);
     }
 
-    public InventoryLogListResponse findReturnOutboundLogs(LogRequest logRequest, Pageable pageable) {
-        return inventoryLogRepository.findReturnOutboundLogs(logRequest, pageable);
+    public InventoryLogListResponse findReturnOutboundLogs(Long hqId, LogRequest logRequest, Pageable pageable) {
+        return inventoryLogRepository.findReturnOutboundLogs(hqId, logRequest, pageable);
     }
 
-    public InventoryLogListResponse findDisposalLogs(LogRequest logRequest, Pageable pageable) {
-        return inventoryLogRepository.findDisposalLogs(logRequest, pageable);
+    public InventoryLogListResponse findDisposalLogs(Long hqId, LogRequest logRequest, Pageable pageable) {
+        return inventoryLogRepository.findDisposalLogs(hqId, logRequest, pageable);
     }
 
     public FranchiseInventoryLogListResponse findFranchiseInboundOutboundLogs(Long franchiseId,

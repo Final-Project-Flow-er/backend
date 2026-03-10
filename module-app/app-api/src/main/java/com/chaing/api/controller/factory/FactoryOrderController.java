@@ -41,8 +41,9 @@ public class FactoryOrderController {
     @PatchMapping
     @PreAuthorize("hasAnyRole('FACTORY', 'ADMIN')")
     public ResponseEntity<ApiResponse<List<FactoryOrderUpdateResponse>>> updateOrder(
-            @Valid @RequestBody FactoryOrderRequest request
+            @Valid @RequestBody FactoryOrderRequest request,
+            @RequestParam(defaultValue = "true") boolean isAccept
     ) {
-        return ResponseEntity.ok(ApiResponse.success(factoryFacade.updateOrders(request)));
+        return ResponseEntity.ok(ApiResponse.success(factoryFacade.updateOrders(request, isAccept)));
     }
 }

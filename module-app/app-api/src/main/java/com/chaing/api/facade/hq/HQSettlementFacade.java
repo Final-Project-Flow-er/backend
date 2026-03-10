@@ -224,7 +224,7 @@ public class HQSettlementFacade {
 
             return lines.map(line -> new FranchiseVoucherResponse(
                     line.getReferenceCode(),
-                    line.getType(),
+                    line.getLineType(),
                     line.getDescription(),
                     line.getQuantity(),
                     line.getAmount(),

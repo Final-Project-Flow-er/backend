@@ -282,6 +282,10 @@ public class HQOrderService {
     public Map<Long, HQOrderCommand> getAllPendingOrders() {
         List<HeadOfficeOrder> orders = orderRepository.findAllByOrderStatusAndDeletedAtIsNull(HQOrderStatus.PENDING);
 
+        if (orders == null || orders.isEmpty()) {
+            throw new HQOrderException(HQOrderErrorCode.ORDER_NOT_FOUND);
+        }
+
         return orders.stream()
                 .collect(Collectors.toMap(
                         HeadOfficeOrder::getHeadOfficeOrderId,
@@ -292,7 +296,7 @@ public class HQOrderService {
     // 대기 상태 발주 제품 정보 조회
     // return: Map<orderId, List<HQOrderItemCommand>>
     public Map<Long, List<com.chaing.domain.orders.dto.command.HQOrderItemCommand>> getOrderItemIdsByOrderId(List<Long> orderIds) {
-        List<HeadOfficeOrderItem> orderItems = orderItemRepository.findAllByHeadOfficeOrder_HeadOfficeOrderIdIn(orderIds);
+        List<HeadOfficeOrderItem> orderItems = orderItemRepository.findAllByHeadOfficeOrder_HeadOfficeOrderIdInAndDeletedAtIsNull(orderIds);
 
         if (orderItems == null || orderItems.isEmpty()) {
             throw new HQOrderException(HQOrderErrorCode.ORDER_ITEM_NOT_FOUND);
@@ -322,7 +326,7 @@ public class HQOrderService {
 
     // 발주 전체 조회
     public Map<Long, HQOrderCommand> getAllOrdersByFactory() {
-        List<HeadOfficeOrder> orders = orderRepository.findAll();
+        List<HeadOfficeOrder> orders = orderRepository.findAllByDeletedAtIsNull();
 
         return orders.stream()
                 .collect(Collectors.toMap(

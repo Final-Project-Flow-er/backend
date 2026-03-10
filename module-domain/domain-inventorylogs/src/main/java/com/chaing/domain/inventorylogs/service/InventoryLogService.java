@@ -1,10 +1,14 @@
 package com.chaing.domain.inventorylogs.service;
 
+import org.springframework.data.domain.Pageable;
+
 import com.chaing.core.enums.LogType;
 import com.chaing.domain.inventorylogs.dto.request.FactoryLogRequest;
 import com.chaing.domain.inventorylogs.dto.request.FranchiseLogRequest;
 import com.chaing.domain.inventorylogs.dto.request.InventoryLogCreateRequest;
 import com.chaing.domain.inventorylogs.dto.request.LogRequest;
+import com.chaing.domain.inventorylogs.dto.response.BoxCodeResponse;
+import com.chaing.domain.inventorylogs.dto.response.FactoryInventoryLogListResponse;
 import com.chaing.domain.inventorylogs.dto.response.FranchiseInventoryLogListResponse;
 import com.chaing.domain.inventorylogs.dto.response.ActorProductSalesResponse;
 import com.chaing.domain.inventorylogs.dto.response.InventoryLogListResponse;
@@ -22,30 +26,31 @@ public class InventoryLogService {
 
     private final InventoryLogRepository inventoryLogRepository;
 
-    public InventoryLogListResponse findReturnInboundLogs(LogRequest request) {
-        return inventoryLogRepository.findReturnInboundLogs(request);
+    public InventoryLogListResponse findReturnInboundLogs(LogRequest request, Pageable pageable) {
+        return inventoryLogRepository.findReturnInboundLogs(request, pageable);
     }
 
-    public InventoryLogListResponse findReturnOutboundLogs(LogRequest logRequest) {
-        return inventoryLogRepository.findReturnOutboundLogs(logRequest);
+    public InventoryLogListResponse findReturnOutboundLogs(LogRequest logRequest, Pageable pageable) {
+        return inventoryLogRepository.findReturnOutboundLogs(logRequest, pageable);
     }
 
-    public InventoryLogListResponse findDisposalLogs(LogRequest logRequest) {
-        return inventoryLogRepository.findDisposalLogs(logRequest);
+    public InventoryLogListResponse findDisposalLogs(LogRequest logRequest, Pageable pageable) {
+        return inventoryLogRepository.findDisposalLogs(logRequest, pageable);
     }
 
     public FranchiseInventoryLogListResponse findFranchiseInboundOutboundLogs(Long franchiseId,
-            FranchiseLogRequest request) {
-        return inventoryLogRepository.findFranchiseInboundOutboundLogs(franchiseId, request);
+            FranchiseLogRequest request, Pageable pageable) {
+        return inventoryLogRepository.findFranchiseInboundOutboundLogs(franchiseId, request, pageable);
     }
 
     public FranchiseInventoryLogListResponse findFranchiseSalesRefundLogs(Long franchiseId,
-            FranchiseLogRequest request) {
-        return inventoryLogRepository.findFranchiseSalesRefundLogs(franchiseId, request);
+            FranchiseLogRequest request, Pageable pageable) {
+        return inventoryLogRepository.findFranchiseSalesRefundLogs(franchiseId, request, pageable);
     }
 
-    public InventoryLogListResponse findFactoryInventoryLogs(Long factoryId, FactoryLogRequest request) {
-        return inventoryLogRepository.findFactoryInventoryLogs(factoryId, request);
+    public FactoryInventoryLogListResponse findFactoryInventoryLogs(Long factoryId, FactoryLogRequest request,
+            Pageable pageable) {
+        return inventoryLogRepository.findFactoryInventoryLogs(factoryId, request, pageable);
     }
 
     public List<ActorProductSalesResponse> getProductSales(List<Long> actorIds, List<Long> productIds,
@@ -69,8 +74,6 @@ public class InventoryLogService {
                 .transactionCode(request.transactionCode())
                 .logType(request.logType()) // 받을 때 스캔하면 INBOUND, 보낼때 스캔하면 OUTBOUND
                 .quantity(request.quantity())
-                .supplyPrice(request.supplyPrice())
-                .price(request.price())
                 .fromLocationType(request.fromLocationType())
                 .fromLocationId(request.fromLocationId())
                 .toLocationType(request.toLocationType())
@@ -78,5 +81,9 @@ public class InventoryLogService {
                 .actorType(request.actorType())
                 .actorId(request.actorId())
                 .build();
+    }
+
+    public List<BoxCodeResponse> findBoxCodesByTransactionCode(String transactionCode) {
+        return inventoryLogRepository.findBoxCodesByTransactionCode(transactionCode);
     }
 }

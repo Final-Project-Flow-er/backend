@@ -4,6 +4,7 @@ import com.chaing.domain.products.dto.request.ProductRequest;
 import com.chaing.domain.products.dto.request.ProductSearchRequest;
 import com.chaing.domain.products.dto.request.ProductUpdateRequest;
 import com.chaing.domain.products.dto.response.ProductListResponse;
+import com.chaing.domain.products.entity.Component;
 import com.chaing.domain.products.entity.Product;
 import com.chaing.domain.products.entity.ProductComponent;
 import com.chaing.domain.products.entity.ProductType;
@@ -25,6 +26,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.Mockito.*;
@@ -96,10 +98,11 @@ class ProductServiceTests {
                 doReturn(10L).when(productService).existType("OR0101");
 
                 // 구성품 Mocking
+                AtomicLong componentIdSeq = new AtomicLong(1L);
                 when(componentRepository.findByName(anyString())).thenReturn(Optional.empty());
                 when(componentRepository.save(any())).thenAnswer(inv -> {
-                        com.chaing.domain.products.entity.Component c = inv.getArgument(0);
-                        ReflectionTestUtils.setField(c, "componentId", 1L); // Just need an ID
+                        Component c = inv.getArgument(0);
+                        ReflectionTestUtils.setField(c, "componentId", componentIdSeq.getAndIncrement());
                         return c;
                 });
 

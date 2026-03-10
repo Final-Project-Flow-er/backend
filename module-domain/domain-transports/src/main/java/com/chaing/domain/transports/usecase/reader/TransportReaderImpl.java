@@ -52,7 +52,18 @@ public class TransportReaderImpl implements TransportReader {
 
     @Override
     public Long getDeliveryFee(Long vehicleId) {
-        return transportRepository
-                .findUnitPriceByTransportId(vehicleRepository.findTransportIdByVehicleId(vehicleId));
+        Long transportId = vehicleRepository.findTransportIdByVehicleId(vehicleId);
+
+        if(transportId == null) {
+            throw new TransportException(TransportErrorCode.TRANSPORT_VENDOR_NOT_FOUND);
+        }
+
+        Long unitPrice = transportRepository.findUnitPriceByTransportId(transportId);
+
+        if(unitPrice == null) {
+            throw new TransportException(TransportErrorCode.TRANSPORT_PRICE_IS_NULL);
+        }
+
+        return unitPrice;
     }
 }

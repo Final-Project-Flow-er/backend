@@ -40,10 +40,4 @@ public class HeadquarterServiceImpl implements BusinessUnitService {
 
         return hq.getHqCode();
     }
-
-    // HqId 조회
-    public Long getHqId() {
-
-        return 1L;
-    }
 }

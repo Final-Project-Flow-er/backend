@@ -5,6 +5,7 @@ import com.chaing.core.dto.info.ReturnItemInfo;
 import com.chaing.core.dto.request.FranchiseReturnUpdateRequest;
 import com.chaing.core.dto.returns.request.ReturnToInventoryRequest;
 import com.chaing.core.enums.LogType;
+import com.chaing.core.enums.ReturnItemStatus;
 import com.chaing.domain.inventories.dto.request.DisposalRequest;
 import com.chaing.domain.inventories.dto.request.FranchiseInventoryItemsRequest;
 import com.chaing.domain.inventories.dto.request.HQInventoryItemsRequest;
@@ -34,8 +35,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -429,5 +432,48 @@ public class InventoryService {
 
     public List<FactoryInventory> getFactoryInventoriesByIds(List<Long> inventoryIds) {
         return factoryInventoryRepository.findAllById(inventoryIds);
+    }
+
+    // return: 데이터 누락 있는지 없는지
+    public void verifyOmission(List<String> requestedBoxCodes) {
+        List<HQInventory> inventories = hqInventoryRepository.findAllByBoxCodeInAndDeletedAtIsNull(requestedBoxCodes);
+
+        Set<String> boxCodes = inventories.stream()
+                .map(HQInventory::getBoxCode)
+                .collect(Collectors.toSet());
+
+        if (boxCodes.isEmpty() || boxCodes.size() != requestedBoxCodes.size()) {
+            throw new InventoriesException(InventoriesErrorCode.DATA_OMISSION);
+        }
+    }
+
+    // 제품 검수 결과 저장
+    public void saveInspectionResults(
+            List<String> boxCodes,
+            Map<String, ReturnItemStatus> finalStatusByBoxCode,
+            Map<String, Boolean> isInspectedBySerialCode
+    ) {
+        List<HQInventory> inventories = hqInventoryRepository.findAllByBoxCodeInAndDeletedAtIsNull(boxCodes);
+
+        Set<String> existingBoxCodes = inventories.stream()
+                .map(HQInventory::getBoxCode)
+                .collect(Collectors.toSet());
+
+        if (existingBoxCodes.isEmpty() || !existingBoxCodes.containsAll(new HashSet<>(boxCodes))) {
+            throw new InventoriesException(InventoriesErrorCode.DATA_OMISSION);
+        }
+
+        for (HQInventory item : inventories) {
+            Boolean isInspected = isInspectedBySerialCode.get(item.getSerialCode());
+            ReturnItemStatus returnItemStatus = finalStatusByBoxCode.get(item.getBoxCode());
+
+            if (isInspected == null || returnItemStatus == null) {
+                throw new InventoriesException(InventoriesErrorCode.DATA_OMISSION);
+            }
+
+            item.updateInspection(isInspected, returnItemStatus);
+        }
+
+        hqInventoryRepository.saveAll(inventories);
     }
 }

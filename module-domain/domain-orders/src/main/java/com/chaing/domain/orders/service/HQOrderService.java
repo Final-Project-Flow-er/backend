@@ -284,10 +284,6 @@ public class HQOrderService {
     public Map<Long, HQOrderCommand> getAllPendingOrders() {
         List<HeadOfficeOrder> orders = orderRepository.findAllByOrderStatusAndDeletedAtIsNull(HQOrderStatus.PENDING);
 
-        if (orders == null || orders.isEmpty()) {
-            throw new HQOrderException(HQOrderErrorCode.ORDER_NOT_FOUND);
-        }
-
         return orders.stream()
                 .collect(Collectors.toMap(
                         HeadOfficeOrder::getHeadOfficeOrderId,

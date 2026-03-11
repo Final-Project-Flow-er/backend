@@ -42,7 +42,7 @@ public class FactoryOrderController {
     @PreAuthorize("hasAnyRole('FACTORY', 'ADMIN')")
     public ResponseEntity<ApiResponse<List<FactoryOrderUpdateResponse>>> updateOrder(
             @Valid @RequestBody FactoryOrderRequest request,
-            @RequestParam(defaultValue = "true") boolean isAccept
+            @RequestParam boolean isAccept
     ) {
         return ResponseEntity.ok(ApiResponse.success(factoryFacade.updateOrders(request, isAccept)));
     }

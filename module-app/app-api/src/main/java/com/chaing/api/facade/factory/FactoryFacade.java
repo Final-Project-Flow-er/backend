@@ -14,6 +14,7 @@ import com.chaing.domain.products.service.ProductService;
 import com.chaing.domain.users.service.UserManagementService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +24,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -43,6 +45,11 @@ public class FactoryFacade {
         } else {
             // 대기 발주 조회
             ordersByOrderId = hqOrderService.getAllPendingOrders();
+        }
+        log.info("orders: {}", ordersByOrderId);
+        // 발주 존재하지 않을 시 빈 배열 반환
+        if (ordersByOrderId == null || ordersByOrderId.isEmpty()) {
+            return List.of();
         }
 
         // List<orderId>
@@ -69,7 +76,6 @@ public class FactoryFacade {
                         entry -> userManagementService.getPhoneNumberByUserId(entry.getValue())
                 ));
 
-        // 대기 상태 발주 제품 정보 조회
         // Map<orderId, List<HQOrderItemCommand>>
         Map<Long, List<HQOrderItemCommand>> orderItemsByOrderId = hqOrderService.getOrderItemIdsByOrderId(orderIds);
 

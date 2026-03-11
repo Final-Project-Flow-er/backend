@@ -1,6 +1,7 @@
 package com.chaing.api.controller.hq;
 
 import com.chaing.api.facade.hq.HQInventoryFacade;
+import com.chaing.api.security.principal.UserPrincipal;
 import com.chaing.core.dto.ApiResponse;
 import com.chaing.domain.inventories.dto.request.DisposalRequest;
 import com.chaing.domain.inventories.dto.request.FranchiseInventoryItemsRequest;
@@ -20,6 +21,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -27,6 +29,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.Map;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -47,6 +51,12 @@ public class HQInventoryController {
         StockSearchRequest request = new StockSearchRequest(productCode, name, status);
         return ResponseEntity.ok(
                 ApiResponse.success(hqInventoryFacade.getStock(request)));
+    }
+
+    @Operation(summary = "가맹점 목록 조회", description = "재고 관리용 가맹점 ID와 이름 목록을 반환합니다.")
+    @GetMapping("/franchises")
+    public ResponseEntity<ApiResponse<Map<Long, String>>> getFranchiseList() {
+        return ResponseEntity.ok(ApiResponse.success(hqInventoryFacade.getFranchiseList()));
     }
 
     @Operation(summary = "재고 증가", description = "재고 증가와 동시에 로그 기록합니다.")
@@ -100,6 +110,13 @@ public class HQInventoryController {
         return ResponseEntity.ok(ApiResponse.success(hqInventoryFacade.getFranchiseStock(franchiseId, request)));
     }
 
+    @Operation(summary = "특정 가맹점 재고 알림 조회", description = "특정 가맹점의 유통기한 및 재고 알림 목록을 조회합니다.")
+    @GetMapping("/franchises/{franchiseId}/alerts")
+    public ResponseEntity<ApiResponse<InventoryAlertResponse>> getFranchiseInventoryAlerts(
+            @PathVariable Long franchiseId) {
+        return ResponseEntity.ok(ApiResponse.success(hqInventoryFacade.getFranchiseInventoryAlerts(franchiseId)));
+    }
+
     @Operation(summary = "특정 가맹점의 재고 중분류", description = "본사가 특정 가맹점의 제조일자별 수량을 확인합니다.")
     @GetMapping("/franchises/{franchiseId}/batches/{productId}")
     public ResponseEntity<ApiResponse<List<FranchiseInventoryBatchResponse>>> getFranchiseBatches(
@@ -132,16 +149,38 @@ public class HQInventoryController {
 
     @Operation(summary = "폐기 처리", description = "제품을 폐기합니다.")
     @PostMapping("/disposal")
-    public ResponseEntity<ApiResponse<Void>> disposalInventory(@Valid @RequestBody DisposalRequest request) {
-        return ResponseEntity.ok(ApiResponse.success(hqInventoryFacade.disposalInventory(request)));
+    public ResponseEntity<ApiResponse<Void>> disposalInventory(@AuthenticationPrincipal UserPrincipal principal,
+            @Valid @RequestBody DisposalRequest request) {
+        return ResponseEntity
+                .ok(ApiResponse.success(hqInventoryFacade.disposalInventory(request, principal.getBusinessUnitId())));
     }
 
     @Operation(summary = "안전재고 설정", description = "관리자가 직접 안전재고를 설정합니다.")
     @PostMapping("/set/safety-stock")
     public ResponseEntity<ApiResponse<Void>> setSafetyStock(
             @RequestBody SafetyStockRequest request) {
-        hqInventoryFacade.setSafetyStock(request);
+        SafetyStockRequest validRequest = new SafetyStockRequest(
+                "FACTORY",
+                1L, // 공장 아이디 고정
+                request.productId(),
+                request.safetyStock());
+        hqInventoryFacade.setSafetyStock(validRequest);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
+    @Operation(summary = "안전재고 초기화", description = "시스템이 계산한 권장 안전재고로 돌아갑니다.")
+    @PostMapping("/reset/safety-stock/{productId}")
+    public ResponseEntity<ApiResponse<Void>> resetSafetyStock(@PathVariable Long productId) {
+        hqInventoryFacade.resetSafetyStock(1L, productId);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @Operation(summary = "안전재고 설정 비밀번호 확인", description = "관리자 비밀번호가 실제 사용자 비밀번호와 일치하는지 확인합니다.")
+    @PostMapping("/verify-password")
+    public ResponseEntity<ApiResponse<Boolean>> verifyPassword(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @RequestBody Map<String, String> request) {
+        return ResponseEntity.ok(ApiResponse.success(
+                hqInventoryFacade.verifyAdminPassword(principal.getId(), request.get("password"))));
+    }
 }

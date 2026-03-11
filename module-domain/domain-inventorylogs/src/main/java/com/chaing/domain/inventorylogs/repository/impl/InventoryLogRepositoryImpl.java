@@ -39,6 +39,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @Repository
 @RequiredArgsConstructor
@@ -490,7 +491,7 @@ public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom 
                                 actorIdsCondition = log.actorId.in(nonNullActorIds);
                         }
 
-                        if (actorIds.contains(null)) {
+                        if (actorIds.stream().anyMatch(Objects::isNull)) {
                                 actorIdsCondition = (actorIdsCondition == null)
                                                 ? log.actorId.isNull()
                                                 : actorIdsCondition.or(log.actorId.isNull());

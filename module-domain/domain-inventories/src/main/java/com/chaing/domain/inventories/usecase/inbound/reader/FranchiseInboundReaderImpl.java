@@ -34,6 +34,7 @@ public class FranchiseInboundReaderImpl implements InboundReader<FranchiseInvent
                         entity.getSerialCode(),
                         entity.getManufactureDate(),
                         entity.getFranchiseId(),
+                        entity.getOrderId(),
                         entity.getStatus()
                 ))
                 .toList();
@@ -50,6 +51,7 @@ public class FranchiseInboundReaderImpl implements InboundReader<FranchiseInvent
                         entity.getSerialCode(),
                         entity.getManufactureDate(),
                         entity.getFranchiseId(),
+                        entity.getOrderId(),
                         entity.getStatus()
                 ))
                 .toList();

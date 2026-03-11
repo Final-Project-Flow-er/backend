@@ -29,6 +29,6 @@ public class FactoryInboundExecutorImpl implements InboundExecutor<FactoryInboun
     @Override
     @Transactional
     public void confirmAll(List<String> confirmedIds) {
-        repository.updateAllStatusInboundBySerialCode(confirmedIds);
+        repository.updateAllStatusAvailableBySerialCode(confirmedIds);
     }
 }

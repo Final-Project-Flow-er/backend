@@ -29,20 +29,21 @@ public class FactoryOrderController {
     private final FactoryFacade factoryFacade;
 
     @Operation(summary = "발주 조회", description = "본사의 발주 대기/전체 조회")
-    @GetMapping("/accepted")
+    @GetMapping
     @PreAuthorize("hasAnyRole('FACTORY', 'ADMIN')")
     public ResponseEntity<ApiResponse<List<FactoryOrderResponse>>> getAllOrders(
-            @RequestParam Boolean isAccepted
+            @RequestParam(defaultValue = "false") boolean isAll
     ) {
-        return ResponseEntity.ok(ApiResponse.success(factoryFacade.getAllOrders(isAccepted)));
+        return ResponseEntity.ok(ApiResponse.success(factoryFacade.getAllOrders(isAll)));
     }
 
     @Operation(summary = "발주 상태 변경", description = "발주 상태를 접수/반려로 변경")
     @PatchMapping
     @PreAuthorize("hasAnyRole('FACTORY', 'ADMIN')")
     public ResponseEntity<ApiResponse<List<FactoryOrderUpdateResponse>>> updateOrder(
-            @Valid @RequestBody FactoryOrderRequest request
+            @Valid @RequestBody FactoryOrderRequest request,
+            @RequestParam boolean isAccept
     ) {
-        return ResponseEntity.ok(ApiResponse.success(factoryFacade.updateOrders(request)));
+        return ResponseEntity.ok(ApiResponse.success(factoryFacade.updateOrders(request, isAccept)));
     }
 }

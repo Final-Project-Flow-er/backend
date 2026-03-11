@@ -16,7 +16,8 @@ import java.util.List;
 @Component
 @Qualifier("factory")
 @RequiredArgsConstructor
-public class FactoryInboundValidatorImpl implements InboundValidator<FactoryInboundCreateCommand, FactoryInventoryRawData> {
+public class FactoryInboundValidatorImpl
+        implements InboundValidator<FactoryInboundCreateCommand, FactoryInventoryRawData> {
 
     @Qualifier("factory")
     private final InboundReader<FactoryInventoryRawData> inboundReader;
@@ -40,40 +41,40 @@ public class FactoryInboundValidatorImpl implements InboundValidator<FactoryInbo
         LocalDate date = command.manufactureDate();
 
         // 식별 코드 누락 확인
-        if(serialCode == null || serialCode.isBlank()) {
+        if (serialCode == null || serialCode.isBlank()) {
             throw new InventoriesException(InventoriesErrorCode.INVENTORIES_SERIAL_CODE_IS_NULL);
         }
 
         // 식별 코드 유효성 확인
-        if(serialCode.length() != SERIAL_CODE_LENGTH) {
+        if (serialCode.length() != SERIAL_CODE_LENGTH) {
             throw new InventoriesException(InventoriesErrorCode.INVALID_SERIAL_CODE);
         }
 
         // 날짜 누락 확인
-        if(date == null) {
+        if (date == null) {
             throw new InventoriesException(InventoriesErrorCode.INVENTORIES_MANUFACTURED_DATE_IS_NULL);
         }
 
         // 날짜 유효성 확인
-        if(date.isAfter(LocalDate.now())){
+        if (date.isAfter(LocalDate.now())) {
             throw new InventoriesException(InventoriesErrorCode.INVALID_MANUFACTURED_DATE);
         }
     }
 
     @Override
     public void checkPendingDataExistence(List<FactoryInventoryRawData> entities) {
-        if(entities.isEmpty() || entities == null) {
+        if (entities == null || entities.isEmpty()) {
             throw new InventoriesException(InventoriesErrorCode.INVENTORIES_IS_NULL);
         }
 
         for (FactoryInventoryRawData entity : entities) {
-            if(entity.status() == null) {
+            if (entity.status() == null) {
                 throw new InventoriesException(InventoriesErrorCode.INVENTORIES_IS_INVALID);
             }
-            if(entity.serialCode() == null) {
+            if (entity.serialCode() == null) {
                 throw new InventoriesException(InventoriesErrorCode.INVENTORIES_IS_INVALID);
             }
-            if(entity.manufactureDate() == null) {
+            if (entity.manufactureDate() == null) {
                 throw new InventoriesException(InventoriesErrorCode.INVENTORIES_IS_INVALID);
             }
         }
@@ -85,7 +86,7 @@ public class FactoryInboundValidatorImpl implements InboundValidator<FactoryInbo
         boolean hasInvalidStatus = statuses.stream()
                 .anyMatch(status -> status != LogType.INBOUND_WAIT);
 
-        if(hasInvalidStatus) {
+        if (hasInvalidStatus) {
             throw new InventoriesException(InventoriesErrorCode.INVALID_INBOUND_STATUS);
         }
     }

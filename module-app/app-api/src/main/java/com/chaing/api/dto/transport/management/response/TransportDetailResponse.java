@@ -10,6 +10,7 @@ import java.time.LocalDate;
 @Builder
 public record TransportDetailResponse(
 
+        Long id,
         String companyName,
         String manager,
         String officePhone,
@@ -23,6 +24,7 @@ public record TransportDetailResponse(
 ) {
     public static TransportDetailResponse from(Transport transport) {
         return new TransportDetailResponse(
+                transport.getTransportId(),
                 transport.getCompanyName(),
                 transport.getManager(),
                 transport.getOfficePhone(),

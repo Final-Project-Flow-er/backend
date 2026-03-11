@@ -8,6 +8,7 @@ import lombok.Builder;
 @Builder
 public record TransportSummaryResponse(
 
+        Long id,
         String companyName,
         String manager,
         String officePhone,
@@ -18,6 +19,7 @@ public record TransportSummaryResponse(
 ) {
     public static TransportSummaryResponse from(Transport transport) {
         return new TransportSummaryResponse(
+                transport.getTransportId(),
                 transport.getCompanyName(),
                 transport.getManager(),
                 transport.getOfficePhone(),

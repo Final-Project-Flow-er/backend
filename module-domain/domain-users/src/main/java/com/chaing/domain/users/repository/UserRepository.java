@@ -40,4 +40,6 @@
 
         @Query("SELECT u.userId FROM User u WHERE u.status = com.chaing.domain.users.enums.UserStatus.ACTIVE")
         List<Long> getAllActiveUserIds();
+
+        List<User> findAllByUserIdIn(List<Long> userIds);
     }

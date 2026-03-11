@@ -25,7 +25,8 @@ public class TransportExecutorImpl implements TransportExecutor {
                         vehicleId,
                         order.orderCode(),
                         order.weight(),
-                        trackingMap.get(order.orderCode())
+                        trackingMap.get(order.orderCode()),
+                        order.franchiseId()
                 ))
                 .toList();
 

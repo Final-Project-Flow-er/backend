@@ -24,6 +24,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 @Service
@@ -38,6 +40,8 @@ public class NoticeFacade {
     private final MinioService minioService;
     private final ImageService imageService;
 
+    private static final List<String> IMAGE_EXTENSIONS = Arrays.asList("jpg", "jpeg", "png", "gif", "webp", "svg");
+
     // 공지사항 상세 조회
     public NoticeDetailResponse getNoticeDetail(Long id) {
         Notice notice = noticeService.getById(id);
@@ -47,12 +51,26 @@ public class NoticeFacade {
         Notice prev = noticeService.getPreviousNotice(id);
         Notice next = noticeService.getNextNotice(id);
 
-        List<Image> images = imageService.getImagesByTarget(TargetType.NOTICE, id);
-        List<String> imageUrls = images.stream()
-                .map(img -> minioService.getFileUrl(img.getStoredName(), BucketName.NOTICES))
-                .toList();
+        List<Image> files = imageService.getImagesByTarget(TargetType.NOTICE, id);
+        List<NoticeDetailResponse.FileInfo> images = new ArrayList<>();
+        List<NoticeDetailResponse.FileInfo> attachments = new ArrayList<>();
 
-        return NoticeDetailResponse.from(notice, authorName, updaterName, prev, next, imageUrls);
+        for (Image file : files) {
+            String url = minioService.getFileUrl(file.getStoredName(), BucketName.NOTICES);
+            NoticeDetailResponse.FileInfo info = new NoticeDetailResponse.FileInfo(
+                    file.getOriginName(),
+                    file.getStoredName(),
+                    url,
+                    file.getFileSize());
+
+            if (IMAGE_EXTENSIONS.contains(file.getExt().toLowerCase())) {
+                images.add(info);
+            } else {
+                attachments.add(info);
+            }
+        }
+
+        return NoticeDetailResponse.from(notice, authorName, updaterName, prev, next, images, attachments);
     }
 
     // 공지사항 목록 조회
@@ -77,16 +95,22 @@ public class NoticeFacade {
         ));
 
         String authorName = getName(authorId);
-        return NoticeDetailResponse.from(notice, authorName, null, null, null, null);
+        return NoticeDetailResponse.from(notice, authorName, null, null, null, null, null);
     }
 
     // 공지사항 수정
     @Transactional(rollbackFor = Exception.class)
-    public NoticeDetailResponse updateNotice(Long id, UpdateNoticeRequest request, List<MultipartFile> images, Long updaterId) {
+    public NoticeDetailResponse updateNotice(Long id, UpdateNoticeRequest request, List<MultipartFile> images,
+            Long updaterId) {
         Notice notice = noticeService.update(id, request.toCommand(), updaterId);
 
+        if (request.deleteStoredFileNames() != null && !request.deleteStoredFileNames().isEmpty()) {
+            for (String storedName : request.deleteStoredFileNames()) {
+                imageService.deleteByStoredName(storedName, BucketName.NOTICES);
+            }
+        }
+
         if (images != null && !images.isEmpty()) {
-            imageService.deleteAllByTarget(TargetType.NOTICE, id, BucketName.NOTICES);
             imageService.saveImages(images, TargetType.NOTICE, id, BucketName.NOTICES);
         }
 
@@ -96,7 +120,7 @@ public class NoticeFacade {
                 notice.getNoticeId()
         ));
 
-        return NoticeDetailResponse.from(notice, getName(notice.getAuthorId()), getName(updaterId), null, null, null);
+        return NoticeDetailResponse.from(notice, getName(notice.getAuthorId()), getName(updaterId), null, null, null, null);
     }
 
     // 사용자 이름 조회

@@ -20,7 +20,8 @@ public record NoticeDetailResponse(
         LocalDateTime updatedAt,
         NoticeNav prevNotice,
         NoticeNav nextNotice,
-        List<String> imageUrls
+        List<FileInfo> images,
+        List<FileInfo> attachments
 ) {
     public record NoticeNav(Long id, String title) {
         public static NoticeNav from(Notice notice) {
@@ -29,7 +30,10 @@ public record NoticeDetailResponse(
         }
     }
 
-    public static NoticeDetailResponse from(Notice notice, String authorName, String updaterName, Notice prev, Notice next, List<String> imageUrls) {
+    public record FileInfo(String originName, String storedName, String url, Long size) {
+    }
+
+    public static NoticeDetailResponse from(Notice notice, String authorName, String updaterName, Notice prev, Notice next, List<FileInfo> images, List<FileInfo> attachments) {
         return NoticeDetailResponse.builder()
                 .id(notice.getNoticeId())
                 .title(notice.getTitle())
@@ -42,7 +46,8 @@ public record NoticeDetailResponse(
                 .updatedAt(notice.getUpdatedAt())
                 .prevNotice(NoticeNav.from(prev))
                 .nextNotice(NoticeNav.from(next))
-                .imageUrls(imageUrls) // [추가]
+                .images(images)
+                .attachments(attachments)
                 .build();
     }
 }

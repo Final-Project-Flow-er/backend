@@ -19,6 +19,4 @@ public interface FranchiseOrderItemRepository extends JpaRepository<FranchiseOrd
     List<FranchiseOrderItem> findAllByFranchiseOrder_FranchiseOrderIdInAndDeletedAtIsNull(List<Long> orderIds);
 
     List<FranchiseOrderItem> findAllByFranchiseOrder_FranchiseOrderIdAndDeletedAtIsNull(Long orderId);
-
-    List<FranchiseOrderItem> findByFranchiseOrder_FranchiseOrderIdInAndFranchiseOrder_OrderStatusAndDeletedAtIsNull(List<Long> orderIds, FranchiseOrderStatus franchiseOrderStatus);
 }

@@ -11,4 +11,5 @@ public interface BusinessUnitService {
     BusinessUnitInternal getById(Long id);
     Map<Long, String> getNamesByIds(List<Long> ids);
     BusinessUnitInternal updateInfo(Long id, BusinessUnitUpdateCommand command);
+
 }

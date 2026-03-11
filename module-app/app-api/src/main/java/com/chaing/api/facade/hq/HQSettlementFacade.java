@@ -241,6 +241,7 @@ public class HQSettlementFacade {
         // 4. PDF 및 엑셀 다운로드 (URL 반환)
 
         public String getDailyAllSummaryPdf(HQSettlementDailyAllPdfRequest request) {
+                log.info("[DEBUG] Facade - getDailyAllSummaryPdf requested for date: {}", request.date());
                 // 1. 이미 생성된 문서가 있는지 확인
                 com.chaing.domain.settlements.entity.SettlementDocument existingDoc = documentService
                                 .getHQDailyDocument(request.date());
@@ -328,6 +329,8 @@ public class HQSettlementFacade {
 
         public String getDailyFranchiseReceiptPdf(Long franchiseId,
                         HQSettlementFranchiseDailyReceiptPdfRequest request) {
+                log.info("[DEBUG] Facade - getDailyFranchiseReceiptPdf requested for franchiseId: {}, date: {}",
+                                franchiseId, request.date());
                 com.chaing.domain.settlements.entity.DailySettlementReceipt receipt = dailyService
                                 .getByFranchiseAndDate(franchiseId, request.date());
 

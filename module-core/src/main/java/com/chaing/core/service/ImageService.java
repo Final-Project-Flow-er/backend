@@ -52,8 +52,15 @@ public class ImageService {
         imageRepository.deleteAllByTargetTypeAndTargetId(targetType, targetId);
     }
 
+    // 이름으로 이미지 삭제
+    public void deleteByStoredName(String storedName, BucketName bucket) {
+        minioService.deleteFile(storedName, bucket);
+        imageRepository.deleteByStoredName(storedName);
+    }
+
     private String extractExt(String filename) {
-        if (filename == null) return "";
+        if (filename == null)
+            return "";
         return filename.substring(filename.lastIndexOf(".") + 1);
     }
 }

@@ -6,6 +6,8 @@ import com.chaing.core.enums.BucketName;
 import com.chaing.core.repository.ImageRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -29,6 +31,7 @@ public class ImageService {
         for (MultipartFile file : files) {
             String storedName = minioService.generateFileName(file);
             minioService.uploadFile(file, storedName, bucket);
+            registerFileRollback(storedName, bucket);
 
             Image image = Image.builder()
                     .originName(file.getOriginalFilename())
@@ -46,16 +49,48 @@ public class ImageService {
     // 특정 타겟의 모든 이미지 삭제
     public void deleteAllByTarget(TargetType targetType, Long targetId, BucketName bucket) {
         List<Image> images = imageRepository.findAllByTargetTypeAndTargetId(targetType, targetId);
-        for (Image img : images) {
-            minioService.deleteFile(img.getStoredName(), bucket);
-        }
+        if (images.isEmpty()) return;
+
         imageRepository.deleteAllByTargetTypeAndTargetId(targetType, targetId);
+
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCompletion(int status) {
+                if (status == STATUS_COMMITTED) {
+                    images.forEach(img -> minioService.deleteFile(img.getStoredName(), bucket));
+                }
+            }
+        });
     }
 
     // 이름으로 이미지 삭제
     public void deleteByStoredName(String storedName, BucketName bucket) {
-        minioService.deleteFile(storedName, bucket);
         imageRepository.deleteByStoredName(storedName);
+
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCompletion(int status) {
+                    if (status == STATUS_COMMITTED) {
+                        minioService.deleteFile(storedName, bucket);
+                    }
+                }
+            });
+        }
+    }
+
+    // 트랜잭션 롤백 시 MinIO 파일도 삭제
+    private void registerFileRollback(String storedName, BucketName bucket) {
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCompletion(int status) {
+                    if (status == STATUS_ROLLED_BACK) {
+                        minioService.deleteFile(storedName, bucket);
+                    }
+                }
+            });
+        }
     }
 
     private String extractExt(String filename) {

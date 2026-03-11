@@ -68,7 +68,7 @@ public class FactoryInventoryRepositoryImpl implements FactoryInventoryRepositor
                                                 factoryInventory.productId.eq(inventoryPolicy.productId)
                                                                 .and(inventoryPolicy.locationType
                                                                                 .eq(LocationType.FACTORY))
-                                                                .and(inventoryPolicy.locationId.isNotNull()))
+                                                                .and(inventoryPolicy.locationId.eq(1L)))
                                 .where(
                                                 factoryInventory.productId.in(products),
                                                 factoryInventory.status.eq(LogType.AVAILABLE))

@@ -220,7 +220,8 @@ public class HQSettlementFacade {
                                 receipt.getOrderAmount(),
                                 receipt.getDeliveryFee(),
                                 receipt.getLossAmount(),
-                                receipt.getCommissionFee());
+                                receipt.getCommissionFee(),
+                                receipt.getAdjustmentAmount());
         }
 
         public FranchiseSettlementSummaryResponse getMonthlyFranchiseSummary(Long franchiseId,
@@ -235,7 +236,8 @@ public class HQSettlementFacade {
                                 settlement.getOrderAmount(),
                                 settlement.getDeliveryFee(),
                                 settlement.getLossAmount(),
-                                settlement.getCommissionFee());
+                                settlement.getCommissionFee(),
+                                settlement.getAdjustmentAmount());
         }
 
         public Page<FranchiseVoucherResponse> getFranchiseVouchers(Long franchiseId, PeriodType period, LocalDate date,

@@ -116,7 +116,8 @@ public class FranchiseSettlementFacade {
                                 s.getOrderAmount(),
                                 s.getDeliveryFee(),
                                 s.getLossAmount(),
-                                s.getCommissionFee());
+                                s.getCommissionFee(),
+                                s.getAdjustmentAmount());
         }
 
         // 월별 매출 현황 top5, 전체
@@ -202,7 +203,8 @@ public class FranchiseSettlementFacade {
                                 r.getOrderAmount(),
                                 r.getDeliveryFee(),
                                 r.getLossAmount(),
-                                r.getCommissionFee());
+                                r.getCommissionFee(),
+                                r.getAdjustmentAmount());
         }
 
         // 전표 상세 보기 탭 목록

@@ -143,12 +143,10 @@ public class HQSettlementController {
         }
 
         // 전표 상세 (본사에서 특정 가맹점 전표로 이동)
-        @Operation(summary = "본사 전표 상세 목록 조회(가맹점 단건, 일/월 공통)", description = """
-                        본사 -> 가맹점 전표 상세 목록 화면용
-                        - franchiseId 필수
+        @Operation(summary = "단건 가맹점 전표 목록 조회", description = """
+                        특정 가맹점의 전표 목록 조회
                         - period=DAILY면 date 필수
                         - period=MONTHLY면 month 필수
-                        - type 없으면 전체
                         """)
         @GetMapping("/vouchers")
         public ResponseEntity<ApiResponse<Page<FranchiseVoucherResponse>>> getFranchiseVouchersByHq(
@@ -161,6 +159,24 @@ public class HQSettlementController {
                         @RequestParam(value = "size", defaultValue = "20") int size) {
                 Page<FranchiseVoucherResponse> response = hqFacade.getFranchiseVouchers(franchiseId, period, date,
                                 month, type, page, size);
+                return ResponseEntity.ok(ApiResponse.success(response));
+        }
+
+        @Operation(summary = "전체 가맹점 전표 목록 조회", description = """
+                        전체 가맹점의 전표 목록 조회 (항목별 상세용)
+                        - period=DAILY면 date 필수
+                        - period=MONTHLY면 month 필수
+                        """)
+        @GetMapping("/vouchers/all")
+        public ResponseEntity<ApiResponse<Page<FranchiseVoucherResponse>>> getAllVouchers(
+                        @RequestParam("period") PeriodType period,
+                        @RequestParam(value = "date", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+                        @RequestParam(value = "month", required = false) @DateTimeFormat(pattern = "yyyy-MM") YearMonth month,
+                        @RequestParam(value = "type", required = false) VoucherType type,
+                        @RequestParam(value = "page", defaultValue = "0") int page,
+                        @RequestParam(value = "size", defaultValue = "20") int size) {
+                Page<FranchiseVoucherResponse> response = hqFacade.getAllVouchers(period, date, month, type, page,
+                                size);
                 return ResponseEntity.ok(ApiResponse.success(response));
         }
 

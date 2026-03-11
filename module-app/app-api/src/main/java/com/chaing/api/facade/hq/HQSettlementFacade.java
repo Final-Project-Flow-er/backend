@@ -16,6 +16,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import com.chaing.domain.businessunits.repository.FranchiseRepository;
+import com.chaing.domain.businessunits.entity.Franchise;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -38,6 +40,7 @@ public class HQSettlementFacade {
         private final MinioService minioService;
         private final com.chaing.domain.settlements.service.SettlementDocumentService documentService;
         private final com.chaing.domain.settlements.repository.interfaces.SettlementVoucherRepository voucherRepository;
+        private final FranchiseRepository franchiseRepository;
 
         // 1. 일별 조회
 
@@ -64,13 +67,23 @@ public class HQSettlementFacade {
                                 .getAllByDate(request.date(), request.keyword());
 
                 List<HQFranchiseSettlementResponse> dtos = receipts.stream()
-                                .map(r -> HQFranchiseSettlementResponse.of(
-                                                r.getFranchiseId(),
-                                                "가맹점명 (추후 연동)", // TODO: Franchise API 연동하여 실제 이름 세팅
-                                                r.getTotalSaleAmount().longValue(),
-                                                r.getFinalAmount().longValue(),
-                                                null, // DailyReceipt에는 상태(status) 필드가 없음
-                                                r.getSettlementDate()))
+                                .map(r -> {
+                                        String franchiseName = franchiseRepository.findById(r.getFranchiseId())
+                                                        .map(Franchise::getName)
+                                                        .orElse("Unknown");
+                                        return HQFranchiseSettlementResponse.of(
+                                                        r.getFranchiseId(),
+                                                        franchiseName,
+                                                        r.getTotalSaleAmount().longValue(),
+                                                        r.getOrderAmount().longValue(),
+                                                        r.getDeliveryFee().longValue(),
+                                                        r.getCommissionFee().longValue(),
+                                                        r.getRefundAmount().longValue(),
+                                                        r.getLossAmount().longValue(),
+                                                        r.getFinalAmount().longValue(),
+                                                        com.chaing.domain.settlements.enums.SettlementStatus.CONFIRMED, // 기본값
+                                                        r.getSettlementDate());
+                                })
                                 .collect(Collectors.toList());
 
                 int page = request.page() != null ? request.page() : 0;
@@ -134,13 +147,26 @@ public class HQSettlementFacade {
                 }
 
                 List<HQFranchiseSettlementResponse> dtos = settlements.stream()
-                                .map(s -> HQFranchiseSettlementResponse.of(
-                                                s.getFranchiseId(),
-                                                "가맹점명 (추후 연동)", // TODO: Franchise API 연동
-                                                s.getTotalSaleAmount().longValue(),
-                                                s.getFinalSettlementAmount().longValue(),
-                                                s.getStatus(),
-                                                s.getSettlementMonth().atEndOfMonth()))
+                                .map(s -> {
+                                        String franchiseName = franchiseRepository.findById(s.getFranchiseId())
+                                                        .map(Franchise::getName)
+                                                        .orElse("Unknown");
+                                        return HQFranchiseSettlementResponse.of(
+                                                        s.getFranchiseId(),
+                                                        franchiseName,
+                                                        s.getTotalSaleAmount().longValue(),
+                                                        s.getOrderAmount().longValue(),
+                                                        s.getDeliveryFee().longValue(),
+                                                        s.getCommissionFee().longValue(),
+                                                        s.getRefundAmount().longValue(),
+                                                        s.getLossAmount().longValue(),
+                                                        s.getFinalSettlementAmount().longValue(), // This was
+                                                                                                  // finalAmount in
+                                                                                                  // original, now it's
+                                                                                                  // finalSettlementAmount
+                                                        s.getStatus(),
+                                                        s.getSettlementMonth().atDay(1)); // 기준일
+                                })
                                 .collect(Collectors.toList());
 
                 int page = request.page() != null ? request.page() : 0;
@@ -233,8 +259,87 @@ public class HQSettlementFacade {
                                         line.getOccurredAt()));
 
                 } else {
+                        // 월별: MonthlySettlement 조회 후 SettlementVoucher를 Response로 변환
+                        com.chaing.domain.settlements.entity.MonthlySettlement settlement = monthlyService
+                                        .getByFranchiseAndMonth(franchiseId, month);
+                        // Page 처리를 위해 페이징 쿼리 사용 (또는 리스트 변환 후 페이징)
+                        List<com.chaing.domain.settlements.entity.SettlementVoucher> vouchers = voucherRepository
+                                        .findAllByMonthlySettlementId(settlement.getMonthlySettlementId());
 
-                        return Page.empty();
+                        List<FranchiseVoucherResponse> dtos = vouchers.stream()
+                                        .filter(v -> type == null || v.getVoucherType() == type)
+                                        .map(v -> new FranchiseVoucherResponse(
+                                                        v.getReferenceCode(),
+                                                        v.getVoucherType(),
+                                                        v.getDescription(),
+                                                        v.getQuantity(),
+                                                        v.getAmount(),
+                                                        v.getOccurredAt()))
+                                        .collect(Collectors.toList());
+
+                        int start = (int) pageable.getOffset();
+                        int end = Math.min((start + pageable.getPageSize()), dtos.size());
+                        if (start > dtos.size())
+                                return Page.empty();
+
+                        return new PageImpl<>(dtos.subList(start, end), pageable, dtos.size());
+                }
+        }
+
+        public Page<FranchiseVoucherResponse> getAllVouchers(PeriodType period, LocalDate date, YearMonth month,
+                        VoucherType type, int page, int size) {
+                PageRequest pageable = PageRequest.of(page, size);
+
+                if (period == PeriodType.DAILY) {
+                        List<com.chaing.domain.settlements.entity.DailySettlementReceipt> receipts = dailyService
+                                        .getAllByDate(date, null);
+                        List<FranchiseVoucherResponse> allLines = receipts.stream()
+                                        .flatMap(r -> dailyService.getAllReceiptLines(r.getDailyReceiptId()).stream())
+                                        .filter(line -> type == null || line.getLineType() == type)
+                                        .map(line -> new FranchiseVoucherResponse(
+                                                        line.getReferenceCode(),
+                                                        line.getLineType(),
+                                                        line.getDescription(),
+                                                        line.getQuantity(),
+                                                        line.getAmount(),
+                                                        line.getOccurredAt()))
+                                        .collect(Collectors.toList());
+
+                        int start = (int) pageable.getOffset();
+                        int end = Math.min((start + pageable.getPageSize()), allLines.size());
+                        if (start > allLines.size())
+                                return Page.empty();
+                        return new PageImpl<>(allLines.subList(start, end), pageable, allLines.size());
+
+                } else {
+                        List<com.chaing.domain.settlements.entity.MonthlySettlement> settlements = monthlyService
+                                        .getAllByMonth(month, null);
+                        List<Long> settlementIds = settlements.stream()
+                                        .map(com.chaing.domain.settlements.entity.MonthlySettlement::getMonthlySettlementId)
+                                        .collect(Collectors.toList());
+
+                        if (settlementIds.isEmpty())
+                                return Page.empty();
+
+                        List<com.chaing.domain.settlements.entity.SettlementVoucher> vouchers = voucherRepository
+                                        .findAllByMonthlySettlementIdIn(settlementIds);
+
+                        List<FranchiseVoucherResponse> dtos = vouchers.stream()
+                                        .filter(v -> type == null || v.getVoucherType() == type)
+                                        .map(v -> new FranchiseVoucherResponse(
+                                                        v.getReferenceCode(),
+                                                        v.getVoucherType(),
+                                                        v.getDescription(),
+                                                        v.getQuantity(),
+                                                        v.getAmount(),
+                                                        v.getOccurredAt()))
+                                        .collect(Collectors.toList());
+
+                        int start = (int) pageable.getOffset();
+                        int end = Math.min((start + pageable.getPageSize()), dtos.size());
+                        if (start > dtos.size())
+                                return Page.empty();
+                        return new PageImpl<>(dtos.subList(start, end), pageable, dtos.size());
                 }
         }
 

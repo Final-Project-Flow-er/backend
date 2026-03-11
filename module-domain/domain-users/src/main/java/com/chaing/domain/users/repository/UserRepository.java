@@ -40,4 +40,7 @@
 
         @Query("SELECT u.userId FROM User u WHERE u.status = com.chaing.domain.users.enums.UserStatus.ACTIVE")
         List<Long> getAllActiveUserIds();
-    }
+
+        @Query("SELECT DISTINCT u.businessUnitId FROM User u WHERE u.role = :role AND u.businessUnitId IS NOT NULL")
+        List<Long> findDistinctBusinessUnitIdsByRole(@Param("role") UserRole role);
+}

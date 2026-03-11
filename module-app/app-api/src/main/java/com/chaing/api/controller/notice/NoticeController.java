@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -22,9 +23,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -36,12 +40,13 @@ public class NoticeController {
 
     @PreAuthorize("hasRole('HQ')")
     @Operation(summary = "공지사항 등록", description = "본사 관리자가 새로운 공지사항 등록")
-    @PostMapping
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<NoticeDetailResponse>> createNotice(
-            @Valid @RequestBody CreateNoticeRequest request,
+            @RequestPart("request") @Valid CreateNoticeRequest request,
+            @RequestPart(value = "images", required = false) List<MultipartFile> images,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
-        return ResponseEntity.ok(ApiResponse.success(noticeFacade.createNotice(request, principal.getId())));
+        return ResponseEntity.ok(ApiResponse.success(noticeFacade.createNotice(request, images, principal.getId())));
     }
 
     @Operation(summary = "공지사항 목록 조회", description = "전체 공지사항 목록 조회")
@@ -62,13 +67,14 @@ public class NoticeController {
 
     @PreAuthorize("hasRole('HQ')")
     @Operation(summary = "공지사항 수정", description = "특정 공지사항 내용 수정")
-    @PatchMapping("/{id}")
+    @PatchMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<NoticeDetailResponse>> updateNotice(
             @PathVariable Long id,
-            @Valid @RequestBody UpdateNoticeRequest request,
+            @RequestPart("request") @Valid UpdateNoticeRequest request,
+            @RequestPart(value = "images", required = false) List<MultipartFile> images,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
-        return ResponseEntity.ok(ApiResponse.success(noticeFacade.updateNotice(id, request, principal.getId())));
+        return ResponseEntity.ok(ApiResponse.success(noticeFacade.updateNotice(id, request, images, principal.getId())));
     }
 
     @PreAuthorize("hasRole('HQ')")

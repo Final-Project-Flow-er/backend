@@ -356,39 +356,44 @@ public class HQSettlementFacade {
                         return existingDoc.getFileUrl();
                 }
 
-                // 2. 해당 날짜의 모든 가맹점 정산 요약 데이터 조회
-                List<com.chaing.domain.settlements.entity.DailySettlementReceipt> receipts = dailyService
-                                .getAllByDate(request.date(), null);
+                try {
+                        // 2. 해당 날짜의 모든 가맹점 정산 요약 데이터 조회
+                        List<com.chaing.domain.settlements.entity.DailySettlementReceipt> receipts = dailyService
+                                        .getAllByDate(request.date(), null);
 
-                if (receipts.isEmpty()) {
-                        return "데이터가 없어 PDF를 생성할 수 없습니다.";
+                        if (receipts.isEmpty()) {
+                                return "선택하신 날짜에 정산 데이터가 없어 PDF를 생성할 수 없습니다.";
+                        }
+
+                        // 3. 파일 생성 서비스 호출
+                        byte[] pdfBytes = fileService.createHQSettlementDailyPdf(request.date(), receipts);
+
+                        // 4. MinIO 업로드
+                        String fileName = "settlement/daily/HQ_Daily_Settlement_" + request.date() + "_"
+                                        + System.currentTimeMillis() + ".pdf";
+                        minioService.uploadFile(pdfBytes, fileName, "application/pdf", BucketName.SETTLEMENTS);
+                        String fileUrl = minioService.getFileUrl(fileName, BucketName.SETTLEMENTS);
+                        log.info("=================> fileUrl: {}", fileUrl);
+                        // 5. 메타데이터 저장
+                        documentService.save(com.chaing.domain.settlements.entity.SettlementDocument.builder()
+                                        .periodType(PeriodType.DAILY)
+                                        .documentType(com.chaing.domain.settlements.enums.DocumentType.HQ_DAILY_SUMMARY_PDF)
+                                        .documentOwner(com.chaing.domain.settlements.enums.DocumentOwner.HQ)
+                                        .settlementDate(request.date())
+                                        .storageProvider("MINIO")
+                                        .bucket(BucketName.SETTLEMENTS.getBucketName())
+                                        .objectKey(fileName)
+                                        .fileUrl(fileUrl)
+                                        .fileName(fileName.substring(fileName.lastIndexOf("/") + 1))
+                                        .contentType("application/pdf")
+                                        .fileSize((long) pdfBytes.length)
+                                        .build());
+
+                        return fileUrl;
+                } catch (Exception e) {
+                        log.error("Failed to generate HQ Daily PDF: ", e);
+                        return "PDF 생성 또는 서버 저장 중 오류가 발생했습니다. (잠시 후 다시 시도해주세요)";
                 }
-
-                // 3. 파일 생성 서비스 호출 (모든 가공점 데이터 aggregation은 서비스 내부에서 처리하도록 설계 변경됨)
-                byte[] pdfBytes = fileService.createHQSettlementDailyPdf(request.date(), receipts);
-
-                // 4. MinIO 업로드
-                String fileName = "settlement/daily/HQ_Daily_Settlement_" + request.date() + "_"
-                                + System.currentTimeMillis() + ".pdf";
-                minioService.uploadFile(pdfBytes, fileName, "application/pdf", BucketName.SETTLEMENTS);
-                String fileUrl = minioService.getFileUrl(fileName, BucketName.SETTLEMENTS);
-
-                // 5. 메타데이터 저장
-                documentService.save(com.chaing.domain.settlements.entity.SettlementDocument.builder()
-                                .periodType(PeriodType.DAILY)
-                                .documentType(com.chaing.domain.settlements.enums.DocumentType.HQ_DAILY_SUMMARY_PDF)
-                                .documentOwner(com.chaing.domain.settlements.enums.DocumentOwner.HQ)
-                                .settlementDate(request.date())
-                                .storageProvider("MINIO")
-                                .bucket(BucketName.SETTLEMENTS.getBucketName())
-                                .objectKey(fileName)
-                                .fileUrl(fileUrl)
-                                .fileName(fileName.substring(fileName.lastIndexOf("/") + 1))
-                                .contentType("application/pdf")
-                                .fileSize((long) pdfBytes.length)
-                                .build());
-
-                return fileUrl;
         }
 
         public String getMonthlyAllSummaryPdf(HQSettlementMonthlyAllPdfRequest request) {
@@ -399,150 +404,170 @@ public class HQSettlementFacade {
                         return existingDoc.getFileUrl();
                 }
 
-                // 2. 해당 월의 모든 가맹점 정산 데이터 조회
-                List<com.chaing.domain.settlements.entity.MonthlySettlement> settlements = monthlyService
-                                .getAllByMonth(request.month(), null);
+                try {
+                        // 2. 해당 월의 모든 가맹점 정산 데이터 조회
+                        List<com.chaing.domain.settlements.entity.MonthlySettlement> settlements = monthlyService
+                                        .getAllByMonth(request.month(), null);
 
-                if (settlements.isEmpty()) {
-                        return "데이터가 없어 PDF를 생성할 수 없습니다.";
+                        if (settlements.isEmpty()) {
+                                return "선택하신 월에 정산 데이터가 없어 PDF를 생성할 수 없습니다.";
+                        }
+
+                        // 3. 파일 생성 서비스 호출
+                        byte[] pdfBytes = fileService.createHQSettlementMonthlyPdf(request.month(), settlements);
+
+                        // 4. MinIO 업로드
+                        String fileName = "settlement/monthly/HQ_Monthly_Report_" + request.month() + "_"
+                                        + System.currentTimeMillis() + ".pdf";
+                        minioService.uploadFile(pdfBytes, fileName, "application/pdf", BucketName.SETTLEMENTS);
+                        String fileUrl = minioService.getFileUrl(fileName, BucketName.SETTLEMENTS);
+
+                        // 5. 메타데이터 저장
+                        documentService.save(com.chaing.domain.settlements.entity.SettlementDocument.builder()
+                                        .periodType(PeriodType.MONTHLY)
+                                        .documentType(com.chaing.domain.settlements.enums.DocumentType.HQ_MONTHLY_SUMMARY_PDF)
+                                        .documentOwner(com.chaing.domain.settlements.enums.DocumentOwner.HQ)
+                                        .settlementMonth(request.month())
+                                        .storageProvider("MINIO")
+                                        .bucket(BucketName.SETTLEMENTS.getBucketName())
+                                        .objectKey(fileName)
+                                        .fileUrl(fileUrl)
+                                        .fileName(fileName.substring(fileName.lastIndexOf("/") + 1))
+                                        .contentType("application/pdf")
+                                        .fileSize((long) pdfBytes.length)
+                                        .build());
+
+                        return fileUrl;
+                } catch (Exception e) {
+                        log.error("Failed to generate HQ Monthly PDF: ", e);
+                        return "PDF 또는 리포트 생성 중 오류가 발생했습니다. (MinIO 연결 또는 리소스 확인 필요)";
                 }
-
-                // 3. 파일 생성 서비스 호출
-                byte[] pdfBytes = fileService.createHQSettlementMonthlyPdf(request.month(), settlements);
-
-                // 4. MinIO 업로드
-                String fileName = "settlement/monthly/HQ_Monthly_Report_" + request.month() + "_"
-                                + System.currentTimeMillis() + ".pdf";
-                minioService.uploadFile(pdfBytes, fileName, "application/pdf", BucketName.SETTLEMENTS);
-                String fileUrl = minioService.getFileUrl(fileName, BucketName.SETTLEMENTS);
-
-                // 5. 메타데이터 저장
-                documentService.save(com.chaing.domain.settlements.entity.SettlementDocument.builder()
-                                .periodType(PeriodType.MONTHLY)
-                                .documentType(com.chaing.domain.settlements.enums.DocumentType.HQ_MONTHLY_SUMMARY_PDF)
-                                .documentOwner(com.chaing.domain.settlements.enums.DocumentOwner.HQ)
-                                .settlementMonth(request.month())
-                                .storageProvider("MINIO")
-                                .bucket(BucketName.SETTLEMENTS.getBucketName())
-                                .objectKey(fileName)
-                                .fileUrl(fileUrl)
-                                .fileName(fileName.substring(fileName.lastIndexOf("/") + 1))
-                                .contentType("application/pdf")
-                                .fileSize((long) pdfBytes.length)
-                                .build());
-
-                return fileUrl;
         }
 
         public String getDailyFranchiseReceiptPdf(Long franchiseId,
                         HQSettlementFranchiseDailyReceiptPdfRequest request) {
-                log.info("[DEBUG] Facade - getDailyFranchiseReceiptPdf requested for franchiseId: {}, date: {}",
-                                franchiseId, request.date());
-                com.chaing.domain.settlements.entity.DailySettlementReceipt receipt = dailyService
-                                .getByFranchiseAndDate(franchiseId, request.date());
+                try {
+                        com.chaing.domain.settlements.entity.DailySettlementReceipt receipt = dailyService
+                                        .getByFranchiseAndDate(franchiseId, request.date());
 
-                // 1. 이미 생성된 문서가 있는지 확인
-                com.chaing.domain.settlements.entity.SettlementDocument existingDoc = documentService
-                                .getDailyDocument(receipt.getDailyReceiptId());
-                if (existingDoc != null) {
-                        return existingDoc.getFileUrl();
+                        // 1. 이미 생성된 문서가 있는지 확인
+                        com.chaing.domain.settlements.entity.SettlementDocument existingDoc = documentService
+                                        .getDailyDocument(receipt.getDailyReceiptId());
+                        if (existingDoc != null) {
+                                return existingDoc.getFileUrl();
+                        }
+
+                        List<com.chaing.domain.settlements.entity.DailyReceiptLine> lines = dailyService
+                                        .getAllReceiptLines(receipt.getDailyReceiptId());
+
+                        byte[] pdfBytes = fileService.createDailyReceiptPdf(receipt, lines);
+
+                        String fileName = "settlement/daily/Franchise_" + franchiseId + "_Receipt_" + request.date()
+                                        + "_"
+                                        + System.currentTimeMillis() + ".pdf";
+                        minioService.uploadFile(pdfBytes, fileName, "application/pdf", BucketName.SETTLEMENTS);
+                        String fileUrl = minioService.getFileUrl(fileName, BucketName.SETTLEMENTS);
+
+                        // 2. 메타데이터 저장
+                        documentService.save(com.chaing.domain.settlements.entity.SettlementDocument.builder()
+                                        .dailyReceiptId(receipt.getDailyReceiptId())
+                                        .periodType(PeriodType.DAILY)
+                                        .documentType(com.chaing.domain.settlements.enums.DocumentType.RECEIPT_PDF)
+                                        .documentOwner(com.chaing.domain.settlements.enums.DocumentOwner.FRANCHISE)
+                                        .storageProvider("MINIO")
+                                        .bucket(BucketName.SETTLEMENTS.getBucketName())
+                                        .objectKey(fileName)
+                                        .fileUrl(fileUrl)
+                                        .fileName(fileName.substring(fileName.lastIndexOf("/") + 1))
+                                        .contentType("application/pdf")
+                                        .fileSize((long) pdfBytes.length)
+                                        .build());
+
+                        return fileUrl;
+                } catch (Exception e) {
+                        log.error("Failed to generate Daily Franchise Receipt PDF: ", e);
+                        return "가맹점 영수증 PDF 생성 중 오류가 발생했습니다. (데이터 확인 필요)";
                 }
-
-                List<com.chaing.domain.settlements.entity.DailyReceiptLine> lines = dailyService
-                                .getAllReceiptLines(receipt.getDailyReceiptId());
-
-                byte[] pdfBytes = fileService.createDailyReceiptPdf(receipt, lines);
-
-                String fileName = "settlement/daily/Franchise_" + franchiseId + "_Receipt_" + request.date() + "_"
-                                + System.currentTimeMillis() + ".pdf";
-                minioService.uploadFile(pdfBytes, fileName, "application/pdf", BucketName.SETTLEMENTS);
-                String fileUrl = minioService.getFileUrl(fileName, BucketName.SETTLEMENTS);
-
-                // 2. 메타데이터 저장
-                documentService.save(com.chaing.domain.settlements.entity.SettlementDocument.builder()
-                                .dailyReceiptId(receipt.getDailyReceiptId())
-                                .periodType(PeriodType.DAILY)
-                                .documentType(com.chaing.domain.settlements.enums.DocumentType.RECEIPT_PDF)
-                                .documentOwner(com.chaing.domain.settlements.enums.DocumentOwner.FRANCHISE)
-                                .storageProvider("MINIO")
-                                .bucket(BucketName.SETTLEMENTS.getBucketName())
-                                .objectKey(fileName)
-                                .fileUrl(fileUrl)
-                                .fileName(fileName.substring(fileName.lastIndexOf("/") + 1))
-                                .contentType("application/pdf")
-                                .fileSize((long) pdfBytes.length)
-                                .build());
-
-                return fileUrl;
         }
 
         public String getMonthlyFranchiseReceiptPdf(Long franchiseId,
                         HQSettlementFranchiseMonthlyReceiptPdfRequest request) {
-                com.chaing.domain.settlements.entity.MonthlySettlement settlement = monthlyService
-                                .getByFranchiseAndMonth(franchiseId, request.month());
+                try {
+                        com.chaing.domain.settlements.entity.MonthlySettlement settlement = monthlyService
+                                        .getByFranchiseAndMonth(franchiseId, request.month());
 
-                // 1. 이미 생성된 문서가 있는지 확인
-                List<com.chaing.domain.settlements.entity.SettlementDocument> documents = documentService
-                                .getMonthlyDocuments(settlement.getMonthlySettlementId());
-                String existingUrl = documents.stream()
-                                .filter(doc -> doc
-                                                .getDocumentType() == com.chaing.domain.settlements.enums.DocumentType.RECEIPT_PDF)
-                                .findFirst()
-                                .map(com.chaing.domain.settlements.entity.SettlementDocument::getFileUrl)
-                                .orElse(null);
+                        // 1. 이미 생성된 문서가 있는지 확인
+                        List<com.chaing.domain.settlements.entity.SettlementDocument> documents = documentService
+                                        .getMonthlyDocuments(settlement.getMonthlySettlementId());
+                        String existingUrl = documents.stream()
+                                        .filter(doc -> doc
+                                                        .getDocumentType() == com.chaing.domain.settlements.enums.DocumentType.RECEIPT_PDF)
+                                        .findFirst()
+                                        .map(com.chaing.domain.settlements.entity.SettlementDocument::getFileUrl)
+                                        .orElse(null);
 
-                if (existingUrl != null) {
-                        return existingUrl;
+                        if (existingUrl != null) {
+                                return existingUrl;
+                        }
+
+                        List<com.chaing.domain.settlements.entity.SettlementVoucher> vouchers = voucherRepository
+                                        .findAllByMonthlySettlementId(settlement.getMonthlySettlementId());
+
+                        byte[] pdfBytes = fileService.createMonthlyReceiptPdf(settlement, vouchers);
+
+                        String fileName = "settlement/monthly/Franchise_" + franchiseId + "_Receipt_" + request.month()
+                                        + "_"
+                                        + System.currentTimeMillis() + ".pdf";
+                        minioService.uploadFile(pdfBytes, fileName, "application/pdf", BucketName.SETTLEMENTS);
+                        String fileUrl = minioService.getFileUrl(fileName, BucketName.SETTLEMENTS);
+
+                        // 2. 메타데이터 저장
+                        documentService.save(com.chaing.domain.settlements.entity.SettlementDocument.builder()
+                                        .monthlySettlementId(settlement.getMonthlySettlementId())
+                                        .periodType(PeriodType.MONTHLY)
+                                        .documentType(com.chaing.domain.settlements.enums.DocumentType.RECEIPT_PDF)
+                                        .documentOwner(com.chaing.domain.settlements.enums.DocumentOwner.FRANCHISE)
+                                        .storageProvider("MINIO")
+                                        .bucket(BucketName.SETTLEMENTS.getBucketName())
+                                        .objectKey(fileName)
+                                        .fileUrl(fileUrl)
+                                        .fileName(fileName.substring(fileName.lastIndexOf("/") + 1))
+                                        .contentType("application/pdf")
+                                        .fileSize((long) pdfBytes.length)
+                                        .build());
+
+                        return fileUrl;
+                } catch (Exception e) {
+                        log.error("Failed to generate Monthly Franchise Receipt PDF: ", e);
+                        return "가맹점 월별 영수증 생성 중 오류가 발생했습니다.";
                 }
-
-                List<com.chaing.domain.settlements.entity.SettlementVoucher> vouchers = voucherRepository
-                                .findAllByMonthlySettlementId(settlement.getMonthlySettlementId());
-
-                byte[] pdfBytes = fileService.createMonthlyReceiptPdf(settlement, vouchers);
-
-                String fileName = "settlement/monthly/Franchise_" + franchiseId + "_Receipt_" + request.month() + "_"
-                                + System.currentTimeMillis() + ".pdf";
-                minioService.uploadFile(pdfBytes, fileName, "application/pdf", BucketName.SETTLEMENTS);
-                String fileUrl = minioService.getFileUrl(fileName, BucketName.SETTLEMENTS);
-
-                // 2. 메타데이터 저장
-                documentService.save(com.chaing.domain.settlements.entity.SettlementDocument.builder()
-                                .monthlySettlementId(settlement.getMonthlySettlementId())
-                                .periodType(PeriodType.MONTHLY)
-                                .documentType(com.chaing.domain.settlements.enums.DocumentType.RECEIPT_PDF)
-                                .documentOwner(com.chaing.domain.settlements.enums.DocumentOwner.FRANCHISE)
-                                .storageProvider("MINIO")
-                                .bucket(BucketName.SETTLEMENTS.getBucketName())
-                                .objectKey(fileName)
-                                .fileUrl(fileUrl)
-                                .fileName(fileName.substring(fileName.lastIndexOf("/") + 1))
-                                .contentType("application/pdf")
-                                .fileSize((long) pdfBytes.length)
-                                .build());
-
-                return fileUrl;
         }
 
         public String getMonthlyExcel(HQSettlementMonthlyExcelRequest request) {
-                // 1. 해당 월의 모든 가맹점 정산 데이터 조회
-                List<com.chaing.domain.settlements.entity.MonthlySettlement> settlements = monthlyService
-                                .getAllByMonth(request.month(), null);
+                try {
+                        // 1. 해당 월의 모든 가맹점 정산 데이터 조회
+                        List<com.chaing.domain.settlements.entity.MonthlySettlement> settlements = monthlyService
+                                        .getAllByMonth(request.month(), null);
 
-                if (settlements.isEmpty()) {
-                        return "데이터가 없어 엑셀을 생성할 수 없습니다.";
+                        if (settlements.isEmpty()) {
+                                return "선택하신 월에 정산 데이터가 없어 엑셀을 생성할 수 없습니다.";
+                        }
+
+                        // 2. 파일 생성 서비스 호출 (Excel 생성)
+                        byte[] excelBytes = fileService.createMonthlySettlementExcel(settlements);
+
+                        // 3. MinIO 업로드
+                        String fileName = "settlement/monthly/HQ_Monthly_Settlement_" + request.month() + "_"
+                                        + System.currentTimeMillis() + ".xlsx";
+                        minioService.uploadFile(excelBytes, fileName,
+                                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                        BucketName.SETTLEMENTS);
+
+                        // 4. 실제 연동된 URL 반환
+                        return minioService.getFileUrl(fileName, BucketName.SETTLEMENTS);
+                } catch (Exception e) {
+                        log.error("Failed to generate Monthly Excel: ", e);
+                        return "엑셀 파일 생성 또는 저장 중 서버 오류가 발생했습니다.";
                 }
-
-                // 2. 파일 생성 서비스 호출 (Excel 생성)
-                byte[] excelBytes = fileService.createMonthlySettlementExcel(settlements);
-
-                // 3. MinIO 업로드
-                String fileName = "settlement/monthly/HQ_Monthly_Settlement_" + request.month() + "_"
-                                + System.currentTimeMillis() + ".xlsx";
-                minioService.uploadFile(excelBytes, fileName,
-                                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                                BucketName.SETTLEMENTS);
-
-                // 4. 실제 연동된 URL 반환
-                return minioService.getFileUrl(fileName, BucketName.SETTLEMENTS);
         }
 }

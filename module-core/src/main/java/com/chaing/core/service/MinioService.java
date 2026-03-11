@@ -29,6 +29,7 @@ public class MinioService {
     // 파일 업로드 로직
     public void uploadFile(MultipartFile file, String fileName, BucketName bucket) {
         try {
+            ensureBucketExists(bucket.getBucketName());
             minioClient.putObject(
                     PutObjectArgs.builder()
                             .bucket(bucket.getBucketName())
@@ -45,6 +46,7 @@ public class MinioService {
     // byte[] 기반 파일 업로드 로직 (정산 파일용)
     public void uploadFile(byte[] bytes, String fileName, String contentType, BucketName bucket) {
         try {
+            ensureBucketExists(bucket.getBucketName());
             java.io.ByteArrayInputStream bais = new java.io.ByteArrayInputStream(bytes);
             minioClient.putObject(
                     PutObjectArgs.builder()
@@ -56,6 +58,16 @@ public class MinioService {
         } catch (Exception e) {
             log.error("MinIO byte[] upload error: ", e);
             throw new RuntimeException("파일 업로드 중 오류가 발생했습니다.");
+        }
+    }
+
+    private void ensureBucketExists(String bucketName) throws Exception {
+        boolean exists = minioClient.bucketExists(
+                io.minio.BucketExistsArgs.builder().bucket(bucketName).build());
+        if (!exists) {
+            log.info("Creating non-existent MinIO bucket: {}", bucketName);
+            minioClient.makeBucket(
+                    io.minio.MakeBucketArgs.builder().bucket(bucketName).build());
         }
     }
 

@@ -303,21 +303,36 @@ public class SettlementFileServiceImpl implements SettlementFileService {
     }
 
     private PdfFont getKoreanFont() {
-        try {
-            // Mac system font path as fallback for Korean support
-            String fontPath = "/System/Library/Fonts/Supplemental/AppleGothic.ttf";
-            if (new File(fontPath).exists()) {
-                return PdfFontFactory.createFont(fontPath, PdfEncodings.IDENTITY_H);
+        // 탐색할 한글 폰트 경로 목록 (Docker, Linux, Mac 대응)
+        String[] fontPaths = {
+                // Mac
+                "/System/Library/Fonts/Supplemental/AppleGothic.ttf",
+                "/Library/Fonts/AppleGothic.ttf",
+                "/System/Library/Fonts/AppleSDGothicNeo.ttc",
+                // Linux (Common)
+                "/usr/share/fonts/truetype/nanum/NanumGothic.ttf",
+                "/usr/share/fonts/nanum/NanumGothic.ttf",
+                "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+                "/usr/share/fonts/noto-cjk/NotoSansCJK-Regular.ttc"
+        };
+
+        for (String path : fontPaths) {
+            try {
+                File fontFile = new File(path);
+                if (fontFile.exists()) {
+                    log.info("Loading Korean font from: {}", path);
+                    // ttc(TrueType Collection)의 경우 첫 번째 인덱스(0)를 사용하도록 처리할 수 있음
+                    if (path.endsWith(".ttc")) {
+                        return PdfFontFactory.createFont(path + ",0", PdfEncodings.IDENTITY_H);
+                    }
+                    return PdfFontFactory.createFont(path, PdfEncodings.IDENTITY_H);
+                }
+            } catch (Exception e) {
+                log.warn("Failed to load font from {}: {}", path, e.getMessage());
             }
-            // Another common path
-            fontPath = "/Library/Fonts/AppleGothic.ttf";
-            if (new File(fontPath).exists()) {
-                return PdfFontFactory.createFont(fontPath, PdfEncodings.IDENTITY_H);
-            }
-            return null;
-        } catch (IOException e) {
-            log.warn("Failed to load Korean font, using default", e);
-            return null;
         }
+
+        log.error("No Korean font found in system paths. PDF might show boxes instead of Korean text.");
+        return null; // font가 null이면 iText는 기본 폰트(English only)를 사용합니다.
     }
 }

@@ -10,12 +10,15 @@ public record AvailableVehicleInfo(
         Long availableWeight    // 남은
 ) {
     public static AvailableVehicleInfo from(Vehicle vehicle, Long currentWeight) {
+        long safeCurrentWeight = currentWeight == null ? 0 : currentWeight;
+        long safeMaxLoad = vehicle.getMaxLoad() == null ? 0 : vehicle.getMaxLoad();
+
         return new AvailableVehicleInfo(
                 vehicle.getVehicleId(),
                 vehicle.getVehicleNumber(),
-                vehicle.getMaxLoad(),
-                currentWeight,
-                vehicle.getMaxLoad() - currentWeight
+                safeMaxLoad,
+                safeCurrentWeight,
+                Math.max(0L, safeMaxLoad - safeCurrentWeight)
         );
     }
 }

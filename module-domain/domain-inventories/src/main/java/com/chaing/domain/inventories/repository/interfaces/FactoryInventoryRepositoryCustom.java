@@ -6,7 +6,9 @@ import com.chaing.domain.inventories.dto.response.ExpirationBatchResultResponse;
 import com.chaing.domain.inventories.dto.response.HQInventoryBatchResponse;
 import com.chaing.domain.inventories.dto.response.HQInventoryItemResponse;
 import com.chaing.domain.inventories.dto.response.InventoryProductInfoResponse;
+import com.chaing.domain.inventories.dto.response.SafetyStockResponse;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -23,8 +25,7 @@ public interface FactoryInventoryRepositoryCustom {
 
     List<ExpirationBatchResultResponse> getExpirationAlerts(String locationType, Long locationId);
 
-    long updateExpiredStatus(java.time.LocalDate expirationDate);
+    long updateExpiredStatus(LocalDate expirationDate);
 
-    List<com.chaing.domain.inventories.dto.response.SafetyStockResponse> getLowStockAlerts(String locationType,
-            Long locationId);
+    List<SafetyStockResponse> getLowStockAlerts(String locationType, Long locationId);
 }

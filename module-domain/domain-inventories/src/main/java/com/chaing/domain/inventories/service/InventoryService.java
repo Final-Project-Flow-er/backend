@@ -111,13 +111,22 @@ public class InventoryService {
         inventoryPolicyRepository.save(policy);
     }
 
+    // 수동 안전재고 완전 초기화 (시스템 기본값으로 회귀)
+    public void resetSafetyStockToDefault(LocationType locationType, Long locationId, Long productId) {
+        InventoryPolicy policy = inventoryPolicyRepository
+                .findPolicy(locationType, locationId, productId)
+                .orElseThrow(() -> new InventoriesException(InventoriesErrorCode.DATA_OMISSION));
+
+        policy.updateManualSafetyStock(null);
+        inventoryPolicyRepository.save(policy);
+    }
+
     // 안전 재고 알림
     public List<SafetyStockResponse> getLowStockAlerts(String locationType, Long locationId) {
         if (locationType.equals("FRANCHISE")) {
             return franchiseInventoryRepository.getLowStockAlerts(locationType, locationId);
         } else {
-            // 본사나 공장이면 ID를 null로 보냄 (ID-less)
-            return factoryInventoryRepository.getLowStockAlerts(locationType, null);
+            return factoryInventoryRepository.getLowStockAlerts(locationType, locationId);
         }
     }
 
@@ -126,14 +135,13 @@ public class InventoryService {
         if (locationType.equals("FRANCHISE")) {
             return franchiseInventoryRepository.getExpirationAlerts(locationType, locationId);
         } else {
-            // 본사나 공장이면 ID를 null로 보냄 (ID-less)
-            return factoryInventoryRepository.getExpirationAlerts(locationType, null);
+            return factoryInventoryRepository.getExpirationAlerts(locationType, locationId);
         }
     }
 
     // 유통기한 상태 자동 업데이트
     public void updateExpiredStatus() {
-        // 현재 로직상 유통기한은 제조일로부터 1년
+
         LocalDate expirationThreshold = LocalDate.now().minusYears(1);
 
         hqInventoryRepository.updateExpiredStatus(expirationThreshold);
@@ -397,10 +405,8 @@ public class InventoryService {
 
         Long locationId = request.locationId();
 
-        // 본사(HQ)나 공장(FACTORY)이면 ID를 null로 처리 (ID-less)
-        if (type == LocationType.HQ || type == LocationType.FACTORY) {
-            locationId = null;
-        } else if (type == LocationType.FRANCHISE && locationId == null) {
+        // 가맹점은 반드시 locationId 필요
+        if (type == LocationType.FRANCHISE && locationId == null) {
             throw new InventoriesException(InventoriesErrorCode.INVALID_LOCATION_ID);
         }
 

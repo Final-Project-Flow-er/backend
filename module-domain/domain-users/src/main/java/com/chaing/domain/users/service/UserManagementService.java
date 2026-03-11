@@ -167,4 +167,13 @@ public class UserManagementService {
                         )
                 ));
     }
+
+    public List<Long> getBusinessUnitIdsByRole(UserRole role) {
+        return userRepository.findDistinctBusinessUnitIdsByRole(role);
+    }
+
+    public boolean verifyPassword(Long userId, String rawPassword) {
+        User user = getUserById(userId);
+        return passwordEncoder.matches(rawPassword, user.getPassword());
+    }
 }

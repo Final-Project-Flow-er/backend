@@ -2,6 +2,7 @@ package com.chaing.api.dto.notice.request;
 
 import com.chaing.domain.notices.dto.command.NoticeCreateCommand;
 import jakarta.validation.constraints.NotBlank;
+import java.time.LocalDateTime;
 
 public record CreateNoticeRequest(
 
@@ -11,13 +12,16 @@ public record CreateNoticeRequest(
         @NotBlank(message = "공지사항 내용은 필수입니다.")
         String content,
 
-        boolean important
+        boolean important,
+
+        LocalDateTime importantUntil
 ) {
     public NoticeCreateCommand toCommand() {
         return new NoticeCreateCommand(
                 this.title,
                 this.content,
-                this.important
+                this.important,
+                this.importantUntil
         );
     }
 }

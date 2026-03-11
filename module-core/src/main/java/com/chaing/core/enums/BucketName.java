@@ -7,7 +7,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum BucketName {
 
-    PROFILES("chaing-profiles");
+    PROFILES("chaing-profiles"),
+    NOTICES("chaing-notices");
 
     private final String bucketName;
 }

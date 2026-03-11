@@ -21,11 +21,6 @@ public interface NoticeRepository extends JpaRepository<Notice, Long> {
             "n.createdAt DESC")
     Page<Notice> findAllSorted(@Param("now") LocalDateTime now, Pageable pageable);
 
-    @Query("SELECT n.noticeId FROM Notice n ORDER BY " +
-            "(CASE WHEN n.important = true AND (n.importantUntil IS NULL OR n.importantUntil > :now) THEN 1 ELSE 0 END) DESC, " +
-            "n.createdAt DESC")
-    List<Long> findAllIdsSorted(@Param("now") LocalDateTime now);
-
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT n FROM Notice n WHERE n.important = true AND (n.importantUntil IS NULL OR n.importantUntil > :now)")
     List<Notice> findAllEffectiveImportantWithLock(@Param("now") LocalDateTime now);

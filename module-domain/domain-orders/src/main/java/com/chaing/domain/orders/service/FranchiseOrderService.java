@@ -554,7 +554,7 @@ public class FranchiseOrderService {
                 franchiseOrderRepository.getFranchiseOrderByFranchiseOrderStatus(statuses);
 
         if (unassignedOrders == null || unassignedOrders.isEmpty()) {
-            throw new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_ITEM_NOT_FOUND);
+            throw new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_NOT_FOUND);
         }
 
         List<Long> unassignedOrderIds = unassignedOrders.stream()

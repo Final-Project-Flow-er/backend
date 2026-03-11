@@ -10,6 +10,7 @@ public record FranchiseInventoryRawData(
         String serialCode,
         LocalDate manufactureDate,
         Long franchiseId,
+        Long orderId,
         LogType status
 ) implements InboundRawData
 {
@@ -24,4 +25,7 @@ public record FranchiseInventoryRawData(
 
     @Override
     public LocalDate getManufactureDate() {return manufactureDate;}
+
+    @Override
+    public Long getOrderId() {return orderId;}
 }

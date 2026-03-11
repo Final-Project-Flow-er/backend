@@ -1,6 +1,7 @@
 package com.chaing.api.dto.transport.management.request;
 
 import com.chaing.domain.transports.dto.command.VehicleCreateCommand;
+import com.chaing.domain.transports.enums.VehicleType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
@@ -12,8 +13,8 @@ public record CreateVehicleRequest(
         @NotBlank(message = "차량 번호는 필수입니다.")
         String vehicleNumber,
 
-        @NotBlank(message = "차량 종류는 필수입니다.")
-        String vehicleType,
+        @NotNull(message = "차량 종류는 필수입니다.")
+        VehicleType vehicleType,
 
         @NotBlank(message = "운전자 이름은 필수입니다.")
         String driverName,

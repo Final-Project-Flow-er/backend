@@ -5,6 +5,7 @@ import java.time.LocalDate;
 public record OutboundGetItemsInfo(
         Long productId,
         String serialCode,
-        LocalDate manufactureDate
+        LocalDate manufactureDate,
+        Boolean isPicking
 ) {
 }

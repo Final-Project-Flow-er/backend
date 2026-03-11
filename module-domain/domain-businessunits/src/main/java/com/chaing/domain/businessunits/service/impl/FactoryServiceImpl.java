@@ -15,6 +15,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 public class FactoryServiceImpl implements BusinessUnitManagementService {
@@ -52,6 +57,18 @@ public class FactoryServiceImpl implements BusinessUnitManagementService {
     @Override
     public Page<BusinessUnitInternal> getBusinessUnitList(Pageable pageable) {
         return factoryRepository.findAll(pageable).map(BusinessUnitInternal::from);
+    }
+
+    // 아이디로 이름 조회
+    @Override
+    public Map<Long, String> getNamesByIds(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) return Collections.emptyMap();
+
+        List<Object[]> results = factoryRepository.findNamesByIds(ids);
+        return results.stream().collect(Collectors.toMap(
+                row -> (Long) row[0],
+                row -> (String) row[1]
+        ));
     }
 
     // 공장 상태 변경

@@ -10,4 +10,6 @@ public interface InboundRawData {
     String getSerialCode();
 
     LocalDate getManufactureDate();
+
+    Long getOrderId();
 }

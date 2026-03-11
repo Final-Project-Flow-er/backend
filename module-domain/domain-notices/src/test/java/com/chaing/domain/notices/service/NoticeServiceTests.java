@@ -103,7 +103,11 @@ class NoticeServiceTests {
         // given
         given(noticeRepository.findById(noticeId)).willReturn(Optional.of(notice));
         Notice prevNotice = Notice.builder().title("이전글").build();
-        given(noticeRepository.findPreviousNotice(any(), anyInt(), any())).willReturn(prevNotice);
+
+        int expectedIsImportant = notice.isCurrentlyImportant() ? 1 : 0;
+        LocalDateTime expectedCreatedAt = notice.getCreatedAt();
+
+        given(noticeRepository.findPreviousNotice(any(LocalDateTime.class), eq(expectedIsImportant), eq(expectedCreatedAt))).willReturn(prevNotice);
 
         // when
         Notice result = noticeService.getPreviousNotice(noticeId);
@@ -111,7 +115,7 @@ class NoticeServiceTests {
         // then
         assertThat(result).isNotNull();
         assertThat(result.getTitle()).isEqualTo("이전글");
-        verify(noticeRepository).findPreviousNotice(any(), eq(0), any());
+        verify(noticeRepository).findPreviousNotice(any(LocalDateTime.class), eq(expectedIsImportant), eq(expectedCreatedAt));
     }
 
     @Test
@@ -121,7 +125,11 @@ class NoticeServiceTests {
         // given
         given(noticeRepository.findById(noticeId)).willReturn(Optional.of(notice));
         Notice nextNotice = Notice.builder().title("다음글").build();
-        given(noticeRepository.findNextNotice(any(), anyInt(), any())).willReturn(nextNotice);
+
+        int expectedIsImportant = notice.isCurrentlyImportant() ? 1 : 0;
+        LocalDateTime expectedCreatedAt = notice.getCreatedAt();
+
+        given(noticeRepository.findNextNotice(any(LocalDateTime.class), eq(expectedIsImportant), eq(expectedCreatedAt))).willReturn(nextNotice);
 
         // when
         Notice result = noticeService.getNextNotice(noticeId);
@@ -129,7 +137,7 @@ class NoticeServiceTests {
         // then
         assertThat(result).isNotNull();
         assertThat(result.getTitle()).isEqualTo("다음글");
-        verify(noticeRepository).findNextNotice(any(), eq(0), any());
+        verify(noticeRepository).findNextNotice(any(LocalDateTime.class), eq(expectedIsImportant), eq(expectedCreatedAt));
     }
 
     @Test

@@ -94,7 +94,7 @@ public class ImageService {
     }
 
     private String extractExt(String filename) {
-        if (filename == null)
+        if (filename == null || !filename.contains("."))
             return "";
         return filename.substring(filename.lastIndexOf(".") + 1);
     }

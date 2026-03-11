@@ -100,8 +100,7 @@ public class NoticeFacade {
 
     // 공지사항 수정
     @Transactional(rollbackFor = Exception.class)
-    public NoticeDetailResponse updateNotice(Long id, UpdateNoticeRequest request, List<MultipartFile> images,
-            Long updaterId) {
+    public NoticeDetailResponse updateNotice(Long id, UpdateNoticeRequest request, List<MultipartFile> images, Long updaterId) {
         Notice notice = noticeService.update(id, request.toCommand(), updaterId);
 
         if (request.deleteStoredFileNames() != null && !request.deleteStoredFileNames().isEmpty()) {

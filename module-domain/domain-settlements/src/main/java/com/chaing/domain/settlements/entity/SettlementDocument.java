@@ -28,7 +28,7 @@ import lombok.NoArgsConstructor;
 @Table(name = "settlement_document", indexes = {
         @Index(name = "idx_doc_monthly", columnList = "monthly_settlement_id"),
         @Index(name = "idx_doc_daily", columnList = "daily_receipt_id"),
-        @Index(name = "idx_doc_type", columnList = "document_type")
+        @Index(name = "idx_doc_type", columnList = "doc_type")
 })
 public class SettlementDocument extends BaseEntity {
 
@@ -41,7 +41,7 @@ public class SettlementDocument extends BaseEntity {
     private PeriodType periodType; // DAILY, MONTHLY
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "document_type", nullable = false, length = 30)
+    @Column(name = "doc_type", nullable = false, length = 255)
     private DocumentType documentType; // RECEIPT_PDF, VOUCHER_EXCEL
 
     @Enumerated(EnumType.STRING)
@@ -90,12 +90,12 @@ public class SettlementDocument extends BaseEntity {
             throw new IllegalStateException("periodType은 필수입니다");
         }
         // HQ 소유의 전체 요약 문서는 특정 ID가 없을 수도 있지만 날짜/월은 있어야 함
-        if (documentOwner == DocumentOwner.HQ && (documentType == DocumentType.HQ_DAILY_SUMMARY_PDF
-                || documentType == DocumentType.HQ_MONTHLY_SUMMARY_PDF)) {
-            if (documentType == DocumentType.HQ_DAILY_SUMMARY_PDF && settlementDate == null) {
+        if (documentOwner == DocumentOwner.HQ && (documentType == DocumentType.HQ_DAILY_SUM
+                || documentType == DocumentType.HQ_MONTHLY_SUM)) {
+            if (documentType == DocumentType.HQ_DAILY_SUM && settlementDate == null) {
                 throw new IllegalStateException("HQ 일별 요약은 settlementDate가 필수입니다");
             }
-            if (documentType == DocumentType.HQ_MONTHLY_SUMMARY_PDF && settlementMonth == null) {
+            if (documentType == DocumentType.HQ_MONTHLY_SUM && settlementMonth == null) {
                 throw new IllegalStateException("HQ 월별 요약은 settlementMonth가 필수입니다");
             }
             return;

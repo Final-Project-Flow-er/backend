@@ -31,7 +31,6 @@ import org.springframework.data.domain.Pageable;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class HQSettlementFacade {
 
         private final DailySettlementService dailyService;
@@ -44,6 +43,7 @@ public class HQSettlementFacade {
 
         // 1. 일별 조회
 
+        @Transactional(readOnly = true)
         public HQSettlementSummaryResponse getDailySummary(HQSettlementDailySummaryRequest request) {
                 List<com.chaing.domain.settlements.entity.DailySettlementReceipt> receipts = dailyService
                                 .getAllByDate(request.date(), null);
@@ -61,6 +61,7 @@ public class HQSettlementFacade {
                                 lossAmount);
         }
 
+        @Transactional(readOnly = true)
         public Page<HQFranchiseSettlementResponse> getDailyFranchises(HQSettlementDailyFranchisesRequest request) {
                 // 1. 도메인 서비스에서 날짜 및 키워드로 전체 목록 조회
                 List<com.chaing.domain.settlements.entity.DailySettlementReceipt> receipts = dailyService
@@ -100,6 +101,7 @@ public class HQSettlementFacade {
                 return new PageImpl<>(dtos.subList(start, end), pageable, dtos.size());
         }
 
+        @Transactional(readOnly = true)
         public List<HQDailyGraphResponse> getDailyTrend(HQSettlementDailyGraphRequest request) {
                 List<com.chaing.domain.settlements.entity.DailySettlementReceipt> receipts = dailyService
                                 .getAllByDateRange(request.start(), request.end());
@@ -118,6 +120,7 @@ public class HQSettlementFacade {
 
         // 2. 월별 조회
 
+        @Transactional(readOnly = true)
         public HQSettlementSummaryResponse getMonthlySummary(HQSettlementMonthlySummaryRequest request) {
                 List<com.chaing.domain.settlements.entity.MonthlySettlement> settlements = monthlyService
                                 .getAllByMonth(request.month(), null);
@@ -135,6 +138,7 @@ public class HQSettlementFacade {
                                 lossAmount);
         }
 
+        @Transactional(readOnly = true)
         public Page<HQFranchiseSettlementResponse> getMonthlyFranchises(HQSettlementMonthlyFranchisesRequest request) {
                 List<com.chaing.domain.settlements.entity.MonthlySettlement> settlements = monthlyService
                                 .getAllByMonth(request.month(), request.keyword());
@@ -183,6 +187,7 @@ public class HQSettlementFacade {
                 return new PageImpl<>(dtos.subList(start, end), pageable, dtos.size());
         }
 
+        @Transactional(readOnly = true)
         public List<HQMonthlyGraphResponse> getMonthlyTrend(HQSettlementMonthlyGraphRequest request) {
                 // start ~ end 기간 사이의 모든 월별 정산 데이터 조회
 
@@ -208,6 +213,7 @@ public class HQSettlementFacade {
 
         // 3. 단건 가맹점 상세 내역 (Drill-down), 전표 조회
 
+        @Transactional(readOnly = true)
         public FranchiseSettlementSummaryResponse getDailyFranchiseSummary(Long franchiseId,
                         HQSettlementFranchiseDailyDetailRequest request) {
                 com.chaing.domain.settlements.entity.DailySettlementReceipt receipt = dailyService
@@ -224,6 +230,7 @@ public class HQSettlementFacade {
                                 receipt.getAdjustmentAmount());
         }
 
+        @Transactional(readOnly = true)
         public FranchiseSettlementSummaryResponse getMonthlyFranchiseSummary(Long franchiseId,
                         HQSettlementFranchiseMonthlyDetailRequest request) {
                 com.chaing.domain.settlements.entity.MonthlySettlement settlement = monthlyService
@@ -240,6 +247,7 @@ public class HQSettlementFacade {
                                 settlement.getAdjustmentAmount());
         }
 
+        @Transactional(readOnly = true)
         public Page<FranchiseVoucherResponse> getFranchiseVouchers(Long franchiseId, PeriodType period, LocalDate date,
                         YearMonth month, VoucherType type, int page, int size) {
 
@@ -288,6 +296,7 @@ public class HQSettlementFacade {
                 }
         }
 
+        @Transactional(readOnly = true)
         public Page<FranchiseVoucherResponse> getAllVouchers(PeriodType period, LocalDate date, YearMonth month,
                         VoucherType type, int page, int size) {
                 PageRequest pageable = PageRequest.of(page, size);
@@ -353,7 +362,7 @@ public class HQSettlementFacade {
                 com.chaing.domain.settlements.entity.SettlementDocument existingDoc = documentService
                                 .getHQDailyDocument(request.date());
                 if (existingDoc != null) {
-                        return existingDoc.getFileUrl();
+                        return minioService.getFileUrl(existingDoc.getObjectKey(), BucketName.SETTLEMENTS);
                 }
 
                 try {
@@ -377,7 +386,7 @@ public class HQSettlementFacade {
                         // 5. 메타데이터 저장
                         documentService.save(com.chaing.domain.settlements.entity.SettlementDocument.builder()
                                         .periodType(PeriodType.DAILY)
-                                        .documentType(com.chaing.domain.settlements.enums.DocumentType.HQ_DAILY_SUMMARY_PDF)
+                                        .documentType(com.chaing.domain.settlements.enums.DocumentType.HQ_DAILY_SUM)
                                         .documentOwner(com.chaing.domain.settlements.enums.DocumentOwner.HQ)
                                         .settlementDate(request.date())
                                         .storageProvider("MINIO")
@@ -401,7 +410,7 @@ public class HQSettlementFacade {
                 com.chaing.domain.settlements.entity.SettlementDocument existingDoc = documentService
                                 .getHQMonthlyDocument(request.month());
                 if (existingDoc != null) {
-                        return existingDoc.getFileUrl();
+                        return minioService.getFileUrl(existingDoc.getObjectKey(), BucketName.SETTLEMENTS);
                 }
 
                 try {
@@ -425,7 +434,7 @@ public class HQSettlementFacade {
                         // 5. 메타데이터 저장
                         documentService.save(com.chaing.domain.settlements.entity.SettlementDocument.builder()
                                         .periodType(PeriodType.MONTHLY)
-                                        .documentType(com.chaing.domain.settlements.enums.DocumentType.HQ_MONTHLY_SUMMARY_PDF)
+                                        .documentType(com.chaing.domain.settlements.enums.DocumentType.HQ_MONTHLY_SUM)
                                         .documentOwner(com.chaing.domain.settlements.enums.DocumentOwner.HQ)
                                         .settlementMonth(request.month())
                                         .storageProvider("MINIO")
@@ -454,7 +463,7 @@ public class HQSettlementFacade {
                         com.chaing.domain.settlements.entity.SettlementDocument existingDoc = documentService
                                         .getDailyDocument(receipt.getDailyReceiptId());
                         if (existingDoc != null) {
-                                return existingDoc.getFileUrl();
+                                return minioService.getFileUrl(existingDoc.getObjectKey(), BucketName.SETTLEMENTS);
                         }
 
                         List<com.chaing.domain.settlements.entity.DailyReceiptLine> lines = dailyService
@@ -507,7 +516,11 @@ public class HQSettlementFacade {
                                         .orElse(null);
 
                         if (existingUrl != null) {
-                                return existingUrl;
+                                return minioService.getFileUrl(documents.stream()
+                                                .filter(doc -> doc
+                                                                .getDocumentType() == com.chaing.domain.settlements.enums.DocumentType.RECEIPT_PDF)
+                                                .findFirst()
+                                                .get().getObjectKey(), BucketName.SETTLEMENTS);
                         }
 
                         List<com.chaing.domain.settlements.entity.SettlementVoucher> vouchers = voucherRepository

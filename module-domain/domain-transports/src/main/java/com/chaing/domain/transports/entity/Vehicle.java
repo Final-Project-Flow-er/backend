@@ -39,6 +39,7 @@ public class Vehicle extends BaseEntity {
     private String vehicleNumber;
 
     @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
     private VehicleType vehicleType;
 
     @Column(nullable = false)

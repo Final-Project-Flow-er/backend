@@ -8,7 +8,8 @@ import lombok.RequiredArgsConstructor;
 public enum BucketName {
 
     PROFILES("chaing-profiles"),
-    SETTLEMENTS("chaing-settlements");
+    SETTLEMENTS("chaing-settlements"),
+    NOTICES("chaing-notices");
 
     private final String bucketName;
 }

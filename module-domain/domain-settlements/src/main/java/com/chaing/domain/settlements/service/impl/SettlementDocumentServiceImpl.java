@@ -4,11 +4,13 @@ import com.chaing.domain.settlements.entity.SettlementDocument;
 import com.chaing.domain.settlements.repository.interfaces.SettlementDocumentRepository;
 import com.chaing.domain.settlements.service.SettlementDocumentService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -47,6 +49,8 @@ public class SettlementDocumentServiceImpl implements SettlementDocumentService 
     @Override
     @Transactional
     public void save(SettlementDocument document) {
+        log.info("[DEBUG] Saving SettlementDocument: type={}, owner={}",
+                document.getDocumentType(), document.getDocumentOwner());
         documentRepository.save(document);
     }
 }

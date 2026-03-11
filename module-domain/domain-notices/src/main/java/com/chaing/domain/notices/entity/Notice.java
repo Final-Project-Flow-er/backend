@@ -15,6 +15,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.SQLRestriction;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Getter
 @Builder
@@ -42,12 +44,15 @@ public class Notice extends BaseEntity {
     @Column(nullable = false)
     private boolean important = false;
 
+    private LocalDateTime importantUntil;
+
     public static Notice createNotice(NoticeCreateCommand command, Long authorId) {
         return Notice.builder()
                 .title(command.title())
                 .content(command.content())
                 .authorId(authorId)
                 .important(command.important())
+                .importantUntil(command.importantUntil())
                 .build();
     }
 
@@ -56,5 +61,12 @@ public class Notice extends BaseEntity {
         if (command.content() != null) this.content = command.content();
         this.updaterId = updaterId;
         if (command.important() != null) this.important = command.important();
+        if (command.importantUntil() != null) this.importantUntil = command.importantUntil();
+    }
+
+    public boolean isCurrentlyImportant() {
+        if (!important) return false;
+        if (importantUntil == null) return true;
+        return importantUntil.isAfter(LocalDateTime.now());
     }
 }

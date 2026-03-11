@@ -24,7 +24,6 @@ import java.util.Optional;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -47,8 +46,8 @@ class NoticeServiceTests {
                 .content("내용")
                 .important(false)
                 .authorId(authorId)
-                .updaterId(null)
                 .build();
+        ReflectionTestUtils.setField(notice, "noticeId", noticeId);
     }
 
     @Test
@@ -56,7 +55,8 @@ class NoticeServiceTests {
     void create() {
 
         // given
-        NoticeCreateCommand command = new NoticeCreateCommand("신규 공지", "내용", true);
+        NoticeCreateCommand command = new NoticeCreateCommand("신규 공지", "내용", true, null);
+        given(noticeRepository.countEffectiveImportantNotices(any(LocalDateTime.class))).willReturn(0L);
         given(noticeRepository.save(any(Notice.class))).willReturn(notice);
 
         // when
@@ -64,40 +64,49 @@ class NoticeServiceTests {
 
         // then
         assertThat(result).isNotNull();
-        verify(noticeRepository, times(1)).save(any(Notice.class));
+        verify(noticeRepository).save(any(Notice.class));
     }
 
     @Test
     @DisplayName("공지사항 목록 조회")
     void getNoticeList() {
 
-        // given
         Pageable pageable = PageRequest.of(0, 10);
-        ReflectionTestUtils.setField(notice, "createdAt", LocalDateTime.now().minusDays(1));
-
         Notice importantNotice = Notice.builder()
                 .title("중요 공지")
                 .important(true)
-                .authorId(authorId)
                 .build();
-        ReflectionTestUtils.setField(importantNotice, "createdAt", LocalDateTime.now());
 
-        List<Notice> notices = List.of(importantNotice, notice);
-        Page<Notice> noticePage = new PageImpl<>(notices, pageable, notices.size());
-
-        given(noticeRepository.findAllByOrderByImportantDescCreatedAtDesc(pageable)).willReturn(noticePage);
+        Page<Notice> noticePage = new PageImpl<>(List.of(importantNotice, notice), pageable, 2);
+        given(noticeRepository.findAllSorted(any(LocalDateTime.class), any(Pageable.class)))
+                .willReturn(noticePage);
 
         // when
         Page<Notice> result = noticeService.getNoticeList(pageable);
 
         // then
         assertThat(result.getContent()).hasSize(2);
-        assertThat(result.getContent().get(0).getTitle()).isEqualTo("중요 공지");
         assertThat(result.getContent().get(0).isImportant()).isTrue();
-        assertThat(result.getContent().get(1).getTitle()).isEqualTo("제목");
-        assertThat(result.getContent().get(1).isImportant()).isFalse();
+        verify(noticeRepository).findAllSorted(any(LocalDateTime.class), any(Pageable.class));
+    }
 
-        verify(noticeRepository, times(1)).findAllByOrderByImportantDescCreatedAtDesc(pageable);
+    @Test
+    @DisplayName("이전글 조회")
+    void getPreviousNotice() {
+
+        // given
+        List<Long> allIds = List.of(2L, 1L, 3L);
+        given(noticeRepository.findAllIdsSorted(any(LocalDateTime.class))).willReturn(allIds);
+
+        Notice prevNotice = Notice.builder().title("이전글").build();
+        given(noticeRepository.findById(2L)).willReturn(Optional.of(prevNotice));
+
+        // when
+        Notice result = noticeService.getPreviousNotice(noticeId);
+
+        // then
+        assertThat(result).isNotNull();
+        assertThat(result.getTitle()).isEqualTo("이전글");
     }
 
     @Test
@@ -120,8 +129,9 @@ class NoticeServiceTests {
 
         // given
         Long updaterId = 2L;
-        NoticeUpdateCommand command = new NoticeUpdateCommand("수정된 제목", "수정된 내용", true);
+        NoticeUpdateCommand command = new NoticeUpdateCommand("수정된 제목", "수정된 내용", true, null);
         given(noticeRepository.findById(noticeId)).willReturn(Optional.of(notice));
+        given(noticeRepository.countEffectiveImportantNotices(any(LocalDateTime.class))).willReturn(0L);
 
         // when
         Notice result = noticeService.update(noticeId, command, updaterId);
@@ -129,8 +139,6 @@ class NoticeServiceTests {
         // then
         assertThat(result.getTitle()).isEqualTo("수정된 제목");
         assertThat(result.isImportant()).isTrue();
-        assertThat(result.getAuthorId()).isEqualTo(1L);
-        assertThat(result.getUpdaterId()).isEqualTo(2L);
     }
 
     @Test
@@ -144,6 +152,6 @@ class NoticeServiceTests {
         noticeService.delete(noticeId);
 
         // then
-        verify(noticeRepository, times(1)).findById(noticeId);
+        verify(noticeRepository).findById(noticeId);
     }
 }

@@ -12,9 +12,11 @@ public record NoticeDetailResponse(
         String title,
         String content,
         String authorName,
+        String updaterName,
         boolean important,
         LocalDateTime importantUntil,
         LocalDateTime createdAt,
+        LocalDateTime updatedAt,
         NoticeNav prevNotice,
         NoticeNav nextNotice
 ) {
@@ -26,15 +28,17 @@ public record NoticeDetailResponse(
         }
     }
 
-    public static NoticeDetailResponse from(Notice notice, String authorName, Notice prev, Notice next) {
+    public static NoticeDetailResponse from(Notice notice, String authorName, String updaterName, Notice prev, Notice next) {
         return new NoticeDetailResponse(
                 notice.getNoticeId(),
                 notice.getTitle(),
                 notice.getContent(),
                 authorName,
+                updaterName,
                 notice.isCurrentlyImportant(),
                 notice.getImportantUntil(),
                 notice.getCreatedAt(),
+                notice.getUpdatedAt(),
                 NoticeNav.from(prev),
                 NoticeNav.from(next));
     }

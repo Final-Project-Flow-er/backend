@@ -16,7 +16,9 @@ import com.chaing.domain.returns.dto.command.FranchiseReturnItemCreateCommand;
 import com.chaing.domain.returns.dto.command.ReturnCommand;
 import com.chaing.domain.returns.dto.command.ReturnItemCommand;
 import com.chaing.domain.returns.dto.request.FranchiseReturnCreateRequest;
+import com.chaing.domain.returns.dto.request.FranchiseReturnDeliveryRequest;
 import com.chaing.domain.returns.dto.response.FranchiseReturnCreateResponse;
+import com.chaing.domain.returns.dto.response.FranchiseReturnDeliveryResponse;
 import com.chaing.domain.returns.dto.response.FranchiseReturnDetailResponse;
 import com.chaing.domain.returns.dto.response.FranchiseReturnItemResponse;
 import com.chaing.domain.returns.dto.response.FranchiseReturnResponse;
@@ -28,6 +30,7 @@ import com.chaing.domain.returns.exception.FranchiseReturnException;
 import com.chaing.domain.returns.service.FranchiseReturnService;
 import com.chaing.domain.returns.service.ReturnCodeGenerator;
 import com.chaing.domain.users.service.UserManagementService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -481,5 +484,20 @@ public class FranchiseReturnFacade {
                 .orderInfo(orderInfo)
                 .items(items)
                 .build();
+    }
+
+    // 반품 제품 출고
+    public List<FranchiseReturnDeliveryResponse> delivery(List<FranchiseReturnDeliveryRequest> requests) {
+        // List<boxCode>
+        List<String> requestedBoxCodes = requests.stream().map(FranchiseReturnDeliveryRequest::boxCode).toList();
+
+        // 반품 요청 상태 배송 대기로 수정
+        // Map<returnCode, List<boxCode>>
+        Map<String, List<String>> boxCodesByReturnCode = franchiseReturnService.delivery(requestedBoxCodes);
+
+        // 반환
+        return boxCodesByReturnCode.entrySet().stream()
+                .map(FranchiseReturnDeliveryResponse::from)
+                .toList();
     }
 }

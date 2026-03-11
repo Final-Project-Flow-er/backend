@@ -42,4 +42,8 @@
         List<Long> getAllActiveUserIds();
 
         List<User> findAllByUserIdIn(List<Long> userIds);
-    }
+
+
+        @Query("SELECT DISTINCT u.businessUnitId FROM User u WHERE u.role = :role AND u.businessUnitId IS NOT NULL")
+        List<Long> findDistinctBusinessUnitIdsByRole(@Param("role") UserRole role);
+}

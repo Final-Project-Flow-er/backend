@@ -27,8 +27,8 @@ public interface NoticeRepository extends JpaRepository<Notice, Long> {
     List<Long> findAllIdsSorted(@Param("now") LocalDateTime now);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("SELECT COUNT(n) FROM Notice n WHERE n.important = true AND (n.importantUntil IS NULL OR n.importantUntil > :now)")
-    long countEffectiveImportantNotices(@Param("now") LocalDateTime now);
+    @Query("SELECT n FROM Notice n WHERE n.important = true AND (n.importantUntil IS NULL OR n.importantUntil > :now)")
+    List<Notice> findAllEffectiveImportantWithLock(@Param("now") LocalDateTime now);
 
     @Query(value = "SELECT * FROM notice n WHERE n.deleted_at IS NULL AND " +
             "((CASE WHEN n.important = true AND (n.important_until IS NULL OR n.important_until > :now) " +

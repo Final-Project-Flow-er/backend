@@ -12,6 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -74,11 +75,10 @@ public class NoticeService {
     // 중요 공지 마감일 검증
     private void validateImportantLimit(LocalDateTime importantUntil) {
         LocalDateTime now = LocalDateTime.now();
+        if (importantUntil != null && importantUntil.isBefore(now)) return;
 
-        if (importantUntil != null && importantUntil.isBefore(now)) {
-            return;
-        }
-        if (noticeRepository.countEffectiveImportantNotices(now) >= 5) {
+        List<Notice> importantNotices = noticeRepository.findAllEffectiveImportantWithLock(now);
+        if (importantNotices.size() >= 5) {
             throw new NoticeException(NoticeErrorCode.TOO_MANY_IMPORTANT_NOTICES);
         }
     }

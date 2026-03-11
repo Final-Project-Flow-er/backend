@@ -21,12 +21,18 @@ public class SettlementDocumentServiceImpl implements SettlementDocumentService 
         // 일별 문서는 1개라고 가정하고 단건 조회 (findByDailyReceiptId)
         return documentRepository.findByDailyReceiptId(dailyReceiptId)
                 .orElse(null);
-                //.orElseThrow(() -> new IllegalArgumentException("해당 일별 영수증 문서를 찾을 수 없습니다."));
+        // .orElseThrow(() -> new IllegalArgumentException("해당 일별 영수증 문서를 찾을 수 없습니다."));
     }
 
     @Override
     public List<SettlementDocument> getMonthlyDocuments(Long monthlySettlementId) {
         // 월별 문서는 여러 개일 수 있으므로 목록 조회 (findAllByMonthlySettlementId)
         return documentRepository.findAllByMonthlySettlementId(monthlySettlementId);
+    }
+
+    @Override
+    @Transactional
+    public void save(SettlementDocument document) {
+        documentRepository.save(document);
     }
 }

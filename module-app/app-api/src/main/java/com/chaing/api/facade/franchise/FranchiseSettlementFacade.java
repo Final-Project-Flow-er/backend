@@ -18,14 +18,19 @@ import com.chaing.domain.sales.repository.FranchiseSalesRepository;
 import com.chaing.domain.settlements.entity.DailyReceiptLine;
 import com.chaing.domain.settlements.entity.DailySettlementReceipt;
 import com.chaing.domain.settlements.entity.MonthlySettlement;
+import com.chaing.domain.settlements.enums.DocumentOwner;
+import com.chaing.domain.settlements.enums.DocumentType;
 import com.chaing.domain.settlements.enums.PeriodType;
 import com.chaing.domain.settlements.enums.VoucherType;
-import com.chaing.domain.settlements.enums.DocumentType;
 import com.chaing.domain.settlements.service.DailySettlementService;
 import com.chaing.domain.settlements.service.MonthlySettlementService;
 import com.chaing.domain.settlements.service.SettlementDocumentService;
 import com.chaing.domain.settlements.repository.interfaces.SettlementVoucherRepository;
 import com.chaing.domain.settlements.entity.SettlementVoucher;
+import com.chaing.api.service.settlement.SettlementFileService;
+import com.chaing.core.enums.BucketName;
+import com.chaing.core.service.MinioService;
+import com.chaing.domain.settlements.entity.SettlementDocument;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -50,6 +55,8 @@ public class FranchiseSettlementFacade {
         private final DailySettlementService dailyService;
         private final MonthlySettlementService monthlyService;
         private final SettlementDocumentService documentService;
+        private final MinioService minioService;
+        private final SettlementFileService fileService;
 
         // 다른 도메인 Repository (메서드 추가 요청 후 사용)
         private final FranchiseSalesRepository salesRepository;
@@ -293,16 +300,45 @@ public class FranchiseSettlementFacade {
                 return ranked;
         }
 
-        // PDF / EXCEL 다운로드 (프론트 통신용 실제 URL 반환) ---
+        // pdf, excel 다운로드 (프론트 통신용 실제 URL 반환) ---
+        @Transactional
         public String getDailyReceiptPdf(Long franchiseId, LocalDate date) {
                 // 1. 해당 가맹점의 일별 정산 데이터 조회
                 DailySettlementReceipt receipt = dailyService.getByFranchiseAndDate(franchiseId, date);
 
-                // 2. 해당 정산 ID로 영수증 문서(PDF) 조회
-                com.chaing.domain.settlements.entity.SettlementDocument document = documentService
-                                .getDailyDocument(receipt.getDailyReceiptId());
+                // 2. 해당 정산 ID로 이미 생성된 문서가 있는지 확인
+                SettlementDocument existingDoc = documentService.getDailyDocument(receipt.getDailyReceiptId());
+                if (existingDoc != null) {
+                        return existingDoc.getFileUrl();
+                }
 
-                return document != null ? document.getFileUrl() : "문서가 존재하지 않습니다.";
+                // 3. 문서가 없으면 실시간 생성
+                List<DailyReceiptLine> lines = dailyService.getAllReceiptLines(receipt.getDailyReceiptId());
+                byte[] pdfBytes = fileService.createDailyReceiptPdf(receipt, lines);
+
+                // 4. MinIO 업로드
+                String fileName = "settlement/daily/FR_" + franchiseId + "_Daily_" + date + "_"
+                                + System.currentTimeMillis() + ".pdf";
+                minioService.uploadFile(pdfBytes, fileName, "application/pdf", BucketName.SETTLEMENTS);
+                String fileUrl = minioService.getFileUrl(fileName, BucketName.SETTLEMENTS);
+
+                // 5. DB에 메타데이터 저장
+                SettlementDocument newDoc = SettlementDocument.builder()
+                                .periodType(PeriodType.DAILY)
+                                .documentType(DocumentType.RECEIPT_PDF)
+                                .documentOwner(DocumentOwner.FRANCHISE)
+                                .dailyReceiptId(receipt.getDailyReceiptId())
+                                .storageProvider("MINIO")
+                                .bucket(BucketName.SETTLEMENTS.getBucketName())
+                                .objectKey(fileName)
+                                .fileUrl(fileUrl)
+                                .fileName(fileName.substring(fileName.lastIndexOf("/") + 1))
+                                .contentType("application/pdf")
+                                .fileSize((long) pdfBytes.length)
+                                .build();
+                documentService.save(newDoc);
+
+                return fileUrl;
         }
 
         public String getMonthlyReceiptPdf(Long franchiseId, YearMonth month) {

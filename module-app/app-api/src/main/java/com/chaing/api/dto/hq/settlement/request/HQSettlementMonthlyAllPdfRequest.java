@@ -7,9 +7,5 @@ import org.springframework.format.annotation.DateTimeFormat;
 import java.time.YearMonth;
 
 public record HQSettlementMonthlyAllPdfRequest(
-        @Schema(description = "조회 월(yyyy-MM)", example = "2026-02", requiredMode = Schema.RequiredMode.REQUIRED)
-        @NotNull
-        @DateTimeFormat(pattern = "yyyy-MM")
-        YearMonth month
-) {
+        @Schema(description = "조회 월(yyyy-MM)", example = "2026-02", requiredMode = Schema.RequiredMode.REQUIRED) @NotNull @DateTimeFormat(pattern = "yyyy-MM") YearMonth month) {
 }

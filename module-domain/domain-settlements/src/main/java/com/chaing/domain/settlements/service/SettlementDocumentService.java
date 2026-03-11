@@ -9,4 +9,7 @@ public interface SettlementDocumentService {
 
     // 2. 월별 정산 문서 목록 조회
     List<SettlementDocument> getMonthlyDocuments(Long monthlySettlementId);
+
+    // 3. 문서 메타데이터 저장
+    void save(SettlementDocument document);
 }

@@ -9,6 +9,7 @@ import com.chaing.domain.businessunits.service.impl.FranchiseServiceImpl;
 import com.chaing.domain.inventories.service.InventoryService;
 import com.chaing.domain.orders.dto.command.FranchiseOrderDetailCommand;
 import com.chaing.domain.orders.dto.command.FranchiseOrderItemCommand;
+import com.chaing.domain.orders.enums.FranchiseOrderStatus;
 import com.chaing.domain.orders.service.FranchiseOrderService;
 import com.chaing.domain.products.service.ProductService;
 import com.chaing.domain.returns.dto.command.FranchiseReturnItemCreateCommand;
@@ -323,6 +324,11 @@ public class FranchiseReturnFacade {
 
         // FranchiseOrderDetailCommand
         FranchiseOrderDetailCommand order = franchiseOrderService.getOrderByOrderCode(franchiseId, userId, request.orderCode());
+
+        // Order 상태가 배송완료 아니면 예외 발생
+        if (order.orderStatus() != FranchiseOrderStatus.COMPLETED) {
+            throw new FranchiseReturnException(FranchiseReturnErrorCode.INVALID_ORDER_STATUS);
+        }
 
         // returnCode
         String returnCode = generator.generate(franchiseCode);

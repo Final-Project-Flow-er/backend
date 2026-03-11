@@ -1,5 +1,6 @@
 package com.chaing.domain.users.service;
 
+import com.chaing.core.dto.command.UserContactCommand;
 import com.chaing.domain.users.dto.command.UserUpdateCommand;
 import com.chaing.domain.users.dto.condition.UserSearchCondition;
 import com.chaing.domain.users.entity.User;
@@ -18,6 +19,8 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -149,5 +152,19 @@ public class UserManagementService {
     public Long getBusinessUnitIdByUserId(Long userId) {
         User user = getUserById(userId);
         return user.getBusinessUnitId();
+    }
+
+    // username, phoneNumber 반환 메소드
+    public Map<Long, UserContactCommand> getUserContactInfosByUserIds(List<Long> userIds) {
+        List<User> users = userRepository.findAllByUserIdIn(userIds);
+
+        return users.stream()
+                .collect(Collectors.toMap(
+                        User::getUserId,
+                        user -> new UserContactCommand(
+                                user.getUsername(),
+                                user.getPhone()
+                        )
+                ));
     }
 }

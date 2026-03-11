@@ -25,14 +25,11 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(
-        name = "settlement_document",
-        indexes = {
-                @Index(name = "idx_doc_monthly", columnList = "monthly_settlement_id"),
-                @Index(name = "idx_doc_daily", columnList = "daily_receipt_id"),
-                @Index(name = "idx_doc_type", columnList = "document_type")
-        }
-)
+@Table(name = "settlement_document", indexes = {
+        @Index(name = "idx_doc_monthly", columnList = "monthly_settlement_id"),
+        @Index(name = "idx_doc_daily", columnList = "daily_receipt_id"),
+        @Index(name = "idx_doc_type", columnList = "document_type")
+})
 public class SettlementDocument extends BaseEntity {
 
     @Id
@@ -56,6 +53,12 @@ public class SettlementDocument extends BaseEntity {
 
     @Column(name = "daily_receipt_id")
     private Long dailyReceiptId; // 일별 문서 연결
+
+    @Column(name = "settlement_date")
+    private java.time.LocalDate settlementDate; // 본사 통합용
+
+    @Column(name = "settlement_month")
+    private java.time.YearMonth settlementMonth; // 본사 통합용
 
     @Column(nullable = false, length = 50)
     private String storageProvider; // MINIO or S3 //
@@ -86,14 +89,22 @@ public class SettlementDocument extends BaseEntity {
         if (periodType == null) {
             throw new IllegalStateException("periodType은 필수입니다");
         }
+        // HQ 소유의 전체 요약 문서는 특정 ID가 없을 수도 있지만 날짜/월은 있어야 함
+        if (documentOwner == DocumentOwner.HQ && (documentType == DocumentType.HQ_DAILY_SUMMARY_PDF
+                || documentType == DocumentType.HQ_MONTHLY_SUMMARY_PDF)) {
+            if (documentType == DocumentType.HQ_DAILY_SUMMARY_PDF && settlementDate == null) {
+                throw new IllegalStateException("HQ 일별 요약은 settlementDate가 필수입니다");
+            }
+            if (documentType == DocumentType.HQ_MONTHLY_SUMMARY_PDF && settlementMonth == null) {
+                throw new IllegalStateException("HQ 월별 요약은 settlementMonth가 필수입니다");
+            }
+            return;
+        }
         if (periodType == PeriodType.MONTHLY && monthlySettlementId == null) {
             throw new IllegalStateException("MONTHLY 문서는 monthlySettlementId가 필수입니다");
         }
         if (periodType == PeriodType.DAILY && dailyReceiptId == null) {
             throw new IllegalStateException("DAILY 문서는 dailyReceiptId가 필수입니다");
-
-
         }
-
     }
 }

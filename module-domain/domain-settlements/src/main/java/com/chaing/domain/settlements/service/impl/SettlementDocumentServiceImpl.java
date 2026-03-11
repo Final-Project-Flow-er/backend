@@ -31,6 +31,20 @@ public class SettlementDocumentServiceImpl implements SettlementDocumentService 
     }
 
     @Override
+    public SettlementDocument getHQDailyDocument(java.time.LocalDate date) {
+        return documentRepository
+                .findByDocumentOwnerAndSettlementDate(com.chaing.domain.settlements.enums.DocumentOwner.HQ, date)
+                .orElse(null);
+    }
+
+    @Override
+    public SettlementDocument getHQMonthlyDocument(java.time.YearMonth month) {
+        return documentRepository
+                .findByDocumentOwnerAndSettlementMonth(com.chaing.domain.settlements.enums.DocumentOwner.HQ, month)
+                .orElse(null);
+    }
+
+    @Override
     @Transactional
     public void save(SettlementDocument document) {
         documentRepository.save(document);

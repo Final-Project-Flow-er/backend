@@ -14,6 +14,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springdoc.core.annotations.ParameterObject;
 
 @RestController
 @Tag(name = "HQSettlementLog API", description = "본사 정산 로그(이력) 조회 API")
@@ -30,7 +31,7 @@ public class HQSettlementLogController {
             """)
     @GetMapping
     public ResponseEntity<ApiResponse<Page<HQSettlementLogResponse>>> getSettlementLogs(
-            @Valid HQSettlementLogRequest request) {
+            @ParameterObject @Valid HQSettlementLogRequest request) {
         Page<HQSettlementLogResponse> response = logFacade.getSettlementLogs(request);
         return ResponseEntity.ok(ApiResponse.success(response));
     }

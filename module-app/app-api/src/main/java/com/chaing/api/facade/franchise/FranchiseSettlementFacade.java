@@ -10,7 +10,6 @@ import com.chaing.domain.orders.entity.FranchiseOrderItem;
 import com.chaing.domain.orders.enums.FranchiseOrderStatus;
 import com.chaing.domain.orders.repository.FranchiseOrderItemRepository;
 import com.chaing.domain.orders.repository.FranchiseOrderRepository;
-import com.chaing.domain.returns.repository.FranchiseReturnRepository;
 import com.chaing.domain.sales.entity.Sales;
 import com.chaing.domain.sales.entity.SalesItem;
 import com.chaing.domain.sales.repository.FranchiseSalesItemRepository;
@@ -44,7 +43,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 @Service
@@ -57,14 +55,13 @@ public class FranchiseSettlementFacade {
         private final SettlementDocumentService documentService;
         private final MinioService minioService;
         private final SettlementFileService fileService;
+        private final SettlementVoucherRepository voucherRepository;
 
         // 다른 도메인 Repository (메서드 추가 요청 후 사용)
         private final FranchiseSalesRepository salesRepository;
         private final FranchiseSalesItemRepository salesItemRepository;
         private final FranchiseOrderRepository orderRepository;
         private final FranchiseOrderItemRepository orderItemRepository;
-        private final FranchiseReturnRepository returnRepository;
-        private final SettlementVoucherRepository voucherRepository;
 
         // 일별 정산 요약
         public FranchiseSettlementSummaryResponse getDailySummary(Long franchiseId, LocalDate date) {
@@ -235,7 +232,6 @@ public class FranchiseSettlementFacade {
                 // 상품명별 그룹핑
                 Map<String, List<SalesItem>> grouped = items.stream()
                                 .collect(Collectors.groupingBy(SalesItem::getProductName));
-                AtomicInteger rank = new AtomicInteger(1);
                 List<FranchiseSalesItemResponse> result = grouped.entrySet().stream()
                                 .map(entry -> {
                                         String name = entry.getKey();
@@ -349,33 +345,94 @@ public class FranchiseSettlementFacade {
                 List<com.chaing.domain.settlements.entity.SettlementDocument> documents = documentService
                                 .getMonthlyDocuments(settlement.getMonthlySettlementId());
 
-                // 3. DocumentType.RECEIPT_PDF 인 문서만 필터링하여 URL 반환
-                if (documents != null) {
-                        return documents.stream()
-                                        .filter(doc -> doc.getDocumentType() == DocumentType.RECEIPT_PDF)
-                                        .findFirst()
-                                        .map(com.chaing.domain.settlements.entity.SettlementDocument::getFileUrl)
-                                        .orElse("문서가 존재하지 않습니다.");
+                // 3. RECEIPT_PDF 문서가 이미 있는지 확인
+                String existingUrl = documents.stream()
+                                .filter(doc -> doc.getDocumentType() == DocumentType.RECEIPT_PDF)
+                                .findFirst()
+                                .map(com.chaing.domain.settlements.entity.SettlementDocument::getFileUrl)
+                                .orElse(null);
+
+                if (existingUrl != null) {
+                        return existingUrl;
                 }
-                return "문서가 존재하지 않습니다.";
+
+                // 4. 없으면 실시간 생성
+                List<com.chaing.domain.settlements.entity.SettlementVoucher> vouchers = voucherRepository
+                                .findAllByMonthlySettlementId(settlement.getMonthlySettlementId());
+                byte[] pdfBytes = fileService.createMonthlyReceiptPdf(settlement, vouchers);
+
+                // 5. MinIO 업로드
+                String fileName = "settlement/monthly/Franchise_" + franchiseId + "_Monthly_Receipt_" + month + "_"
+                                + System.currentTimeMillis() + ".pdf";
+                minioService.uploadFile(pdfBytes, fileName, "application/pdf", BucketName.SETTLEMENTS);
+
+                // 6. DB 메타데이터 저장
+                String fileUrl = minioService.getFileUrl(fileName, BucketName.SETTLEMENTS);
+                documentService.save(SettlementDocument.builder()
+                                .monthlySettlementId(settlement.getMonthlySettlementId())
+                                .periodType(PeriodType.MONTHLY)
+                                .documentType(DocumentType.RECEIPT_PDF)
+                                .documentOwner(DocumentOwner.FRANCHISE)
+                                .storageProvider("MINIO")
+                                .bucket(BucketName.SETTLEMENTS.getBucketName())
+                                .objectKey(fileName)
+                                .fileUrl(fileUrl)
+                                .fileName(fileName.substring(fileName.lastIndexOf("/") + 1))
+                                .contentType("application/pdf")
+                                .fileSize((long) pdfBytes.length)
+                                .build());
+
+                return fileUrl;
         }
 
+        @Transactional
         public String getMonthlyVouchersExcel(Long franchiseId, YearMonth month) {
-                // 엑셀도 동일하게 해당 정산 데이터 기반으로 조회 후 반환
+                // 1. 해당 가맹점의 월별 정산 데이터 조회
                 MonthlySettlement settlement = monthlyService.getByFranchiseAndMonth(franchiseId, month);
-                List<com.chaing.domain.settlements.entity.SettlementDocument> documents = documentService
-                                .getMonthlyDocuments(settlement.getMonthlySettlementId());
 
+                // 2. 이미 생성된 엑셀 문서가 있는지 확인
+                List<SettlementDocument> documents = documentService
+                                .getMonthlyDocuments(settlement.getMonthlySettlementId());
                 if (documents != null) {
-                        // DocumentType.VOUCHER_EXCEL 인 문서만 필터링하여 URL 반환
-                        // 필요시 VOUCHER_EXCEL 타입 등 상세 조건으로 필터링
-                        return documents.stream()
+                        var existingExcel = documents.stream()
                                         .filter(doc -> doc.getDocumentType() == DocumentType.VOUCHER_EXCEL)
-                                        .findFirst()
-                                        .map(com.chaing.domain.settlements.entity.SettlementDocument::getFileUrl)
-                                        .orElse("문서가 존재하지 않습니다.");
+                                        .findFirst();
+                        if (existingExcel.isPresent()) {
+                                return existingExcel.get().getFileUrl();
+                        }
                 }
-                return "문서가 존재하지 않습니다.";
+
+                // 3. 없으면 실시간 생성 (전표 데이터 조회)
+                // TODO: 페이징 없이 전체 조회용 메서드 필요. 일단 mock이나 기존 repository 활용
+                List<SettlementVoucher> vouchers = voucherRepository
+                                .findAllByMonthlySettlementId(settlement.getMonthlySettlementId());
+                byte[] excelBytes = fileService.createMonthlyVoucherExcel(vouchers);
+
+                // 4. MinIO 업로드
+                String fileName = "settlement/monthly/FR_" + franchiseId + "_Voucher_" + month + "_"
+                                + System.currentTimeMillis() + ".xlsx";
+                minioService.uploadFile(excelBytes, fileName,
+                                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                BucketName.SETTLEMENTS);
+                String fileUrl = minioService.getFileUrl(fileName, BucketName.SETTLEMENTS);
+
+                // 5. DB에 메타데이터 저장
+                SettlementDocument newDoc = SettlementDocument.builder()
+                                .periodType(PeriodType.MONTHLY)
+                                .documentType(DocumentType.VOUCHER_EXCEL)
+                                .documentOwner(DocumentOwner.FRANCHISE)
+                                .monthlySettlementId(settlement.getMonthlySettlementId())
+                                .storageProvider("MINIO")
+                                .bucket(BucketName.SETTLEMENTS.getBucketName())
+                                .objectKey(fileName)
+                                .fileUrl(fileUrl)
+                                .fileName(fileName.substring(fileName.lastIndexOf("/") + 1))
+                                .contentType("application/vnd.ms-excel")
+                                .fileSize((long) excelBytes.length)
+                                .build();
+                documentService.save(newDoc);
+
+                return fileUrl;
         }
 
 }

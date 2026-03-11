@@ -47,5 +47,5 @@ public interface FranchiseOrderRepository extends JpaRepository<FranchiseOrder, 
 
     @Query("SELECT f FROM FranchiseOrder f " +
             "WHERE f.orderStatus IN :statuses")
-    List<FranchiseOrder> getFranchiseOrderItemByFranchiseOrderStatus(@Param("statuses") List<FranchiseOrderStatus> statuses);
+    List<FranchiseOrder> getFranchiseOrderByFranchiseOrderStatus(@Param("statuses") List<FranchiseOrderStatus> statuses);
 }

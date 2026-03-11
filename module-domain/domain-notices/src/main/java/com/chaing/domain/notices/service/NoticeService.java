@@ -63,6 +63,7 @@ public class NoticeService {
         return null;
     }
 
+    // 다음글
     public Notice getNextNotice(Long currentId) {
         List<Long> allIds = noticeRepository.findAllIdsSorted(LocalDateTime.now());
         int currentIndex = allIds.indexOf(currentId);

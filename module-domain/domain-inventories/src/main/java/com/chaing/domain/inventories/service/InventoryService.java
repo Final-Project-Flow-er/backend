@@ -112,13 +112,21 @@ public class InventoryService {
     }
 
     // 수동 안전재고 완전 초기화 (시스템 기본값으로 회귀)
-    public void resetSafetyStockToDefault(LocationType locationType, Long locationId, Long productId) {
+    public void resetSafetyStockToDefault(String locationType, Long locationId, Long productId) {
         InventoryPolicy policy = inventoryPolicyRepository
-                .findPolicy(locationType, locationId, productId)
+                .findPolicy(convertLocationType(locationType), locationId, productId)
                 .orElseThrow(() -> new InventoriesException(InventoriesErrorCode.DATA_OMISSION));
 
         policy.updateManualSafetyStock(null);
         inventoryPolicyRepository.save(policy);
+    }
+
+    public LocationType convertLocationType(String locationType) {
+        try {
+            return LocationType.valueOf(locationType);
+        } catch (IllegalArgumentException e) {
+            throw new InventoriesException(InventoriesErrorCode.INVALID_LOCATION_TYPE);
+        }
     }
 
     // 안전 재고 알림

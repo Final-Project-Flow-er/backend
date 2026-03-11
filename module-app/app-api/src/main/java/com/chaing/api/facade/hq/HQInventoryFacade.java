@@ -2,9 +2,8 @@ package com.chaing.api.facade.hq;
 
 import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.core.enums.LogType;
-import com.chaing.domain.inventories.entity.FactoryInventory;
-import com.chaing.domain.inventories.entity.FranchiseInventory;
-import com.chaing.domain.inventories.entity.HQInventory;
+import com.chaing.domain.businessunits.entity.Franchise;
+import com.chaing.domain.businessunits.repository.FranchiseRepository;
 import com.chaing.domain.inventories.dto.request.DisposalRequest;
 import com.chaing.domain.inventories.dto.request.FranchiseInventoryItemsRequest;
 import com.chaing.domain.inventories.dto.request.HQInventoryItemsRequest;
@@ -25,6 +24,9 @@ import com.chaing.domain.inventories.dto.response.InventoryAlertResponse;
 import com.chaing.domain.inventories.dto.response.InventoryProductInfoResponse;
 import com.chaing.domain.inventories.dto.response.SafetyStockAlertResponse;
 import com.chaing.domain.inventories.dto.response.SafetyStockResponse;
+import com.chaing.domain.inventories.entity.FactoryInventory;
+import com.chaing.domain.inventories.entity.FranchiseInventory;
+import com.chaing.domain.inventories.entity.HQInventory;
 import com.chaing.domain.inventories.service.InventoryService;
 import com.chaing.domain.inventorylogs.dto.request.InventoryLogCreateRequest;
 import com.chaing.domain.inventorylogs.dto.response.ActorProductSalesResponse;
@@ -35,10 +37,10 @@ import com.chaing.domain.inventorylogs.enums.LocationType;
 import com.chaing.domain.inventorylogs.service.InventoryLogService;
 import com.chaing.domain.products.dto.response.ProductInfoResponse;
 import com.chaing.domain.products.service.ProductService;
+import com.chaing.domain.sales.dto.response.FranchiseSalesDailyQuantityResponse;
+import com.chaing.domain.sales.service.FranchiseSalesService;
 import com.chaing.domain.users.enums.UserRole;
 import com.chaing.domain.users.service.UserManagementService;
-import com.chaing.domain.businessunits.entity.Franchise;
-import com.chaing.domain.businessunits.repository.FranchiseRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -46,7 +48,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -58,32 +62,30 @@ import static com.chaing.domain.inventories.enums.LocationType.FRANCHISE;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class HQInventoryFacade {
+
     private final InventoryService inventoryService;
     private final ProductService productService;
     private final InventoryLogService inventoryLogService;
     private final UserManagementService userManagementService;
     private final FranchiseRepository franchiseRepository;
+    private final FranchiseSalesService franchiseSalesService;
 
-    // 가맹점 ID+이름 목록 조회
     public Map<Long, String> getFranchiseList() {
         return franchiseRepository.findAll().stream()
                 .collect(Collectors.toMap(Franchise::getFranchiseId, Franchise::getName));
     }
 
-    // 대분류
     public List<HQInventoryProductResponse> getStock(StockSearchRequest request) {
-        // id, code, name 반환(재고에 코드랑 이름이 없으므로 가지고 오기)
-        List<ProductInfoResponse> products = productService.getInventoryProducts(request.productCode(),
-                request.name());
+        List<ProductInfoResponse> products = productService.getInventoryProducts(request.productCode(), request.name());
 
         List<Long> ids = products.stream()
                 .map(ProductInfoResponse::productId)
                 .toList();
 
         Map<Long, InventoryProductInfoResponse> productInfos = inventoryService.getStock(ids, request.status());
+
         return products.stream()
                 .map(p -> {
-
                     InventoryProductInfoResponse info = productInfos.get(p.productId());
 
                     if (info == null) {
@@ -109,30 +111,26 @@ public class HQInventoryFacade {
                 .toList();
     }
 
-    // 중분류
     public List<HQInventoryBatchResponse> getBatches(Long productId) {
         return inventoryService.getBatches(productId);
     }
 
-    // 소분류
     public List<HQInventoryItemResponse> getItems(HQInventoryItemsRequest request) {
         return inventoryService.getItems(request);
     }
 
-    // 특정 가맹점 대분류
     public List<FranchiseInventoryProductResponse> getFranchiseStock(Long franchiseId, StockSearchRequest request) {
         List<ProductInfoResponse> products = productService.getInventoryProducts(request.productCode(), request.name());
+
         List<Long> ids = products.stream()
                 .map(ProductInfoResponse::productId)
                 .toList();
 
-        Map<Long, InventoryProductInfoResponse> productInfos = inventoryService.getFranchiseStock(franchiseId,
-                ids,
-                request.status());
+        Map<Long, InventoryProductInfoResponse> productInfos = inventoryService.getFranchiseStock(
+                franchiseId, ids, request.status());
 
         return products.stream()
                 .map(p -> {
-
                     InventoryProductInfoResponse info = productInfos.get(p.productId());
 
                     if (info == null) {
@@ -158,30 +156,31 @@ public class HQInventoryFacade {
                 .toList();
     }
 
-    // 특정 가맹정 중분류
     public List<FranchiseInventoryBatchResponse> getFranchiseBatches(Long franchiseId, Long productId) {
         return inventoryService.getFranchiseBatches(franchiseId, productId);
     }
 
-    // 특정 가맹점 소분류
     public List<FranchiseInventoryItemResponse> getFranchiseItems(Long franchiseId,
-            FranchiseInventoryItemsRequest request) {
+                                                                  FranchiseInventoryItemsRequest request) {
         return inventoryService.getFranchiseItems(franchiseId, request);
     }
 
-    // 안전재고, 유통기한 계산
-    @Scheduled(cron = "0 0 0 * * *") // 매일 자정 실행
+    @Scheduled(cron = "0 0 0 * * *")
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public void calculateSafetyStock() {
-        // 0. 유통기한 만료 상태 업데이트
         inventoryService.updateExpiredStatus();
 
         List<Long> franchiseIds = inventoryService.getAllFranchiseIds();
-        List<Long> ids = productService.getAllProductIds();
+        List<Long> productIds = productService.getAllProductIds();
 
-        // 1. 가맹점 안전재고 계산 (판매량 기준)
-        List<ActorProductSalesResponse> salesData = inventoryLogService.getProductSales(
-                franchiseIds, ids, ActorType.FRANCHISE, LogType.SALE);
+        LocalDate today = LocalDate.now();
+        LocalDate startDate = today.minusDays(90);
+        LocalDate endDate = today.minusDays(60);
+
+        List<FranchiseSalesDailyQuantityResponse> salesRows = franchiseSalesService.getDailyProductSalesForSafetyStock(
+                franchiseIds, productIds, startDate, endDate);
+
+        List<ActorProductSalesResponse> salesData = toActorProductSales(salesRows);
 
         for (ActorProductSalesResponse franchise : salesData) {
             Long franchiseId = franchise.actorId();
@@ -200,10 +199,9 @@ public class HQInventoryFacade {
             }
         }
 
-        // 2. 공장(FACTORY) 안전재고 계산 (출고량 기준)
         List<Long> factoryIds = userManagementService.getBusinessUnitIdsByRole(UserRole.FACTORY);
         List<ActorProductSalesResponse> factoryOutboundData = inventoryLogService.getProductSales(
-                factoryIds, ids, ActorType.FACTORY, LogType.OUTBOUND);
+                factoryIds, productIds, ActorType.FACTORY, LogType.OUTBOUND);
 
         for (ActorProductSalesResponse factory : factoryOutboundData) {
             Long actorId = factory.actorId();
@@ -223,17 +221,13 @@ public class HQInventoryFacade {
         }
     }
 
-    // 안전재고 유통기한 알림
     public InventoryAlertResponse getInventoryAlerts() {
-        List<SafetyStockResponse> safetyStockAlert = inventoryService.getLowStockAlerts("FACTORY", 1L); // 공장 아이디 고정
-
-        List<ExpirationBatchResultResponse> expirationAlerts = inventoryService.getExpirationAlerts("FACTORY", 1L); // 공장 아이디 고정
+        List<SafetyStockResponse> safetyStockAlert = inventoryService.getLowStockAlerts("FACTORY", 1L);
+        List<ExpirationBatchResultResponse> expirationAlerts = inventoryService.getExpirationAlerts("FACTORY", 1L);
 
         List<Long> ids = productService.getAllProductIds();
-
         Map<Long, ProductInfo> products = productService.getProductInfos(ids);
 
-        // 코드와 이름 조합
         List<SafetyStockAlertResponse> safetyStockAlerts = safetyStockAlert.stream()
                 .filter(k -> products.containsKey(k.productId()))
                 .map(k -> new SafetyStockAlertResponse(
@@ -243,7 +237,6 @@ public class HQInventoryFacade {
                         k.safetyStock()))
                 .toList();
 
-        // 코드와 이름 조합
         List<ExpirationAlertResponse> expirationAlert = expirationAlerts.stream()
                 .filter(k -> products.containsKey(k.productId()))
                 .map(k -> new ExpirationAlertResponse(
@@ -259,11 +252,9 @@ public class HQInventoryFacade {
                 .build();
     }
 
-    // 본사용: 가맹점별 유통기한 및 안전재고 알림
     public InventoryAlertResponse getFranchiseInventoryAlerts(Long franchiseId) {
         List<SafetyStockResponse> safetyStockAlert = inventoryService.getLowStockAlerts("FRANCHISE", franchiseId);
-        List<ExpirationBatchResultResponse> expirationAlerts = inventoryService.getExpirationAlerts("FRANCHISE",
-                franchiseId);
+        List<ExpirationBatchResultResponse> expirationAlerts = inventoryService.getExpirationAlerts("FRANCHISE", franchiseId);
 
         List<Long> ids = productService.getAllProductIds();
         Map<Long, ProductInfo> products = productService.getProductInfos(ids);
@@ -292,16 +283,13 @@ public class HQInventoryFacade {
                 .build();
     }
 
-    // 재고 증가 및 로그 기록
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public Void increaseInventory(@Valid InventoryBatchRequest inventoryBatchRequest) {
-        // 여기서 받을땐 로그가 가용상태에서 받아야 할 듯
         List<InventoryLogCreateRequest> logs = convert(inventoryBatchRequest);
         inventoryLogService.recordInventoryLog(logs);
 
         LocationType toType = LocationType.valueOf(inventoryBatchRequest.toLocationType().toUpperCase());
 
-        // 재고 감소 인벤토리Ids로 받음
         if (toType == LocationType.FRANCHISE) {
             inventoryService.franchiseIncreaseInventory(inventoryBatchRequest);
         } else if (toType == LocationType.FACTORY) {
@@ -310,9 +298,7 @@ public class HQInventoryFacade {
             inventoryService.hqIncreaseInventory(inventoryBatchRequest);
         }
 
-        // 해당 재고 삭제
         LocationType fromType = LocationType.valueOf(inventoryBatchRequest.fromLocationType().toUpperCase());
-
         List<String> serialCodes = convertsSerialCode(inventoryBatchRequest.boxes());
 
         if (fromType == LocationType.FRANCHISE) {
@@ -325,7 +311,6 @@ public class HQInventoryFacade {
         return null;
     }
 
-    // 제품 식별코드 반환
     public List<String> convertsSerialCode(List<InventoryBoxRequest> boxes) {
         return boxes.stream()
                 .flatMap(box -> box.productList().stream())
@@ -333,21 +318,19 @@ public class HQInventoryFacade {
                 .toList();
     }
 
-    // 재고 상태 변환 및 로그 기록
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public Void decreaseInventory(@Valid InventoryBatchRequest inventoryBatchRequest) {
         List<String> serialCodes = convertsSerialCode(inventoryBatchRequest.boxes());
         inventoryService.updateShippingStatus(serialCodes);
+
         List<InventoryLogCreateRequest> logs = convert(inventoryBatchRequest);
         inventoryLogService.recordInventoryLog(logs);
 
         return null;
     }
 
-    // 안전재고 계산
     private double calculateStdDev(List<DailySales> sales) {
-        if (sales == null || sales.isEmpty())
-            return 0;
+        if (sales == null || sales.isEmpty()) return 0;
 
         double avg = sales.stream()
                 .mapToInt(DailySales::quantity)
@@ -362,8 +345,34 @@ public class HQInventoryFacade {
         return Math.sqrt(variance);
     }
 
-    public List<InventoryLogCreateRequest> convert(InventoryBatchRequest request) {
+    private List<ActorProductSalesResponse> toActorProductSales(List<FranchiseSalesDailyQuantityResponse> rows) {
+        Map<Long, Map<Long, List<DailySales>>> grouped = new HashMap<>();
 
+        for (FranchiseSalesDailyQuantityResponse row : rows) {
+            grouped
+                    .computeIfAbsent(row.franchiseId(), k -> new HashMap<>())
+                    .computeIfAbsent(row.productId(), k -> new ArrayList<>())
+                    .add(new DailySales(row.date(), row.quantity()));
+        }
+
+        return grouped.entrySet().stream()
+                .map(actorEntry -> {
+                    Long actorId = actorEntry.getKey();
+
+                    List<ProductSalesResponse> products = actorEntry.getValue().entrySet().stream()
+                            .map(productEntry -> {
+                                List<DailySales> daily = productEntry.getValue();
+                                int totalSales = daily.stream().mapToInt(DailySales::quantity).sum();
+                                return new ProductSalesResponse(productEntry.getKey(), daily, totalSales);
+                            })
+                            .toList();
+
+                    return new ActorProductSalesResponse(actorId, products);
+                })
+                .toList();
+    }
+
+    public List<InventoryLogCreateRequest> convert(InventoryBatchRequest request) {
         LocationType fromType = LocationType.valueOf(request.fromLocationType().toUpperCase());
         LocationType toType = LocationType.valueOf(request.toLocationType().toUpperCase());
         ActorType actorType = ActorType.valueOf(request.fromLocationType().toUpperCase());
@@ -371,11 +380,9 @@ public class HQInventoryFacade {
         List<InventoryLogCreateRequest> result = new ArrayList<>();
 
         for (InventoryBoxRequest box : request.boxes()) {
-
             int quantity = box.productList().size();
 
             for (InventoryRequest product : box.productList()) {
-
                 InventoryLogCreateRequest log = new InventoryLogCreateRequest(
                         product.productId(),
                         box.productName(),
@@ -401,7 +408,6 @@ public class HQInventoryFacade {
 
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public Void disposalInventory(DisposalRequest request, Long locationId) {
-
         String actorTypeRaw = request.actorType().toUpperCase();
         List<InventoryLogCreateRequest> logs = new ArrayList<>();
 
@@ -411,8 +417,7 @@ public class HQInventoryFacade {
                     .map(HQInventory::getProductId)
                     .distinct()
                     .toList();
-            Map<Long, ProductInfo> productInfos = productIds.isEmpty() ? Map.of()
-                    : productService.getProductInfos(productIds);
+            Map<Long, ProductInfo> productInfos = productIds.isEmpty() ? Map.of() : productService.getProductInfos(productIds);
 
             for (HQInventory inv : inventories) {
                 ProductInfo pInfo = productInfos.get(inv.getProductId());
@@ -438,8 +443,7 @@ public class HQInventoryFacade {
                     .map(FactoryInventory::getProductId)
                     .distinct()
                     .toList();
-            Map<Long, ProductInfo> productInfos = productIds.isEmpty() ? Map.of()
-                    : productService.getProductInfos(productIds);
+            Map<Long, ProductInfo> productInfos = productIds.isEmpty() ? Map.of() : productService.getProductInfos(productIds);
 
             for (FactoryInventory inv : inventories) {
                 ProductInfo pInfo = productInfos.get(inv.getProductId());
@@ -460,14 +464,12 @@ public class HQInventoryFacade {
                         request.actorId()));
             }
         } else if (actorTypeRaw.equals("FRANCHISE")) {
-            List<FranchiseInventory> inventories = inventoryService
-                    .getFranchiseInventoriesByIds(request.inventoryIds());
+            List<FranchiseInventory> inventories = inventoryService.getFranchiseInventoriesByIds(request.inventoryIds());
             List<Long> productIds = inventories.stream()
                     .map(FranchiseInventory::getProductId)
                     .distinct()
                     .toList();
-            Map<Long, ProductInfo> productInfos = productIds.isEmpty() ? Map.of()
-                    : productService.getProductInfos(productIds);
+            Map<Long, ProductInfo> productInfos = productIds.isEmpty() ? Map.of() : productService.getProductInfos(productIds);
 
             for (FranchiseInventory inv : inventories) {
                 ProductInfo pInfo = productInfos.get(inv.getProductId());
@@ -504,7 +506,9 @@ public class HQInventoryFacade {
 
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public void resetSafetyStock(Long locationId, Long productId) {
-        inventoryService.resetSafetyStockToDefault(com.chaing.domain.inventories.enums.LocationType.FACTORY, locationId,
+        inventoryService.resetSafetyStockToDefault(
+                "FACTORY",
+                locationId,
                 productId);
     }
 

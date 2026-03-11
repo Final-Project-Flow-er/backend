@@ -258,7 +258,7 @@ public class FranchiseInventoryFacade {
 
     @Transactional
     public void resetSafetyStock(Long franchiseId, Long productId) {
-        inventoryService.resetSafetyStockToDefault(com.chaing.domain.inventories.enums.LocationType.FRANCHISE,
+        inventoryService.resetSafetyStockToDefault("FRANCHISE",
                 franchiseId, productId);
     }
 

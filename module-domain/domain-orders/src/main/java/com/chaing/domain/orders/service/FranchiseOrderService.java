@@ -457,7 +457,7 @@ public class FranchiseOrderService {
         }
 
         List<FranchiseOrderItem> allItems = franchiseOrderItemRepository
-                .findAllByFranchiseOrderFranchiseOrderIdIn(
+                .findAllByFranchiseOrder_FranchiseOrderIdInAndDeletedAtIsNull(
                         orderIds
                 );
 

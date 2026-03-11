@@ -9,6 +9,8 @@ import com.chaing.api.facade.notification.NotificationFacade;
 import com.chaing.domain.notices.entity.Notice;
 import com.chaing.domain.notices.service.NoticeService;
 import com.chaing.domain.notifications.enums.NotificationType;
+import com.chaing.domain.users.entity.User;
+import com.chaing.domain.users.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
@@ -25,17 +27,26 @@ public class NoticeFacade {
     private final NoticeService noticeService;
     private final NotificationFacade notificationFacade;
     private final ApplicationEventPublisher eventPublisher;
+    private final UserRepository userRepository;
 
     // 공지사항 상세 조회
     public NoticeDetailResponse getNoticeDetail(Long id) {
         Notice notice = noticeService.getById(id);
-        return NoticeDetailResponse.from(notice);
+        String authorName = getName(notice.getAuthorId());
+        String updaterName = getName(notice.getUpdaterId());
+        Notice prev = noticeService.getPreviousNotice(id);
+        Notice next = noticeService.getNextNotice(id);
+
+        return NoticeDetailResponse.from(notice, authorName, updaterName, prev, next);
     }
 
     // 공지사항 목록 조회
     public Page<NoticeSummaryResponse> getNoticeList(Pageable pageable) {
         Page<Notice> notices = noticeService.getNoticeList(pageable);
-        return notices.map(NoticeSummaryResponse::from);
+        return notices.map(notice -> {
+            String authorName = getName(notice.getAuthorId());
+            return NoticeSummaryResponse.from(notice, authorName);
+        });
     }
 
     // 공지사항 등록
@@ -49,7 +60,8 @@ public class NoticeFacade {
                 notice.getNoticeId()
         ));
 
-        return NoticeDetailResponse.from(notice);
+        String authorName = getName(authorId);
+        return NoticeDetailResponse.from(notice, authorName, null, null, null);
     }
 
     // 공지사항 수정
@@ -63,7 +75,18 @@ public class NoticeFacade {
                 notice.getNoticeId()
         ));
 
-        return NoticeDetailResponse.from(notice);
+        String authorName = getName(notice.getAuthorId());
+        String updaterName = getName(notice.getUpdaterId());
+        return NoticeDetailResponse.from(notice, authorName, updaterName, null, null);
+    }
+
+    // 사용자 이름 조회
+    private String getName(Long userId) {
+        if (userId == null)
+            return null;
+        return userRepository.findById(userId)
+                .map(User::getUsername)
+                .orElse("알 수 없음");
     }
 
     // 공지사항 삭제

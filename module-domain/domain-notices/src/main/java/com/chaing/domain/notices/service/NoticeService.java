@@ -54,24 +54,16 @@ public class NoticeService {
 
     // 이전글
     public Notice getPreviousNotice(Long currentId) {
-        List<Long> allIds = noticeRepository.findAllIdsSorted(LocalDateTime.now());
-        int currentIndex = allIds.indexOf(currentId);
-
-        if (currentIndex > 0) {
-            return getById(allIds.get(currentIndex - 1));
-        }
-        return null;
+        Notice current = getById(currentId);
+        int isImportant = current.isCurrentlyImportant() ? 1 : 0;
+        return noticeRepository.findPreviousNotice(LocalDateTime.now(), isImportant, current.getCreatedAt());
     }
 
     // 다음글
     public Notice getNextNotice(Long currentId) {
-        List<Long> allIds = noticeRepository.findAllIdsSorted(LocalDateTime.now());
-        int currentIndex = allIds.indexOf(currentId);
-
-        if (currentIndex != -1 && currentIndex < allIds.size() - 1) {
-            return getById(allIds.get(currentIndex + 1));
-        }
-        return null;
+        Notice current = getById(currentId);
+        int isImportant = current.isCurrentlyImportant() ? 1 : 0;
+        return noticeRepository.findNextNotice(LocalDateTime.now(), isImportant, current.getCreatedAt());
     }
 
     // 공지사항 삭제

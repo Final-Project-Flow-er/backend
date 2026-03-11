@@ -376,25 +376,6 @@ public class HQOrderService {
                     );
                 })
                 .toList();
-    // 발주 접수/반려
-    public Map<String, HQOrderStatus> updateOrderStatus(FactoryOrderRequest request) {
-        List<HeadOfficeOrder> orders = orderRepository.findAllByOrderCodeInAndDeletedAtIsNull(request.orderCodes());
-
-        if (orders == null || orders.isEmpty() || orders.size() != request.orderCodes().size()) {
-            throw new HQOrderException(HQOrderErrorCode.ORDER_NOT_FOUND);
-        }
-
-        if (request.isAccept()) {
-            orders.forEach(HeadOfficeOrder::accept);
-        } else {
-            orders.forEach(HeadOfficeOrder::reject);
-        }
-
-        return orders.stream()
-                .collect(Collectors.toMap(
-                        HeadOfficeOrder::getOrderCode,
-                        HeadOfficeOrder::getOrderStatus
-                ));
     }
 
     // return: Map<orderId, List<HQOrderItemCommand>>

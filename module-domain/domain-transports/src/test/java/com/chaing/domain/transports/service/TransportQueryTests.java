@@ -1,6 +1,6 @@
 package com.chaing.domain.transports.service;
 
-import com.chaing.domain.transports.dto.response.AvailableVehicleResponse;
+import com.chaing.domain.transports.dto.response.AvailableVehicleInfo;
 import com.chaing.domain.transports.entity.Vehicle;
 import com.chaing.domain.transports.usecase.reader.TransportReader;
 import com.chaing.domain.transports.usecase.validator.TransportValidator;
@@ -48,7 +48,7 @@ public class TransportQueryTests {
         given(validator.canLoadWeight(2000L, 1800L)).willReturn(false);
 
         // when
-        List<AvailableVehicleResponse> result = transportService.getAvailableVehicle();
+        List<AvailableVehicleInfo> result = transportService.getAvailableVehicle();
 
         // then
         // 결과에는 v1만 있어야 함!

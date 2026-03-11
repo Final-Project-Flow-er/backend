@@ -1,8 +1,11 @@
 package com.chaing.domain.orders.repository;
 
 import com.chaing.domain.orders.entity.FranchiseOrder;
+import com.chaing.domain.orders.entity.FranchiseOrderItem;
 import com.chaing.domain.orders.enums.FranchiseOrderStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -41,4 +44,8 @@ public interface FranchiseOrderRepository extends JpaRepository<FranchiseOrder, 
     List<FranchiseOrder> findAllByOrderStatusAndDeletedAtIsNull(FranchiseOrderStatus franchiseOrderStatus);
 
     List<FranchiseOrder> findAllByDeletedAtIsNull();
+
+    @Query("SELECT f FROM FranchiseOrder f " +
+            "WHERE f.orderStatus IN :statuses")
+    List<FranchiseOrder> getFranchiseOrderItemByFranchiseOrderStatus(@Param("statuses") List<FranchiseOrderStatus> statuses);
 }

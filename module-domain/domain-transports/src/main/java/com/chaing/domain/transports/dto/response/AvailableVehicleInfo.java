@@ -18,5 +18,4 @@ public record AvailableVehicleInfo(
                 vehicle.getMaxLoad() - currentWeight
         );
     }
-
 }

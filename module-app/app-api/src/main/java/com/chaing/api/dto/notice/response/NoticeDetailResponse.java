@@ -4,6 +4,7 @@ import com.chaing.domain.notices.entity.Notice;
 import lombok.Builder;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Builder
 public record NoticeDetailResponse(
@@ -18,28 +19,30 @@ public record NoticeDetailResponse(
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
         NoticeNav prevNotice,
-        NoticeNav nextNotice
+        NoticeNav nextNotice,
+        List<String> imageUrls
 ) {
     public record NoticeNav(Long id, String title) {
         public static NoticeNav from(Notice notice) {
-            if (notice == null)
-                return null;
+            if (notice == null) return null;
             return new NoticeNav(notice.getNoticeId(), notice.getTitle());
         }
     }
 
-    public static NoticeDetailResponse from(Notice notice, String authorName, String updaterName, Notice prev, Notice next) {
-        return new NoticeDetailResponse(
-                notice.getNoticeId(),
-                notice.getTitle(),
-                notice.getContent(),
-                authorName,
-                updaterName,
-                notice.isCurrentlyImportant(),
-                notice.getImportantUntil(),
-                notice.getCreatedAt(),
-                notice.getUpdatedAt(),
-                NoticeNav.from(prev),
-                NoticeNav.from(next));
+    public static NoticeDetailResponse from(Notice notice, String authorName, String updaterName, Notice prev, Notice next, List<String> imageUrls) {
+        return NoticeDetailResponse.builder()
+                .id(notice.getNoticeId())
+                .title(notice.getTitle())
+                .content(notice.getContent())
+                .authorName(authorName)
+                .updaterName(updaterName)
+                .important(notice.isCurrentlyImportant())
+                .importantUntil(notice.getImportantUntil())
+                .createdAt(notice.getCreatedAt())
+                .updatedAt(notice.getUpdatedAt())
+                .prevNotice(NoticeNav.from(prev))
+                .nextNotice(NoticeNav.from(next))
+                .imageUrls(imageUrls) // [추가]
+                .build();
     }
 }

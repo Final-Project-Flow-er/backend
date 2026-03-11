@@ -442,7 +442,9 @@ public class FranchiseOrderService {
                             order.getFranchiseOrderId(),
                             order.getOrderCode(),
                             itemResponses,
-                            order.getFranchiseId()
+                            order.getFranchiseId(),
+                            order.getCreatedAt(),
+                            order.getDeliveryDate()
                     );
                 })
                 .toList();
@@ -455,9 +457,8 @@ public class FranchiseOrderService {
         }
 
         List<FranchiseOrderItem> allItems = franchiseOrderItemRepository
-                .findByFranchiseOrder_FranchiseOrderIdInAndFranchiseOrder_OrderStatusAndDeletedAtIsNull(
-                        orderIds,
-                        FranchiseOrderStatus.AWAITING
+                .findAllByFranchiseOrder_FranchiseOrderIdInAndDeletedAtIsNull(
+                        orderIds
                 );
 
         if (allItems.isEmpty()) {
@@ -489,7 +490,9 @@ public class FranchiseOrderService {
                             order.getFranchiseOrderId(),
                             order.getOrderCode(),
                             itemResponses,
-                            order.getFranchiseId()
+                            order.getFranchiseId(),
+                            order.getCreatedAt(),
+                            order.getDeliveryDate()
                     );
                 })
                 .toList();
@@ -539,5 +542,46 @@ public class FranchiseOrderService {
                         FranchiseOrder::getFranchiseOrderId,
                         FranchiseOrderDetailCommand::from
                 ));
+    }
+
+    public List<FranchiseOrderForTransitResponse> getOrdersForAssignVehicle() {
+        List<FranchiseOrderStatus> statuses = List.of(
+                FranchiseOrderStatus.PARTIAL,
+                FranchiseOrderStatus.ACCEPTED
+        );
+
+        List<FranchiseOrder> unassignedOrders =
+                franchiseOrderRepository.getFranchiseOrderByFranchiseOrderStatus(statuses);
+
+        if (unassignedOrders == null || unassignedOrders.isEmpty()) {
+            throw new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_NOT_FOUND);
+        }
+
+        List<Long> unassignedOrderIds = unassignedOrders.stream()
+                .map(FranchiseOrder::getFranchiseOrderId)
+                .toList();
+
+        List<FranchiseOrderItem> unassignedOrderItems =
+                franchiseOrderItemRepository.findAllByFranchiseOrderFranchiseOrderIdIn(unassignedOrderIds);
+
+        Map<Long, List<FranchiseOrderForTransitResponse.OrderItemForTransit>> itemsByOrderId = unassignedOrderItems.stream()
+                .collect(Collectors.groupingBy(
+                        item -> item.getFranchiseOrder().getFranchiseOrderId(),
+                        Collectors.mapping(item -> new FranchiseOrderForTransitResponse.OrderItemForTransit(
+                                item.getProductId(),
+                                item.getQuantity()
+                        ), Collectors.toList())
+                ));
+
+        return unassignedOrders.stream()
+                .map(order -> new FranchiseOrderForTransitResponse(
+                        order.getFranchiseOrderId(),
+                        order.getOrderCode(),
+                        itemsByOrderId.getOrDefault(order.getFranchiseOrderId(), List.of()),
+                        order.getFranchiseId(),
+                        order.getCreatedAt(),
+                        order.getDeliveryDate()
+                ))
+                .toList();
     }
 }

@@ -2,9 +2,7 @@ package com.chaing.domain.transports.service;
 
 import com.chaing.domain.transports.dto.DeliveryFeeInfo;
 import com.chaing.domain.transports.dto.OrderInfo;
-import com.chaing.domain.transports.dto.request.TransportForceUpdateRequest;
-import com.chaing.domain.transports.dto.request.VehicleAssignmentRequest;
-import com.chaing.domain.transports.dto.response.AvailableVehicleResponse;
+import com.chaing.domain.transports.dto.response.AvailableVehicleInfo;
 import com.chaing.domain.transports.entity.Vehicle;
 import com.chaing.domain.transports.enums.DeliverStatus;
 import com.chaing.domain.transports.usecase.executor.TransportExecutor;
@@ -31,7 +29,7 @@ public class InternalTransportService {
     private final TransportValidator validator;
 
     // 운송 가능 차량 목록 조회
-    public List<AvailableVehicleResponse> getAvailableVehicle() {
+    public List<AvailableVehicleInfo> getAvailableVehicle() {
 
         // 활성화 + 배차 가능 상태의 차량 목록 조회
         List<Vehicle> candidateVehicles = reader.findCandidateVehicles();
@@ -46,7 +44,7 @@ public class InternalTransportService {
                 })
                 .map(vehicle -> {
                     Long currentWeight = reader.getCurrentTransitWeight(vehicle.getVehicleId());
-                    return AvailableVehicleResponse.from(vehicle, currentWeight);
+                    return AvailableVehicleInfo.from(vehicle, currentWeight);
                 })
                 .toList();
     }

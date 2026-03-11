@@ -47,7 +47,7 @@ public class FactoryFacade {
             // 대기 발주 조회
             ordersByOrderId = hqOrderService.getAllPendingOrders();
         }
-
+        log.info("ordersByOrderId = {}", ordersByOrderId);
         // 발주 존재하지 않을 시 빈 배열 반환
         if (ordersByOrderId == null || ordersByOrderId.isEmpty()) {
             return List.of();
@@ -64,6 +64,10 @@ public class FactoryFacade {
 
         // Map<userId, UserContactCommand>
         Map<Long, UserContactCommand> userByUserId = userManagementService.getUserContactInfosByUserIds(userIds);
+        log.info("userByUserId = {}", userByUserId);
+        if (userByUserId == null || userByUserId.isEmpty()) {
+            return List.of();
+        }
 
         // Map<orderId, userId>
         Map<Long, Long> userIdByOrderId = ordersByOrderId.values().stream()
@@ -88,7 +92,7 @@ public class FactoryFacade {
 
         // Map<orderId, List<HQOrderItemCommand>>
         Map<Long, List<HQOrderItemCommand>> orderItemsByOrderId = hqOrderService.getOrderItemIdsByOrderId(orderIds);
-
+        log.info("orderItemsByOrderId = {}", orderItemsByOrderId);
         // Map<orderItemId, HQOrderItemCommand>
         Map<Long, HQOrderItemCommand> orderItemByOrderItemId = orderItemsByOrderId.values().stream()
                 .flatMap(List::stream)

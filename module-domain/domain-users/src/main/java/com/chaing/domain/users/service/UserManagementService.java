@@ -158,10 +158,6 @@ public class UserManagementService {
     public Map<Long, UserContactCommand> getUserContactInfosByUserIds(List<Long> userIds) {
         List<User> users = userRepository.findAllByUserIdIn(userIds);
 
-        if (users == null || users.isEmpty()) {
-            throw new UserException(UserErrorCode.USER_NOT_FOUND);
-        }
-
         return users.stream()
                 .collect(Collectors.toMap(
                         User::getUserId,

@@ -63,12 +63,12 @@ public class FactoryInventoryRepositoryImpl implements FactoryInventoryRepositor
                                                 effectiveSafetyStock,
                                                 safetyResult))
                                 .from(factoryInventory)
-                                .join(inventoryPolicy)
+                                .leftJoin(inventoryPolicy)
                                 .on(
                                                 factoryInventory.productId.eq(inventoryPolicy.productId)
                                                                 .and(inventoryPolicy.locationType
                                                                                 .eq(LocationType.FACTORY))
-                                                                .and(inventoryPolicy.locationId.isNull()))
+                                                                .and(inventoryPolicy.locationId.isNotNull()))
                                 .where(
                                                 factoryInventory.productId.in(products),
                                                 factoryInventory.status.eq(LogType.AVAILABLE))
@@ -105,6 +105,7 @@ public class FactoryInventoryRepositoryImpl implements FactoryInventoryRepositor
                 return queryFactory
                                 .select(Projections.constructor(
                                                 HQInventoryItemResponse.class,
+                                                factoryInventory.inventoryId,
                                                 factoryInventory.serialCode,
                                                 factoryInventory.boxCode,
                                                 factoryInventory.status.stringValue(),
@@ -123,9 +124,6 @@ public class FactoryInventoryRepositoryImpl implements FactoryInventoryRepositor
         // 유통기한 체크
         @Override
         public List<ExpirationBatchResultResponse> getExpirationAlerts(String locationType, Long locationId) {
-                if (locationId != null) {
-                        throw new InventoriesException(InventoriesErrorCode.INVALID_LOCATION_ID);
-                }
                 if (!"FACTORY".equalsIgnoreCase(locationType)) {
                         throw new InventoriesException(InventoriesErrorCode.INVALID_LOCATION_TYPE);
                 }
@@ -230,8 +228,7 @@ public class FactoryInventoryRepositoryImpl implements FactoryInventoryRepositor
                                                 .and(factoryInventory.status.eq(LogType.AVAILABLE)))
                                 .where(
                                                 typeFilter,
-                                                idFilter
-                                )
+                                                idFilter)
                                 .groupBy(inventoryPolicy.productId, inventoryPolicy.safetyStock,
                                                 inventoryPolicy.defaultSafetyStock)
                                 .having(quantity.loe(effectiveSafetyStock))
@@ -282,7 +279,7 @@ public class FactoryInventoryRepositoryImpl implements FactoryInventoryRepositor
 
         private BooleanExpression containsLocationId(Long locationId) {
                 if (locationId == null) {
-                        return inventoryPolicy.locationId.isNull();
+                        return null;
                 }
                 return inventoryPolicy.locationId.eq(locationId);
         }

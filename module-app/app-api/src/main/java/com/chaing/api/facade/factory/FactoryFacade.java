@@ -47,7 +47,7 @@ public class FactoryFacade {
             // 대기 발주 조회
             ordersByOrderId = hqOrderService.getAllPendingOrders();
         }
-        log.info("orders: {}", ordersByOrderId);
+
         // 발주 존재하지 않을 시 빈 배열 반환
         if (ordersByOrderId == null || ordersByOrderId.isEmpty()) {
             return List.of();

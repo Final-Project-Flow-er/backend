@@ -359,7 +359,10 @@ public class HQOrderService {
     public Map<String, HQOrderStatus> updateOrders(List<String> orderCodes, boolean isAccept) {
         List<HeadOfficeOrder> orders = orderRepository.findAllByOrderCodeInAndDeletedAtIsNull(orderCodes);
 
-        if (orders == null || orders.isEmpty() || orders.size() != orderCodes.size()) {
+        // List<orderCode>
+        List<String> distinctOrderCodes = orderCodes.stream().distinct().toList();
+
+        if (orders == null || orders.isEmpty() || orders.size() != distinctOrderCodes.size()) {
             throw new HQOrderException(HQOrderErrorCode.ORDER_NOT_FOUND);
         }
 

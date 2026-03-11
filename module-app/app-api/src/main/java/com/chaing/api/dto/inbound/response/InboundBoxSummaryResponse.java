@@ -2,11 +2,13 @@ package com.chaing.api.dto.inbound.response;
 
 public record InboundBoxSummaryResponse(
         String boxCode,
+        String orderCode,
+        String productCode,
         String productName,
-        String productCode
+        Long countItem
 ) {
     public static InboundBoxSummaryResponse of(
-            String boxCode, String productName, String productCode) {
-        return new InboundBoxSummaryResponse(boxCode, productName, productCode);
+            String boxCode, String orderCode, String productCode, String productName, Long countItem) {
+        return new InboundBoxSummaryResponse(boxCode, orderCode, productCode, productName, countItem);
     }
 }

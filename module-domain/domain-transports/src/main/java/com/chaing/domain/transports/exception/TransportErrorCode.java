@@ -16,7 +16,8 @@ public enum TransportErrorCode implements ErrorCode {
     TRANSPORT_WEIGHT_IS_NOT_VALID(400, "TP006", "제품의 무게가 유효하지 않습니다."),
     TRANSPORT_VENDOR_NOT_FOUND(404, "TP007", "해당 운송 업체가 존재하지 않습니다."),
     TRANSPORT_VEHICLE_NOT_FOUND(404, "TP008", "해당 운송 차량이 존재하지 않습니다."),
-    INVALID_CONTRACT_PERIOD(400, "TP009", "계약 종료일은 시작일 이후여야 합니다.");
+    INVALID_CONTRACT_PERIOD(400, "TP009", "계약 종료일은 시작일 이후여야 합니다."),
+    TRANSPORT_PRICE_IS_NULL(400, "TP010", "운송 업체의 운송비가 확인되지 않습니다.");
 
     private final Integer status;
     private final String code;

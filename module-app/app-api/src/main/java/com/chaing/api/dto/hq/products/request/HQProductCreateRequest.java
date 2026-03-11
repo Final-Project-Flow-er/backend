@@ -11,57 +11,44 @@ import java.util.List;
 @Builder
 public record HQProductCreateRequest(
 
-        // 제품 코드 (OR, RO, MA 등 구분 가능)
-        @NotBlank
-        String productCode,
+                // 제품 코드 (OR, RO, MA 등 구분 가능)
+                @NotBlank String productCode,
 
-        // 제품명
-        @NotBlank
-        String name,
+                // 제품명
+                @NotBlank String name,
 
-        // 설명
-        @NotBlank
-        String description,
+                // 설명
+                @NotBlank String description,
 
-        // 이미지 URL
-        @NotBlank
-        String imageUrl,
+                // 이미지 URL
+                @NotBlank String imageUrl,
 
-        // 소비자 판매가
-        @NotNull
-        BigDecimal price,
+                // 소비자 판매가
+                @NotNull BigDecimal price,
 
-        // 원가
-        @NotNull
-        BigDecimal costPrice,
+                // 원가
+                @NotNull BigDecimal costPrice,
 
-        // 공급가
-        @NotNull
-        BigDecimal supplyPrice,
+                // 공급가
+                @NotNull BigDecimal supplyPrice,
 
-        // 안전재고
-        @NotNull
-        Integer safetyStock,
+                // 안전재고
+                @NotNull Integer safetyStock,
 
-        // 판매 상태
-        @NotNull
-        String status,
+                // 판매 상태
+                @NotNull String status,
 
-        // 칼로리
-        @NotNull
-        Integer kcal,
+                // 칼로리
+                @NotNull Integer kcal,
 
-        // 무게(g)
-        @NotNull
-        Integer weight,
+                // 무게(g)
+                @NotNull Integer weight,
 
-        // 공급가 적용일
-        LocalDate startDate,
+                // 공급가 적용일
+                LocalDate startDate,
 
-        LocalDate endDate,
+                LocalDate endDate,
 
-        // 구성품 목록
-        @NotNull
-        List<Long> componentIds
-) {
+                // 구성품 목록 (이름 리스트)
+                List<String> components) {
 }

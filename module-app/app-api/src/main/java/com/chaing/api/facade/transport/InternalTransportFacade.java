@@ -3,9 +3,10 @@ package com.chaing.api.facade.transport;
 import com.chaing.api.dto.transport.internal.request.VehicleAssignmentRequest;
 import com.chaing.api.dto.transport.internal.response.AvailableVehicleResponse;
 import com.chaing.api.dto.transport.internal.response.TransportCancelResponse;
-import com.chaing.domain.orders.dto.response.HQOrderForTransitResponse;
-import com.chaing.domain.orders.service.HQOrderService;
+import com.chaing.domain.orders.dto.response.FranchiseOrderForTransitResponse;
+import com.chaing.domain.orders.service.FranchiseOrderService;
 import com.chaing.domain.products.service.ProductService;
+import com.chaing.domain.transports.dto.DeliveryFeeInfo;
 import com.chaing.domain.transports.dto.OrderInfo;
 import com.chaing.domain.transports.exception.TransportErrorCode;
 import com.chaing.domain.transports.exception.TransportException;
@@ -14,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -23,7 +25,7 @@ import java.util.Map;
 public class InternalTransportFacade {
 
     private final InternalTransportService transportService;
-    private final HQOrderService hQOrderService;
+    private final FranchiseOrderService franchiseOrderService;
     private final ProductService productService;
 
     // 운송 가능 차량 리스트 조회
@@ -53,12 +55,12 @@ public class InternalTransportFacade {
 
         // 발주 도메인
         // 발주 Id, 중량 정보 받아오기
-        List<HQOrderForTransitResponse> orders = hQOrderService.getOrdersForTransit(request.orderIds());
+        List<FranchiseOrderForTransitResponse> orders = franchiseOrderService.getOrdersForTransit(request.orderIds());
 
         // 상품 Id 추출
         List<Long> productIds = orders.stream()
                 .flatMap(order -> order.items().stream())
-                .map(HQOrderForTransitResponse.OrderItemForTransit::productId)
+                .map(FranchiseOrderForTransitResponse.OrderItemForTransit::productId)
                 .distinct()
                 .toList();
 
@@ -77,7 +79,7 @@ public class InternalTransportFacade {
                                 return (long) weight * item.quantity();
                             })
                             .sum();
-                    return new OrderInfo(order.orderId(), order.orderCode(), orderWeight);
+                    return new OrderInfo(order.orderId(), order.orderCode(), orderWeight, order.franchiseId());
                 })
                 .toList();
 
@@ -104,7 +106,10 @@ public class InternalTransportFacade {
                 trackingMap,     // String
                 totalWeight
         );
+
         // 정산 관련 도메인
+        List<DeliveryFeeInfo> deliveryFees = transportService.calculateDeliveryFee(orderInfos, request.vehicleId());
+
     }
 
     @Transactional

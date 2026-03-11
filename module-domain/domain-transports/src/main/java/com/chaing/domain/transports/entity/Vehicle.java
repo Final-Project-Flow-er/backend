@@ -5,6 +5,7 @@ import com.chaing.core.enums.UsableStatus;
 import com.chaing.domain.transports.dto.command.VehicleCreateCommand;
 import com.chaing.domain.transports.dto.command.VehicleUpdateCommand;
 import com.chaing.domain.transports.enums.Dispatchable;
+import com.chaing.domain.transports.enums.VehicleType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -38,7 +39,7 @@ public class Vehicle extends BaseEntity {
     private String vehicleNumber;
 
     @Column(nullable = false)
-    private String vehicleType;
+    private VehicleType vehicleType;
 
     @Column(nullable = false)
     private String driverName;
@@ -78,9 +79,30 @@ public class Vehicle extends BaseEntity {
         if (command.driverPhone() != null) this.driverPhone = command.driverPhone();
         if (command.maxLoad() != null) this.maxLoad = command.maxLoad();
         if (command.dispatchable() != null) this.dispatchable = command.dispatchable();
+        if (command.status() != null) {
+            this.status = command.status();
+            if (this.status == UsableStatus.ACTIVE) {
+                if (this.dispatchable == Dispatchable.UNAVAILABLE) {
+                    this.dispatchable = Dispatchable.AVAILABLE;
+                }
+            } else if (this.status == UsableStatus.INACTIVE) {
+                this.dispatchable = Dispatchable.UNAVAILABLE;
+            }
+        }
     }
 
     public void updateStatus(UsableStatus status) {
         this.status = status;
+        if (status == UsableStatus.ACTIVE) {
+            this.dispatchable = Dispatchable.AVAILABLE;
+        } else if (status == UsableStatus.INACTIVE) {
+            this.dispatchable = Dispatchable.UNAVAILABLE;
+        }
+    }
+
+    public void delete() {
+        super.delete();
+        this.status = UsableStatus.INACTIVE;
+        this.dispatchable = Dispatchable.UNAVAILABLE;
     }
 }

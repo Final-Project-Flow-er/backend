@@ -21,4 +21,7 @@ public record FactoryInventoryRawData(
 
     @Override
     public LocalDate getManufactureDate() {return manufactureDate;}
+
+    @Override
+    public Long getOrderId() {return 0L;}
 }

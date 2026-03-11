@@ -44,9 +44,8 @@ public class TransportManagementService {
 
     // 운송 업체 상태 변경
     public Transport updateStatus(Long id, UsableStatus status) {
-        Transport transport = getById(id);
-        transport.updateStatus(status);
-        return transport;
+        transportRepository.updateStatus(id, status);
+        return getById(id);
     }
 
     // 운송 업체 삭제

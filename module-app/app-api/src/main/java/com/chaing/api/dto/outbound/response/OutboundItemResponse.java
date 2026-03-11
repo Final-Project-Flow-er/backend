@@ -6,14 +6,16 @@ public record OutboundItemResponse(
         String serialCode,
         Long productId,
         String productName,
-        LocalDate manufactureDate
+        LocalDate manufactureDate,
+        Boolean isPicking
 ) {
     public static OutboundItemResponse of(
             String serialCode,
             Long productId,
             String productName,
-            LocalDate manufactureDate
+            LocalDate manufactureDate,
+            Boolean isPicking
     ) {
-        return new OutboundItemResponse(serialCode, productId, productName, manufactureDate);
+        return new OutboundItemResponse(serialCode, productId, productName, manufactureDate, isPicking);
     }
 }

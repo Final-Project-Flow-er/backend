@@ -46,6 +46,11 @@ public class TransportManagementFacade {
     @Transactional
     public TransportDetailResponse updateTransport(Long id, UpdateTransportRequest request) {
         Transport transport = transportManagementService.updateTransport(id, request.toCommand());
+
+        if (request.status() == UsableStatus.INACTIVE) {
+            vehicleManagementService.deactivateVehiclesByTransportId(id);
+        }
+
         return TransportDetailResponse.from(transport);
     }
 

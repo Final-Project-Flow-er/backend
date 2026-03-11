@@ -9,7 +9,6 @@ import com.chaing.domain.orders.dto.request.HQOrderCreateRequest;
 import com.chaing.domain.orders.dto.request.HQOrderItemCreateCommand;
 import com.chaing.domain.orders.dto.request.HQOrderItemUpdateRequest;
 import com.chaing.domain.orders.dto.request.HQOrderUpdateRequest;
-import com.chaing.domain.orders.dto.response.HQOrderForTransitResponse;
 import com.chaing.domain.orders.entity.HeadOfficeOrder;
 import com.chaing.domain.orders.entity.HeadOfficeOrderItem;
 import com.chaing.domain.orders.enums.HQOrderStatus;
@@ -377,6 +376,25 @@ public class HQOrderService {
                     );
                 })
                 .toList();
+    // 발주 접수/반려
+    public Map<String, HQOrderStatus> updateOrderStatus(FactoryOrderRequest request) {
+        List<HeadOfficeOrder> orders = orderRepository.findAllByOrderCodeInAndDeletedAtIsNull(request.orderCodes());
+
+        if (orders == null || orders.isEmpty() || orders.size() != request.orderCodes().size()) {
+            throw new HQOrderException(HQOrderErrorCode.ORDER_NOT_FOUND);
+        }
+
+        if (request.isAccept()) {
+            orders.forEach(HeadOfficeOrder::accept);
+        } else {
+            orders.forEach(HeadOfficeOrder::reject);
+        }
+
+        return orders.stream()
+                .collect(Collectors.toMap(
+                        HeadOfficeOrder::getOrderCode,
+                        HeadOfficeOrder::getOrderStatus
+                ));
     }
 
     // return: Map<orderId, List<HQOrderItemCommand>>

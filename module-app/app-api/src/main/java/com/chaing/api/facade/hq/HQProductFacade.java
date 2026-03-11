@@ -30,27 +30,28 @@ public class HQProductFacade {
         ProductSearchRequest productSearchRequest = convertProductSearchRequest(request);
         ProductListResponse productListResponse = productService.getProducts(productSearchRequest);
 
-        List<HQProductResponse> HQProductResponses =
-                productListResponse.products().stream()
-                        .map( p -> HQProductResponse.builder()
-                                .name(p.product().getName())
-                                .productCode(p.product().getProductCode())
-                                .description(p.product().getDescription())
-                                .size(sizeValid(p.product().getProductCode()))
-                                .spicy(spicyValid(p.product().getProductCode()))
-                                .kcal(p.product().getKcal())
-                                .weight(p.product().getWeight())
-                                .safetyStock(p.product().getSafetyStock())
-                                .price(p.product().getPrice())
-                                .supplyPrice(p.product().getSupplyPrice())
-                                .costPrice(p.product().getCostPrice())
-                                .startDate(p.product().getSupplyPriceStartDate())
-                                .endDate(p.product().getSupplyPriceEndDate())
-                                .components(p.component().stream()
-                                        .map(c -> c.getName())
-                                        .toList())
-                                .build())
-                        .toList();
+        List<HQProductResponse> HQProductResponses = productListResponse.products().stream()
+                .map(p -> HQProductResponse.builder()
+                        .productId(p.product().getProductId())
+                        .name(p.product().getName())
+                        .productCode(p.product().getProductCode())
+                        .description(p.product().getDescription())
+                        .size(sizeValid(p.product().getProductCode()))
+                        .spicy(spicyValid(p.product().getProductCode()))
+                        .kcal(p.product().getKcal())
+                        .weight(p.product().getWeight())
+                        .safetyStock(p.product().getSafetyStock())
+                        .price(p.product().getPrice())
+                        .supplyPrice(p.product().getSupplyPrice())
+                        .costPrice(p.product().getCostPrice())
+                        .startDate(p.product().getSupplyPriceStartDate())
+                        .endDate(p.product().getSupplyPriceEndDate())
+                        .components(p.component().stream()
+                                .map(c -> c.getName())
+                                .toList())
+                        .status(p.product().getStatus() != null ? p.product().getStatus().name() : null)
+                        .build())
+                .toList();
 
         return HQProductListResponse.builder()
                 .HQProductList(HQProductResponses)
@@ -58,10 +59,12 @@ public class HQProductFacade {
 
     }
 
-    private String spicyValid(String productCode){
-        String spicy = productCode.substring(2,4);
-        return switch (spicy){
-            case "01"  -> "순한맛";
+    private String spicyValid(String productCode) {
+        if (productCode == null || productCode.length() < 4)
+            throw new ProductException(ProductErrorCode.INVALID_PRODUCT_CODE_FORMAT);
+        String spicy = productCode.substring(2, 4);
+        return switch (spicy) {
+            case "01" -> "순한맛";
             case "02" -> "기본맛";
             case "03" -> "매운맛";
             case "04" -> "아주 매운맛";
@@ -69,8 +72,10 @@ public class HQProductFacade {
         };
     }
 
-    private String sizeValid(String productCode){
-        String size = productCode.substring(4,6);
+    private String sizeValid(String productCode) {
+        if (productCode == null || productCode.length() < 6)
+            throw new ProductException(ProductErrorCode.INVALID_PRODUCT_CODE_FORMAT);
+        String size = productCode.substring(4, 6);
         return switch (size) {
             case "01" -> "1~2인분";
             case "03" -> "3~4인분";
@@ -96,7 +101,6 @@ public class HQProductFacade {
         productService.createProductTypes(type, productName);
     }
 
-
     private ProductSearchRequest convertProductSearchRequest(HQProductSearchRequest hqProductSearchRequest) {
         return ProductSearchRequest.builder()
                 .productCode(hqProductSearchRequest.productCode())
@@ -121,7 +125,7 @@ public class HQProductFacade {
                 .weight(request.weight())
                 .startDate(request.startDate())
                 .endDate(request.endDate())
-                .componentIds(request.componentIds())
+                .components(request.components())
                 .build();
     }
 
@@ -138,8 +142,7 @@ public class HQProductFacade {
                 request.endDate(),
                 request.description(),
                 request.imageUrl(),
-                request.componentIds()
-        );
+                request.components());
     }
 
 }

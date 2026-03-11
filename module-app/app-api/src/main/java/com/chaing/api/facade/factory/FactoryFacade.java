@@ -1,5 +1,6 @@
 package com.chaing.api.facade.factory;
 
+import com.chaing.core.dto.command.UserContactCommand;
 import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.domain.orders.dto.command.HQOrderItemCommand;
 import com.chaing.domain.orders.dto.info.HQOrderCommand;
@@ -11,16 +12,20 @@ import com.chaing.domain.orders.exception.OrderErrorCode;
 import com.chaing.domain.orders.exception.OrderException;
 import com.chaing.domain.orders.service.HQOrderService;
 import com.chaing.domain.products.service.ProductService;
+import com.chaing.domain.users.service.UserManagementService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -28,30 +33,73 @@ public class FactoryFacade {
 
     private final HQOrderService hqOrderService;
     private final ProductService productService;
+    private final UserManagementService userManagementService;
 
     // 발주 전체/대기 조회
-    public List<FactoryOrderResponse> getAllOrders(Boolean isAccepted) {
-        // Map<orderId, HQOrderInfo>
-        Map<Long, HQOrderCommand> orderByOrderId;
+    public List<FactoryOrderResponse> getAllOrders(boolean isAll) {
+        // Map<orderId, HQOrderCommand>
+        Map<Long, HQOrderCommand> ordersByOrderId;
 
-        if (isAccepted) {
+        if (isAll) {
             // 전체 발주 조회
-            orderByOrderId = hqOrderService.getAllOrdersByFactory();
+            ordersByOrderId = hqOrderService.getAllOrdersByFactory();
         } else {
             // 대기 발주 조회
-            orderByOrderId = hqOrderService.getAllPendingOrders();
+            ordersByOrderId = hqOrderService.getAllPendingOrders();
         }
-
-        if (orderByOrderId.isEmpty()) {
+        log.info("ordersByOrderId = {}", ordersByOrderId);
+        // 발주 존재하지 않을 시 빈 배열 반환
+        if (ordersByOrderId == null || ordersByOrderId.isEmpty()) {
             return List.of();
         }
 
         // List<orderId>
-        List<Long> orderIds = orderByOrderId.keySet().stream().toList();
+        List<Long> orderIds = ordersByOrderId.keySet().stream().toList();
 
-        // 대기 상태 발주 제품 정보 조회
+        // List<userId>
+        List<Long> userIds = ordersByOrderId.values().stream()
+                .map(HQOrderCommand::userId)
+                .distinct()
+                .toList();
+
+        // Map<userId, UserContactCommand>
+        Map<Long, UserContactCommand> userByUserId = userManagementService.getUserContactInfosByUserIds(userIds);
+        log.info("userByUserId = {}", userByUserId);
+        if (userByUserId == null || userByUserId.isEmpty()) {
+            return List.of();
+        }
+
+        // Map<orderId, userId>
+        Map<Long, Long> userIdByOrderId = ordersByOrderId.values().stream()
+                .collect(Collectors.toMap(
+                        HQOrderCommand::orderId,
+                        HQOrderCommand::userId
+                ));
+
+        // Map<orderId, username>
+        Map<Long, String> usernameByOrderId = userIdByOrderId.entrySet().stream()
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        entry -> userByUserId.get(entry.getValue()).username()
+                ));
+
+        // Map<orderId, phoneNumber>
+        Map<Long, String> phoneNumberByOrderId = userIdByOrderId.entrySet().stream()
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        entry -> userByUserId.get(entry.getValue()).phoneNumber()
+                ));
+
         // Map<orderId, List<HQOrderItemCommand>>
         Map<Long, List<HQOrderItemCommand>> orderItemsByOrderId = hqOrderService.getOrderItemIdsByOrderId(orderIds);
+        log.info("orderItemsByOrderId = {}", orderItemsByOrderId);
+        // Map<orderItemId, HQOrderItemCommand>
+        Map<Long, HQOrderItemCommand> orderItemByOrderItemId = orderItemsByOrderId.values().stream()
+                .flatMap(List::stream)
+                .collect(Collectors.toMap(
+                        HQOrderItemCommand::orderItemId,
+                        Function.identity()
+                ));
 
         // List<orderItemId>
         List<Long> orderItemIds = orderItemsByOrderId.values().stream()
@@ -62,72 +110,68 @@ public class FactoryFacade {
         // Map<orderItemId, productId>
         Map<Long, Long> productIdByOrderItemId = hqOrderService.getProductIdsByOrderItemIds(orderItemIds);
 
-        // 제품 정보 조회
         // List<productId>
-        List<Long> productIds = productIdByOrderItemId.values().stream()
-                .distinct()
-                .toList();
+        List<Long> productIds = productIdByOrderItemId.values().stream().distinct().toList();
+
         // Map<productId, ProductInfo>
         Map<Long, ProductInfo> productInfoByProductId = productService.getProductInfos(productIds);
-        // Map<productId, List<orderItemId>>
-        Map<Long, List<Long>> orderItemIdsByProductId = productIdByOrderItemId.entrySet().stream()
-                .collect(Collectors.groupingBy(
-                        Map.Entry::getValue,
-                        Collectors.mapping(Map.Entry::getKey, Collectors.toList())
+
+        // Map<orderId, Map<productId, List<orderItemId>>
+        Map<Long, Map<Long, List<Long>>> orderItemIdsByProductIdByOrderId = orderItemsByOrderId.entrySet().stream()
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        entry -> entry.getValue().stream()
+                                .collect(Collectors.groupingBy(
+                                        item -> productIdByOrderItemId.get(item.orderItemId()),
+                                        Collectors.mapping(HQOrderItemCommand::orderItemId, Collectors.toList())
+                                ))
                 ));
 
-        // Map<orderId, Map<productId, List<HQOrderItemCommand>>>
-//        Map<Long, Map<Long, List<HQOrderItemCommand>>> orderItemByProductIdByOrderId =
-
-        // 사원 정보 조회
-        // 나중에 엔티티가 userId 갖도록 수정해야함
-        String employeeNumber = "employeeNumber";
-
         // 반환
-        return productIdByOrderItemId.entrySet().stream()
-                .map(entry -> {
-                    Long productId = entry.getValue();
-                    Long orderItemId = entry.getKey();
-//                    Long orderId = orderIdByOrderItemId.get(orderItemId);
-//                    HQOrderCommand orderInfo = orderByOrderId.get(orderId);
-                    ProductInfo productInfo = productInfoByProductId.get(productId);
+        return orderItemIdsByProductIdByOrderId.entrySet().stream()
+                .flatMap(entry -> {
+                    Long orderId = entry.getKey();
 
-//                    Integer quantity = orderItemIdByOrderId.get(orderId).size();
+                    HQOrderCommand order = ordersByOrderId.get(orderId);
+                    Map<Long, List<Long>> orderItemIdsByProductId = entry.getValue();
 
-//                    if (orderInfo == null) {
-//                        throw new OrderException(OrderErrorCode.ORDER_NOT_FOUND);
-//                    }
+                    String username = usernameByOrderId.get(orderId);
+                    String phoneNumber = phoneNumberByOrderId.get(orderId);
 
-                    if (productInfo == null) {
-                        throw new OrderException(OrderErrorCode.PRODUCT_NOT_FOUND);
-                    }
+                    return orderItemIdsByProductId.entrySet().stream()
+                            .map(entrySet -> {
+                                Long productId = entrySet.getKey();
+                                Integer quantity = entrySet.getValue().stream()
+                                        .map(orderItemId -> orderItemByOrderItemId.get(orderItemId).quantity())
+                                        .reduce(0, Integer::sum);
 
-//                    return FactoryOrderResponse.builder()
-//                            .orderCode(orderInfo.orderCode())
-//                            .status(orderInfo.status())
-//                            .isRegular(orderInfo.isRegular())
-//                            .productCode(productInfo.productCode())
-//                            .productName(productInfo.productName())
-//                            .quantity(quantity)
-//                            .username(orderInfo.username())
-//                            .phoneNumber(orderInfo.phoneNumber())
-//                            .employeeNumber(employeeNumber)
-//                            .requestedDate(orderInfo.requestedDate())
-//                            .storedDate(orderInfo.storedDate())
-//                            .build();
-                    return FactoryOrderResponse.builder().build();
+                                ProductInfo productInfo = productInfoByProductId.get(productId);
+
+                                return FactoryOrderResponse.builder()
+                                        .orderCode(order.orderCode())
+                                        .status(order.status())
+                                        .isRegular(order.isRegular())
+                                        .productCode(productInfo.productCode())
+                                        .productName(productInfo.productName())
+                                        .quantity(quantity)
+                                        .username(username)
+                                        .phoneNumber(phoneNumber)
+                                        .requestedDate(order.requestedDate())
+                                        .storedDate(order.storedDate())
+                                        .build();
+                                    }
+                            );
                 })
                 .toList();
     }
 
     // 발주 접수/반려
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
-    public List<FactoryOrderUpdateResponse> updateOrders(@Valid FactoryOrderRequest request) {
+    public List<FactoryOrderUpdateResponse> updateOrders(FactoryOrderRequest request, boolean isAccept) {
         // 재고 확인
 
-        // 접수/반려
         // Map<orderCode, HQOrderStatus>
-        Map<String, HQOrderStatus> orderStatusByOrderCode = hqOrderService.updateOrderStatus(request);
+        Map<String, HQOrderStatus> orderStatusByOrderCode = hqOrderService.updateOrders(request.orderCodes(), isAccept);
 
         // 반환
         return orderStatusByOrderCode.entrySet().stream()

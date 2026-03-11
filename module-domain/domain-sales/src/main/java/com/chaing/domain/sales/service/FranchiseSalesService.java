@@ -7,6 +7,7 @@ import com.chaing.domain.sales.dto.response.FranchiseSalesDetailResponse;
 import com.chaing.domain.sales.dto.response.FranchiseSalesInfoResponse;
 import com.chaing.domain.sales.dto.response.FranchiseSalesProductResponse;
 import com.chaing.domain.sales.dto.response.FranchiseSellResponse;
+import com.chaing.domain.sales.dto.response.FranchiseSalesDailyQuantityResponse;
 import com.chaing.domain.sales.entity.Sales;
 import com.chaing.domain.sales.entity.SalesItem;
 import com.chaing.domain.sales.exception.FranchiseSalesErrorCode;
@@ -18,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -109,5 +111,16 @@ public class FranchiseSalesService {
         sales.cancel();
 
         return FranchiseSalesCancellationResponse.from(sales);
+    }
+
+    // 안전재고 계산용 판매 집계 조회
+    public List<FranchiseSalesDailyQuantityResponse> getDailyProductSalesForSafetyStock(
+            List<Long> franchiseIds,
+            List<Long> productIds,
+            LocalDate startDate,
+            LocalDate endDate
+    ) {
+        return franchiseSalesItemRepositoryCustom.searchDailyProductSalesForSafetyStock(
+                franchiseIds, productIds, startDate, endDate);
     }
 }

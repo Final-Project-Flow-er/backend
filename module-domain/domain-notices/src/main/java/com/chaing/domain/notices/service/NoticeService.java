@@ -34,7 +34,7 @@ public class NoticeService {
     // 공지사항 등록
     public Notice create(NoticeCreateCommand command, Long authorId) {
         if (command.important()) {
-            validateImportantLimit(command.importantUntil());
+            validateImportantLimit(command.importantUntil(), null);
         }
         Notice notice = Notice.createNotice(command, authorId);
         return noticeRepository.save(notice);
@@ -45,7 +45,7 @@ public class NoticeService {
         Notice notice = getById(id);
 
         if (command.important() != null && command.important()) {
-            validateImportantLimit(command.importantUntil());
+            validateImportantLimit(command.importantUntil(), id);
         }
 
         notice.updateNotice(command, updaterId);
@@ -72,13 +72,17 @@ public class NoticeService {
         notice.delete();
     }
 
-    // 중요 공지 마감일 검증
-    private void validateImportantLimit(LocalDateTime importantUntil) {
+    // 중요 공지 검증
+    private void validateImportantLimit(LocalDateTime importantUntil, Long excludeId) {
         LocalDateTime now = LocalDateTime.now();
         if (importantUntil != null && importantUntil.isBefore(now)) return;
 
         List<Notice> importantNotices = noticeRepository.findAllEffectiveImportantWithLock(now);
-        if (importantNotices.size() >= 5) {
+        long count = importantNotices.stream()
+                .filter(n -> !n.getNoticeId().equals(excludeId))
+                .count();
+
+        if (count >= 5) {
             throw new NoticeException(NoticeErrorCode.TOO_MANY_IMPORTANT_NOTICES);
         }
     }

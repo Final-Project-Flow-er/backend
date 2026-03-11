@@ -19,6 +19,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -119,7 +120,10 @@ class TransportManagementServiceTests {
         // given
         given(transportRepository.findById(1L)).willReturn(Optional.of(transport));
         TransportUpdateCommand updateCommand = mock(TransportUpdateCommand.class);
+
         given(updateCommand.companyName()).willReturn("수정된 업체");
+        given(updateCommand.contractStartDate()).willReturn(LocalDate.parse("2026-01-01"));
+        given(updateCommand.contractEndDate()).willReturn(LocalDate.parse("2026-12-31"));
 
         // when
         Transport result = transportManagementService.updateTransport(1L, updateCommand);
@@ -133,13 +137,17 @@ class TransportManagementServiceTests {
     void updateStatus() {
 
         // given
-        given(transportRepository.findById(1L)).willReturn(Optional.of(transport));
+        Long id = 1L;
+        UsableStatus newStatus = UsableStatus.INACTIVE;
+        Transport updatedTransport = Transport.builder().companyName("업체").officePhone("010-1234-5678").status(newStatus).build();
+        given(transportRepository.findById(id)).willReturn(Optional.of(updatedTransport));
 
         // when
-        Transport result = transportManagementService.updateStatus(1L, UsableStatus.INACTIVE);
+        Transport result = transportManagementService.updateStatus(id, newStatus);
 
         // then
-        assertThat(result.getStatus()).isEqualTo(UsableStatus.INACTIVE);
+        verify(transportRepository).updateStatus(id, newStatus);
+        assertThat(result.getStatus()).isEqualTo(newStatus);
     }
 
     @Test

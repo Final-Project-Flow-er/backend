@@ -9,7 +9,6 @@ import com.chaing.domain.orders.dto.request.HQOrderCreateRequest;
 import com.chaing.domain.orders.dto.request.HQOrderItemCreateCommand;
 import com.chaing.domain.orders.dto.request.HQOrderItemUpdateRequest;
 import com.chaing.domain.orders.dto.request.HQOrderUpdateRequest;
-import com.chaing.domain.orders.dto.response.HQOrderForTransitResponse;
 import com.chaing.domain.orders.entity.HeadOfficeOrder;
 import com.chaing.domain.orders.entity.HeadOfficeOrderItem;
 import com.chaing.domain.orders.enums.HQOrderStatus;
@@ -292,7 +291,7 @@ public class HQOrderService {
     // 대기 상태 발주 제품 정보 조회
     // return: Map<orderId, List<HQOrderItemCommand>>
     public Map<Long, List<com.chaing.domain.orders.dto.command.HQOrderItemCommand>> getOrderItemIdsByOrderId(List<Long> orderIds) {
-        List<HeadOfficeOrderItem> orderItems = orderItemRepository.findAllByHeadOfficeOrder_HeadOfficeOrderIdIn(orderIds);
+        List<HeadOfficeOrderItem> orderItems = orderItemRepository.findAllByHeadOfficeOrder_HeadOfficeOrderIdInAndDeletedAtIsNull(orderIds);
 
         if (orderItems == null || orderItems.isEmpty()) {
             throw new HQOrderException(HQOrderErrorCode.ORDER_ITEM_NOT_FOUND);
@@ -322,80 +321,13 @@ public class HQOrderService {
 
     // 발주 전체 조회
     public Map<Long, HQOrderCommand> getAllOrdersByFactory() {
-        List<HeadOfficeOrder> orders = orderRepository.findAll();
+        List<HeadOfficeOrder> orders = orderRepository.findAllByDeletedAtIsNull();
 
         return orders.stream()
                 .collect(Collectors.toMap(
                         HeadOfficeOrder::getHeadOfficeOrderId,
                         HQOrderCommand::from
                 ));
-    }
-
-    // 발주 접수/반려
-    public Map<String, HQOrderStatus> updateOrderStatus(FactoryOrderRequest request) {
-        List<HeadOfficeOrder> orders = orderRepository.findAllByOrderCodeInAndDeletedAtIsNull(request.orderCodes());
-
-        if (orders == null || orders.isEmpty() || orders.size() != request.orderCodes().size()) {
-            throw new HQOrderException(HQOrderErrorCode.ORDER_NOT_FOUND);
-        }
-
-        if (request.isAccept()) {
-            orders.forEach(HeadOfficeOrder::accept);
-        } else {
-            orders.forEach(HeadOfficeOrder::reject);
-        }
-
-        return orders.stream()
-                .collect(Collectors.toMap(
-                        HeadOfficeOrder::getOrderCode,
-                        HeadOfficeOrder::getOrderStatus
-                ));
-    }
-
-    public List<HQOrderForTransitResponse> getOrdersForTransit(List<Long> orderIds) {
-
-        if (orderIds == null || orderIds.isEmpty()) {
-            throw new HQOrderException(HQOrderErrorCode.INVALID_INPUT);
-        }
-
-        List<HeadOfficeOrderItem> allItems = orderItemRepository
-                .findByHeadOfficeOrder_HeadOfficeOrderIdInAndHeadOfficeOrder_OrderStatusAndDeletedAtIsNull(
-                        orderIds,
-                        HQOrderStatus.AWAITING
-                );
-
-        if (allItems.isEmpty()) {
-            throw new HQOrderException(HQOrderErrorCode.ORDER_ITEM_NOT_FOUND);
-        }
-
-        Map<HeadOfficeOrder, List<HeadOfficeOrderItem>> itemsByOrder = allItems.stream()
-                .collect(Collectors.groupingBy(HeadOfficeOrderItem::getHeadOfficeOrder));
-
-        long requestedCount = orderIds.stream().distinct().count();
-
-        if (itemsByOrder.size() != requestedCount) {
-            throw new HQOrderException(HQOrderErrorCode.ORDER_NOT_FOUND);
-        }
-
-        return itemsByOrder.entrySet().stream()
-                .map(entry -> {
-                    HeadOfficeOrder order = entry.getKey();
-                    List<HeadOfficeOrderItem> items = entry.getValue();
-
-                    List<HQOrderForTransitResponse.OrderItemForTransit> itemResponses = items.stream()
-                            .map(item -> new HQOrderForTransitResponse.OrderItemForTransit(
-                                    item.getProductId(),
-                                    item.getQuantity()
-                            ))
-                            .toList();
-
-                    return new HQOrderForTransitResponse(
-                            order.getHeadOfficeOrderId(),
-                            order.getOrderCode(),
-                            itemResponses
-                    );
-                })
-                .toList();
     }
 
     // return: Map<orderId, List<HQOrderItemCommand>>
@@ -421,5 +353,29 @@ public class HQOrderService {
                 .orElseThrow(() -> new HQOrderException(HQOrderErrorCode.INVALID_STATUS));
 
         return HQOrderCommand.from(order);
+    }
+
+    // return: Map<orderCode, HQOrderStatus>
+    public Map<String, HQOrderStatus> updateOrders(List<String> orderCodes, boolean isAccept) {
+        List<HeadOfficeOrder> orders = orderRepository.findAllByOrderCodeInAndDeletedAtIsNull(orderCodes);
+
+        // List<orderCode>
+        List<String> distinctOrderCodes = orderCodes.stream().distinct().toList();
+
+        if (orders == null || orders.isEmpty() || orders.size() != distinctOrderCodes.size()) {
+            throw new HQOrderException(HQOrderErrorCode.ORDER_NOT_FOUND);
+        }
+
+        if (isAccept) {
+            orders.forEach(HeadOfficeOrder::accept);
+        } else {
+            orders.forEach(HeadOfficeOrder::reject);
+        }
+
+        return orders.stream()
+                .collect(Collectors.toMap(
+                        HeadOfficeOrder::getOrderCode,
+                        HeadOfficeOrder::getOrderStatus
+                ));
     }
 }

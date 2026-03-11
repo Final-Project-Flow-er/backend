@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -52,7 +53,7 @@ public class OutboundService {
                 case PICKING:
                     outboundValidator.checkValidStatus(status, LogType.PICKING);
                     outboundValidator.checkBoxCode(target.getBoxCode());
-                    targetStatus.set(LogType.OUTBOUND);
+                    targetStatus.set(LogType.SHIPPING);
                     break;
                 default:
                     throw new InventoriesException(InventoriesErrorCode.INVALID_OUTBOUND_STATUS);
@@ -86,7 +87,7 @@ public class OutboundService {
         List<FactoryInventory> selectedList = getListAndValidate(serialCodes);
 
         // 요소들의 boxCode 확인
-        for(FactoryInventory f : selectedList) {
+        for (FactoryInventory f : selectedList) {
             outboundValidator.isTargetMatched(f.getBoxCode(), boxCode);
         }
 
@@ -97,10 +98,9 @@ public class OutboundService {
             switch (status) {
                 case PICKING_WAIT:
                 case PICKING:
-                case OUTBOUND:
                     break;
                 default:
-                    throw new  InventoriesException(InventoriesErrorCode.INVALID_OUTBOUND_CANCEL_STATUS);
+                    throw new InventoriesException(InventoriesErrorCode.INVALID_OUTBOUND_CANCEL_STATUS);
             }
         });
 
@@ -125,12 +125,22 @@ public class OutboundService {
 
     public List<OutboundGetBoxInfo> getBoxInfos() {
         List<FactoryInventory> pendingList = outboundReader.getAllByBoxCodeAndStatus(null);
+        System.out.println("DB에서 가져온 원본 데이터 개수: " + pendingList.size());
         return pendingList.stream()
-                .map(inventory -> new OutboundGetBoxInfo(
-                        inventory.getBoxCode(),     // 박스 코드
-                        inventory.getProductId() // 제품 id
+                .collect(Collectors.groupingBy(
+                        FactoryInventory::getBoxCode // 박스 코드 기준으로 그룹핑
                 ))
-                .distinct()
+                .entrySet().stream()
+                .map(entry -> {
+                    String boxCode = entry.getKey();
+                    List<FactoryInventory> itemsInBox = entry.getValue();
+                    // 제품 id
+                    Long productId = itemsInBox.get(0).getProductId();
+                    Long orderId = itemsInBox.get(0).getOrderId();
+                    // 제품의 수량
+                    long countItem = itemsInBox.size();
+                    return new OutboundGetBoxInfo(boxCode, productId, countItem, orderId);
+                })
                 .toList();
     }
 
@@ -141,8 +151,8 @@ public class OutboundService {
                 .map(inventory -> new OutboundGetItemsInfo(
                         inventory.getProductId(), // 제품 id
                         inventory.getSerialCode(),
-                        inventory.getManufactureDate()
-                ))
+                        inventory.getManufactureDate(),
+                        inventory.getStatus() == LogType.PICKING))
                 .toList();
     }
 }

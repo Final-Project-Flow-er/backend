@@ -23,8 +23,6 @@ public record FactoryOrderResponse(
 
         String phoneNumber,
 
-        String employeeNumber,
-
         LocalDateTime requestedDate,
 
         String storedDate

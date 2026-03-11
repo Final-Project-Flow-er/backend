@@ -26,6 +26,7 @@ import com.chaing.domain.inventorylogs.enums.LocationType;
 import com.chaing.domain.inventorylogs.service.InventoryLogService;
 import com.chaing.domain.products.dto.response.ProductInfoResponse;
 import com.chaing.domain.products.service.ProductService;
+import com.chaing.domain.users.service.UserManagementService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -42,6 +43,7 @@ public class FranchiseInventoryFacade {
     private final InventoryService inventoryService;
     private final ProductService productService;
     private final InventoryLogService inventoryLogService;
+    private final UserManagementService userManagementService;
 
     // 특정 가맹점 대분류
     public List<FranchiseInventoryProductResponse> getFranchiseStock(Long franchiseId, StockSearchRequest request) {
@@ -212,7 +214,7 @@ public class FranchiseInventoryFacade {
     }
 
     @Transactional
-    public Void disposalInventory(DisposalRequest request) {
+    public Void disposalInventory(DisposalRequest request, Long locationId) {
         String actorTypeRaw = request.actorType().toUpperCase();
         List<InventoryLogCreateRequest> logs = new ArrayList<>();
 
@@ -234,11 +236,11 @@ public class FranchiseInventoryFacade {
                         pInfo != null ? pInfo.tradePrice() : null,
                         pInfo != null ? pInfo.retailPrice() : null,
                         LocationType.FRANCHISE,
-                        inv.getFranchiseId(),
+                        locationId,
                         null,
                         null,
                         ActorType.FRANCHISE,
-                        inv.getFranchiseId()));
+                        locationId));
             }
         }
 
@@ -252,5 +254,15 @@ public class FranchiseInventoryFacade {
 
     public void setSafetyStock(SafetyStockRequest request) {
         inventoryService.setSafetyStock(request);
+    }
+
+    @Transactional
+    public void resetSafetyStock(Long franchiseId, Long productId) {
+        inventoryService.resetSafetyStockToDefault(com.chaing.domain.inventories.enums.LocationType.FRANCHISE,
+                franchiseId, productId);
+    }
+
+    public boolean verifyAdminPassword(Long userId, String password) {
+        return userManagementService.verifyPassword(userId, password);
     }
 }

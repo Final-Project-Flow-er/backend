@@ -62,7 +62,7 @@ public class FranchiseInventoryRepositoryImpl implements FranchiseInventoryRepos
                                                 effectiveSafetyStock,
                                                 safetyResult))
                                 .from(franchiseInventory)
-                                .join(inventoryPolicy)
+                                .leftJoin(inventoryPolicy)
                                 .on(
                                                 franchiseInventory.productId.eq(inventoryPolicy.productId)
                                                                 .and(inventoryPolicy.locationType
@@ -119,6 +119,7 @@ public class FranchiseInventoryRepositoryImpl implements FranchiseInventoryRepos
                 return queryFactory
                                 .select(Projections.constructor(
                                                 FranchiseInventoryItemResponse.class,
+                                                franchiseInventory.inventoryId,
                                                 franchiseInventory.serialCode,
                                                 franchiseInventory.boxCode,
                                                 franchiseInventory.status.stringValue(),

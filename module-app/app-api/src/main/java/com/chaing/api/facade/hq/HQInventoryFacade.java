@@ -35,6 +35,10 @@ import com.chaing.domain.inventorylogs.enums.LocationType;
 import com.chaing.domain.inventorylogs.service.InventoryLogService;
 import com.chaing.domain.products.dto.response.ProductInfoResponse;
 import com.chaing.domain.products.service.ProductService;
+import com.chaing.domain.users.enums.UserRole;
+import com.chaing.domain.users.service.UserManagementService;
+import com.chaing.domain.businessunits.entity.Franchise;
+import com.chaing.domain.businessunits.repository.FranchiseRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -45,6 +49,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static com.chaing.domain.inventories.enums.LocationType.FACTORY;
 import static com.chaing.domain.inventories.enums.LocationType.FRANCHISE;
@@ -56,11 +61,20 @@ public class HQInventoryFacade {
     private final InventoryService inventoryService;
     private final ProductService productService;
     private final InventoryLogService inventoryLogService;
+    private final UserManagementService userManagementService;
+    private final FranchiseRepository franchiseRepository;
+
+    // 가맹점 ID+이름 목록 조회
+    public Map<Long, String> getFranchiseList() {
+        return franchiseRepository.findAll().stream()
+                .collect(Collectors.toMap(Franchise::getFranchiseId, Franchise::getName));
+    }
 
     // 대분류
     public List<HQInventoryProductResponse> getStock(StockSearchRequest request) {
         // id, code, name 반환(재고에 코드랑 이름이 없으므로 가지고 오기)
-        List<ProductInfoResponse> products = productService.getInventoryProducts(request.productCode(), request.name());
+        List<ProductInfoResponse> products = productService.getInventoryProducts(request.productCode(),
+                request.name());
 
         List<Long> ids = products.stream()
                 .map(ProductInfoResponse::productId)
@@ -112,7 +126,8 @@ public class HQInventoryFacade {
                 .map(ProductInfoResponse::productId)
                 .toList();
 
-        Map<Long, InventoryProductInfoResponse> productInfos = inventoryService.getFranchiseStock(franchiseId, ids,
+        Map<Long, InventoryProductInfoResponse> productInfos = inventoryService.getFranchiseStock(franchiseId,
+                ids,
                 request.status());
 
         return products.stream()
@@ -186,11 +201,12 @@ public class HQInventoryFacade {
         }
 
         // 2. 공장(FACTORY) 안전재고 계산 (출고량 기준)
+        List<Long> factoryIds = userManagementService.getBusinessUnitIdsByRole(UserRole.FACTORY);
         List<ActorProductSalesResponse> factoryOutboundData = inventoryLogService.getProductSales(
-                null, ids, ActorType.FACTORY, LogType.OUTBOUND);
+                factoryIds, ids, ActorType.FACTORY, LogType.OUTBOUND);
 
         for (ActorProductSalesResponse factory : factoryOutboundData) {
-            Long actorId = factory.actorId(); // null일 것임
+            Long actorId = factory.actorId();
             for (ProductSalesResponse product : factory.products()) {
                 double stdDev = calculateStdDev(product.sales());
                 double z = 1.65; // 95% 서비스 수준
@@ -209,9 +225,9 @@ public class HQInventoryFacade {
 
     // 안전재고 유통기한 알림
     public InventoryAlertResponse getInventoryAlerts() {
-        List<SafetyStockResponse> safetyStockAlert = inventoryService.getLowStockAlerts("FACTORY", null);
+        List<SafetyStockResponse> safetyStockAlert = inventoryService.getLowStockAlerts("FACTORY", 1L); // 공장 아이디 고정
 
-        List<ExpirationBatchResultResponse> expirationAlerts = inventoryService.getExpirationAlerts("FACTORY", null);
+        List<ExpirationBatchResultResponse> expirationAlerts = inventoryService.getExpirationAlerts("FACTORY", 1L); // 공장 아이디 고정
 
         List<Long> ids = productService.getAllProductIds();
 
@@ -228,6 +244,39 @@ public class HQInventoryFacade {
                 .toList();
 
         // 코드와 이름 조합
+        List<ExpirationAlertResponse> expirationAlert = expirationAlerts.stream()
+                .filter(k -> products.containsKey(k.productId()))
+                .map(k -> new ExpirationAlertResponse(
+                        products.get(k.productId()).productName(),
+                        k.manufactureDate(),
+                        k.quantity(),
+                        k.daysUntilExpiration()))
+                .toList();
+
+        return InventoryAlertResponse.builder()
+                .safetyStockAlerts(safetyStockAlerts)
+                .expirationAlerts(expirationAlert)
+                .build();
+    }
+
+    // 본사용: 가맹점별 유통기한 및 안전재고 알림
+    public InventoryAlertResponse getFranchiseInventoryAlerts(Long franchiseId) {
+        List<SafetyStockResponse> safetyStockAlert = inventoryService.getLowStockAlerts("FRANCHISE", franchiseId);
+        List<ExpirationBatchResultResponse> expirationAlerts = inventoryService.getExpirationAlerts("FRANCHISE",
+                franchiseId);
+
+        List<Long> ids = productService.getAllProductIds();
+        Map<Long, ProductInfo> products = productService.getProductInfos(ids);
+
+        List<SafetyStockAlertResponse> safetyStockAlerts = safetyStockAlert.stream()
+                .filter(k -> products.containsKey(k.productId()))
+                .map(k -> new SafetyStockAlertResponse(
+                        products.get(k.productId()).productCode(),
+                        products.get(k.productId()).productName(),
+                        k.currentQuantity(),
+                        k.safetyStock()))
+                .toList();
+
         List<ExpirationAlertResponse> expirationAlert = expirationAlerts.stream()
                 .filter(k -> products.containsKey(k.productId()))
                 .map(k -> new ExpirationAlertResponse(
@@ -296,7 +345,9 @@ public class HQInventoryFacade {
     }
 
     // 안전재고 계산
-    public double calculateStdDev(List<DailySales> sales) {
+    private double calculateStdDev(List<DailySales> sales) {
+        if (sales == null || sales.isEmpty())
+            return 0;
 
         double avg = sales.stream()
                 .mapToInt(DailySales::quantity)
@@ -349,7 +400,8 @@ public class HQInventoryFacade {
     }
 
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
-    public Void disposalInventory(DisposalRequest request) {
+    public Void disposalInventory(DisposalRequest request, Long locationId) {
+
         String actorTypeRaw = request.actorType().toUpperCase();
         List<InventoryLogCreateRequest> logs = new ArrayList<>();
 
@@ -401,7 +453,7 @@ public class HQInventoryFacade {
                         pInfo != null ? pInfo.tradePrice() : null,
                         pInfo != null ? pInfo.retailPrice() : null,
                         LocationType.FACTORY,
-                        request.actorId(),
+                        locationId,
                         null,
                         null,
                         ActorType.FACTORY,
@@ -448,5 +500,15 @@ public class HQInventoryFacade {
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public void setSafetyStock(SafetyStockRequest request) {
         inventoryService.setSafetyStock(request);
+    }
+
+    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
+    public void resetSafetyStock(Long locationId, Long productId) {
+        inventoryService.resetSafetyStockToDefault(com.chaing.domain.inventories.enums.LocationType.FACTORY, locationId,
+                productId);
+    }
+
+    public boolean verifyAdminPassword(Long userId, String password) {
+        return userManagementService.verifyPassword(userId, password);
     }
 }

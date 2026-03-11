@@ -31,10 +31,10 @@ public class InventoryPolicy extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private LocationType locationType;
 
-    //가맹점ID
+    // 가맹점ID
     private Long locationId;
 
-    //제품ID
+    // 제품ID
     @NotNull
     @Column(nullable = false)
     private Long productId;
@@ -43,4 +43,8 @@ public class InventoryPolicy extends BaseEntity {
 
     // 점주가 설정한 안전재고 (없으면 default 사용)
     private Integer safetyStock;
+
+    public void updateManualSafetyStock(Integer safetyStock) {
+        this.safetyStock = safetyStock;
+    }
 }

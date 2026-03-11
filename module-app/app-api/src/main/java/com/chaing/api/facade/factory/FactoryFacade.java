@@ -1,5 +1,6 @@
 package com.chaing.api.facade.factory;
 
+import com.chaing.core.dto.command.UserContactCommand;
 import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.domain.orders.dto.command.HQOrderItemCommand;
 import com.chaing.domain.orders.dto.info.HQOrderCommand;
@@ -55,6 +56,15 @@ public class FactoryFacade {
         // List<orderId>
         List<Long> orderIds = ordersByOrderId.keySet().stream().toList();
 
+        // List<userId>
+        List<Long> userIds = ordersByOrderId.values().stream()
+                .map(HQOrderCommand::userId)
+                .distinct()
+                .toList();
+
+        // Map<userId, UserContactCommand>
+        Map<Long, UserContactCommand> userByUserId = userManagementService.getUserContactInfosByUserIds(userIds);
+
         // Map<orderId, userId>
         Map<Long, Long> userIdByOrderId = ordersByOrderId.values().stream()
                 .collect(Collectors.toMap(
@@ -66,14 +76,14 @@ public class FactoryFacade {
         Map<Long, String> usernameByOrderId = userIdByOrderId.entrySet().stream()
                 .collect(Collectors.toMap(
                         Map.Entry::getKey,
-                        entry -> userManagementService.getUsernameByUserId(entry.getValue())
+                        entry -> userByUserId.get(entry.getValue()).username()
                 ));
 
         // Map<orderId, phoneNumber>
         Map<Long, String> phoneNumberByOrderId = userIdByOrderId.entrySet().stream()
                 .collect(Collectors.toMap(
                         Map.Entry::getKey,
-                        entry -> userManagementService.getPhoneNumberByUserId(entry.getValue())
+                        entry -> userByUserId.get(entry.getValue()).phoneNumber()
                 ));
 
         // Map<orderId, List<HQOrderItemCommand>>

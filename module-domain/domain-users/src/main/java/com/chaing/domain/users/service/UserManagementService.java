@@ -156,7 +156,13 @@ public class UserManagementService {
 
     // username, phoneNumber 반환 메소드
     public Map<Long, UserContactCommand> getUserContactInfosByUserIds(List<Long> userIds) {
-        return userRepository.findAllByUserIdIn(userIds).stream()
+        List<User> users = userRepository.findAllByUserIdIn(userIds);
+
+        if (users == null || users.isEmpty()) {
+            throw new UserException(UserErrorCode.USER_NOT_FOUND);
+        }
+
+        return users.stream()
                 .collect(Collectors.toMap(
                         User::getUserId,
                         user -> new UserContactCommand(

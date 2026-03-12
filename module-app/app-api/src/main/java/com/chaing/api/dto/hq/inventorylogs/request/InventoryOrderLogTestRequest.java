@@ -7,7 +7,7 @@ import jakarta.validation.constraints.NotNull;
 
 public record InventoryOrderLogTestRequest(
         @NotNull Long orderId,
-        @NotBlank String fromType,
+        @NotBlank String orderType,
         @NotNull Long fromId,
         @NotNull LogType logType,
         @NotBlank String actorType,

@@ -116,7 +116,7 @@ public class HQOrderController {
     @PatchMapping("/shipping-pending")
     @PreAuthorize("hasAnyRole('ADMIN', 'HQ')")
     public ResponseEntity<ApiResponse<List<FranchiseOrderStatusShippingPendingResponse>>> updateOrderShippingPending(
-            @Valid @RequestBody List<FranchiseOrderStatusUpdateRequest> request
+            @RequestBody List<@Valid FranchiseOrderStatusUpdateRequest> request
     ) {
         return ResponseEntity.ok(ApiResponse.success(hqOrderFacade.updateShippingPending(request)));
     }

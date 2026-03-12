@@ -6,7 +6,9 @@ import com.chaing.core.dto.ApiResponse;
 import com.chaing.core.dto.request.FranchiseReturnUpdateRequest;
 import com.chaing.core.dto.returns.response.FranchiseReturnTargetResponse;
 import com.chaing.domain.returns.dto.request.FranchiseReturnCreateRequest;
+import com.chaing.domain.returns.dto.request.FranchiseReturnDeliveryRequest;
 import com.chaing.domain.returns.dto.response.FranchiseReturnCreateResponse;
+import com.chaing.domain.returns.dto.response.FranchiseReturnDeliveryResponse;
 import com.chaing.domain.returns.dto.response.FranchiseReturnDetailResponse;
 import com.chaing.domain.returns.dto.response.FranchiseReturnResponse;
 import com.chaing.domain.returns.dto.response.FranchiseReturnUpdateResponse;
@@ -118,5 +120,14 @@ public class FranchiseReturnController {
         Long userId = userPrincipal.getId();
 
         return ResponseEntity.ok(ApiResponse.success(franchiseReturnFacade.create(userId, request)));
+    }
+
+    @Operation(summary = "반품 출고", description = "외부 모듈용 가맹점에서 반품 신청한 제품들을 본사로 배송")
+    @PatchMapping("/delivery")
+    @PreAuthorize("hasAnyRole('ADMIN', 'FRANCHISE')")
+    public ResponseEntity<ApiResponse<List<FranchiseReturnDeliveryResponse>>> returnDelivery(
+            @Valid @RequestBody List<FranchiseReturnDeliveryRequest> requests
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(franchiseReturnFacade.delivery(requests)));
     }
 }

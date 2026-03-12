@@ -181,7 +181,7 @@ public class FranchiseOrderService {
     // 반품 대상이 되는 발주 반환
     public List<FranchiseReturnTargetResponse> getAllTargetOrders(Long franchiseId, Long userId, String username) {
         // 발주 조회
-        List<FranchiseOrder> orders = franchiseOrderRepository.findAllByFranchiseIdAndUserIdAndOrderStatusNot(franchiseId, userId, FranchiseOrderStatus.PENDING);
+        List<FranchiseOrder> orders = franchiseOrderRepository.findAllByFranchiseIdAndUserIdAndOrderStatus(franchiseId, userId, FranchiseOrderStatus.COMPLETED);
 
         List<String> orderCodes = orders.stream().map(FranchiseOrder::getOrderCode).toList();
 

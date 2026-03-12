@@ -10,7 +10,7 @@ public enum SettlementErrorCode implements ErrorCode {
 
     // 일별 정산
     DAILY_SETTLEMENT_NOT_FOUND(404, "S001", "해당 날짜의 정산 내역이 존재하지 않습니다."),
-    DAILY_SETTLEMENT_PROCESSING(102, "S019", "해당 날짜의 정산 내역을 생성 중입니다. 잠시 후 확인해 주세요."),
+    DAILY_SETTLEMENT_PROCESSING(202, "S019", "해당 날짜의 정산 내역을 생성 중입니다. 잠시 후 확인해 주세요."),
     DAILY_SETTLEMENT_ALREADY_EXISTS(409, "S002", "해당 날짜의 정산이 이미 존재합니다."),
     // 월별 정산
     MONTHLY_SETTLEMENT_NOT_FOUND(404, "S003", "해당 월의 정산 내역이 존재하지 않습니다."),

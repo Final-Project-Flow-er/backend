@@ -5,15 +5,14 @@ import com.chaing.api.dto.inbound.request.InboundScanBoxRequest;
 import com.chaing.api.dto.inbound.request.InboundScanItemRequest;
 import com.chaing.api.dto.inbound.response.InboundBoxSummaryResponse;
 import com.chaing.api.dto.inbound.response.InboundDetailResponse;
-import com.chaing.api.dto.outbound.response.OutboundBoxSummaryResponse;
 import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.domain.inventories.dto.command.FactoryInboundCreateCommand;
 import com.chaing.domain.inventories.dto.command.FranchiseInboundCreateCommand;
+import com.chaing.domain.inventories.dto.info.InboundPendingItemInfo;
 import com.chaing.domain.inventories.dto.info.PendingBoxInfo;
 import com.chaing.domain.inventories.dto.info.PendingItemInfo;
 import com.chaing.domain.inventories.dto.raw.FactoryInventoryRawData;
 import com.chaing.domain.inventories.dto.raw.FranchiseInventoryRawData;
-import com.chaing.domain.inventories.dto.raw.InboundRawData;
 import com.chaing.domain.inventories.exception.InventoriesErrorCode;
 import com.chaing.domain.inventories.exception.InventoriesException;
 import com.chaing.domain.inventories.service.inbound.InboundService;
@@ -53,7 +52,9 @@ public class InboundFacade {
 
     @Transactional
     public void scanInboundBox(@Valid InboundScanBoxRequest request, Long franchiseId) {
-        franchiseInboundService.scanInbound(InboundScanBoxRequest.toCommand(request, franchiseId));
+        List<InboundPendingItemInfo> inboundBoxDetails = factoryInboundService.getInboundBoxDetails(request.boxCode());
+
+        franchiseInboundService.scanInbound(InboundScanBoxRequest.toCommand(request, inboundBoxDetails, franchiseId));
     }
 
     public List<InboundBoxSummaryResponse> getPendingBoxes(Long franchiseId) {

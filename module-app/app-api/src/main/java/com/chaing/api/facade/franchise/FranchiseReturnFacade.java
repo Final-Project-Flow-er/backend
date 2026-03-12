@@ -495,7 +495,7 @@ public class FranchiseReturnFacade {
                 .map(FranchiseReturnDeliveryRequest::boxCode)
                 .collect(Collectors.toSet());
 
-        // 반품 요청 상태 배송 대기로 수정
+        // 출고 처리
         // Map<returnCode, List<boxCode>>
         Map<String, List<String>> boxCodesByReturnCode = franchiseReturnService.delivery(requestedBoxCodes);
 

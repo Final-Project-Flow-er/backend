@@ -40,6 +40,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -486,10 +487,12 @@ public class FranchiseReturnFacade {
                 .build();
     }
 
-    // 반품 제품 출고
+    // 외부 모듈용 반품 제품 출고
     public List<FranchiseReturnDeliveryResponse> delivery(List<FranchiseReturnDeliveryRequest> requests) {
-        // List<boxCode>
-        List<String> requestedBoxCodes = requests.stream().map(FranchiseReturnDeliveryRequest::boxCode).toList();
+        // Set<boxCode>
+        Set<String> requestedBoxCodes = requests.stream()
+                .map(FranchiseReturnDeliveryRequest::boxCode)
+                .collect(Collectors.toSet());
 
         // 반품 요청 상태 배송 대기로 수정
         // Map<returnCode, List<boxCode>>
@@ -497,7 +500,10 @@ public class FranchiseReturnFacade {
 
         // 반환
         return boxCodesByReturnCode.entrySet().stream()
-                .map(FranchiseReturnDeliveryResponse::from)
+                .map(entry -> FranchiseReturnDeliveryResponse.of(
+                        entry.getKey(),
+                        entry.getValue()
+                ))
                 .toList();
     }
 }

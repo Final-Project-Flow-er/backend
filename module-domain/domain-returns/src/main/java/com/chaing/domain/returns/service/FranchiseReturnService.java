@@ -381,4 +381,35 @@ public class FranchiseReturnService {
         }
         return items;
     }
+
+    // 반품 요청 상태 배송 대기로 수정
+    // return: Map<returnCode, List<boxCode>>
+    public Map<String, List<String>> delivery(Set<String> requestedBoxCodes) {
+        List<ReturnItem> items = franchiseReturnItemRepository.findAllByBoxCodeInAndDeletedAtIsNull(requestedBoxCodes);
+
+        if (items == null || items.isEmpty()) {
+            throw new FranchiseReturnException(FranchiseReturnErrorCode.RETURN_ITEM_NOT_FOUND);
+        }
+
+        // Set<ReturnItem BoxCode>
+        Set<String> existingBoxCodes = items.stream()
+                .map(ReturnItem::getBoxCode)
+                .collect(Collectors.toSet());
+
+        if (!existingBoxCodes.containsAll(requestedBoxCodes)) {
+            throw new FranchiseReturnException(FranchiseReturnErrorCode.DATA_OMISSION);
+        }
+
+        // 반품 요청 상태 변경
+        items.forEach(item -> {
+            Returns returns = item.getReturns();
+            returns.deliveryReturn();
+        });
+
+        return items.stream()
+                .collect(Collectors.groupingBy(
+                        item -> item.getReturns().getReturnCode(),
+                        Collectors.mapping(ReturnItem::getBoxCode, Collectors.toList())
+                ));
+    }
 }

@@ -86,4 +86,12 @@ public class Returns extends BaseEntity {
 
         this.returnStatus = returnStatus;
     }
+
+    // 반품 요청 상태를 배송 중으로 변경
+    public void deliveryReturn() {
+        if (!this.returnStatus.equals(ReturnStatus.SHIPPING_PENDING)) {
+            throw new FranchiseReturnException(FranchiseReturnErrorCode.INVALID_RETURN_STATUS);
+        }
+        this.returnStatus = ReturnStatus.SHIPPING;
+    }
 }

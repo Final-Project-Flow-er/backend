@@ -1,6 +1,7 @@
 package com.chaing.api.controller.transport;
 
 import com.chaing.api.dto.transport.management.request.CreateTransportRequest;
+import com.chaing.api.dto.transport.management.request.TransportSearchRequest;
 import com.chaing.api.dto.transport.management.request.UpdateTransportRequest;
 import com.chaing.api.dto.transport.management.request.UpdateTransportStatusRequest;
 import com.chaing.api.dto.transport.management.response.TransportDetailResponse;
@@ -44,9 +45,10 @@ public class TransportVendorController {
     @Operation(summary = "운송 업체 목록 조회", description = "전체 운송 업체 목록 조회")
     @GetMapping
     public ResponseEntity<ApiResponse<Page<TransportSummaryResponse>>> getVendors(
+            TransportSearchRequest request,
             Pageable pageable
     ) {
-        return ResponseEntity.ok(ApiResponse.success(transportManagementFacade.getTransportList(pageable)));
+        return ResponseEntity.ok(ApiResponse.success(transportManagementFacade.getTransportList(request, pageable)));
     }
 
     @Operation(summary = "운송 업체 상세 정보 조회", description = "특정 운송 업체의 상세 정보 조회")

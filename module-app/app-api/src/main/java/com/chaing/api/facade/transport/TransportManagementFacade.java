@@ -1,6 +1,7 @@
 package com.chaing.api.facade.transport;
 
 import com.chaing.api.dto.transport.management.request.CreateTransportRequest;
+import com.chaing.api.dto.transport.management.request.TransportSearchRequest;
 import com.chaing.api.dto.transport.management.request.UpdateTransportRequest;
 import com.chaing.api.dto.transport.management.request.UpdateTransportStatusRequest;
 import com.chaing.api.dto.transport.management.response.TransportDetailResponse;
@@ -33,8 +34,8 @@ public class TransportManagementFacade {
     }
 
     // 운송 업체 목록 조회
-    public Page<TransportSummaryResponse> getTransportList(Pageable pageable) {
-        Page<Transport> transports = transportManagementService.getTransportList(pageable);
+    public Page<TransportSummaryResponse> getTransportList(TransportSearchRequest request, Pageable pageable) {
+        Page<Transport> transports = transportManagementService.getTransportList(request.toCondition(), pageable);
         return transports.map(TransportSummaryResponse::from);
     }
 

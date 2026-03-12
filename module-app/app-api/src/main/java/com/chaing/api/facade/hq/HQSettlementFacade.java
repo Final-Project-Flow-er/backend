@@ -368,7 +368,7 @@ public class HQSettlementFacade {
         }
 
         // 4. PDF 및 엑셀 다운로드 (URL 반환)
-
+        @Transactional
         public String getDailyAllSummaryPdf(HQSettlementDailyAllPdfRequest request) {
                 log.info("[DEBUG] Facade - getDailyAllSummaryPdf requested for date: {}", request.date());
                 // 1. 이미 생성된 문서가 있는지 확인
@@ -384,7 +384,8 @@ public class HQSettlementFacade {
                                         .getAllByDate(request.date(), null);
 
                         if (receipts.isEmpty()) {
-                                return "선택하신 날짜에 정산 데이터가 없어 PDF를 생성할 수 없습니다.";
+                                throw new com.chaing.domain.settlements.exception.SettlementException(
+                                                com.chaing.domain.settlements.exception.SettlementErrorCode.PROVISIONAL_SETTLEMENT_NOT_FOUND);
                         }
 
                         // 3. 파일 생성 서비스 호출
@@ -412,12 +413,16 @@ public class HQSettlementFacade {
                                         .build());
 
                         return fileUrl;
+                } catch (com.chaing.domain.settlements.exception.SettlementException e) {
+                        throw e;
                 } catch (Exception e) {
                         log.error("Failed to generate HQ Daily PDF: ", e);
-                        return "PDF 생성 또는 서버 저장 중 오류가 발생했습니다. (잠시 후 다시 시도해주세요)";
+                        throw new com.chaing.domain.settlements.exception.SettlementException(
+                                        com.chaing.domain.settlements.exception.SettlementErrorCode.DOCUMENT_GENERATION_FAILED);
                 }
         }
 
+        @Transactional
         public String getMonthlyAllSummaryPdf(HQSettlementMonthlyAllPdfRequest request) {
                 // 1. 이미 생성된 문서가 있는지 확인
                 com.chaing.domain.settlements.entity.SettlementDocument existingDoc = documentService
@@ -432,7 +437,8 @@ public class HQSettlementFacade {
                                         .getAllByMonth(request.month(), null);
 
                         if (settlements.isEmpty()) {
-                                return "선택하신 월에 정산 데이터가 없어 PDF를 생성할 수 없습니다.";
+                                throw new com.chaing.domain.settlements.exception.SettlementException(
+                                                com.chaing.domain.settlements.exception.SettlementErrorCode.MONTHLY_SETTLEMENT_NOT_FOUND);
                         }
 
                         // 3. 파일 생성 서비스 호출
@@ -460,12 +466,16 @@ public class HQSettlementFacade {
                                         .build());
 
                         return fileUrl;
+                } catch (com.chaing.domain.settlements.exception.SettlementException e) {
+                        throw e;
                 } catch (Exception e) {
                         log.error("Failed to generate HQ Monthly PDF: ", e);
-                        return "PDF 또는 리포트 생성 중 오류가 발생했습니다. (MinIO 연결 또는 리소스 확인 필요)";
+                        throw new com.chaing.domain.settlements.exception.SettlementException(
+                                        com.chaing.domain.settlements.exception.SettlementErrorCode.DOCUMENT_GENERATION_FAILED);
                 }
         }
 
+        @Transactional
         public String getDailyFranchiseReceiptPdf(Long franchiseId,
                         HQSettlementFranchiseDailyReceiptPdfRequest request) {
                 try {
@@ -506,12 +516,16 @@ public class HQSettlementFacade {
                                         .build());
 
                         return fileUrl;
+                } catch (com.chaing.domain.settlements.exception.SettlementException e) {
+                        throw e;
                 } catch (Exception e) {
                         log.error("Failed to generate Daily Franchise Receipt PDF: ", e);
-                        return "가맹점 영수증 PDF 생성 중 오류가 발생했습니다. (데이터 확인 필요)";
+                        throw new com.chaing.domain.settlements.exception.SettlementException(
+                                        com.chaing.domain.settlements.exception.SettlementErrorCode.DOCUMENT_GENERATION_FAILED);
                 }
         }
 
+        @Transactional
         public String getMonthlyFranchiseReceiptPdf(Long franchiseId,
                         HQSettlementFranchiseMonthlyReceiptPdfRequest request) {
                 try {
@@ -563,12 +577,16 @@ public class HQSettlementFacade {
                                         .build());
 
                         return fileUrl;
+                } catch (com.chaing.domain.settlements.exception.SettlementException e) {
+                        throw e;
                 } catch (Exception e) {
                         log.error("Failed to generate Monthly Franchise Receipt PDF: ", e);
-                        return "가맹점 월별 영수증 생성 중 오류가 발생했습니다.";
+                        throw new com.chaing.domain.settlements.exception.SettlementException(
+                                        com.chaing.domain.settlements.exception.SettlementErrorCode.DOCUMENT_GENERATION_FAILED);
                 }
         }
 
+        @Transactional
         public String getMonthlyExcel(HQSettlementMonthlyExcelRequest request) {
                 try {
                         // 1. 해당 월의 모든 가맹점 정산 데이터 조회
@@ -576,7 +594,8 @@ public class HQSettlementFacade {
                                         .getAllByMonth(request.month(), null);
 
                         if (settlements.isEmpty()) {
-                                return "선택하신 월에 정산 데이터가 없어 엑셀을 생성할 수 없습니다.";
+                                throw new com.chaing.domain.settlements.exception.SettlementException(
+                                                com.chaing.domain.settlements.exception.SettlementErrorCode.MONTHLY_SETTLEMENT_NOT_FOUND);
                         }
 
                         // 2. 파일 생성 서비스 호출 (Excel 생성)
@@ -591,9 +610,12 @@ public class HQSettlementFacade {
 
                         // 4. 실제 연동된 URL 반환
                         return minioService.getFileUrl(fileName, BucketName.SETTLEMENTS);
+                } catch (com.chaing.domain.settlements.exception.SettlementException e) {
+                        throw e;
                 } catch (Exception e) {
                         log.error("Failed to generate Monthly Excel: ", e);
-                        return "엑셀 파일 생성 또는 저장 중 서버 오류가 발생했습니다.";
+                        throw new com.chaing.domain.settlements.exception.SettlementException(
+                                        com.chaing.domain.settlements.exception.SettlementErrorCode.DOCUMENT_GENERATION_FAILED);
                 }
         }
 }

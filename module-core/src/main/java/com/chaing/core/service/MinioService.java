@@ -29,17 +29,53 @@ public class MinioService {
     // 파일 업로드 로직
     public void uploadFile(MultipartFile file, String fileName, BucketName bucket) {
         try {
+            ensureBucketExists(bucket.getBucketName());
             minioClient.putObject(
                     PutObjectArgs.builder()
                             .bucket(bucket.getBucketName())
                             .object(fileName)
                             .stream(file.getInputStream(), file.getSize(), -1)
                             .contentType(file.getContentType())
-                            .build()
-            );
+                            .build());
         } catch (Exception e) {
             log.error("MinIO upload error: ", e);
             throw new RuntimeException("파일 업로드 중 오류가 발생했습니다.");
+        }
+    }
+
+    // byte[] 기반 파일 업로드 로직 (정산 파일용)
+    public void uploadFile(byte[] bytes, String fileName, String contentType, BucketName bucket) {
+        try {
+            ensureBucketExists(bucket.getBucketName());
+            java.io.ByteArrayInputStream bais = new java.io.ByteArrayInputStream(bytes);
+            minioClient.putObject(
+                    PutObjectArgs.builder()
+                            .bucket(bucket.getBucketName())
+                            .object(fileName)
+                            .stream(bais, bytes.length, -1)
+                            .contentType(contentType)
+                            .build());
+        } catch (Exception e) {
+            log.error("MinIO byte[] upload error: ", e);
+            throw new RuntimeException("파일 업로드 중 오류가 발생했습니다.");
+        }
+    }
+
+    private void ensureBucketExists(String bucketName) throws Exception {
+        boolean exists = minioClient.bucketExists(
+                io.minio.BucketExistsArgs.builder().bucket(bucketName).build());
+        if (!exists) {
+            log.info("Creating non-existent MinIO bucket: {}", bucketName);
+            try {
+                minioClient.makeBucket(
+                        io.minio.MakeBucketArgs.builder().bucket(bucketName).build());
+            } catch (io.minio.errors.ErrorResponseException e) {
+                // 병렬 요청으로 인해 이미 버킷이 생성된 경우 무시
+                if (!"BucketAlreadyOwnedByYou".equals(e.errorResponse().code()) &&
+                        !"BucketAlreadyExists".equals(e.errorResponse().code())) {
+                    throw e;
+                }
+            }
         }
     }
 
@@ -56,8 +92,7 @@ public class MinioService {
                             .bucket(bucket.getBucketName())
                             .object(fileName)
                             .expiry(2, TimeUnit.HOURS)
-                            .build()
-            );
+                            .build());
         } catch (Exception e) {
             log.error("MinIO get URL error: ", e);
             return null;
@@ -71,8 +106,7 @@ public class MinioService {
                     RemoveObjectArgs.builder()
                             .bucket(bucket.getBucketName())
                             .object(fileName)
-                            .build()
-            );
+                            .build());
         } catch (Exception e) {
             log.error("MinIO delete error: ", e);
             throw new RuntimeException("파일 삭제 중 오류가 발생했습니다.");

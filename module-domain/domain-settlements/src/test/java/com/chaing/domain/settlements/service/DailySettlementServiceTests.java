@@ -70,7 +70,7 @@ class DailySettlementServiceTests {
                 // when, then
                 assertThatThrownBy(() -> dailyService.getByFranchiseAndDate(franchiseId, date))
                                 .isInstanceOf(SettlementException.class)
-                                .hasMessageContaining("해당 일별 정산을 찾을 수 없습니다.");
+                                .hasMessageContaining("해당 날짜의 정산 내역이 존재하지 않습니다.");
         }
 
         @DisplayName("날짜와 특정 가맹점 키워드로 일별 정산 목록 조회 - 성공")

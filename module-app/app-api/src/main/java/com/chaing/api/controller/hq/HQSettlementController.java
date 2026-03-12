@@ -41,7 +41,9 @@ public class HQSettlementController {
         @GetMapping("/daily-documents/{dailyReceiptId}")
         public ResponseEntity<ApiResponse<SettlementDocument>> getDailyDocument(
                         @PathVariable("dailyReceiptId") Long dailyReceiptId) {
-                SettlementDocument document = documentService.getDailyDocument(dailyReceiptId);
+                SettlementDocument document = documentService.getDailyDocument(dailyReceiptId)
+                                .orElseThrow(() -> new com.chaing.domain.settlements.exception.SettlementException(
+                                                com.chaing.domain.settlements.exception.SettlementErrorCode.DOCUMENT_STILL_GENERATING));
                 return ResponseEntity.ok(ApiResponse.success(document));
         }
 
@@ -54,19 +56,25 @@ public class HQSettlementController {
         }
 
         // 일별
-        @Operation(summary = "본사 일별 정산 요약 조회(합산)", 
-                        description = "본사 관점 일별 정산 요약(최종 정산 금액, 발주 매출, 수수료 수익, 배송 수익, 반품 차감액, 본사 손실)")
+        @Operation(summary = "본사 일별 정산 요약 조회(합산)", description = "본사 관점 일별 정산 요약(최종 정산 금액, 발주 매출, 수수료 수익, 배송 수익, 반품 차감액, 본사 손실)")
         @GetMapping("/daily/summary")
         public ResponseEntity<ApiResponse<HQSettlementSummaryResponse>> getDailySummary(
-                        @Valid HQSettlementDailySummaryRequest request) {
-                HQSettlementSummaryResponse response = hqFacade.getDailySummary(request);
+                        @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+                HQSettlementSummaryResponse response = hqFacade
+                                .getDailySummary(new HQSettlementDailySummaryRequest(date));
                 return ResponseEntity.ok(ApiResponse.success(response));
         }
 
         @Operation(summary = "본사 일별 가맹점별 정산 목록 조회", description = "선택한 일자에 대한 가맹점별 정산 목록(검색/상태 필터/페이징)")
         @GetMapping("/daily/franchises")
         public ResponseEntity<ApiResponse<Page<HQFranchiseSettlementResponse>>> getDailyFranchiseSettlements(
-                        @Valid HQSettlementDailyFranchisesRequest request) {
+                        @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+                        @RequestParam(value = "keyword", required = false) String keyword,
+                        @RequestParam(value = "status", required = false) com.chaing.domain.settlements.enums.SettlementStatus status,
+                        @RequestParam(value = "page", defaultValue = "0") int page,
+                        @RequestParam(value = "size", defaultValue = "20") int size) {
+                HQSettlementDailyFranchisesRequest request = new HQSettlementDailyFranchisesRequest(date,
+                                keyword, status, page, size);
                 Page<HQFranchiseSettlementResponse> response = hqFacade.getDailyFranchises(request);
                 return ResponseEntity.ok(ApiResponse.success(response));
         }
@@ -74,7 +82,9 @@ public class HQSettlementController {
         @Operation(summary = "본사 일별 전체 가맹점 정산 추이(그래프)", description = "기간(start~end) 동안 전체 가맹점 합계 추이(일자별)")
         @GetMapping("/daily/daily-sales-graph")
         public ResponseEntity<ApiResponse<List<HQDailyGraphResponse>>> getDailyTrend(
-                        @Valid HQSettlementDailyGraphRequest request) {
+                        @RequestParam("start") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start,
+                        @RequestParam("end") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end) {
+                HQSettlementDailyGraphRequest request = new HQSettlementDailyGraphRequest(start, end);
                 List<HQDailyGraphResponse> response = hqFacade.getDailyTrend(request);
                 return ResponseEntity.ok(ApiResponse.success(response));
         }
@@ -84,15 +94,22 @@ public class HQSettlementController {
         @Operation(summary = "본사 월별 정산 요약 조회(합산)", description = "본사 관점 월별 정산 요약(최종 정산 금액, 발주 매출, 수수료 수익, 배송 수익, 반품 차감액, 본사 손실)")
         @GetMapping("/monthly/summary")
         public ResponseEntity<ApiResponse<HQSettlementSummaryResponse>> getMonthlySummary(
-                        @Valid HQSettlementMonthlySummaryRequest request) {
-                HQSettlementSummaryResponse response = hqFacade.getMonthlySummary(request);
+                        @RequestParam("month") @DateTimeFormat(pattern = "yyyy-MM") YearMonth month) {
+                HQSettlementSummaryResponse response = hqFacade
+                                .getMonthlySummary(new HQSettlementMonthlySummaryRequest(month));
                 return ResponseEntity.ok(ApiResponse.success(response));
         }
 
         @Operation(summary = "본사 월별 가맹점별 정산 목록 조회", description = "선택한 월에 대한 가맹점별 정산 목록(검색/상태 필터/페이징)")
         @GetMapping("/monthly/franchises")
         public ResponseEntity<ApiResponse<Page<HQFranchiseSettlementResponse>>> getMonthlyFranchiseSettlements(
-                        @Valid HQSettlementMonthlyFranchisesRequest request) {
+                        @RequestParam("month") @DateTimeFormat(pattern = "yyyy-MM") YearMonth month,
+                        @RequestParam(value = "keyword", required = false) String keyword,
+                        @RequestParam(value = "status", required = false) com.chaing.domain.settlements.enums.SettlementStatus status,
+                        @RequestParam(value = "page", defaultValue = "0") int page,
+                        @RequestParam(value = "size", defaultValue = "20") int size) {
+                HQSettlementMonthlyFranchisesRequest request = new HQSettlementMonthlyFranchisesRequest(month,
+                                keyword, status, page, size);
                 Page<HQFranchiseSettlementResponse> response = hqFacade.getMonthlyFranchises(request);
                 return ResponseEntity.ok(ApiResponse.success(response));
         }
@@ -100,7 +117,9 @@ public class HQSettlementController {
         @Operation(summary = "본사 월별 전체 가맹점 정산 추이(그래프)", description = "기간(start~end) 동안 전체 가맹점 합계 추이(월별 또는 선택 월 내부 일자별은 일별 trend로 처리)")
         @GetMapping("/monthly/monthly-sales-graph")
         public ResponseEntity<ApiResponse<List<HQMonthlyGraphResponse>>> getMonthlyTrend(
-                        @Valid HQSettlementMonthlyGraphRequest request) {
+                        @RequestParam("start") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start,
+                        @RequestParam("end") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end) {
+                HQSettlementMonthlyGraphRequest request = new HQSettlementMonthlyGraphRequest(start, end);
                 List<HQMonthlyGraphResponse> response = hqFacade.getMonthlyTrend(request);
                 return ResponseEntity.ok(ApiResponse.success(response));
         }
@@ -126,12 +145,10 @@ public class HQSettlementController {
         }
 
         // 전표 상세 (본사에서 특정 가맹점 전표로 이동)
-        @Operation(summary = "본사 전표 상세 목록 조회(가맹점 단건, 일/월 공통)", description = """
-                        본사 -> 가맹점 전표 상세 목록 화면용
-                        - franchiseId 필수
+        @Operation(summary = "단건 가맹점 전표 목록 조회", description = """
+                        특정 가맹점의 전표 목록 조회
                         - period=DAILY면 date 필수
                         - period=MONTHLY면 month 필수
-                        - type 없으면 전체
                         """)
         @GetMapping("/vouchers")
         public ResponseEntity<ApiResponse<Page<FranchiseVoucherResponse>>> getFranchiseVouchersByHq(
@@ -147,21 +164,39 @@ public class HQSettlementController {
                 return ResponseEntity.ok(ApiResponse.success(response));
         }
 
+        @Operation(summary = "전체 가맹점 전표 목록 조회", description = """
+                        전체 가맹점의 전표 목록 조회 (항목별 상세용)
+                        - period=DAILY면 date 필수
+                        - period=MONTHLY면 month 필수
+                        """)
+        @GetMapping("/vouchers/all")
+        public ResponseEntity<ApiResponse<Page<FranchiseVoucherResponse>>> getAllVouchers(
+                        @RequestParam("period") PeriodType period,
+                        @RequestParam(value = "date", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+                        @RequestParam(value = "month", required = false) @DateTimeFormat(pattern = "yyyy-MM") YearMonth month,
+                        @RequestParam(value = "type", required = false) VoucherType type,
+                        @RequestParam(value = "page", defaultValue = "0") int page,
+                        @RequestParam(value = "size", defaultValue = "20") int size) {
+                Page<FranchiseVoucherResponse> response = hqFacade.getAllVouchers(period, date, month, type, page,
+                                size);
+                return ResponseEntity.ok(ApiResponse.success(response));
+        }
+
         // PDF 및 엑셀 다운로드 (URL 반환)
 
         @Operation(summary = "본사 전체 가맹점 요약 PDF 조회(일별)", description = "선택한 일자 기준 전체 가맹점 요약 PDF")
         @GetMapping("/daily/receipt-all/pdf")
         public ResponseEntity<ApiResponse<String>> getDailyAllSummaryPdf(
-                        @Valid HQSettlementDailyAllPdfRequest request) {
-                String url = hqFacade.getDailyAllSummaryPdf(request);
+                        @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+                String url = hqFacade.getDailyAllSummaryPdf(new HQSettlementDailyAllPdfRequest(date));
                 return ResponseEntity.ok(ApiResponse.success(url));
         }
 
         @Operation(summary = "본사 전체 가맹점 요약 PDF 조회(월별)", description = "선택한 월 기준 전체 가맹점 요약 PDF")
         @GetMapping("/monthly/receipt-all/pdf")
         public ResponseEntity<ApiResponse<String>> getMonthlyAllSummaryPdf(
-                        @Valid HQSettlementMonthlyAllPdfRequest request) {
-                String url = hqFacade.getMonthlyAllSummaryPdf(request);
+                        @RequestParam("month") @DateTimeFormat(pattern = "yyyy-MM") YearMonth month) {
+                String url = hqFacade.getMonthlyAllSummaryPdf(new HQSettlementMonthlyAllPdfRequest(month));
                 return ResponseEntity.ok(ApiResponse.success(url));
         }
 
@@ -169,8 +204,9 @@ public class HQSettlementController {
         @GetMapping("/daily/franchises/{franchiseId}/receipt/pdf")
         public ResponseEntity<ApiResponse<String>> getDailyFranchiseReceiptPdf(
                         @PathVariable Long franchiseId,
-                        @Valid HQSettlementFranchiseDailyReceiptPdfRequest request) {
-                String url = hqFacade.getDailyFranchiseReceiptPdf(franchiseId, request);
+                        @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+                String url = hqFacade.getDailyFranchiseReceiptPdf(franchiseId,
+                                new HQSettlementFranchiseDailyReceiptPdfRequest(franchiseId, date));
                 return ResponseEntity.ok(ApiResponse.success(url));
         }
 
@@ -178,16 +214,18 @@ public class HQSettlementController {
         @GetMapping("/monthly/franchises/{franchiseId}/receipt/pdf")
         public ResponseEntity<ApiResponse<String>> getMonthlyFranchiseReceiptPdf(
                         @PathVariable Long franchiseId,
-                        @Valid HQSettlementFranchiseMonthlyReceiptPdfRequest request) {
-                String url = hqFacade.getMonthlyFranchiseReceiptPdf(franchiseId, request);
+                        @RequestParam("month") @DateTimeFormat(pattern = "yyyy-MM") YearMonth month) {
+                String url = hqFacade.getMonthlyFranchiseReceiptPdf(franchiseId,
+                                new HQSettlementFranchiseMonthlyReceiptPdfRequest(franchiseId, month));
                 return ResponseEntity.ok(ApiResponse.success(url));
         }
 
         @Operation(summary = "본사 월별 전표 다운로드", description = "선택한 월 기준 본사 정산 Excel(요약/목록) 다운로드")
         @GetMapping("/monthly/vouchers/excel")
         public ResponseEntity<ApiResponse<String>> getMonthlyExcel(
-                        @Valid HQSettlementMonthlyExcelRequest request) {
-                String url = hqFacade.getMonthlyExcel(request);
+                        @RequestParam("month") @DateTimeFormat(pattern = "yyyy-MM") YearMonth month,
+                        @RequestParam(value = "type", required = false) VoucherType type) {
+                String url = hqFacade.getMonthlyExcel(new HQSettlementMonthlyExcelRequest(month, type));
                 return ResponseEntity.ok(ApiResponse.success(url));
         }
 

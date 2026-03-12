@@ -122,7 +122,7 @@ class MonthlySettlementServiceTests {
         // when, then
         assertThatThrownBy(() -> monthlyService.getByFranchiseAndMonth(franchiseId, month))
                 .isInstanceOf(com.chaing.domain.settlements.exception.SettlementException.class)
-                .hasMessageContaining("해당 월별 정산을 찾을 수 없습니다.");
+                .hasMessageContaining("해당 월의 정산 내역이 존재하지 않습니다.");
     }
 
     @DisplayName("월별 정산 상태별 카운트 조회 - 성공")

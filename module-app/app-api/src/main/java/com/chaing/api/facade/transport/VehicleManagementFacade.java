@@ -3,6 +3,7 @@ package com.chaing.api.facade.transport;
 import com.chaing.api.dto.transport.management.request.CreateVehicleRequest;
 import com.chaing.api.dto.transport.management.request.UpdateVehicleRequest;
 import com.chaing.api.dto.transport.management.request.UpdateVehicleStatusRequest;
+import com.chaing.api.dto.transport.management.request.VehicleSearchRequest;
 import com.chaing.api.dto.transport.management.response.VehicleDetailResponse;
 import com.chaing.api.dto.transport.management.response.VehicleSummaryResponse;
 import com.chaing.core.enums.UsableStatus;
@@ -35,8 +36,8 @@ public class VehicleManagementFacade {
     }
 
     // 운송 차량 목록 조회
-    public Page<VehicleSummaryResponse> getVehicleList(Pageable pageable) {
-        Page<Vehicle> vehicles = vehicleManagementService.getVehicleList(pageable);
+    public Page<VehicleSummaryResponse> getVehicleList(VehicleSearchRequest request, Pageable pageable) {
+        Page<Vehicle> vehicles = vehicleManagementService.getVehicleList(request.toCondition(), pageable);
         return vehicles.map(VehicleSummaryResponse::from);
     }
 

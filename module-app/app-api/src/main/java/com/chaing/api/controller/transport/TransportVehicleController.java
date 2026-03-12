@@ -3,6 +3,7 @@ package com.chaing.api.controller.transport;
 import com.chaing.api.dto.transport.management.request.CreateVehicleRequest;
 import com.chaing.api.dto.transport.management.request.UpdateVehicleRequest;
 import com.chaing.api.dto.transport.management.request.UpdateVehicleStatusRequest;
+import com.chaing.api.dto.transport.management.request.VehicleSearchRequest;
 import com.chaing.api.dto.transport.management.response.VehicleDetailResponse;
 import com.chaing.api.dto.transport.management.response.VehicleSummaryResponse;
 import com.chaing.api.facade.transport.VehicleManagementFacade;
@@ -44,9 +45,10 @@ public class TransportVehicleController {
     @Operation(summary = "운송 차량 목록 조회", description = "전체 운송 차량 목록 조회")
     @GetMapping
     public ResponseEntity<ApiResponse<Page<VehicleSummaryResponse>>> getVehicles(
+            VehicleSearchRequest request,
             Pageable pageable
     ) {
-        return ResponseEntity.ok(ApiResponse.success(vehicleManagementFacade.getVehicleList(pageable)));
+        return ResponseEntity.ok(ApiResponse.success(vehicleManagementFacade.getVehicleList(request, pageable)));
     }
 
     @Operation(summary = "운송 차량 상세 정보 조회", description = "특정 운송 차량의 상세 정보 조회")

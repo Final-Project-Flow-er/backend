@@ -433,6 +433,7 @@ public class FranchiseSettlementFacade {
                                         .periodType(PeriodType.MONTHLY)
                                         .documentType(DocumentType.RECEIPT_PDF)
                                         .documentOwner(DocumentOwner.FRANCHISE)
+                                        .franchiseId(franchiseId)
                                         .storageProvider("MINIO")
                                         .bucket(BucketName.SETTLEMENTS.getBucketName())
                                         .objectKey(fileName)

@@ -2,6 +2,7 @@ package com.chaing.api.controller.franchise;
 
 import com.chaing.domain.orders.dto.request.FranchiseOrderCreateRequest;
 import com.chaing.api.dto.franchise.orders.response.FranchiseOrderResponse;
+import com.chaing.domain.orders.dto.request.FranchiseOrderStatusUpdateRequest;
 import com.chaing.domain.orders.dto.request.FranchiseOrderUpdateRequest;
 import com.chaing.api.facade.franchise.FranchiseOrderFacade;
 import com.chaing.api.security.principal.UserPrincipal;
@@ -9,6 +10,7 @@ import com.chaing.core.dto.ApiResponse;
 import com.chaing.domain.orders.dto.response.FranchiseOrderCancelResponse;
 import com.chaing.domain.orders.dto.response.FranchiseOrderCreateResponse;
 import com.chaing.domain.orders.dto.response.FranchiseOrderDetailResponse;
+import com.chaing.domain.orders.dto.response.FranchiseOrderStatusShippingPendingResponse;
 import com.chaing.domain.orders.dto.response.FranchiseOrderUpdateResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -98,8 +100,8 @@ public class FranchiseOrderController {
     @Operation(summary = "발주 상태 수정", description = "차량 배정 후 해당 발주 상태를 배송 대기로 수정")
     @PatchMapping("/shipping-pending")
     @PreAuthorize("hasAnyRole('ADMIN', 'HQ')")
-    public ResponseEntity<ApiResponse<FranchiseOrderStatusShippingPendingResponse>> updateOrderShippingPending(
-            @Valid @RequestBody FranchiseOrderStatusUpdateRequest request
+    public ResponseEntity<ApiResponse<List<FranchiseOrderStatusShippingPendingResponse>>> updateOrderShippingPending(
+            @Valid @RequestBody List<FranchiseOrderStatusUpdateRequest> request
     ) {
         return ResponseEntity.ok(ApiResponse.success(franchiseOrderFacade.updateShippingPending(request)));
     }

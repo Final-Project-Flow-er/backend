@@ -92,6 +92,12 @@ public class SettlementDocument extends BaseEntity {
         if (periodType == null) {
             throw new IllegalStateException("periodType은 필수입니다");
         }
+        if (documentType == null) {
+            throw new IllegalStateException("documentType은 필수입니다");
+        }
+        if (documentOwner == null) {
+            throw new IllegalStateException("documentOwner는 필수입니다");
+        }
         // 1. 문서 타입별 소유자 및 주기 엄격 검증 (보험)
         if (documentType == DocumentType.HQ_DAILY_SUM) {
             if (documentOwner != DocumentOwner.HQ || periodType != PeriodType.DAILY) {

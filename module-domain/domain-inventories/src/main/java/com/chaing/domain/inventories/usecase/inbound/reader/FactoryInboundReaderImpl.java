@@ -31,7 +31,9 @@ public class FactoryInboundReaderImpl implements InboundReader<FactoryInventoryR
                         entity.getProductId(),
                         entity.getSerialCode(),
                         entity.getManufactureDate(),
-                        entity.getStatus()
+                        entity.getStatus(),
+                        entity.getOrderId(),
+                        entity.getOrderItemId()
                 ))
                 .toList();
     }
@@ -45,7 +47,27 @@ public class FactoryInboundReaderImpl implements InboundReader<FactoryInventoryR
                         entity.getProductId(),
                         entity.getSerialCode(),
                         entity.getManufactureDate(),
-                        entity.getStatus()
+                        entity.getStatus(),
+                        entity.getOrderId(),
+                        entity.getOrderItemId()
+                ))
+                .toList();
+    }
+
+    @Override
+    public List<FactoryInventoryRawData> findAllByBoxCode(String boxCode) {
+
+        LogType status = LogType.SHIPPING;
+        List<FactoryInventory> entities = repository.findAllByBoxCodeAndStatuses(boxCode, status, status);
+
+        return entities.stream()
+                .map(entity -> new FactoryInventoryRawData(
+                        entity.getProductId(),
+                        entity.getSerialCode(),
+                        entity.getManufactureDate(),
+                        entity.getStatus(),
+                        entity.getOrderId(),
+                        entity.getOrderItemId()
                 ))
                 .toList();
     }

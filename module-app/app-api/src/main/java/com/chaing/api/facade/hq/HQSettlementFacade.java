@@ -67,11 +67,19 @@ public class HQSettlementFacade {
                 List<com.chaing.domain.settlements.entity.DailySettlementReceipt> receipts = dailyService
                                 .getAllByDate(request.date(), request.keyword());
 
+                // 2. 가맹점 정보 벌크 조회 (N+1 쿼리 방지)
+                List<Long> franchiseIds = receipts.stream()
+                                .map(com.chaing.domain.settlements.entity.DailySettlementReceipt::getFranchiseId)
+                                .distinct()
+                                .collect(Collectors.toList());
+
+                Map<Long, String> franchiseNameMap = franchiseRepository.findAllById(franchiseIds).stream()
+                                .collect(Collectors.toMap(Franchise::getFranchiseId, Franchise::getName));
+
                 List<HQFranchiseSettlementResponse> dtos = receipts.stream()
                                 .map(r -> {
-                                        String franchiseName = franchiseRepository.findById(r.getFranchiseId())
-                                                        .map(Franchise::getName)
-                                                        .orElse("Unknown");
+                                        String franchiseName = franchiseNameMap.getOrDefault(r.getFranchiseId(),
+                                                        "Unknown");
                                         return HQFranchiseSettlementResponse.of(
                                                         r.getFranchiseId(),
                                                         franchiseName,
@@ -150,11 +158,19 @@ public class HQSettlementFacade {
                                         .collect(Collectors.toList());
                 }
 
+                // 2. 가맹점 정보 벌크 조회 (N+1 쿼리 방지)
+                List<Long> franchiseIds = settlements.stream()
+                                .map(com.chaing.domain.settlements.entity.MonthlySettlement::getFranchiseId)
+                                .distinct()
+                                .collect(Collectors.toList());
+
+                Map<Long, String> franchiseNameMap = franchiseRepository.findAllById(franchiseIds).stream()
+                                .collect(Collectors.toMap(Franchise::getFranchiseId, Franchise::getName));
+
                 List<HQFranchiseSettlementResponse> dtos = settlements.stream()
                                 .map(s -> {
-                                        String franchiseName = franchiseRepository.findById(s.getFranchiseId())
-                                                        .map(Franchise::getName)
-                                                        .orElse("Unknown");
+                                        String franchiseName = franchiseNameMap.getOrDefault(s.getFranchiseId(),
+                                                        "Unknown");
                                         return HQFranchiseSettlementResponse.of(
                                                         s.getFranchiseId(),
                                                         franchiseName,
@@ -164,10 +180,7 @@ public class HQSettlementFacade {
                                                         s.getCommissionFee().longValue(),
                                                         s.getRefundAmount().longValue(),
                                                         s.getLossAmount().longValue(),
-                                                        s.getFinalSettlementAmount().longValue(), // This was
-                                                                                                  // finalAmount in
-                                                                                                  // original, now it's
-                                                                                                  // finalSettlementAmount
+                                                        s.getFinalSettlementAmount().longValue(),
                                                         s.getStatus(),
                                                         s.getSettlementMonth().atDay(1)); // 기준일
                                 })

@@ -246,9 +246,9 @@ public class HQSettlementFacade {
                 while (!current.isAfter(endMonth)) {
                         List<com.chaing.domain.settlements.entity.MonthlySettlement> settlements = monthlyService
                                         .getAllByMonth(current, null);
-                        long totalSaleAmount = settlements.stream()
-                                        .mapToLong(s -> s.getTotalSaleAmount().longValue())
-                                        .sum();
+                        BigDecimal totalSaleAmount = settlements.stream()
+                                        .map(com.chaing.domain.settlements.entity.MonthlySettlement::getTotalSaleAmount)
+                                        .reduce(BigDecimal.ZERO, BigDecimal::add);
 
                         result.add(HQMonthlyGraphResponse.of(current, totalSaleAmount));
                         current = current.plusMonths(1);

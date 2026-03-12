@@ -122,7 +122,7 @@ public class FranchiseReturnController {
         return ResponseEntity.ok(ApiResponse.success(franchiseReturnFacade.create(userId, request)));
     }
 
-    @Operation(summary = "반품 출고", description = "가맹점에서 반품 신청한 제품들을 본사로 배송")
+    @Operation(summary = "반품 출고", description = "외부 모듈용 가맹점에서 반품 신청한 제품들을 본사로 배송")
     @PatchMapping("/delivery")
     @PreAuthorize("hasAnyRole('ADMIN', 'FRANCHISE')")
     public ResponseEntity<ApiResponse<List<FranchiseReturnDeliveryResponse>>> returnDelivery(

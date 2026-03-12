@@ -96,13 +96,4 @@ public class FranchiseOrderController {
 
         return ResponseEntity.ok(ApiResponse.success(franchiseOrderFacade.createOrder(userId, request)));
     }
-
-    @Operation(summary = "발주 상태 수정", description = "차량 배정 후 해당 발주 상태를 배송 대기로 수정")
-    @PatchMapping("/shipping-pending")
-    @PreAuthorize("hasAnyRole('ADMIN', 'HQ')")
-    public ResponseEntity<ApiResponse<List<FranchiseOrderStatusShippingPendingResponse>>> updateOrderShippingPending(
-            @Valid @RequestBody List<FranchiseOrderStatusUpdateRequest> request
-    ) {
-        return ResponseEntity.ok(ApiResponse.success(franchiseOrderFacade.updateShippingPending(request)));
-    }
 }

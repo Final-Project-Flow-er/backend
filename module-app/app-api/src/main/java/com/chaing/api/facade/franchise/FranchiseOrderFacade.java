@@ -299,19 +299,4 @@ public class FranchiseOrderFacade {
                 .items(orderItems)
                 .build();
     }
-
-    // 발주 상태 SHIPPING_PENDING으로 수정
-    public List<FranchiseOrderStatusShippingPendingResponse> updateShippingPending(List<FranchiseOrderStatusUpdateRequest> requests) {
-        // List<orderCode>
-        Set<String> orderCodes = requests.stream().map(FranchiseOrderStatusUpdateRequest::orderCode).collect(Collectors.toSet());
-
-        // 수정
-        // Map<orderId, FranchiseOrderCommand>
-        Map<Long, FranchiseOrderCommand> orders = franchiseOrderService.updateShippingPending(orderCodes);
-
-        // 반환
-        return orders.values().stream()
-                .map(FranchiseOrderStatusShippingPendingResponse::from)
-                .toList();
-    }
 }

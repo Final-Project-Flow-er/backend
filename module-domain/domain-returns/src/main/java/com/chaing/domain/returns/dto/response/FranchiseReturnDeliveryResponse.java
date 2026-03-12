@@ -11,4 +11,10 @@ public record FranchiseReturnDeliveryResponse(
 
         List<String> boxCodes
 ) {
+    public static FranchiseReturnDeliveryResponse of(String returnCode, List<String> boxCodes) {
+        return FranchiseReturnDeliveryResponse.builder()
+                .returnCode(returnCode)
+                .boxCodes(boxCodes)
+                .build();
+    }
 }

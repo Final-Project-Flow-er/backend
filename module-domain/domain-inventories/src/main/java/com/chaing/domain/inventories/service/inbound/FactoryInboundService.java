@@ -76,7 +76,7 @@ public class FactoryInboundService extends InboundService<FactoryInboundCreateCo
         List<FactoryInventoryRawData> details = inboundReader.findAllByBoxCode(boxCode);
         return details.stream()
                 .map(detail -> InboundPendingItemInfo.create(
-                        detail.getSerialCode(),
+                        detail.serialCode(),
                         detail.productId(),
                         detail.manufactureDate(),
                         detail.orderId(),

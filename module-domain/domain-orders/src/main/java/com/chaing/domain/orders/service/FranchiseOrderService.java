@@ -610,4 +610,12 @@ public class FranchiseOrderService {
                         FranchiseOrderCommand::from
                 ));
     }
+
+    // 본사의 발주 조회
+    public FranchiseOrderDetailCommand getOrderByHQ(String orderCode) {
+        FranchiseOrder order = franchiseOrderRepository.findByOrderCodeAndDeletedAtIsNull(orderCode)
+                .orElseThrow(() -> new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_NOT_FOUND));
+
+        return FranchiseOrderDetailCommand.from(order);
+    }
 }

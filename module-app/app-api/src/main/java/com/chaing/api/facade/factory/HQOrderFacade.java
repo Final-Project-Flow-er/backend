@@ -196,8 +196,21 @@ public class HQOrderFacade {
                         Collectors.mapping(HQOrderItemCommand::orderItemId, Collectors.toList())
                 ));
 
-        // List<HQOrderItemCommand>
-        List<HQOrderItemCommand> items = orderItemByOrderItemId.values().stream().toList();
+        // List<HQOrderItemCommand> — productCode 보강
+        List<HQOrderItemCommand> items = orderItemByOrderItemId.values().stream()
+                .map(item -> {
+                    ProductInfo info = productInfoByProductId.get(item.productId());
+                    return HQOrderItemCommand.builder()
+                            .orderId(item.orderId())
+                            .orderItemId(item.orderItemId())
+                            .productId(item.productId())
+                            .productCode(info != null ? info.productCode() : null)
+                            .quantity(item.quantity())
+                            .unitPrice(item.unitPrice())
+                            .totalPrice(item.totalPrice())
+                            .build();
+                })
+                .toList();
 
         // 반환
         return HQOrderDetailResponse.builder()

@@ -16,6 +16,7 @@ import com.chaing.domain.orders.dto.response.FranchiseOrderDetailResponse;
 import com.chaing.domain.orders.dto.response.FranchiseOrderItemDetailResponse;
 import com.chaing.domain.orders.dto.response.FranchiseOrderStatusShippingPendingResponse;
 import com.chaing.domain.orders.dto.response.FranchiseOrderUpdateResponse;
+import com.chaing.domain.orders.entity.FranchiseOrderItem;
 import com.chaing.domain.orders.exception.OrderErrorCode;
 import com.chaing.domain.orders.exception.OrderException;
 import com.chaing.domain.orders.service.FranchiseOrderCodeGenerator;
@@ -113,17 +114,38 @@ public class FranchiseOrderFacade {
 
     // 가맹점의 발주 번호에 따른 특정 발주 조회
     public FranchiseOrderDetailResponse getOrder(Long userId, String orderCode) {
-        // franchiseId
-        Long franchiseId = userManagementService.getFranchiseIdByUserId(userId);
+        // userRole 확인
+        String userRole = userManagementService.getUserById(userId).getRole().toString();
 
-        // username
-        String username = userManagementService.getUsernameByUserId(userId);
+        Long franchiseId;
+        Long orderUserId;
+        String username;
+        String phoneNumber;
 
-        // phoneNumber
-        String phoneNumber = userManagementService.getPhoneNumberByUserId(userId);
+        if (userRole.equals("FRANCHISE")) {
+            orderUserId = userId;
+            // franchiseId
+            franchiseId = userManagementService.getFranchiseIdByUserId(userId);
+            // username
+            username = userManagementService.getUsernameByUserId(userId);
+            // phoneNumber
+            phoneNumber = userManagementService.getPhoneNumberByUserId(userId);
+        } else if (userRole.equals("HQ")) {
+            FranchiseOrderDetailCommand order = franchiseOrderService.getOrderByHQ(orderCode);
+            orderUserId = order.userId();
+
+            // franchiseId
+            franchiseId = userManagementService.getFranchiseIdByUserId(orderUserId);
+            // username
+            username = userManagementService.getUsernameByUserId(orderUserId);
+            // phoneNumber
+            phoneNumber = userManagementService.getPhoneNumberByUserId(orderUserId);
+        } else {
+            throw new OrderException(OrderErrorCode.UNAUTHORIZED);
+        }
 
         // FranchiseOrderCommand
-        FranchiseOrderDetailCommand order = franchiseOrderService.getOrderByOrderCode(franchiseId, userId, orderCode);
+        FranchiseOrderDetailCommand order = franchiseOrderService.getOrderByOrderCode(franchiseId, orderUserId, orderCode);
 
         // Map<orderId, List<FranchiseOrderItemCommand>>
         Map<Long, List<FranchiseOrderItemCommand>> orderItemsByOrderId = franchiseOrderService.getOrderItemsByOrderId(order.orderId());
@@ -153,21 +175,22 @@ public class FranchiseOrderFacade {
 
         // List<FranchiseOrderItemDetailResponse>
         List<FranchiseOrderItemDetailResponse> itemResponses = orderItemIdsByProductId.entrySet().stream()
-                .map(entry -> {
-                    ProductInfo productInfo = productInfoByProductId.get(entry.getKey());
+                .flatMap(entry -> {
                     List<Long> orderItemIds = entry.getValue();
-                    FranchiseOrderItemCommand orderItemCommand = orderItemCommandByOrderItemId.get(orderItemIds.get(0));
-                    int quantity = orderItemIds.size();
-                    BigDecimal unitPrice = orderItemCommand.unitPrice();
-                    BigDecimal totalPrice = unitPrice.multiply(BigDecimal.valueOf(quantity));
 
-                    return FranchiseOrderItemDetailResponse.builder()
-                            .productCode(productInfo.productCode())
-                            .productName(productInfo.productName())
-                            .quantity(quantity)
-                            .unitPrice(unitPrice)
-                            .totalPrice(totalPrice)
-                            .build();
+                    return orderItemIds.stream()
+                            .map(orderItemId -> {
+                                FranchiseOrderItemCommand orderItem = orderItemCommandByOrderItemId.get(orderItemId);
+                                ProductInfo productInfo = productInfoByProductId.get(entry.getKey());
+
+                                return FranchiseOrderItemDetailResponse.builder()
+                                        .productCode(productInfo.productCode())
+                                        .productName(productInfo.productName())
+                                        .quantity(orderItem.quantity())
+                                        .unitPrice(orderItem.unitPrice())
+                                        .totalPrice(orderItem.unitPrice().multiply(BigDecimal.valueOf(orderItem.quantity())))
+                                        .build();
+                            });
                 })
                 .toList();
 

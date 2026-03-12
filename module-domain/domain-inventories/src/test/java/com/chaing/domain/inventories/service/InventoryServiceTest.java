@@ -18,6 +18,9 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Map;
@@ -66,29 +69,29 @@ class InventoryServiceTest {
     @Test
     @DisplayName("전체 재고 중분류 조회")
     void getBatches() {
-        // given
         Long productId = 1L;
-        given(factoryInventoryRepository.getBatches(productId)).willReturn(List.of());
+        Pageable pageable = PageRequest.of(0, 10);
 
-        // when
-        inventoryService.getBatches(productId);
+        given(factoryInventoryRepository.getBatches(productId, pageable))
+                .willReturn(Page.empty(pageable));
 
-        // then
-        verify(factoryInventoryRepository).getBatches(productId);
+        inventoryService.getBatches(productId, pageable);
+
+        verify(factoryInventoryRepository).getBatches(productId, pageable);
     }
 
     @Test
     @DisplayName("전체 재고 소분류 조회")
     void getItems() {
-        // given
         HQInventoryItemsRequest request = mock(HQInventoryItemsRequest.class);
-        given(factoryInventoryRepository.getItems(request)).willReturn(List.of());
+        Pageable pageable = PageRequest.of(0, 10);
 
-        // when
-        inventoryService.getItems(request);
+        given(factoryInventoryRepository.getItems(request, pageable))
+                .willReturn(Page.empty(pageable));
 
-        // then
-        verify(factoryInventoryRepository).getItems(request);
+        inventoryService.getItems(request, pageable);
+
+        verify(factoryInventoryRepository).getItems(request, pageable);
     }
 
     @Test
@@ -110,31 +113,31 @@ class InventoryServiceTest {
     @Test
     @DisplayName("가맹점 재고 중분류 조회")
     void getFranchiseBatches() {
-        // given
         Long franchiseId = 1L;
         Long productId = 1L;
-        given(franchiseInventoryRepository.getFranchiseBatches(franchiseId, productId)).willReturn(List.of());
+        Pageable pageable = PageRequest.of(0, 10);
 
-        // when
-        inventoryService.getFranchiseBatches(franchiseId, productId);
+        given(franchiseInventoryRepository.getFranchiseBatches(franchiseId, productId, pageable))
+                .willReturn(Page.empty(pageable));
 
-        // then
-        verify(franchiseInventoryRepository).getFranchiseBatches(franchiseId, productId);
+        inventoryService.getFranchiseBatches(franchiseId, productId, pageable);
+
+        verify(franchiseInventoryRepository).getFranchiseBatches(franchiseId, productId, pageable);
     }
 
     @Test
     @DisplayName("가맹점 재고 소분류 조회")
     void getFranchiseItems() {
-        // given
         Long franchiseId = 1L;
         FranchiseInventoryItemsRequest request = mock(FranchiseInventoryItemsRequest.class);
-        given(franchiseInventoryRepository.getFranchiseItems(franchiseId, request)).willReturn(List.of());
+        Pageable pageable = PageRequest.of(0, 10);
 
-        // when
-        inventoryService.getFranchiseItems(franchiseId, request);
+        given(franchiseInventoryRepository.getFranchiseItems(franchiseId, request, pageable))
+                .willReturn(Page.empty(pageable));
 
-        // then
-        verify(franchiseInventoryRepository).getFranchiseItems(franchiseId, request);
+        inventoryService.getFranchiseItems(franchiseId, request, pageable);
+
+        verify(franchiseInventoryRepository).getFranchiseItems(franchiseId, request, pageable);
     }
 
     @Test

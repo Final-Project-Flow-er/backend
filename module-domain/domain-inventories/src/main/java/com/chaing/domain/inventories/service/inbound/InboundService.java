@@ -92,5 +92,5 @@ public abstract class InboundService<T, R extends InboundRawData> {
 
     public abstract void confirmInbound(List<String> selectedList);
 
-    public abstract List<InboundPendingItemInfo> getInboundBoxDetails(@NotBlank @NotBlank String boxCode);
+    public abstract List<InboundPendingItemInfo> getInboundBoxDetails(@NotBlank String boxCode);
 }

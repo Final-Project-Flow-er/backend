@@ -27,10 +27,9 @@ public class VehicleManagementFacade {
     private final TransportManagementService transportManagementService;
 
     // 운송 차량 등록
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public VehicleDetailResponse createVehicle(CreateVehicleRequest request) {
         validateTransportIsActive(request.transportId());
-//        transportManagementService.getById(request.transportId());
         Vehicle vehicle = vehicleManagementService.createVehicle(request.toCommand());
         return VehicleDetailResponse.from(vehicle);
     }
@@ -48,7 +47,7 @@ public class VehicleManagementFacade {
     }
 
     // 운송 차량 수정
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public VehicleDetailResponse updateVehicle(Long id, UpdateVehicleRequest request) {
         Vehicle vehicle = vehicleManagementService.getById(id);
 
@@ -64,7 +63,7 @@ public class VehicleManagementFacade {
     }
 
     // 운송 차량 상태 변경
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public VehicleDetailResponse updateVehicleStatus(Long id, UpdateVehicleStatusRequest request) {
         if (request.status() == UsableStatus.ACTIVE) {
             Vehicle vehicle = vehicleManagementService.getById(id);
@@ -76,7 +75,7 @@ public class VehicleManagementFacade {
     }
 
     // 운송 차량 삭제
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void deleteVehicle(Long id) {
         vehicleManagementService.deleteVehicle(id);
     }

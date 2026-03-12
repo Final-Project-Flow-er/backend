@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Repository
 public interface FranchiseReturnRepository extends JpaRepository<Returns, Long> {
@@ -22,6 +23,8 @@ public interface FranchiseReturnRepository extends JpaRepository<Returns, Long> 
             Long franchiseId, ReturnStatus returnStatus,
             LocalDateTime start, LocalDateTime end);
     List<Returns> findAllByReturnCodeInAndDeletedAtIsNull(List<String> returnCodes);
+
+    List<Returns> findAllByReturnCodeInAndDeletedAtIsNull(Set<String> returnCodes);
 
     Optional<Returns> findByUserIdAndFranchiseIdAndReturnCodeAndDeletedAtIsNull(Long userId, Long franchiseId, String returnCode);
 

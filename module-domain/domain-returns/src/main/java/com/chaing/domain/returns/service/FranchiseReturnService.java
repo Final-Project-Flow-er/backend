@@ -381,4 +381,62 @@ public class FranchiseReturnService {
         }
         return items;
     }
+
+    // 반품 요청 상태 배송 대기로 수정
+    // return: Map<returnCode, List<boxCode>>
+    public Map<String, List<String>> delivery(Set<String> requestedBoxCodes) {
+        List<ReturnItem> items = franchiseReturnItemRepository.findAllByBoxCodeInAndDeletedAtIsNull(requestedBoxCodes);
+
+        if (items == null || items.isEmpty()) {
+            throw new FranchiseReturnException(FranchiseReturnErrorCode.RETURN_ITEM_NOT_FOUND);
+        }
+
+        // Set<ReturnItem BoxCode>
+        Set<String> existingBoxCodes = items.stream()
+                .map(ReturnItem::getBoxCode)
+                .collect(Collectors.toSet());
+
+        if (!existingBoxCodes.containsAll(requestedBoxCodes)) {
+            throw new FranchiseReturnException(FranchiseReturnErrorCode.DATA_OMISSION);
+        }
+
+        // Set<Returns>
+        Set<Returns> returns = items.stream()
+                .map(ReturnItem::getReturns)
+                .collect(Collectors.toSet());
+
+        // 반품 요청 상태 변경
+        returns.forEach(Returns::deliveryReturn);
+
+        return items.stream()
+                .collect(Collectors.groupingBy(
+                        item -> item.getReturns().getReturnCode(),
+                        Collectors.mapping(ReturnItem::getBoxCode, Collectors.toList())
+                ));
+    }
+
+    // 반품 상태 SHIPPING_PENDING으로 수정
+    // return: Map<returnCode, ReturnCommand>
+    public Map<Long, ReturnCommand> updateShippingPending(Set<String> returnCodes) {
+        List<Returns> returns = franchiseReturnRepository.findAllByReturnCodeInAndDeletedAtIsNull(returnCodes);
+
+        if (returns == null || returns.isEmpty()) {
+            throw new FranchiseReturnException(FranchiseReturnErrorCode.RETURN_NOT_FOUND);
+        }
+
+        // Set<Returns ReturnCode>
+        Set<String> existingReturnCodes = returns.stream().map(Returns::getReturnCode).collect(Collectors.toSet());
+
+        if (!returnCodes.containsAll(existingReturnCodes)) {
+            throw new FranchiseReturnException(FranchiseReturnErrorCode.DATA_OMISSION);
+        }
+
+        returns.forEach(Returns::updateStatusToShippingPending);
+
+        return returns.stream()
+                .collect(Collectors.toMap(
+                        Returns::getReturnId,
+                        ReturnCommand::from
+                ));
+    }
 }

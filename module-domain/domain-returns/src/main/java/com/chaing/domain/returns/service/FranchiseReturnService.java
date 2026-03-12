@@ -414,4 +414,29 @@ public class FranchiseReturnService {
                         Collectors.mapping(ReturnItem::getBoxCode, Collectors.toList())
                 ));
     }
+
+    // 반품 상태 SHIPPING_PENDING으로 수정
+    // return: Map<returnCode, ReturnCommand>
+    public Map<Long, ReturnCommand> updateShippingPending(Set<String> returnCodes) {
+        List<Returns> returns = franchiseReturnRepository.findAllByReturnCodeInAndDeletedAtIsNull(returnCodes);
+
+        if (returns == null || returns.isEmpty()) {
+            throw new FranchiseReturnException(FranchiseReturnErrorCode.RETURN_NOT_FOUND);
+        }
+
+        // Set<Returns ReturnCode>
+        Set<String> existingReturnCodes = returns.stream().map(Returns::getReturnCode).collect(Collectors.toSet());
+
+        if (!returnCodes.containsAll(existingReturnCodes)) {
+            throw new FranchiseReturnException(FranchiseReturnErrorCode.DATA_OMISSION);
+        }
+
+        returns.forEach(Returns::updateStatusToShippingPending);
+
+        return returns.stream()
+                .collect(Collectors.toMap(
+                        Returns::getReturnId,
+                        ReturnCommand::from
+                ));
+    }
 }

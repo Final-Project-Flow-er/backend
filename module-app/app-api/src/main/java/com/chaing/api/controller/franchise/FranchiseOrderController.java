@@ -2,6 +2,7 @@ package com.chaing.api.controller.franchise;
 
 import com.chaing.domain.orders.dto.request.FranchiseOrderCreateRequest;
 import com.chaing.api.dto.franchise.orders.response.FranchiseOrderResponse;
+import com.chaing.domain.orders.dto.request.FranchiseOrderStatusUpdateRequest;
 import com.chaing.domain.orders.dto.request.FranchiseOrderUpdateRequest;
 import com.chaing.api.facade.franchise.FranchiseOrderFacade;
 import com.chaing.api.security.principal.UserPrincipal;
@@ -9,9 +10,11 @@ import com.chaing.core.dto.ApiResponse;
 import com.chaing.domain.orders.dto.response.FranchiseOrderCancelResponse;
 import com.chaing.domain.orders.dto.response.FranchiseOrderCreateResponse;
 import com.chaing.domain.orders.dto.response.FranchiseOrderDetailResponse;
+import com.chaing.domain.orders.dto.response.FranchiseOrderStatusShippingPendingResponse;
 import com.chaing.domain.orders.dto.response.FranchiseOrderUpdateResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -86,7 +89,7 @@ public class FranchiseOrderController {
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'FRANCHISE', 'HQ')")
     public ResponseEntity<ApiResponse<FranchiseOrderCreateResponse>> createOrder(
-            @RequestBody FranchiseOrderCreateRequest request,
+            @Valid @RequestBody FranchiseOrderCreateRequest request,
             @AuthenticationPrincipal UserPrincipal userPrincipal
     ) {
         Long userId = userPrincipal.getId();

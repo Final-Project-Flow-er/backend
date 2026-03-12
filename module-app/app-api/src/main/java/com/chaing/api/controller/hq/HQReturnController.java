@@ -4,7 +4,9 @@ import com.chaing.api.dto.hq.response.HQReturnProductResponse;
 import com.chaing.api.dto.hq.response.HQReturnResponse;
 import com.chaing.api.facade.hq.HQReturnFacade;
 import com.chaing.core.dto.ApiResponse;
+import com.chaing.domain.returns.dto.request.HQOrderStatusUpdateRequest;
 import com.chaing.domain.returns.dto.request.HQReturnUpdateRequest;
+import com.chaing.domain.returns.dto.response.HQOrderStatusShippingPendingResponse;
 import com.chaing.domain.returns.dto.response.HQReturnDetailResponse;
 import com.chaing.domain.returns.dto.response.HQReturnUpdateResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -67,5 +69,14 @@ public class HQReturnController {
             @Valid @RequestBody HQReturnUpdateRequest request
     ) {
         return ResponseEntity.ok(ApiResponse.success(hqReturnFacade.updateReturn(returnCode, request)));
+    }
+
+    @Operation(summary = "반품 상태 수정", description = "차량 배정 후 해당 반품 상태를 배송 대기로 수정")
+    @PatchMapping("/shipping-pending")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HQ')")
+    public ResponseEntity<ApiResponse<List<HQOrderStatusShippingPendingResponse>>> updateOrderShippingPending(
+            @RequestBody List<@Valid HQOrderStatusUpdateRequest> request
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(hqReturnFacade.updateShippingPending(request)));
     }
 }

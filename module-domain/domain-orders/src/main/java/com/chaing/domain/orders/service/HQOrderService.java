@@ -16,6 +16,8 @@ import com.chaing.domain.orders.exception.HQOrderErrorCode;
 import com.chaing.domain.orders.exception.HQOrderException;
 import com.chaing.domain.orders.repository.HeadOfficeOrderItemRepository;
 import com.chaing.domain.orders.repository.HeadOfficeOrderRepository;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,8 +26,10 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -291,7 +295,7 @@ public class HQOrderService {
     // 대기 상태 발주 제품 정보 조회
     // return: Map<orderId, List<HQOrderItemCommand>>
     public Map<Long, List<com.chaing.domain.orders.dto.command.HQOrderItemCommand>> getOrderItemIdsByOrderId(List<Long> orderIds) {
-        List<HeadOfficeOrderItem> orderItems = orderItemRepository.findAllByHeadOfficeOrder_HeadOfficeOrderIdInAndDeletedAtIsNull(orderIds);
+        List<HeadOfficeOrderItem> orderItems = orderItemRepository.findAllByHeadOfficeOrder_HeadOfficeOrderIdIn(orderIds);
 
         if (orderItems == null || orderItems.isEmpty()) {
             throw new HQOrderException(HQOrderErrorCode.ORDER_ITEM_NOT_FOUND);
@@ -359,14 +363,18 @@ public class HQOrderService {
     public Map<String, HQOrderStatus> updateOrders(List<String> orderCodes, boolean isAccept) {
         List<HeadOfficeOrder> orders = orderRepository.findAllByOrderCodeInAndDeletedAtIsNull(orderCodes);
 
-        // List<orderCode>
-        List<String> distinctOrderCodes = orderCodes.stream().distinct().toList();
+        // Set<orderCode>
+        Set<String> existingOrderCodes = orders.stream().map(HeadOfficeOrder::getOrderCode).collect(Collectors.toSet());
 
-        if (orders == null || orders.isEmpty() || orders.size() != distinctOrderCodes.size()) {
-            throw new HQOrderException(HQOrderErrorCode.ORDER_NOT_FOUND);
+        // Set<orderCode>
+        Set<String> requestedOrderCodes = new HashSet<>(orderCodes);
+
+        if (requestedOrderCodes.containsAll(existingOrderCodes)) {
+            throw new HQOrderException(HQOrderErrorCode.DATA_OMISSION);
         }
 
         if (isAccept) {
+            // 접수
             orders.forEach(HeadOfficeOrder::accept);
         } else {
             orders.forEach(HeadOfficeOrder::reject);

@@ -32,4 +32,5 @@ public interface FranchiseInventoryRepository extends JpaRepository<FranchiseInv
     List<Long> getAllFranchiseIds();
 
     void deleteByFranchiseIdAndInventoryIdIn(Long aLong, List<Long> longs);
+
 }

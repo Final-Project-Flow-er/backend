@@ -16,6 +16,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -78,22 +81,22 @@ public class FranchiseInventoryController {
 
         @Operation(summary = "상품별 상세 재고(배치) 조회", description = "특정 상품의 제조일자별 수량을 확인합니다.")
         @GetMapping("/batches/{productId}")
-        public ResponseEntity<ApiResponse<List<FranchiseInventoryBatchResponse>>> getFranchiseBatches(
-                        @AuthenticationPrincipal UserPrincipal principal,
-                        @PathVariable Long productId) {
-                return ResponseEntity.ok(ApiResponse.success(
-                                franchiseInventoryFacade.getFranchiseBatches(principal.getBusinessUnitId(),
-                                                productId)));
+        public ResponseEntity<ApiResponse<Page<FranchiseInventoryBatchResponse>>> getFranchiseBatches(
+                @AuthenticationPrincipal UserPrincipal principal,
+                @PathVariable Long productId,
+                @PageableDefault(size = 20) Pageable pageable) {
+            return ResponseEntity.ok(ApiResponse.success(
+                    franchiseInventoryFacade.getFranchiseBatches(principal.getBusinessUnitId(), productId, pageable)));
         }
 
         @Operation(summary = "상세 재고 소분류 리스트 조회", description = "상세 제품 정보를 확인합니다.")
         @PostMapping("/items")
-        public ResponseEntity<ApiResponse<List<FranchiseInventoryItemResponse>>> getFranchiseItems(
-                        @AuthenticationPrincipal UserPrincipal principal,
-                        @Valid @RequestBody FranchiseInventoryItemsRequest request) {
-                return ResponseEntity.ok(ApiResponse
-                                .success(franchiseInventoryFacade.getFranchiseItems(principal.getBusinessUnitId(),
-                                                request)));
+        public ResponseEntity<ApiResponse<Page<FranchiseInventoryItemResponse>>> getFranchiseItems(
+                @AuthenticationPrincipal UserPrincipal principal,
+                @Valid @RequestBody FranchiseInventoryItemsRequest request,
+                @PageableDefault(size = 20) Pageable pageable) {
+            return ResponseEntity.ok(ApiResponse.success(
+                    franchiseInventoryFacade.getFranchiseItems(principal.getBusinessUnitId(), request, pageable)));
         }
 
         @Operation(summary = "폐기 처리", description = "제품을 폐기합니다.")

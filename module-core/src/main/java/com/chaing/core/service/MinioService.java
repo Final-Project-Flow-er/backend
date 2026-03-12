@@ -66,8 +66,16 @@ public class MinioService {
                 io.minio.BucketExistsArgs.builder().bucket(bucketName).build());
         if (!exists) {
             log.info("Creating non-existent MinIO bucket: {}", bucketName);
-            minioClient.makeBucket(
-                    io.minio.MakeBucketArgs.builder().bucket(bucketName).build());
+            try {
+                minioClient.makeBucket(
+                        io.minio.MakeBucketArgs.builder().bucket(bucketName).build());
+            } catch (io.minio.errors.ErrorResponseException e) {
+                // 병렬 요청으로 인해 이미 버킷이 생성된 경우 무시
+                if (!"BucketAlreadyOwnedByYou".equals(e.errorResponse().code()) &&
+                        !"BucketAlreadyExists".equals(e.errorResponse().code())) {
+                    throw e;
+                }
+            }
         }
     }
 

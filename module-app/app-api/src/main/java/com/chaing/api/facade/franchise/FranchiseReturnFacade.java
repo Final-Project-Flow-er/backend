@@ -488,6 +488,7 @@ public class FranchiseReturnFacade {
     }
 
     // 외부 모듈용 반품 제품 출고
+    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public List<FranchiseReturnDeliveryResponse> delivery(List<FranchiseReturnDeliveryRequest> requests) {
         // Set<boxCode>
         Set<String> requestedBoxCodes = requests.stream()

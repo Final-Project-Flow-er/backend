@@ -12,6 +12,7 @@ import com.chaing.domain.orders.dto.response.FranchiseOrderDetailResponse;
 import com.chaing.domain.orders.dto.response.FranchiseOrderUpdateResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -86,11 +87,20 @@ public class FranchiseOrderController {
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'FRANCHISE', 'HQ')")
     public ResponseEntity<ApiResponse<FranchiseOrderCreateResponse>> createOrder(
-            @RequestBody FranchiseOrderCreateRequest request,
+            @Valid @RequestBody FranchiseOrderCreateRequest request,
             @AuthenticationPrincipal UserPrincipal userPrincipal
     ) {
         Long userId = userPrincipal.getId();
 
         return ResponseEntity.ok(ApiResponse.success(franchiseOrderFacade.createOrder(userId, request)));
+    }
+
+    @Operation(summary = "발주 상태 수정", description = "차량 배정 후 해당 발주 상태를 배송 대기로 수정")
+    @PatchMapping("/shipping-pending")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HQ')")
+    public ResponseEntity<ApiResponse<FranchiseOrderStatusShippingPendingResponse>> updateOrderShippingPending(
+            @Valid @RequestBody FranchiseOrderStatusUpdateRequest request
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(franchiseOrderFacade.updateShippingPending(request)));
     }
 }

@@ -12,14 +12,17 @@ import java.util.List;
 @Repository
 public interface SettlementVoucherRepository extends JpaRepository<SettlementVoucher, Long> {
 
-    // 월별 정산의 전체 전표 (PDF/Excel용)
-    List<SettlementVoucher> findAllByMonthlySettlementId(Long monthlySettlementId);
+        // 월별 정산의 전체 전표 (PDF/Excel용)
+        List<SettlementVoucher> findAllByMonthlySettlementId(Long monthlySettlementId);
 
-    // 월별 전표 페이징 (전표 상세 목록 — 전체 탭)
-    Page<SettlementVoucher> findAllByMonthlySettlementId(
-            Long monthlySettlementId, Pageable pageable);
+        // 월별 전표 페이징 (전표 상세 목록 — 전체 탭)
+        Page<SettlementVoucher> findAllByMonthlySettlementId(
+                        Long monthlySettlementId, Pageable pageable);
 
-    // 월별 전표 유형 필터 + 페이징 (전표 상세 목록 — 유형별 탭)
-    Page<SettlementVoucher> findAllByMonthlySettlementIdAndVoucherType(
-            Long monthlySettlementId, VoucherType voucherType, Pageable pageable);
+        // 월별 전표 유형 필터 + 페이징 (전표 상세 목록 — 유형별 탭)
+        Page<SettlementVoucher> findAllByMonthlySettlementIdAndVoucherType(
+                        Long monthlySettlementId, VoucherType voucherType, Pageable pageable);
+
+        // 전체 가맹점용: 여러 월별 정산 ID에 해당하는 전표들 조회
+        List<SettlementVoucher> findAllByMonthlySettlementIdIn(List<Long> monthlySettlementIds);
 }

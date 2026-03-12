@@ -16,7 +16,9 @@ import com.chaing.domain.returns.dto.command.FranchiseReturnItemCreateCommand;
 import com.chaing.domain.returns.dto.command.ReturnCommand;
 import com.chaing.domain.returns.dto.command.ReturnItemCommand;
 import com.chaing.domain.returns.dto.request.FranchiseReturnCreateRequest;
+import com.chaing.domain.returns.dto.request.FranchiseReturnDeliveryRequest;
 import com.chaing.domain.returns.dto.response.FranchiseReturnCreateResponse;
+import com.chaing.domain.returns.dto.response.FranchiseReturnDeliveryResponse;
 import com.chaing.domain.returns.dto.response.FranchiseReturnDetailResponse;
 import com.chaing.domain.returns.dto.response.FranchiseReturnItemResponse;
 import com.chaing.domain.returns.dto.response.FranchiseReturnResponse;
@@ -28,6 +30,7 @@ import com.chaing.domain.returns.exception.FranchiseReturnException;
 import com.chaing.domain.returns.service.FranchiseReturnService;
 import com.chaing.domain.returns.service.ReturnCodeGenerator;
 import com.chaing.domain.users.service.UserManagementService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -37,6 +40,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -481,5 +485,26 @@ public class FranchiseReturnFacade {
                 .orderInfo(orderInfo)
                 .items(items)
                 .build();
+    }
+
+    // 외부 모듈용 반품 제품 출고
+    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
+    public List<FranchiseReturnDeliveryResponse> delivery(List<FranchiseReturnDeliveryRequest> requests) {
+        // Set<boxCode>
+        Set<String> requestedBoxCodes = requests.stream()
+                .map(FranchiseReturnDeliveryRequest::boxCode)
+                .collect(Collectors.toSet());
+
+        // 출고 처리
+        // Map<returnCode, List<boxCode>>
+        Map<String, List<String>> boxCodesByReturnCode = franchiseReturnService.delivery(requestedBoxCodes);
+
+        // 반환
+        return boxCodesByReturnCode.entrySet().stream()
+                .map(entry -> FranchiseReturnDeliveryResponse.of(
+                        entry.getKey(),
+                        entry.getValue()
+                ))
+                .toList();
     }
 }

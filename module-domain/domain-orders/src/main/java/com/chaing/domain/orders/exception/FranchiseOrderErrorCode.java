@@ -15,7 +15,8 @@ public enum FranchiseOrderErrorCode implements ErrorCode {
     PRODUCT_NOT_FOUND(404, "PR001", "해당 제품을 찾을 수 없습니다."),
 
     // 400 BAD REQUEST
-    ORDER_INVALID_STATUS(400, "FO003" ,"발주 상태가 대기일 때만 수정 가능합니다.");
+    ORDER_INVALID_STATUS(400, "FO003" ,"발주 상태가 대기일 때만 수정 가능합니다."),
+    DATA_OMISSION(400, "RE014", "데이터 누락이 존재합니다.");
 
     private final Integer status;
     private final String code;

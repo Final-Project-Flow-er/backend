@@ -8,4 +8,6 @@ public interface InboundReader<R> {
     List<R> findAllByStatusWait();
 
     List<R> findAllBySerialCode(List<String> selectedList);
+
+    List<R> findAllByBoxCode(String boxCode);
 }

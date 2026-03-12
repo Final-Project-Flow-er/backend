@@ -147,4 +147,12 @@ public class FranchiseOrder extends BaseEntity {
         }
         this.orderStatus = FranchiseOrderStatus.REJECTED;
     }
+
+    // 상태를 SHIPPING_PENDING으로 수정
+    public void updateStatusToShippingPending() {
+        if (this.orderStatus != FranchiseOrderStatus.ACCEPTED) {
+            throw new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_INVALID_STATUS);
+        }
+        this.orderStatus = FranchiseOrderStatus.SHIPPING_PENDING;
+    }
 }

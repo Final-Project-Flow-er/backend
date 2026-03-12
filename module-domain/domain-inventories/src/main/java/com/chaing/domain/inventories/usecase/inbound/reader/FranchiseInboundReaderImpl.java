@@ -35,6 +35,7 @@ public class FranchiseInboundReaderImpl implements InboundReader<FranchiseInvent
                         entity.getManufactureDate(),
                         entity.getFranchiseId(),
                         entity.getOrderId(),
+                        entity.getOrderItemId(),
                         entity.getStatus()
                 ))
                 .toList();
@@ -52,6 +53,26 @@ public class FranchiseInboundReaderImpl implements InboundReader<FranchiseInvent
                         entity.getManufactureDate(),
                         entity.getFranchiseId(),
                         entity.getOrderId(),
+                        entity.getOrderItemId(),
+                        entity.getStatus()
+                ))
+                .toList();
+    }
+
+    @Override
+    public List<FranchiseInventoryRawData> findAllByBoxCode(String boxCode) {
+
+        List<FranchiseInventory> entities = repository.findAllByBoxCode(boxCode);
+
+        return entities.stream()
+                .map(entity -> new FranchiseInventoryRawData(
+                        entity.getBoxCode(),
+                        entity.getProductId(),
+                        entity.getSerialCode(),
+                        entity.getManufactureDate(),
+                        entity.getFranchiseId(),
+                        entity.getOrderId(),
+                        entity.getOrderItemId(),
                         entity.getStatus()
                 ))
                 .toList();

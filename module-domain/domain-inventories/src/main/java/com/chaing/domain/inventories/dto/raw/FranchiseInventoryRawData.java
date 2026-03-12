@@ -11,6 +11,7 @@ public record FranchiseInventoryRawData(
         LocalDate manufactureDate,
         Long franchiseId,
         Long orderId,
+        Long orderItemId,
         LogType status
 ) implements InboundRawData
 {

@@ -8,7 +8,9 @@ public record FactoryInventoryRawData(
         Long productId,
         String serialCode,
         LocalDate manufactureDate,
-        LogType status
+        LogType status,
+        Long orderId,
+        Long orderItemId
 ) implements InboundRawData {
     @Override
     public String getBoxCode() {return "";}
@@ -23,5 +25,5 @@ public record FactoryInventoryRawData(
     public LocalDate getManufactureDate() {return manufactureDate;}
 
     @Override
-    public Long getOrderId() {return 0L;}
+    public Long getOrderId() {return orderId;}
 }

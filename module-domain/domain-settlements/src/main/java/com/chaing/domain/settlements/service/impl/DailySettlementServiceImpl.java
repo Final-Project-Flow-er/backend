@@ -9,6 +9,7 @@ import com.chaing.domain.settlements.repository.interfaces.DailyReceiptLineRepos
 import com.chaing.domain.settlements.repository.interfaces.DailySettlementReceiptRepository;
 import com.chaing.domain.settlements.service.DailySettlementService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -27,16 +29,25 @@ public class DailySettlementServiceImpl implements DailySettlementService {
 
     @Override
     public List<DailySettlementReceipt> getAllByDate(LocalDate date, String keyword) {
+        log.info("[DEBUG] getAllByDate called with date: {}, keyword: {}", date, keyword);
+        List<DailySettlementReceipt> results;
         if (keyword != null && !keyword.trim().isEmpty()) {
-            return receiptRepository.findAllBySettlementDateAndFranchiseNameContaining(date, keyword);
+            results = receiptRepository.findAllBySettlementDateAndFranchiseNameContaining(date, keyword);
+        } else {
+            results = receiptRepository.findAllBySettlementDate(date);
         }
-        return receiptRepository.findAllBySettlementDate(date);
-    } // 본사에서 3/5일 전체 가맹점 정산을 조회하려 할 때
+        log.info("[DEBUG] getAllByDate found {} receipts", results.size());
+        return results;
+    }
 
     @Override
     public DailySettlementReceipt getByFranchiseAndDate(Long franchiseId, LocalDate date) {
+        log.info("[DEBUG] getByFranchiseAndDate called for franchiseId: {}, date: {}", franchiseId, date);
         return receiptRepository.findByFranchiseIdAndSettlementDate(franchiseId, date)
-                .orElseThrow(() -> new SettlementException(SettlementErrorCode.DAILY_SETTLEMENT_NOT_FOUND));
+                .orElseThrow(() -> {
+                    log.warn("[DEBUG] Daily Settlement NOT FOUND for franchiseId: {}, date: {}", franchiseId, date);
+                    return new SettlementException(SettlementErrorCode.DAILY_SETTLEMENT_NOT_FOUND);
+                });
     } // 가맹점에서 정산을 조회하고 싶을 때
 
     @Override

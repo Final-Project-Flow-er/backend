@@ -12,9 +12,11 @@ import com.chaing.domain.returns.dto.command.HQReturnCommand;
 import com.chaing.domain.returns.dto.command.HQReturnDetailCommand;
 import com.chaing.domain.returns.dto.command.ReturnCommand;
 import com.chaing.domain.returns.dto.command.ReturnItemInspection;
+import com.chaing.domain.returns.dto.request.HQOrderStatusUpdateRequest;
 import com.chaing.domain.returns.dto.request.HQReturnItemUpdateRequest;
 import com.chaing.domain.returns.dto.request.HQReturnUpdateRequest;
 import com.chaing.domain.returns.dto.response.FranchiseReturnItemDetailResponse;
+import com.chaing.domain.returns.dto.response.HQOrderStatusShippingPendingResponse;
 import com.chaing.domain.returns.dto.response.HQReturnDetailResponse;
 import com.chaing.domain.returns.dto.response.HQReturnUpdateResponse;
 import com.chaing.domain.returns.enums.ReturnStatus;
@@ -22,6 +24,7 @@ import com.chaing.domain.returns.exception.FranchiseReturnErrorCode;
 import com.chaing.domain.returns.exception.FranchiseReturnException;
 import com.chaing.domain.returns.service.FranchiseReturnService;
 import com.chaing.domain.users.service.UserManagementService;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +35,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -244,6 +248,22 @@ public class HQReturnFacade {
         // 반환
         return acceptedReturns.stream()
                 .map(HQReturnProductResponse::from)
+                .toList();
+    }
+
+    // 반품 상태 SHIPPING_PENDING으로 수정
+    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
+    public List<HQOrderStatusShippingPendingResponse> updateShippingPending(List<HQOrderStatusUpdateRequest> request) {
+        // Set<returnCode>
+        Set<String> returnCodes = request.stream().map(HQOrderStatusUpdateRequest::returnCode).collect(Collectors.toSet());
+
+        // 수정
+        // Map<returnId, ReturnCommand>
+        Map<Long, ReturnCommand> returns = franchiseReturnService.updateShippingPending(returnCodes);
+
+        // 반환
+        return returns.values().stream()
+                .map(HQOrderStatusShippingPendingResponse::from)
                 .toList();
     }
 }

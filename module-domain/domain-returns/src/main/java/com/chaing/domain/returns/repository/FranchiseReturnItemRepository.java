@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Repository
 public interface FranchiseReturnItemRepository extends JpaRepository<ReturnItem, Long> {
@@ -25,4 +26,6 @@ public interface FranchiseReturnItemRepository extends JpaRepository<ReturnItem,
     List<ReturnItem> findAllByReturns_ReturnIdAndDeletedAtIsNull(Long returnId);
 
     Optional<ReturnItem> findByBoxCodeAndDeletedAtIsNull(String boxCode);
+
+    List<ReturnItem> findAllByBoxCodeInAndDeletedAtIsNull(Set<String> requestedBoxCodes);
 }

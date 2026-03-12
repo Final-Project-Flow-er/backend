@@ -2,9 +2,11 @@ package com.chaing.api.facade.factory;
 
 import com.chaing.domain.businessunits.service.impl.FranchiseServiceImpl;
 import com.chaing.domain.businessunits.service.impl.HeadquarterServiceImpl;
+import com.chaing.domain.orders.dto.command.FranchiseOrderCommand;
 import com.chaing.domain.orders.dto.command.HQOrderCancelCommand;
 import com.chaing.domain.orders.dto.command.FranchiseOrderDetailCommand;
 import com.chaing.domain.orders.dto.command.FranchiseOrderItemCommand;
+import com.chaing.domain.orders.dto.request.FranchiseOrderStatusUpdateRequest;
 import com.chaing.domain.orders.dto.request.HQOrderCreateRequest;
 import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.domain.orders.dto.info.HQOrderCommand;
@@ -12,6 +14,7 @@ import com.chaing.domain.orders.dto.info.HQOrderItemCommand;
 import com.chaing.domain.orders.dto.request.HQOrderItemCreateCommand;
 import com.chaing.domain.orders.dto.request.HQOrderUpdateRequest;
 import com.chaing.domain.orders.dto.request.HQOrderUpdateStatusRequest;
+import com.chaing.domain.orders.dto.response.FranchiseOrderStatusShippingPendingResponse;
 import com.chaing.domain.orders.dto.response.HQOrderCancelResponse;
 import com.chaing.domain.orders.dto.response.HQOrderCreateResponse;
 import com.chaing.domain.orders.dto.response.HQOrderDetailResponse;
@@ -34,6 +37,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -427,6 +431,22 @@ public class HQOrderFacade {
                                         .build();
                             });
                 })
+                .toList();
+    }
+
+    // 발주 상태 SHIPPING_PENDING으로 수정
+    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
+    public List<FranchiseOrderStatusShippingPendingResponse> updateShippingPending(List<FranchiseOrderStatusUpdateRequest> requests) {
+        // List<orderCode>
+        Set<String> orderCodes = requests.stream().map(FranchiseOrderStatusUpdateRequest::orderCode).collect(Collectors.toSet());
+
+        // 수정
+        // Map<orderId, FranchiseOrderCommand>
+        Map<Long, FranchiseOrderCommand> orders = franchiseOrderService.updateShippingPending(orderCodes);
+
+        // 반환
+        return orders.values().stream()
+                .map(FranchiseOrderStatusShippingPendingResponse::from)
                 .toList();
     }
 }

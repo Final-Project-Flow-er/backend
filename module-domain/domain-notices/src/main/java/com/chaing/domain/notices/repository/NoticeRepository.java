@@ -1,13 +1,41 @@
 package com.chaing.domain.notices.repository;
 
 import com.chaing.domain.notices.entity.Notice;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-@Repository
-public interface NoticeRepository extends JpaRepository<Notice,Long> {
+import java.time.LocalDateTime;
+import java.util.List;
 
-    Page<Notice> findAllByOrderByImportantDescCreatedAtDesc(Pageable pageable);
+@Repository
+public interface NoticeRepository extends JpaRepository<Notice, Long> {
+
+    @Query("SELECT n FROM Notice n ORDER BY " +
+            "(CASE WHEN n.important = true AND (n.importantUntil IS NULL OR n.importantUntil > :now) THEN 1 ELSE 0 END) DESC, " +
+            "n.createdAt DESC")
+    Page<Notice> findAllSorted(@Param("now") LocalDateTime now, Pageable pageable);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT n FROM Notice n WHERE n.important = true AND (n.importantUntil IS NULL OR n.importantUntil > :now)")
+    List<Notice> findAllEffectiveImportantWithLock(@Param("now") LocalDateTime now);
+
+    @Query(value = "SELECT * FROM notice n WHERE n.deleted_at IS NULL AND (" +
+            "(CASE WHEN n.important = true AND (n.important_until IS NULL OR n.important_until > :now) THEN 1 ELSE 0 END > :isImportant) OR " +
+            "((CASE WHEN n.important = true AND (n.important_until IS NULL OR n.important_until > :now) THEN 1 ELSE 0 END = :isImportant) AND n.created_at > :createdAt)) " +
+            "ORDER BY (CASE WHEN n.important = true AND (n.important_until IS NULL OR n.important_until > :now) THEN 1 ELSE 0 END) ASC, n.created_at ASC LIMIT 1",
+            nativeQuery = true)
+    Notice findPreviousNotice(@Param("now") LocalDateTime now, @Param("isImportant") int isImportant, @Param("createdAt") LocalDateTime createdAt);
+
+    @Query(value = "SELECT * FROM notice n WHERE n.deleted_at IS NULL AND (" +
+            "(CASE WHEN n.important = true AND (n.important_until IS NULL OR n.important_until > :now) THEN 1 ELSE 0 END < :isImportant) OR " +
+            "((CASE WHEN n.important = true AND (n.important_until IS NULL OR n.important_until > :now) THEN 1 ELSE 0 END = :isImportant) AND n.created_at < :createdAt)) " +
+            "ORDER BY (CASE WHEN n.important = true AND (n.important_until IS NULL OR n.important_until > :now) THEN 1 ELSE 0 END) DESC, n.created_at DESC LIMIT 1",
+            nativeQuery = true)
+    Notice findNextNotice(@Param("now") LocalDateTime now, @Param("isImportant") int isImportant, @Param("createdAt") LocalDateTime createdAt);
 }

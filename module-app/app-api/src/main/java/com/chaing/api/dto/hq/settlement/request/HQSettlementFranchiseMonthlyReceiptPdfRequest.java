@@ -7,7 +7,5 @@ import java.time.YearMonth;
 
 public record HQSettlementFranchiseMonthlyReceiptPdfRequest(
         @NotNull Long franchiseId,
-        @NotNull @DateTimeFormat(pattern = "yyyy-MM")
-        YearMonth month
-) {
+        @NotNull @DateTimeFormat(pattern = "yyyy-MM") YearMonth month) {
 }

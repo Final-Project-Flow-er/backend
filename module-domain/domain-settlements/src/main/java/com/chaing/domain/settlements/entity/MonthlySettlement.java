@@ -24,24 +24,17 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 
-
 @Entity
 @Getter
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(
-        name = "monthly_settlement",
-        uniqueConstraints = @UniqueConstraint(
-                name = "uk_monthly_settlement_franchise_month",
-                columnNames = {"franchise_id", "settlement_month"}
-        ),
-        indexes = {
+@Table(name = "monthly_settlement", uniqueConstraints = @UniqueConstraint(name = "uk_monthly_settlement_franchise_month", columnNames = {
+        "franchise_id", "settlement_month" }), indexes = {
                 @Index(name = "idx_monthly_settlement_month", columnList = "settlement_month"),
                 @Index(name = "idx_monthly_settlement_franchise", columnList = "franchise_id"),
                 @Index(name = "idx_monthly_settlement_status", columnList = "status")
-        }
-)
+        })
 
 public class MonthlySettlement extends BaseEntity {
 
@@ -52,10 +45,11 @@ public class MonthlySettlement extends BaseEntity {
     @Column(name = "franchise_id", nullable = false)
     private Long franchiseId;
 
+    @jakarta.persistence.Convert(converter = com.chaing.domain.settlements.converter.YearMonthConverter.class)
     @Column(name = "settlement_month", nullable = false)
     private YearMonth settlementMonth;
 
-    //가맹점 정산
+    // 가맹점 정산
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal totalSaleAmount;
 
@@ -116,6 +110,7 @@ public class MonthlySettlement extends BaseEntity {
             throw new SettlementException(SettlementErrorCode.INVALID_SETTLEMENT_STATUS);
         }
         this.status = SettlementStatus.CONFIRMED;
+        this.confirmedAt = LocalDateTime.now();
     }
 
     public void rollback() {

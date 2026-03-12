@@ -8,11 +8,6 @@ import org.springframework.format.annotation.DateTimeFormat;
 import java.time.YearMonth;
 
 public record HQSettlementMonthlyExcelRequest(
-        @Schema(description = "조회 월(yyyy-MM)", example = "2026-02", requiredMode = Schema.RequiredMode.REQUIRED)
-        @NotNull
-        @DateTimeFormat(pattern = "yyyy-MM")
-        YearMonth month,
-        @Schema(description = "전표 타입 필터(없으면 전체)", example = "SALES")
-        VoucherType type
-) {
+        @Schema(description = "조회 월(yyyy-MM)", example = "2026-02", requiredMode = Schema.RequiredMode.REQUIRED) @NotNull @DateTimeFormat(pattern = "yyyy-MM") YearMonth month,
+        @Schema(description = "전표 타입 필터(없으면 전체)", example = "SALES") VoucherType type) {
 }

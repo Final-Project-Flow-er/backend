@@ -12,14 +12,14 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface FactoryInventoryRepository extends JpaRepository<FactoryInventory, Long>, FactoryInventoryRepositoryCustom {
+public interface FactoryInventoryRepository extends JpaRepository<FactoryInventory,Long>, FactoryInventoryRepositoryCustom {
 
     List<FactoryInventory> findAllByStatus(LogType status);
 
     List<FactoryInventory> findAllByOrderId(Long orderId);
 
     @Modifying
-    @Query("UPDATE FactoryInventory i SET i.status = 'com.chaing.core.enums.LogType.AVAILABLE' WHERE i.serialCode IN :serials")
+    @Query("UPDATE FactoryInventory i SET i.status = 'AVAILABLE' WHERE i.serialCode IN :serials")
     void updateAllStatusAvailableBySerialCode(@Param("serials") List<String> serials);
 
     List<FactoryInventory> findAllBySerialCodeIn(List<String> selectedList);
@@ -39,7 +39,7 @@ public interface FactoryInventoryRepository extends JpaRepository<FactoryInvento
     @Modifying(clearAutomatically = true)
     @Query("update FactoryInventory f " +
             "set f.boxCode = null, " +
-            "    f.status = com.chaing.core.enums.LogType.AVAILABLE " +
+            "    f.status = 'AVAILABLE' " + // Enum 경로를 맞춰주세요!
             "where f.serialCode in :ids")
     void cancelOutboundBySerialCodeIn(@Param("ids") List<String> confirmedIds);
 
@@ -51,10 +51,12 @@ public interface FactoryInventoryRepository extends JpaRepository<FactoryInvento
             @Param("status1") LogType status1,
             @Param("status2") LogType status2
     );
-
     List<FactoryInventory> findAllByInventoryIdIn(List<Long> selectedList);
 
     void deleteByInventoryIdIn(List<Long> longs);
+
+    @Query("SELECT i FROM FactoryInventory i WHERE i.boxCode = :boxCode")
+    List<FactoryInventory> findAllByBoxCode(String boxCode);
 
     List<FactoryInventory> findByInventoryIdIn(List<Long> ids);
     List<FactoryInventory> findByBoxCodeIn(List<String> boxCodes);

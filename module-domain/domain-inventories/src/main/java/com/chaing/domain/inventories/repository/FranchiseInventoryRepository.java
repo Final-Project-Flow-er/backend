@@ -32,6 +32,7 @@ public interface FranchiseInventoryRepository extends JpaRepository<FranchiseInv
 
     void deleteByFranchiseIdAndInventoryIdIn(Long aLong, List<Long> longs);
 
+    List<FranchiseInventory> findAllByBoxCode(String boxCode);
     List<FranchiseInventory> findByInventoryIdIn(List<Long> ids);
     List<FranchiseInventory> findByInventoryIdInAndFranchiseId(List<Long> ids, Long franchiseId);
     List<FranchiseInventory> findByBoxCodeInAndFranchiseId(List<String> boxCodes, Long franchiseId);

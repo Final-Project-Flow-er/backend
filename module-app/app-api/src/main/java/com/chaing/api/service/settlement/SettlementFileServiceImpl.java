@@ -20,6 +20,7 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -226,9 +227,15 @@ public class SettlementFileServiceImpl implements SettlementFileService {
             document.add(new Paragraph("총 가맹점 수: " + receipts.size()));
             document.add(new Paragraph("--------------------------------------------"));
 
-            long totalFinal = receipts.stream().mapToLong(r -> r.getFinalAmount().longValue()).sum();
-            long totalSale = receipts.stream().mapToLong(r -> r.getTotalSaleAmount().longValue()).sum();
-            long totalFee = receipts.stream().mapToLong(r -> r.getCommissionFee().longValue()).sum();
+            BigDecimal totalFinal = receipts.stream()
+                    .map(DailySettlementReceipt::getFinalAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal totalSale = receipts.stream()
+                    .map(DailySettlementReceipt::getTotalSaleAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal totalFee = receipts.stream()
+                    .map(DailySettlementReceipt::getCommissionFee)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
 
             document.add(new Paragraph("1. 전체 매출 합계: " + totalSale + "원"));
             document.add(new Paragraph("2. 전체 수수료 수익: " + totalFee + "원"));
@@ -274,8 +281,12 @@ public class SettlementFileServiceImpl implements SettlementFileService {
             document.add(new Paragraph("총 가맹점 수: " + settlements.size()));
             document.add(new Paragraph("--------------------------------------------"));
 
-            long totalFinal = settlements.stream().mapToLong(s -> s.getFinalSettlementAmount().longValue()).sum();
-            long totalSale = settlements.stream().mapToLong(s -> s.getTotalSaleAmount().longValue()).sum();
+            BigDecimal totalFinal = settlements.stream()
+                    .map(MonthlySettlement::getFinalSettlementAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal totalSale = settlements.stream()
+                    .map(MonthlySettlement::getTotalSaleAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
 
             document.add(new Paragraph("1. 전체 매출 합계: " + totalSale + "원"));
             document.add(new Paragraph("--------------------------------------------"));

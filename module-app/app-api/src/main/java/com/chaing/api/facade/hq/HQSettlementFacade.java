@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.chaing.domain.businessunits.repository.FranchiseRepository;
 import com.chaing.domain.businessunits.entity.Franchise;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
@@ -48,17 +49,30 @@ public class HQSettlementFacade {
                 List<com.chaing.domain.settlements.entity.DailySettlementReceipt> receipts = dailyService
                                 .getAllByDate(request.date(), null);
 
-                long finalAmount = receipts.stream().mapToLong(r -> r.getFinalAmount().longValue()).sum();
-                long orderAmount = receipts.stream().mapToLong(r -> r.getOrderAmount().longValue()).sum();
-                long saleAmount = receipts.stream().mapToLong(r -> r.getTotalSaleAmount().longValue()).sum();
-                long commissionFee = receipts.stream().mapToLong(r -> r.getCommissionFee().longValue()).sum();
-                long deliveryFee = receipts.stream().mapToLong(r -> r.getDeliveryFee().longValue()).sum();
-                long refundAmount = receipts.stream().mapToLong(r -> r.getRefundAmount().longValue()).sum();
-                long lossAmount = receipts.stream().mapToLong(r -> r.getLossAmount().longValue()).sum();
+                BigDecimal totalFinal = receipts.stream()
+                                .map(com.chaing.domain.settlements.entity.DailySettlementReceipt::getFinalAmount)
+                                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                BigDecimal totalOrder = receipts.stream()
+                                .map(com.chaing.domain.settlements.entity.DailySettlementReceipt::getOrderAmount)
+                                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                BigDecimal totalSale = receipts.stream()
+                                .map(com.chaing.domain.settlements.entity.DailySettlementReceipt::getTotalSaleAmount)
+                                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                BigDecimal totalCommission = receipts.stream()
+                                .map(com.chaing.domain.settlements.entity.DailySettlementReceipt::getCommissionFee)
+                                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                BigDecimal totalDelivery = receipts.stream()
+                                .map(com.chaing.domain.settlements.entity.DailySettlementReceipt::getDeliveryFee)
+                                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                BigDecimal totalRefund = receipts.stream()
+                                .map(com.chaing.domain.settlements.entity.DailySettlementReceipt::getRefundAmount)
+                                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                BigDecimal totalLoss = receipts.stream()
+                                .map(com.chaing.domain.settlements.entity.DailySettlementReceipt::getLossAmount)
+                                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-                return HQSettlementSummaryResponse.of(
-                                finalAmount, orderAmount, saleAmount, commissionFee, deliveryFee, refundAmount,
-                                lossAmount);
+                return HQSettlementSummaryResponse.of(totalFinal, totalOrder, totalSale, totalCommission, totalDelivery,
+                                totalRefund, totalLoss);
         }
 
         @Transactional(readOnly = true)
@@ -83,13 +97,13 @@ public class HQSettlementFacade {
                                         return HQFranchiseSettlementResponse.of(
                                                         r.getFranchiseId(),
                                                         franchiseName,
-                                                        r.getTotalSaleAmount().longValue(),
-                                                        r.getOrderAmount().longValue(),
-                                                        r.getDeliveryFee().longValue(),
-                                                        r.getCommissionFee().longValue(),
-                                                        r.getRefundAmount().longValue(),
-                                                        r.getLossAmount().longValue(),
-                                                        r.getFinalAmount().longValue(),
+                                                        r.getTotalSaleAmount(),
+                                                        r.getOrderAmount(),
+                                                        r.getDeliveryFee(),
+                                                        r.getCommissionFee(),
+                                                        r.getRefundAmount(),
+                                                        r.getLossAmount(),
+                                                        r.getFinalAmount(),
                                                         com.chaing.domain.settlements.enums.SettlementStatus.CONFIRMED, // 기본값
                                                         r.getSettlementDate());
                                 })
@@ -133,17 +147,30 @@ public class HQSettlementFacade {
                 List<com.chaing.domain.settlements.entity.MonthlySettlement> settlements = monthlyService
                                 .getAllByMonth(request.month(), null);
 
-                long finalAmount = settlements.stream().mapToLong(s -> s.getFinalSettlementAmount().longValue()).sum();
-                long orderAmount = settlements.stream().mapToLong(s -> s.getOrderAmount().longValue()).sum();
-                long saleAmount = settlements.stream().mapToLong(s -> s.getTotalSaleAmount().longValue()).sum();
-                long commissionFee = settlements.stream().mapToLong(s -> s.getCommissionFee().longValue()).sum();
-                long deliveryFee = settlements.stream().mapToLong(s -> s.getDeliveryFee().longValue()).sum();
-                long refundAmount = settlements.stream().mapToLong(s -> s.getRefundAmount().longValue()).sum();
-                long lossAmount = settlements.stream().mapToLong(s -> s.getLossAmount().longValue()).sum();
+                BigDecimal totalFinal = settlements.stream()
+                                .map(com.chaing.domain.settlements.entity.MonthlySettlement::getFinalSettlementAmount)
+                                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                BigDecimal totalOrder = settlements.stream()
+                                .map(com.chaing.domain.settlements.entity.MonthlySettlement::getOrderAmount)
+                                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                BigDecimal totalSale = settlements.stream()
+                                .map(com.chaing.domain.settlements.entity.MonthlySettlement::getTotalSaleAmount)
+                                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                BigDecimal totalCommission = settlements.stream()
+                                .map(com.chaing.domain.settlements.entity.MonthlySettlement::getCommissionFee)
+                                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                BigDecimal totalDelivery = settlements.stream()
+                                .map(com.chaing.domain.settlements.entity.MonthlySettlement::getDeliveryFee)
+                                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                BigDecimal totalRefund = settlements.stream()
+                                .map(com.chaing.domain.settlements.entity.MonthlySettlement::getRefundAmount)
+                                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                BigDecimal totalLoss = settlements.stream()
+                                .map(com.chaing.domain.settlements.entity.MonthlySettlement::getLossAmount)
+                                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-                return HQSettlementSummaryResponse.of(
-                                finalAmount, orderAmount, saleAmount, commissionFee, deliveryFee, refundAmount,
-                                lossAmount);
+                return HQSettlementSummaryResponse.of(totalFinal, totalOrder, totalSale, totalCommission, totalDelivery,
+                                totalRefund, totalLoss);
         }
 
         @Transactional(readOnly = true)
@@ -174,13 +201,13 @@ public class HQSettlementFacade {
                                         return HQFranchiseSettlementResponse.of(
                                                         s.getFranchiseId(),
                                                         franchiseName,
-                                                        s.getTotalSaleAmount().longValue(),
-                                                        s.getOrderAmount().longValue(),
-                                                        s.getDeliveryFee().longValue(),
-                                                        s.getCommissionFee().longValue(),
-                                                        s.getRefundAmount().longValue(),
-                                                        s.getLossAmount().longValue(),
-                                                        s.getFinalSettlementAmount().longValue(),
+                                                        s.getTotalSaleAmount(),
+                                                        s.getOrderAmount(),
+                                                        s.getDeliveryFee(),
+                                                        s.getCommissionFee(),
+                                                        s.getRefundAmount(),
+                                                        s.getLossAmount(),
+                                                        s.getFinalSettlementAmount(),
                                                         s.getStatus(),
                                                         s.getSettlementMonth().atDay(1)); // 기준일
                                 })

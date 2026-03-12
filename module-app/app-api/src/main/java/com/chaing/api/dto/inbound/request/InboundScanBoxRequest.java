@@ -15,6 +15,7 @@ public record InboundScanBoxRequest(
         if(itemInfos == null || itemInfos.isEmpty()) {
             throw new InventoriesException(InventoriesErrorCode.INVENTORIES_IS_NULL);
         }
+        InboundPendingItemInfo firstItem = itemInfos.get(0);
 
         List<String> serialCodes = itemInfos.stream().map(InboundPendingItemInfo::serialCode).toList();
         List<Long> orderItemIds =  itemInfos.stream().map(InboundPendingItemInfo::orderItemId).toList();
@@ -22,10 +23,10 @@ public record InboundScanBoxRequest(
         return new FranchiseInboundCreateCommand(
                 request.boxCode(),
                 serialCodes,
-                itemInfos.get(1).productId(),
-                itemInfos.get(1).manufactureDate(),
+                firstItem.productId(),
+                firstItem.manufactureDate(),
                 franchiseId,
-                itemInfos.get(1).orderId(),
+                firstItem.orderId(),
                 orderItemIds
         );
     }

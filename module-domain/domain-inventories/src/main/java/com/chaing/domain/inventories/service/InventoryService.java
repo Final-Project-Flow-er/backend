@@ -40,6 +40,7 @@ import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -434,17 +435,6 @@ public class InventoryService {
         }
     }
 
-    public List<HQInventory> getHqInventoriesByIds(List<Long> inventoryIds) {
-        return hqInventoryRepository.findAllById(inventoryIds);
-    }
-
-    public List<FranchiseInventory> getFranchiseInventoriesByIds(List<Long> inventoryIds) {
-        return franchiseInventoryRepository.findAllById(inventoryIds);
-    }
-
-    public List<FactoryInventory> getFactoryInventoriesByIds(List<Long> inventoryIds) {
-        return factoryInventoryRepository.findAllById(inventoryIds);
-    }
 
     // return: 데이터 누락 있는지 없는지
     public void verifyOmission(List<String> requestedBoxCodes) {
@@ -487,5 +477,82 @@ public class InventoryService {
         }
 
         hqInventoryRepository.saveAll(inventories);
+    }
+
+    public List<HQInventory> getHqInventoriesByIds(List<Long> inventoryIds) {
+        return hqInventoryRepository.findByInventoryIdIn(inventoryIds);
+    }
+
+    public List<FranchiseInventory> getFranchiseInventoriesByIds(List<Long> inventoryIds) {
+        return franchiseInventoryRepository.findByInventoryIdIn(inventoryIds);
+    }
+
+    public List<FactoryInventory> getFactoryInventoriesByIds(List<Long> inventoryIds) {
+        return factoryInventoryRepository.findByInventoryIdIn(inventoryIds);
+    }
+
+    public List<Long> expandInventoryIdsByBoxCode(String actorTypeRaw, List<Long> selectedIds, Long locationId, Long actorId) {
+        if (selectedIds == null || selectedIds.isEmpty()) return List.of();
+
+        if ("HQ".equals(actorTypeRaw)) {
+            List<HQInventory> selected = getHqInventoriesByIds(selectedIds);
+            List<String> boxCodes = selected.stream().map(HQInventory::getBoxCode).filter(Objects::nonNull).distinct().toList();
+            if (boxCodes.isEmpty()) return List.of();
+
+            return hqInventoryRepository.findByBoxCodeIn(boxCodes).stream()
+                    .map(HQInventory::getInventoryId)
+                    .distinct()
+                    .toList();
+        }
+
+        if ("FACTORY".equals(actorTypeRaw)) {
+            List<FactoryInventory> selected = getFactoryInventoriesByIds(selectedIds);
+            List<String> boxCodes = selected.stream().map(FactoryInventory::getBoxCode).filter(Objects::nonNull).distinct().toList();
+            if (boxCodes.isEmpty()) return List.of();
+
+            return factoryInventoryRepository.findByBoxCodeIn(boxCodes).stream()
+                    .map(FactoryInventory::getInventoryId)
+                    .distinct()
+                    .toList();
+        }
+
+        if ("FRANCHISE".equals(actorTypeRaw)) {
+            List<FranchiseInventory> selected = getFranchiseInventoriesByIds(selectedIds);
+            List<String> boxCodes = selected.stream().map(FranchiseInventory::getBoxCode).filter(Objects::nonNull).distinct().toList();
+            if (boxCodes.isEmpty()) return List.of();
+
+            return franchiseInventoryRepository.findByBoxCodeInAndFranchiseId(boxCodes, actorId).stream()
+                    .map(FranchiseInventory::getInventoryId)
+                    .distinct()
+                    .toList();
+        }
+
+        throw new IllegalArgumentException("Unsupported actorType: " + actorTypeRaw);
+    }
+
+    public void disposalInventoryByIds(String actorTypeRaw, List<Long> ids, Long locationId, Long actorId) {
+        if (ids == null || ids.isEmpty()) return;
+
+        if ("HQ".equals(actorTypeRaw)) {
+            hqInventoryRepository.deleteByInventoryIdIn(ids);
+            return;
+        }
+
+        if ("FACTORY".equals(actorTypeRaw)) {
+            factoryInventoryRepository.deleteByInventoryIdIn(ids);
+            return;
+        }
+
+        if ("FRANCHISE".equals(actorTypeRaw)) {
+            List<Long> scopedIds = franchiseInventoryRepository.findByInventoryIdInAndFranchiseId(ids, actorId).stream()
+                    .map(FranchiseInventory::getInventoryId)
+                    .toList();
+            if (!scopedIds.isEmpty()) {
+                franchiseInventoryRepository.deleteByFranchiseIdAndInventoryIdIn(actorId, scopedIds);
+            }
+            return;
+        }
+
+        throw new IllegalArgumentException("Unsupported actorType: " + actorTypeRaw);
     }
 }

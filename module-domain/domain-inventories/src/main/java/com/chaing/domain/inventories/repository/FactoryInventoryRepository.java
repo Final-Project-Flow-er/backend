@@ -12,7 +12,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface FactoryInventoryRepository extends JpaRepository<FactoryInventory,Long>, FactoryInventoryRepositoryCustom {
+public interface FactoryInventoryRepository extends JpaRepository<FactoryInventory, Long>, FactoryInventoryRepositoryCustom {
 
     List<FactoryInventory> findAllByStatus(LogType status);
 
@@ -39,7 +39,7 @@ public interface FactoryInventoryRepository extends JpaRepository<FactoryInvento
     @Modifying(clearAutomatically = true)
     @Query("update FactoryInventory f " +
             "set f.boxCode = null, " +
-            "    f.status = com.chaing.core.enums.LogType.AVAILABLE " + // Enum 경로를 맞춰주세요!
+            "    f.status = com.chaing.core.enums.LogType.AVAILABLE " +
             "where f.serialCode in :ids")
     void cancelOutboundBySerialCodeIn(@Param("ids") List<String> confirmedIds);
 
@@ -51,7 +51,11 @@ public interface FactoryInventoryRepository extends JpaRepository<FactoryInvento
             @Param("status1") LogType status1,
             @Param("status2") LogType status2
     );
+
     List<FactoryInventory> findAllByInventoryIdIn(List<Long> selectedList);
 
     void deleteByInventoryIdIn(List<Long> longs);
+
+    List<FactoryInventory> findByInventoryIdIn(List<Long> ids);
+    List<FactoryInventory> findByBoxCodeIn(List<String> boxCodes);
 }

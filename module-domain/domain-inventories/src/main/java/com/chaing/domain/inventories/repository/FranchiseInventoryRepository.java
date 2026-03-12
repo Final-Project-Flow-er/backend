@@ -4,7 +4,6 @@ import com.chaing.core.enums.LogType;
 import com.chaing.domain.inventories.entity.FranchiseInventory;
 import com.chaing.domain.inventories.repository.interfaces.FranchiseInventoryRepositoryCustom;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -33,4 +32,7 @@ public interface FranchiseInventoryRepository extends JpaRepository<FranchiseInv
 
     void deleteByFranchiseIdAndInventoryIdIn(Long aLong, List<Long> longs);
 
+    List<FranchiseInventory> findByInventoryIdIn(List<Long> ids);
+    List<FranchiseInventory> findByInventoryIdInAndFranchiseId(List<Long> ids, Long franchiseId);
+    List<FranchiseInventory> findByBoxCodeInAndFranchiseId(List<String> boxCodes, Long franchiseId);
 }

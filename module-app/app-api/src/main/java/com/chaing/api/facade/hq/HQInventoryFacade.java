@@ -457,7 +457,7 @@ public class HQInventoryFacade {
         List<InventoryLogCreateRequest> result = new ArrayList<>();
 
         for (InventoryBoxRequest box : request.boxes()) {
-            int quantity = box.productList().size();
+            int quantity = 1;
 
             for (InventoryRequest product : box.productList()) {
                 InventoryLogCreateRequest log = new InventoryLogCreateRequest(
@@ -484,10 +484,24 @@ public class HQInventoryFacade {
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public Void disposalInventory(DisposalRequest request, Long locationId) {
         String actorTypeRaw = request.actorType().toUpperCase();
+
+        // 1) 사용자가 선택한 재고를 boxCode 기준으로 전체 확장
+        List<Long> expandedIds = inventoryService.expandInventoryIdsByBoxCode(
+                actorTypeRaw,
+                request.inventoryIds(),
+                locationId,
+                request.actorId()
+        );
+
+        if (expandedIds.isEmpty()) {
+            return null;
+        }
+
         List<InventoryLogCreateRequest> logs = new ArrayList<>();
 
+        // 2) 확장된 대상 기준으로 로그 생성
         if (actorTypeRaw.equals("HQ")) {
-            List<HQInventory> inventories = inventoryService.getHqInventoriesByIds(request.inventoryIds());
+            List<HQInventory> inventories = inventoryService.getHqInventoriesByIds(expandedIds);
             List<Long> productIds = inventories.stream().map(HQInventory::getProductId).distinct().toList();
             Map<Long, ProductInfo> productInfos = productIds.isEmpty() ? Map.of() : productService.getProductInfos(productIds);
 
@@ -499,16 +513,18 @@ public class HQInventoryFacade {
                         inv.getBoxCode(),
                         null,
                         LogType.DISPOSAL,
-                        request.inventoryIds().size(),
+                        1,
                         LocationType.HQ,
                         request.actorId(),
                         null,
                         null,
                         ActorType.HQ,
-                        request.actorId()));
+                        request.actorId()
+                ));
             }
+
         } else if (actorTypeRaw.equals("FACTORY")) {
-            List<FactoryInventory> inventories = inventoryService.getFactoryInventoriesByIds(request.inventoryIds());
+            List<FactoryInventory> inventories = inventoryService.getFactoryInventoriesByIds(expandedIds);
             List<Long> productIds = inventories.stream().map(FactoryInventory::getProductId).distinct().toList();
             Map<Long, ProductInfo> productInfos = productIds.isEmpty() ? Map.of() : productService.getProductInfos(productIds);
 
@@ -520,16 +536,18 @@ public class HQInventoryFacade {
                         inv.getBoxCode(),
                         null,
                         LogType.DISPOSAL,
-                        request.inventoryIds().size(),
+                        1,
                         LocationType.FACTORY,
                         locationId,
                         null,
                         null,
                         ActorType.FACTORY,
-                        request.actorId()));
+                        request.actorId()
+                ));
             }
+
         } else if (actorTypeRaw.equals("FRANCHISE")) {
-            List<FranchiseInventory> inventories = inventoryService.getFranchiseInventoriesByIds(request.inventoryIds());
+            List<FranchiseInventory> inventories = inventoryService.getFranchiseInventoriesByIds(expandedIds);
             List<Long> productIds = inventories.stream().map(FranchiseInventory::getProductId).distinct().toList();
             Map<Long, ProductInfo> productInfos = productIds.isEmpty() ? Map.of() : productService.getProductInfos(productIds);
 
@@ -541,24 +559,31 @@ public class HQInventoryFacade {
                         inv.getBoxCode(),
                         null,
                         LogType.DISPOSAL,
-                        request.inventoryIds().size(),
+                        1,
                         LocationType.FRANCHISE,
                         inv.getFranchiseId(),
                         null,
                         null,
                         ActorType.FRANCHISE,
-                        inv.getFranchiseId()));
+                        inv.getFranchiseId()
+                ));
             }
+
+        } else {
+            throw new IllegalArgumentException("Unsupported actorType: " + request.actorType());
         }
 
         if (!logs.isEmpty()) {
             inventoryLogService.recordInventoryLog(logs);
         }
 
-        inventoryService.disposalInventory(request);
+        // 3) 확장된 ID 전체 삭제
+        inventoryService.disposalInventoryByIds(actorTypeRaw, expandedIds, locationId, request.actorId());
+
         evictInventoryCache();
         return null;
     }
+
 
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public void setSafetyStock(SafetyStockRequest request) {

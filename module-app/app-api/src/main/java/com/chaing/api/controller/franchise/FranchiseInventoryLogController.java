@@ -26,44 +26,51 @@ import java.time.LocalDate;
 @RequestMapping("/api/v1/franchise/log")
 public class FranchiseInventoryLogController {
 
-    private final FranchiseInventoryLogFacade franchiseInventoryLogFacade;
+        private final FranchiseInventoryLogFacade franchiseInventoryLogFacade;
 
-    @Operation(summary = "가맹점 물류 입출고 이력 조회", description = "가맹점 물류 입출고 이력을 확인합니다.")
-    @GetMapping("/inventory/{franchiseId}")
-    public ResponseEntity<ApiResponse<FranchiseInventoryLogListResponse>> findFranchiseInboundOutboundLogs(
-            @AuthenticationPrincipal UserPrincipal principal,
+        @Operation(summary = "가맹점 물류 입출고 이력 조회", description = "가맹점 물류 입출고 이력을 확인합니다.")
+        @GetMapping("/inventory/{franchiseId}")
+        public ResponseEntity<ApiResponse<FranchiseInventoryLogListResponse>> findFranchiseInboundOutboundLogs(
+                        @AuthenticationPrincipal UserPrincipal principal,
 
-            @RequestParam(required = false) String productName,
+                        @RequestParam(required = false) String productName,
 
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+                        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
 
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+                        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
 
-            @RequestParam(required = false) String transactionCode,
+                        @RequestParam(required = false) String transactionCode,
+                        @RequestParam(required = false) com.chaing.core.enums.LogType logType,
 
-            @PageableDefault(size = 10) Pageable pageable) {
-        FranchiseLogRequest request = new FranchiseLogRequest(productName, startDate, endDate, transactionCode);
-        return ResponseEntity.ok(ApiResponse
-                .success(franchiseInventoryLogFacade.findFranchiseInboundOutboundLogs(principal.getBusinessUnitId(), request, pageable)));
-    }
+                        @PageableDefault(size = 20) Pageable pageable) {
+                FranchiseLogRequest request = new FranchiseLogRequest(productName, startDate, endDate, transactionCode,
+                                logType);
+                return ResponseEntity.ok(ApiResponse
+                                .success(franchiseInventoryLogFacade.findFranchiseInboundOutboundLogs(
+                                                principal.getBusinessUnitId(),
+                                                request, pageable)));
+        }
 
-    @Operation(summary = "가맹점 판매 환불 이력 조회", description = "가맹점 판매 환불 이력을 확인합니다.")
-    @GetMapping("/sales/{franchiseId}")
-    public ResponseEntity<ApiResponse<FranchiseInventoryLogListResponse>> findFranchiseSalesRefundLogs(
-            @AuthenticationPrincipal UserPrincipal principal,
+        @Operation(summary = "가맹점 판매 환불 이력 조회", description = "가맹점 판매 환불 이력을 확인합니다.")
+        @GetMapping("/sales/{franchiseId}")
+        public ResponseEntity<ApiResponse<FranchiseInventoryLogListResponse>> findFranchiseSalesRefundLogs(
+                        @AuthenticationPrincipal UserPrincipal principal,
 
-            @RequestParam(required = false) String productName,
+                        @RequestParam(required = false) String productName,
 
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+                        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
 
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+                        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
 
-            @RequestParam(required = false) String transactionCode,
+                        @RequestParam(required = false) String transactionCode,
 
-            @PageableDefault(size = 10) Pageable pageable) {
-        FranchiseLogRequest request = new FranchiseLogRequest(productName, startDate, endDate, transactionCode);
-        return ResponseEntity.ok(ApiResponse
-                .success(franchiseInventoryLogFacade.findFranchiseSalesRefundLogs(principal.getBusinessUnitId(), request, pageable)));
-    }
+                        @PageableDefault(size = 20) Pageable pageable) {
+                FranchiseLogRequest request = new FranchiseLogRequest(productName, startDate, endDate, transactionCode,
+                                null);
+                return ResponseEntity.ok(ApiResponse
+                                .success(franchiseInventoryLogFacade.findFranchiseSalesRefundLogs(
+                                                principal.getBusinessUnitId(),
+                                                request, pageable)));
+        }
 
 }

@@ -131,10 +131,12 @@ public class HQSettlementFacade {
                                 .getAllByDateRange(request.start(), request.end());
 
                 // 날짜별로 그룹화하여 totalSaleAmount 합산
-                Map<LocalDate, Long> dailySums = receipts.stream()
+                Map<LocalDate, BigDecimal> dailySums = receipts.stream()
                                 .collect(Collectors.groupingBy(
                                                 com.chaing.domain.settlements.entity.DailySettlementReceipt::getSettlementDate,
-                                                Collectors.summingLong(r -> r.getTotalSaleAmount().longValue())));
+                                                Collectors.reducing(BigDecimal.ZERO,
+                                                                com.chaing.domain.settlements.entity.DailySettlementReceipt::getTotalSaleAmount,
+                                                                BigDecimal::add)));
 
                 return dailySums.entrySet().stream()
                                 .map(entry -> HQDailyGraphResponse.of(entry.getKey(), entry.getValue()))

@@ -1,4 +1,9 @@
 package com.chaing.domain.orders.dto.request;
 
-public record FranchiseOrderStatusUpdateRequest() {
+import jakarta.validation.constraints.NotBlank;
+
+public record FranchiseOrderStatusUpdateRequest(
+        @NotBlank
+        String orderCode
+) {
 }

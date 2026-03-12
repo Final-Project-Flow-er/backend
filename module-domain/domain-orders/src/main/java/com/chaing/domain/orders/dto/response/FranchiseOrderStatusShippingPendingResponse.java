@@ -1,4 +1,10 @@
 package com.chaing.domain.orders.dto.response;
 
-public record FranchiseOrderStatusShippingPendingResponse() {
+import com.chaing.domain.orders.enums.FranchiseOrderStatus;
+
+public record FranchiseOrderStatusShippingPendingResponse(
+        String orderCode,
+
+        FranchiseOrderStatus status
+) {
 }

@@ -101,6 +101,7 @@ public class FranchiseOrderFacade {
                                 .orderCode(orderCommand.orderCode())
                                 .orderStatus(orderCommand.orderStatus())
                                 .productCode(productInfo.productCode())
+                                .quantity(item.quantity())
                                 .unitPrice(item.unitPrice())
                                 .totalPrice(orderCommand.totalPrice())
                                 .requestedDate(orderCommand.requestedDate())

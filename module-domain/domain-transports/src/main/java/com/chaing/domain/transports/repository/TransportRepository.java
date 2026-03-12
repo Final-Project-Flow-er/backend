@@ -2,6 +2,7 @@ package com.chaing.domain.transports.repository;
 
 import com.chaing.core.enums.UsableStatus;
 import com.chaing.domain.transports.entity.Transport;
+import com.chaing.domain.transports.repository.interfaces.TransportRepositoryCustom;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.Modifying;
@@ -10,7 +11,7 @@ import org.springframework.data.repository.query.Param;
 import java.time.LocalDate;
 import java.util.List;
 
-public interface TransportRepository extends JpaRepository<Transport, Long> {
+public interface TransportRepository extends JpaRepository<Transport, Long>, TransportRepositoryCustom {
 
     List<Transport> findAllByContractEndDateBeforeAndStatus(LocalDate today, UsableStatus status);
 

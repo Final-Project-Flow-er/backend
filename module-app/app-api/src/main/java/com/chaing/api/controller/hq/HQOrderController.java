@@ -88,6 +88,15 @@ public class HQOrderController {
         return ResponseEntity.ok(ApiResponse.success(hqOrderFacade.updateStatus(request)));
     }
 
+    @Operation(summary = "가맹점의 발주 취소", description = "접수된 가맹점의 발주 요청을 취소 처리")
+    @PatchMapping("/cancellation")
+    @PreAuthorize("hasRole('HQ')")
+    public ResponseEntity<ApiResponse<List<HQOrderCancelResponse>>> cancelFranchiseOrder(
+            @Valid @RequestBody HQFranchiseOrderCancelRequest request
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(hqOrderFacade.cancelFranchiseOrder(request)));
+    }
+
     @Operation(summary = "발주 취소", description = "발주 번호로 특정 발주 취소")
     @PatchMapping("/{order-code}/cancellation")
     @PreAuthorize("hasAnyRole('ADMIN', 'HQ')")

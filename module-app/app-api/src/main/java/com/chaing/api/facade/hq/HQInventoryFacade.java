@@ -50,6 +50,10 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import com.fasterxml.jackson.databind.JsonNode;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -118,31 +122,30 @@ public class HQInventoryFacade {
         return result;
     }
 
-    public List<HQInventoryBatchResponse> getBatches(Long productId) {
-        String key = "inv:hq:batches:%d".formatted(productId);
-        List<HQInventoryBatchResponse> cached = readListCache(
-                key, new TypeReference<List<HQInventoryBatchResponse>>() {});
+    public Page<HQInventoryBatchResponse> getBatches(Long productId, Pageable pageable) {
+        String key = "inv:hq:batches:%d:%s".formatted(productId, pageableKey(pageable));
+        Page<HQInventoryBatchResponse> cached = readPageCache(key, HQInventoryBatchResponse.class, pageable);
         if (cached != null) return cached;
 
-        List<HQInventoryBatchResponse> result = inventoryService.getBatches(productId);
-        writeCache(key, result);
+        Page<HQInventoryBatchResponse> result = inventoryService.getBatches(productId, pageable);
+        writePageCache(key, result);
         return result;
     }
 
-    public List<HQInventoryItemResponse> getItems(HQInventoryItemsRequest request) {
-        String key = "inv:hq:items:%d:%s:%s:%s:%s".formatted(
+    public Page<HQInventoryItemResponse> getItems(HQInventoryItemsRequest request, Pageable pageable) {
+        String key = "inv:hq:items:%d:%s:%s:%s:%s:%s".formatted(
                 request.productId(),
                 nullToDash(request.serialCode()),
                 request.manufactureDate() == null ? "-" : request.manufactureDate().toString(),
                 request.shippedAt() == null ? "-" : request.shippedAt().toString(),
-                request.receivedAt() == null ? "-" : request.receivedAt().toString());
+                request.receivedAt() == null ? "-" : request.receivedAt().toString(),
+                pageableKey(pageable));
 
-        List<HQInventoryItemResponse> cached = readListCache(
-                key, new TypeReference<List<HQInventoryItemResponse>>() {});
+        Page<HQInventoryItemResponse> cached = readPageCache(key, HQInventoryItemResponse.class, pageable);
         if (cached != null) return cached;
 
-        List<HQInventoryItemResponse> result = inventoryService.getItems(request);
-        writeCache(key, result);
+        Page<HQInventoryItemResponse> result = inventoryService.getItems(request, pageable);
+        writePageCache(key, result);
         return result;
     }
 
@@ -182,34 +185,34 @@ public class HQInventoryFacade {
         return result;
     }
 
-    public List<FranchiseInventoryBatchResponse> getFranchiseBatches(Long franchiseId, Long productId) {
-        String key = "inv:fr:batches:%d:%d".formatted(franchiseId, productId);
-        List<FranchiseInventoryBatchResponse> cached = readListCache(
-                key, new TypeReference<List<FranchiseInventoryBatchResponse>>() {});
+    public Page<FranchiseInventoryBatchResponse> getFranchiseBatches(Long franchiseId, Long productId, Pageable pageable) {
+        String key = "inv:fr:batches:%d:%d:%s".formatted(franchiseId, productId, pageableKey(pageable));
+        Page<FranchiseInventoryBatchResponse> cached = readPageCache(key, FranchiseInventoryBatchResponse.class, pageable);
         if (cached != null) return cached;
 
-        List<FranchiseInventoryBatchResponse> result = inventoryService.getFranchiseBatches(franchiseId, productId);
-        writeCache(key, result);
+        Page<FranchiseInventoryBatchResponse> result = inventoryService.getFranchiseBatches(franchiseId, productId, pageable);
+        writePageCache(key, result);
         return result;
     }
 
-    public List<FranchiseInventoryItemResponse> getFranchiseItems(Long franchiseId,
-                                                                  FranchiseInventoryItemsRequest request) {
-        String key = "inv:fr:items:%d:%d:%s:%s:%s:%s:%s".formatted(
+    public Page<FranchiseInventoryItemResponse> getFranchiseItems(Long franchiseId,
+                                                                  FranchiseInventoryItemsRequest request,
+                                                                  Pageable pageable) {
+        String key = "inv:fr:items:%d:%d:%s:%s:%s:%s:%s:%s".formatted(
                 franchiseId,
                 request.productId(),
                 nullToDash(request.serialCode()),
                 nullToDash(request.boxCode()),
                 request.manufactureDate() == null ? "-" : request.manufactureDate().toString(),
                 request.shippedAt() == null ? "-" : request.shippedAt().toString(),
-                request.receivedAt() == null ? "-" : request.receivedAt().toString());
+                request.receivedAt() == null ? "-" : request.receivedAt().toString(),
+                pageableKey(pageable));
 
-        List<FranchiseInventoryItemResponse> cached = readListCache(
-                key, new TypeReference<List<FranchiseInventoryItemResponse>>() {});
+        Page<FranchiseInventoryItemResponse> cached = readPageCache(key, FranchiseInventoryItemResponse.class, pageable);
         if (cached != null) return cached;
 
-        List<FranchiseInventoryItemResponse> result = inventoryService.getFranchiseItems(franchiseId, request);
-        writeCache(key, result);
+        Page<FranchiseInventoryItemResponse> result = inventoryService.getFranchiseItems(franchiseId, request, pageable);
+        writePageCache(key, result);
         return result;
     }
 
@@ -625,5 +628,37 @@ public class HQInventoryFacade {
     private void evictInventoryCache() {
         evictByPattern("inv:hq:*");
         evictByPattern("inv:fr:*");
+    }
+
+    private String pageableKey(Pageable pageable) {
+        return "%d:%d:%s".formatted(
+                pageable.getPageNumber(),
+                pageable.getPageSize(),
+                pageable.getSort().isSorted() ? pageable.getSort().toString().replace(" ", "") : "-");
+    }
+
+    private <T> Page<T> readPageCache(String key, Class<T> itemClass, Pageable pageable) {
+        try {
+            String cached = redisTemplate.opsForValue().get(key);
+            if (cached == null) return null;
+
+            JsonNode root = objectMapper.readTree(cached);
+            List<T> content = objectMapper.readerForListOf(itemClass).readValue(root.path("content"));
+            long totalElements = root.path("totalElements").asLong(content.size());
+
+            return new PageImpl<>(content, pageable, totalElements);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private void writePageCache(String key, Page<?> page) {
+        try {
+            Map<String, Object> payload = Map.of(
+                    "content", page.getContent(),
+                    "totalElements", page.getTotalElements());
+            redisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(payload), CACHE_TTL);
+        } catch (Exception ignored) {
+        }
     }
 }

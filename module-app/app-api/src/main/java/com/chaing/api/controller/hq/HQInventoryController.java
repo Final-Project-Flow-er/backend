@@ -20,6 +20,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -81,22 +84,23 @@ public class HQInventoryController {
 
     @Operation(summary = "원하는 상품의 중분류", description = "원하는 상품의 제조일자와 해당 수량목록을 가져옵니다.")
     @GetMapping("/batches/{productId}")
-    public ResponseEntity<ApiResponse<List<HQInventoryBatchResponse>>> getBatches(
-            @PathVariable("productId") Long productId) {
-        return ResponseEntity.ok(ApiResponse.success(hqInventoryFacade.getBatches(productId)));
+    public ResponseEntity<ApiResponse<Page<HQInventoryBatchResponse>>> getBatches(
+            @PathVariable("productId") Long productId,
+            @PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.success(hqInventoryFacade.getBatches(productId, pageable)));
     }
 
     @Operation(summary = "원하는 상품의 소분류", description = "제품의 자세한 정보를 가져옵니다.")
     @GetMapping("/items")
-    public ResponseEntity<ApiResponse<List<HQInventoryItemResponse>>> getItems(
+    public ResponseEntity<ApiResponse<Page<HQInventoryItemResponse>>> getItems(
             @RequestParam Long productId,
             @RequestParam(required = false) String serialCode,
             @RequestParam LocalDate manufactureDate,
             @RequestParam(required = false) LocalDate shippedAt,
-            @RequestParam(required = false) LocalDate receivedAt) {
-        HQInventoryItemsRequest request = new HQInventoryItemsRequest(productId, serialCode, manufactureDate, shippedAt,
-                receivedAt);
-        return ResponseEntity.ok(ApiResponse.success(hqInventoryFacade.getItems(request)));
+            @RequestParam(required = false) LocalDate receivedAt,
+            @PageableDefault(size = 20) Pageable pageable) {
+        HQInventoryItemsRequest request = new HQInventoryItemsRequest(productId, serialCode, manufactureDate, shippedAt, receivedAt);
+        return ResponseEntity.ok(ApiResponse.success(hqInventoryFacade.getItems(request, pageable)));
     }
 
     @Operation(summary = "특정 가맹점 재고 조회", description = "특정 가맹점 재고 전체 조회합니다.")
@@ -119,25 +123,26 @@ public class HQInventoryController {
 
     @Operation(summary = "특정 가맹점의 재고 중분류", description = "본사가 특정 가맹점의 제조일자별 수량을 확인합니다.")
     @GetMapping("/franchises/{franchiseId}/batches/{productId}")
-    public ResponseEntity<ApiResponse<List<FranchiseInventoryBatchResponse>>> getFranchiseBatches(
+    public ResponseEntity<ApiResponse<Page<FranchiseInventoryBatchResponse>>> getFranchiseBatches(
             @PathVariable Long franchiseId,
-            @PathVariable Long productId) {
-        return ResponseEntity.ok(ApiResponse.success(hqInventoryFacade.getFranchiseBatches(franchiseId, productId)));
+            @PathVariable Long productId,
+            @PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.success(hqInventoryFacade.getFranchiseBatches(franchiseId, productId, pageable)));
     }
 
     @Operation(summary = "특정 가맹점의 재고 소분류", description = "본사가 특정 가맹점의 상세 제품 정보를 확인합니다.")
     @GetMapping("/franchises/items")
-    public ResponseEntity<ApiResponse<List<FranchiseInventoryItemResponse>>> getFranchiseItems(
+    public ResponseEntity<ApiResponse<Page<FranchiseInventoryItemResponse>>> getFranchiseItems(
             @RequestParam Long franchiseId,
             @RequestParam Long productId,
             @RequestParam LocalDate manufactureDate,
             @RequestParam(required = false) String serialCode,
             @RequestParam(required = false) String boxCode,
             @RequestParam(required = false) LocalDate shippedAt,
-            @RequestParam(required = false) LocalDate receivedAt) {
-        FranchiseInventoryItemsRequest request = new FranchiseInventoryItemsRequest(productId, serialCode, boxCode,
-                manufactureDate, shippedAt, receivedAt);
-        return ResponseEntity.ok(ApiResponse.success(hqInventoryFacade.getFranchiseItems(franchiseId, request)));
+            @RequestParam(required = false) LocalDate receivedAt,
+            @PageableDefault(size = 20) Pageable pageable) {
+        FranchiseInventoryItemsRequest request = new FranchiseInventoryItemsRequest(productId, serialCode, boxCode, manufactureDate, shippedAt, receivedAt);
+        return ResponseEntity.ok(ApiResponse.success(hqInventoryFacade.getFranchiseItems(franchiseId, request, pageable)));
     }
 
     @Operation(summary = "안전 재고 계산 및 유통기한 상세 갱신", description = "모든 상품 안전재고와 안전재고를 자동으로 재계산하여 갱신합니다.")

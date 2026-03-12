@@ -7,6 +7,8 @@ import com.chaing.domain.inventories.dto.response.HQInventoryBatchResponse;
 import com.chaing.domain.inventories.dto.response.HQInventoryItemResponse;
 import com.chaing.domain.inventories.dto.response.InventoryProductInfoResponse;
 import com.chaing.domain.inventories.dto.response.SafetyStockResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -15,9 +17,9 @@ import java.util.Map;
 public interface FactoryInventoryRepositoryCustom {
     Map<Long, InventoryProductInfoResponse> getStock(List<Long> products, String status);
 
-    List<HQInventoryBatchResponse> getBatches(Long productId);
+    Page<HQInventoryBatchResponse> getBatches(Long productId, Pageable pageable);
 
-    List<HQInventoryItemResponse> getItems(HQInventoryItemsRequest request);
+    Page<HQInventoryItemResponse> getItems(HQInventoryItemsRequest request, Pageable pageable);
 
     void updateStatus(List<String> serialCode, LogType status);
 

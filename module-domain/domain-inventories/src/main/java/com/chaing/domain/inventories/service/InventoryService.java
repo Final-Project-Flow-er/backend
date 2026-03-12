@@ -32,6 +32,8 @@ import com.chaing.domain.inventories.repository.InventoryPolicyRepository;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -56,14 +58,13 @@ public class InventoryService {
     }
 
     // 중분류
-    public List<HQInventoryBatchResponse> getBatches(Long productId) {
-        return factoryInventoryRepository.getBatches(productId);
+    public Page<HQInventoryBatchResponse> getBatches(Long productId, Pageable pageable) {
+        return factoryInventoryRepository.getBatches(productId, pageable);
+    }
+    public Page<HQInventoryItemResponse> getItems(HQInventoryItemsRequest request, Pageable pageable) {
+        return factoryInventoryRepository.getItems(request, pageable);
     }
 
-    // 소분류
-    public List<HQInventoryItemResponse> getItems(HQInventoryItemsRequest request) {
-        return factoryInventoryRepository.getItems(request);
-    }
 
     // 가맹점 대분류
     public Map<Long, InventoryProductInfoResponse> getFranchiseStock(Long franchiseId, List<Long> ids, String status) {
@@ -71,14 +72,11 @@ public class InventoryService {
     }
 
     // 가맹점 중분류
-    public List<FranchiseInventoryBatchResponse> getFranchiseBatches(Long franchiseId, Long productId) {
-        return franchiseInventoryRepository.getFranchiseBatches(franchiseId, productId);
+    public Page<FranchiseInventoryBatchResponse> getFranchiseBatches(Long franchiseId, Long productId, Pageable pageable) {
+        return franchiseInventoryRepository.getFranchiseBatches(franchiseId, productId, pageable);
     }
-
-    // 가맹점 소분류
-    public List<FranchiseInventoryItemResponse> getFranchiseItems(Long franchiseId,
-            FranchiseInventoryItemsRequest request) {
-        return franchiseInventoryRepository.getFranchiseItems(franchiseId, request);
+    public Page<FranchiseInventoryItemResponse> getFranchiseItems(Long franchiseId, FranchiseInventoryItemsRequest request, Pageable pageable) {
+        return franchiseInventoryRepository.getFranchiseItems(franchiseId, request, pageable);
     }
 
     public List<Long> getAllFranchiseIds() {

@@ -1,11 +1,13 @@
 package com.chaing.domain.inventories.service.inbound;
 
+import com.chaing.domain.inventories.dto.info.InboundPendingItemInfo;
 import com.chaing.domain.inventories.dto.info.PendingBoxInfo;
 import com.chaing.domain.inventories.dto.info.PendingItemInfo;
 import com.chaing.domain.inventories.dto.raw.InboundRawData;
 import com.chaing.domain.inventories.usecase.inbound.executor.InboundExecutor;
 import com.chaing.domain.inventories.usecase.inbound.reader.InboundReader;
 import com.chaing.domain.inventories.usecase.inbound.validator.InboundValidator;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
@@ -89,4 +91,6 @@ public abstract class InboundService<T, R extends InboundRawData> {
     protected abstract boolean isFranchise(R d, Long id);
 
     public abstract void confirmInbound(List<String> selectedList);
+
+    public abstract List<InboundPendingItemInfo> getInboundBoxDetails(@NotBlank @NotBlank String boxCode);
 }

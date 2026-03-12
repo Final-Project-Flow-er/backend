@@ -2,10 +2,12 @@ package com.chaing.domain.inventories.service.inbound;
 
 import com.chaing.core.enums.LogType;
 import com.chaing.domain.inventories.dto.command.FactoryInboundCreateCommand;
+import com.chaing.domain.inventories.dto.info.InboundPendingItemInfo;
 import com.chaing.domain.inventories.dto.raw.FactoryInventoryRawData;
 import com.chaing.domain.inventories.usecase.inbound.executor.InboundExecutor;
 import com.chaing.domain.inventories.usecase.inbound.reader.InboundReader;
 import com.chaing.domain.inventories.usecase.inbound.validator.InboundValidator;
+import jakarta.validation.constraints.NotBlank;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
@@ -56,8 +58,8 @@ public class FactoryInboundService extends InboundService<FactoryInboundCreateCo
 
         // 상태 INBOUND_WAIT 검증
         List<LogType> statuses = targets.stream()
-                        .map(FactoryInventoryRawData::status)
-                        .toList();
+                .map(FactoryInventoryRawData::status)
+                .toList();
         inboundValidator.checkValidStatus(statuses);
 
         // 검증이 완료된 정보들의 식별 코드 추출
@@ -67,5 +69,18 @@ public class FactoryInboundService extends InboundService<FactoryInboundCreateCo
 
         // 상태 INBOUND로 변경(승인 확정)
         inboundExecutor.confirmAll(confirmedIds);
+    }
+
+    @Override
+    public List<InboundPendingItemInfo> getInboundBoxDetails(String boxCode) {
+        List<FactoryInventoryRawData> details = inboundReader.findAllByBoxCode(boxCode);
+        return details.stream()
+                .map(detail -> InboundPendingItemInfo.create(
+                        detail.getSerialCode(),
+                        detail.productId(),
+                        detail.manufactureDate(),
+                        detail.orderId(),
+                        detail.orderItemId()
+                )).toList();
     }
 }

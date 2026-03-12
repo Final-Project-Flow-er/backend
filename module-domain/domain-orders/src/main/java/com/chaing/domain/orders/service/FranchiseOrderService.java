@@ -8,6 +8,7 @@ import com.chaing.domain.orders.dto.command.FranchiseOrderItemCommand;
 import com.chaing.domain.orders.dto.request.FranchiseOrderCreateRequest;
 import com.chaing.domain.orders.dto.request.FranchiseOrderCreateRequestItem;
 import com.chaing.domain.orders.dto.request.FranchiseOrderUpdateRequest;
+import com.chaing.domain.orders.dto.request.HQFranchiseOrderCancelRequest;
 import com.chaing.domain.orders.dto.request.HQOrderUpdateStatusRequest;
 import com.chaing.domain.orders.dto.response.FranchiseOrderCancelResponse;
 import com.chaing.domain.orders.dto.response.FranchiseOrderForTransitResponse;
@@ -617,5 +618,36 @@ public class FranchiseOrderService {
                 .orElseThrow(() -> new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_NOT_FOUND));
 
         return FranchiseOrderDetailCommand.from(order);
+    }
+
+    // 본사의 가맹점 발주 요청 취소
+    // return: Map<orderCode, FranchiseOrderStatus>
+    public Map<String, FranchiseOrderStatus> cancelFranchiseOrder(List<HQFranchiseOrderCancelRequest> requests) {
+        // Set<orderCode>
+        Set<String> orderCodes = requests.stream().map(HQFranchiseOrderCancelRequest::orderCode).collect(Collectors.toSet());
+
+        // Map<orderCode, canceledReason>
+        Map<String, String> reasonByOrderCode = requests.stream()
+                .collect(Collectors.toMap(
+                        HQFranchiseOrderCancelRequest::orderCode,
+                        HQFranchiseOrderCancelRequest::canceledReason
+                ));
+
+        // List<FranchiseOrder>
+        List<FranchiseOrder> orders = franchiseOrderRepository.findAllByOrderCodeInAndDeletedAtIsNull(orderCodes);
+
+        if (orders == null || orders.isEmpty()) {
+            throw new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_NOT_FOUND);
+        }
+
+        orders.forEach(order -> {
+            order.cancelOrderByHQ(reasonByOrderCode.get(order.getOrderCode()));
+        });
+
+        return orders.stream()
+                .collect(Collectors.toMap(
+                        FranchiseOrder::getOrderCode,
+                        FranchiseOrder::getOrderStatus
+                ));
     }
 }

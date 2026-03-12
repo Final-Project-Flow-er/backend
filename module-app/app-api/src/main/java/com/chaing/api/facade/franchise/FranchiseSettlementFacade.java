@@ -319,6 +319,7 @@ public class FranchiseSettlementFacade {
         }
 
         // pdf, excel 다운로드 (프론트 통신용 실제 URL 반환) ---
+        @Transactional
         public String getDailyReceiptPdf(Long franchiseId, LocalDate date) {
                 try {
                         // 1. 해당 가맹점의 일별 정산 데이터 조회
@@ -362,13 +363,14 @@ public class FranchiseSettlementFacade {
                                 // 데이터가 없으면 실시간 집계 시도
                                 return generateProvisionalDailyPdf(franchiseId, date);
                         }
-                        return e.getMessage();
+                        throw e;
                 } catch (Exception e) {
                         log.error("Failed to generate Daily Franchise Receipt PDF: ", e);
-                        return "일별 영수증 생성 중 오류가 발생했습니다. (잠시 후 다시 시도해주세요)";
+                        throw new SettlementException(SettlementErrorCode.DOCUMENT_GENERATION_FAILED);
                 }
         }
 
+        @Transactional
         public String getMonthlyReceiptPdf(Long franchiseId, YearMonth month) {
                 try {
                         // 1. 해당 가맹점의 월별 정산 데이터 조회 (없으면 SettlementException 발생)
@@ -433,18 +435,20 @@ public class FranchiseSettlementFacade {
                         return fileUrl;
                 } catch (SettlementException e) {
                         if (e.getErrorCode() == SettlementErrorCode.MONTHLY_SETTLEMENT_NOT_FOUND) {
-                                if (month.isBefore(YearMonth.now())) {
-                                        return "해당 월의 정산 내역이 존재하지 않습니다.";
+                                if (month.isAfter(YearMonth.now().minusMonths(1))) { // 이번 달인 경우 안내 메시지 포함된 코드 사용
+                                        throw new SettlementException(
+                                                        SettlementErrorCode.MONTHLY_SETTLEMENT_NOT_FINALIZED);
                                 }
-                                return "해당 월의 정산 내역은 정산 마감(매달 20일) 이후 자정에 업데이트됩니다.";
+                                throw e;
                         }
-                        return e.getMessage();
+                        throw e;
                 } catch (Exception e) {
                         log.error("Failed to generate Monthly Franchise Receipt PDF: ", e);
-                        return "월별 영수증 생성 중 오류가 발생했습니다. (스토리지 또는 데이터 확인 필요)";
+                        throw new SettlementException(SettlementErrorCode.DOCUMENT_GENERATION_FAILED);
                 }
         }
 
+        @Transactional
         public String getMonthlyVouchersExcel(Long franchiseId, YearMonth month) {
                 try {
                         // 1. 해당 가맹점의 월별 정산 데이터 조회
@@ -503,15 +507,15 @@ public class FranchiseSettlementFacade {
                         return fileUrl;
                 } catch (SettlementException e) {
                         if (e.getErrorCode() == SettlementErrorCode.MONTHLY_SETTLEMENT_NOT_FOUND) {
-                                if (month.isBefore(YearMonth.now())) {
-                                        return "해당 월의 전표 데이터가 존재하지 않습니다.";
+                                if (month.isAfter(YearMonth.now().minusMonths(1))) {
+                                        throw new SettlementException(
+                                                        SettlementErrorCode.MONTHLY_SETTLEMENT_NOT_FINALIZED);
                                 }
-                                return "해당 월의 전표 데이터는 정산 마감(매달 20일) 이후 자정에 업데이트됩니다.";
                         }
-                        return e.getMessage();
+                        throw e;
                 } catch (Exception e) {
                         log.error("Failed to generate Monthly Franchise Vouchers Excel: ", e);
-                        return "월별 전표 엑셀 생성 중 오류가 발생했습니다.";
+                        throw new SettlementException(SettlementErrorCode.DOCUMENT_GENERATION_FAILED);
                 }
         }
 
@@ -521,7 +525,7 @@ public class FranchiseSettlementFacade {
                                 franchiseId, month.atDay(1), month.atEndOfMonth());
 
                 if (dailyReceipts.isEmpty()) {
-                        return "해당 월의 정산 내역(일별)이 아직 한 건도 존재하지 않습니다.";
+                        throw new SettlementException(SettlementErrorCode.DAILY_SETTLEMENT_NOT_FOUND);
                 }
 
                 // 2. 가집계 MonthlySettlement 객체 생성
@@ -554,7 +558,7 @@ public class FranchiseSettlementFacade {
                                 franchiseId, month.atDay(1), month.atEndOfMonth());
 
                 if (dailyReceipts.isEmpty()) {
-                        return "해당 월의 전표 데이터(일별)가 아직 한 건도 존재하지 않습니다.";
+                        throw new SettlementException(SettlementErrorCode.DAILY_SETTLEMENT_NOT_FOUND);
                 }
 
                 // 2. 일별 데이터를 기반으로 가상 전표 생성
@@ -656,8 +660,7 @@ public class FranchiseSettlementFacade {
 
                 if (provisionalReceipt.getTotalSaleAmount().compareTo(BigDecimal.ZERO) == 0 &&
                                 provisionalReceipt.getOrderAmount().compareTo(BigDecimal.ZERO) == 0) {
-                        return date.isBefore(LocalDate.now()) ? "해당 날짜의 정산 내역이 존재하지 않습니다."
-                                        : "금일 정산 내역이 존재하지 않습니다. (매출 또는 발주 발생 후 확인 가능)";
+                        throw new SettlementException(SettlementErrorCode.PROVISIONAL_SETTLEMENT_NOT_FOUND);
                 }
 
                 // 2. 가상 전표(Line) 생성 (요약 정보만 표시)

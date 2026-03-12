@@ -48,6 +48,9 @@ public class SettlementDocument extends BaseEntity {
     @Column(nullable = false, length = 20)
     private DocumentOwner documentOwner; // FRANCHISE, HQ
 
+    @Column(name = "franchise_id")
+    private Long franchiseId; // 가맹점별 문서 식별 강화
+
     @Column(name = "monthly_settlement_id")
     private Long monthlySettlementId; // 월별 문서 연결
 
@@ -100,6 +103,18 @@ public class SettlementDocument extends BaseEntity {
             }
             return;
         }
+
+        // 가맹점 문서인 경우 franchiseId 필수 체크
+        if (documentOwner == DocumentOwner.FRANCHISE && franchiseId == null) {
+            throw new IllegalStateException("가맹점 문서는 franchiseId가 필수입니다");
+        }
+
+        // 가집계(PROVISIONAL) 문서는 연관 ID가 없어도 허용
+        boolean isProvisional = documentType.name().startsWith("PROVISIONAL");
+        if (isProvisional) {
+            return;
+        }
+
         if (periodType == PeriodType.MONTHLY && monthlySettlementId == null) {
             throw new IllegalStateException("MONTHLY 문서는 monthlySettlementId가 필수입니다");
         }

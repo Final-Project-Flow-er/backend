@@ -92,14 +92,15 @@ public class SettlementDocument extends BaseEntity {
         if (periodType == null) {
             throw new IllegalStateException("periodType은 필수입니다");
         }
-        // HQ 소유의 전체 요약 문서는 특정 ID가 없을 수도 있지만 날짜/월은 있어야 함
+        // HQ 소유의 전체 요약/전표 문서는 특정 ID가 없을 수도 있지만 날짜/월은 있어야 함
         if (documentOwner == DocumentOwner.HQ && (documentType == DocumentType.HQ_DAILY_SUM
-                || documentType == DocumentType.HQ_MONTHLY_SUM)) {
+                || documentType == DocumentType.HQ_MONTHLY_SUM || documentType == DocumentType.VOUCHER_EXCEL)) {
             if (documentType == DocumentType.HQ_DAILY_SUM && settlementDate == null) {
                 throw new IllegalStateException("HQ 일별 요약은 settlementDate가 필수입니다");
             }
-            if (documentType == DocumentType.HQ_MONTHLY_SUM && settlementMonth == null) {
-                throw new IllegalStateException("HQ 월별 요약은 settlementMonth가 필수입니다");
+            if ((documentType == DocumentType.HQ_MONTHLY_SUM || documentType == DocumentType.VOUCHER_EXCEL)
+                    && settlementMonth == null) {
+                throw new IllegalStateException("HQ 월별 문서(요약/엑셀)는 settlementMonth가 필수입니다");
             }
             return;
         }

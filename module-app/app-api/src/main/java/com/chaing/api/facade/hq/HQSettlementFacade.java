@@ -646,8 +646,23 @@ public class HQSettlementFacade {
                                         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                                         BucketName.SETTLEMENTS);
 
-                        // 4. 실제 연동된 URL 반환
-                        return minioService.getFileUrl(fileName, BucketName.SETTLEMENTS);
+                        // 4. 메타데이터 저장
+                        String fileUrl = minioService.getFileUrl(fileName, BucketName.SETTLEMENTS);
+                        documentService.save(com.chaing.domain.settlements.entity.SettlementDocument.builder()
+                                        .periodType(PeriodType.MONTHLY)
+                                        .documentType(com.chaing.domain.settlements.enums.DocumentType.VOUCHER_EXCEL)
+                                        .documentOwner(com.chaing.domain.settlements.enums.DocumentOwner.HQ)
+                                        .settlementMonth(request.month())
+                                        .storageProvider("MINIO")
+                                        .bucket(BucketName.SETTLEMENTS.getBucketName())
+                                        .objectKey(fileName)
+                                        .fileUrl(fileUrl)
+                                        .fileName(fileName.substring(fileName.lastIndexOf("/") + 1))
+                                        .contentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                                        .fileSize((long) excelBytes.length)
+                                        .build());
+
+                        return fileUrl;
                 } catch (com.chaing.domain.settlements.exception.SettlementException e) {
                         throw e;
                 } catch (Exception e) {

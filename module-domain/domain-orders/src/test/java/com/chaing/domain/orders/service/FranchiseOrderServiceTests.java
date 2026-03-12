@@ -457,13 +457,13 @@ class FranchiseOrderServiceTests {
     @DisplayName("본사 발주 접수 처리 - 성공")
     void updateStatus_Accept_Success() {
         // given
-        given(franchiseOrderRepository.findAllByOrderCodeIn(List.of(orderCode))).willReturn(List.of(franchiseOrder));
+        given(franchiseOrderRepository.findAllByOrderCodeInAndDeletedAtIsNull(List.of(orderCode))).willReturn(List.of(franchiseOrder));
 
         // when
         List<HQOrderStatusUpdateResponse> result = franchiseOrderService.updateStatus(hqOrderUpdateStatusRequestAccept);
 
         // then
-        verify(franchiseOrderRepository, times(1)).findAllByOrderCodeIn(List.of(orderCode));
+        verify(franchiseOrderRepository, times(1)).findAllByOrderCodeInAndDeletedAtIsNull(List.of(orderCode));
         assertEquals(FranchiseOrderStatus.ACCEPTED, result.get(0).status());
     }
 
@@ -471,13 +471,13 @@ class FranchiseOrderServiceTests {
     @DisplayName("본사 발주 반려 처리 - 성공")
     void updateStatus_Reject_Success() {
         // given
-        given(franchiseOrderRepository.findAllByOrderCodeIn(List.of(orderCode))).willReturn(List.of(franchiseOrder));
+        given(franchiseOrderRepository.findAllByOrderCodeInAndDeletedAtIsNull(List.of(orderCode))).willReturn(List.of(franchiseOrder));
 
         // when
         List<HQOrderStatusUpdateResponse> result = franchiseOrderService.updateStatus(hqOrderUpdateStatusRequestReject);
 
         // then
-        verify(franchiseOrderRepository, times(1)).findAllByOrderCodeIn(List.of(orderCode));
+        verify(franchiseOrderRepository, times(1)).findAllByOrderCodeInAndDeletedAtIsNull(List.of(orderCode));
         assertEquals(FranchiseOrderStatus.REJECTED, result.get(0).status());
     }
 
@@ -485,7 +485,7 @@ class FranchiseOrderServiceTests {
     @DisplayName("존재하지 않는 발주 코드로 상태 수정 시 예외 발생")
     void updateStatus_Failure_ORDER_NOT_FOUND() {
         // given
-        given(franchiseOrderRepository.findAllByOrderCodeIn(List.of(orderCode))).willReturn(List.of());
+        given(franchiseOrderRepository.findAllByOrderCodeInAndDeletedAtIsNull(List.of(orderCode))).willReturn(List.of());
 
         // when & then
         FranchiseOrderException exception = assertThrows(FranchiseOrderException.class, () ->
@@ -497,7 +497,7 @@ class FranchiseOrderServiceTests {
     @DisplayName("배송 중인 발주 접수 처리 시 예외 발생")
     void updateStatus_Accept_Failure_INVALID_STATUS() {
         // given
-        given(franchiseOrderRepository.findAllByOrderCodeIn(List.of(orderCode))).willReturn(List.of(shippingFranchiseOrder));
+        given(franchiseOrderRepository.findAllByOrderCodeInAndDeletedAtIsNull(List.of(orderCode))).willReturn(List.of(shippingFranchiseOrder));
 
         // when & then
         FranchiseOrderException exception = assertThrows(FranchiseOrderException.class, () ->
@@ -509,7 +509,7 @@ class FranchiseOrderServiceTests {
     @DisplayName("배송 중인 발주 반려 처리 시 예외 발생")
     void updateStatus_Reject_Failure_INVALID_STATUS() {
         // given
-        given(franchiseOrderRepository.findAllByOrderCodeIn(List.of(orderCode))).willReturn(List.of(shippingFranchiseOrder));
+        given(franchiseOrderRepository.findAllByOrderCodeInAndDeletedAtIsNull(List.of(orderCode))).willReturn(List.of(shippingFranchiseOrder));
 
         // when & then
         FranchiseOrderException exception = assertThrows(FranchiseOrderException.class, () ->

@@ -1,7 +1,6 @@
 package com.chaing.domain.orders.repository;
 
 import com.chaing.domain.orders.entity.FranchiseOrder;
-import com.chaing.domain.orders.entity.FranchiseOrderItem;
 import com.chaing.domain.orders.enums.FranchiseOrderStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -11,6 +10,7 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Repository
 public interface FranchiseOrderRepository extends JpaRepository<FranchiseOrder, Long> {
@@ -24,7 +24,9 @@ public interface FranchiseOrderRepository extends JpaRepository<FranchiseOrder, 
 
     List<FranchiseOrder> findAllByFranchiseIdAndOrderStatus(Long franchiseId, FranchiseOrderStatus orderStatus);
 
-    List<FranchiseOrder> findAllByOrderCodeIn(List<String> orderCodes);
+    List<FranchiseOrder> findAllByOrderCodeInAndDeletedAtIsNull(Set<String> orderCodes);
+
+    List<FranchiseOrder> findAllByOrderCodeInAndDeletedAtIsNull(List<String> orderCodes);
 
     // 특정 가맹점 날짜 범위 발주 (ACCEPTED 일 때)
     List<FranchiseOrder> findAllByFranchiseIdAndOrderStatusAndCreatedAtBetween(

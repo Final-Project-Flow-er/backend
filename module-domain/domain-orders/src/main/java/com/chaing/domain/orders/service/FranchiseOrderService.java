@@ -30,6 +30,7 @@ import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -189,9 +190,9 @@ public class FranchiseOrderService {
     }
 
     // 본사에서 가맹점의 발주 상태 수정
-    public List<HQOrderStatusUpdateResponse> updateStatus(@Valid HQOrderUpdateStatusRequest request) {
+    public List<HQOrderStatusUpdateResponse> updateStatus(HQOrderUpdateStatusRequest request) {
         // 발주 조회
-        List<FranchiseOrder> orders = franchiseOrderRepository.findAllByOrderCodeIn(request.orderCodes());
+        List<FranchiseOrder> orders = franchiseOrderRepository.findAllByOrderCodeInAndDeletedAtIsNull(request.orderCodes());
 
         if (orders == null || orders.isEmpty()) {
             throw new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_NOT_FOUND);
@@ -583,5 +584,23 @@ public class FranchiseOrderService {
                         order.getDeliveryDate()
                 ))
                 .toList();
+    }
+
+    // 발주 상태 SHIPPING_PENDING으로 수정
+    // return: Map<orderId, FranchiseOrderCommand>
+    public Map<Long, FranchiseOrderCommand> updateShippingPending(Set<String> orderCodes) {
+        List<FranchiseOrder> orders = franchiseOrderRepository.findAllByOrderCodeInAndDeletedAtIsNull(orderCodes);
+
+        if (orders == null || orders.isEmpty()) {
+            throw new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_NOT_FOUND);
+        }
+
+        orders.forEach(FranchiseOrder::updateStatusToShippingPending);
+
+        return orders.stream()
+                .collect(Collectors.toMap(
+                        FranchiseOrder::getFranchiseOrderId,
+                        FranchiseOrderCommand::from
+                ));
     }
 }

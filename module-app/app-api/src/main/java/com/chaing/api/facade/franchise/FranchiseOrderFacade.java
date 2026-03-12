@@ -32,6 +32,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -301,9 +302,12 @@ public class FranchiseOrderFacade {
 
     // 발주 상태 SHIPPING_PENDING으로 수정
     public List<FranchiseOrderStatusShippingPendingResponse> updateShippingPending(List<FranchiseOrderStatusUpdateRequest> requests) {
+        // List<orderCode>
+        Set<String> orderCodes = requests.stream().map(FranchiseOrderStatusUpdateRequest::orderCode).collect(Collectors.toSet());
+
         // 수정
         // Map<orderId, FranchiseOrderCommand>
-        Map<Long, FranchiseOrderCommand> orders = franchiseOrderService.updateShippingPending(requests);
+        Map<Long, FranchiseOrderCommand> orders = franchiseOrderService.updateShippingPending(orderCodes);
 
         // 반환
         return orders.values().stream()

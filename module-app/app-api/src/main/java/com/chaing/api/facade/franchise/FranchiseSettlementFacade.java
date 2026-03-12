@@ -326,9 +326,15 @@ public class FranchiseSettlementFacade {
                         DailySettlementReceipt receipt = dailyService.getByFranchiseAndDate(franchiseId, date);
 
                         // 2. 해당 정산 ID로 이미 생성된 문서가 있는지 확인
-                        SettlementDocument existingDoc = documentService.getDailyDocument(receipt.getDailyReceiptId());
-                        if (existingDoc != null) {
+                        try {
+                                SettlementDocument existingDoc = documentService
+                                                .getDailyDocument(receipt.getDailyReceiptId());
                                 return minioService.getFileUrl(existingDoc.getObjectKey(), BucketName.SETTLEMENTS);
+                        } catch (SettlementException e) {
+                                // 상황 1: 문서가 아직 생성되지 않음 -> 아래에서 생성 진행
+                                if (e.getErrorCode() != SettlementErrorCode.DOCUMENT_STILL_GENERATING) {
+                                        throw e;
+                                }
                         }
 
                         // 3. 문서가 없으면 실시간 생성
@@ -389,22 +395,29 @@ public class FranchiseSettlementFacade {
                                 throw e;
                         }
 
-                        // 2. 해당 월별 정산에 연관된 모든 문서 목록 조회 (기존 로직 유지)
-                        List<com.chaing.domain.settlements.entity.SettlementDocument> documents = documentService
-                                        .getMonthlyDocuments(settlement.getMonthlySettlementId());
+                        // 2. 이미 생성된 문서(RECEIPT_PDF)가 있는지 확인
+                        try {
+                                List<com.chaing.domain.settlements.entity.SettlementDocument> documents = documentService
+                                                .getMonthlyDocuments(settlement.getMonthlySettlementId());
 
-                        // 3. RECEIPT_PDF 문서가 이미 있는지 확인
-                        String existingUrl = documents.stream()
-                                        .filter(doc -> doc.getDocumentType() == DocumentType.RECEIPT_PDF)
-                                        .findFirst()
-                                        .map(com.chaing.domain.settlements.entity.SettlementDocument::getFileUrl)
-                                        .orElse(null);
-
-                        if (existingUrl != null) {
-                                return minioService.getFileUrl(documents.stream()
+                                String existingUrl = documents.stream()
                                                 .filter(doc -> doc.getDocumentType() == DocumentType.RECEIPT_PDF)
                                                 .findFirst()
-                                                .get().getObjectKey(), BucketName.SETTLEMENTS);
+                                                .map(com.chaing.domain.settlements.entity.SettlementDocument::getFileUrl)
+                                                .orElse(null);
+
+                                if (existingUrl != null) {
+                                        return minioService.getFileUrl(documents.stream()
+                                                        .filter(doc -> doc
+                                                                        .getDocumentType() == DocumentType.RECEIPT_PDF)
+                                                        .findFirst()
+                                                        .get().getObjectKey(), BucketName.SETTLEMENTS);
+                                }
+                        } catch (SettlementException e) {
+                                // 문서 목록 조회 시 에러가 나더라도(없으면), 아래에서 실시간 생성 진행을 위해 넘어감
+                                if (e.getErrorCode() == SettlementErrorCode.INVALID_SETTLEMENT_ID) {
+                                        throw e;
+                                }
                         }
 
                         // 4. 없으면 실시간 생성
@@ -525,7 +538,8 @@ public class FranchiseSettlementFacade {
                                 franchiseId, month.atDay(1), month.atEndOfMonth());
 
                 if (dailyReceipts.isEmpty()) {
-                        throw new SettlementException(SettlementErrorCode.DAILY_SETTLEMENT_NOT_FOUND);
+                        // 상황 2: 정산 데이터 자체가 없음 (휴무일 등)
+                        throw new SettlementException(SettlementErrorCode.SETTLEMENT_DATA_EMPTY);
                 }
 
                 // 2. 가집계 MonthlySettlement 객체 생성
@@ -573,7 +587,8 @@ public class FranchiseSettlementFacade {
                                 franchiseId, month.atDay(1), month.atEndOfMonth());
 
                 if (dailyReceipts.isEmpty()) {
-                        throw new SettlementException(SettlementErrorCode.DAILY_SETTLEMENT_NOT_FOUND);
+                        // 상황 2: 정산 데이터 자체가 없음
+                        throw new SettlementException(SettlementErrorCode.SETTLEMENT_DATA_EMPTY);
                 }
 
                 // 2. 일별 데이터를 기반으로 가상 전표 생성
@@ -690,7 +705,8 @@ public class FranchiseSettlementFacade {
 
                 if (provisionalReceipt.getTotalSaleAmount().compareTo(BigDecimal.ZERO) == 0 &&
                                 provisionalReceipt.getOrderAmount().compareTo(BigDecimal.ZERO) == 0) {
-                        throw new SettlementException(SettlementErrorCode.PROVISIONAL_SETTLEMENT_NOT_FOUND);
+                        // 상황 2: 정산 데이터 자체가 없음
+                        throw new SettlementException(SettlementErrorCode.SETTLEMENT_DATA_EMPTY);
                 }
 
                 // 2. 가상 전표(Line) 생성 (요약 정보만 표시)

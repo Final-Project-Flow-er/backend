@@ -399,10 +399,15 @@ public class HQSettlementFacade {
         public String getDailyAllSummaryPdf(HQSettlementDailyAllPdfRequest request) {
                 log.info("[DEBUG] Facade - getDailyAllSummaryPdf requested for date: {}", request.date());
                 // 1. 이미 생성된 문서가 있는지 확인
-                com.chaing.domain.settlements.entity.SettlementDocument existingDoc = documentService
-                                .getHQDailyDocument(request.date());
-                if (existingDoc != null) {
+                try {
+                        com.chaing.domain.settlements.entity.SettlementDocument existingDoc = documentService
+                                        .getHQDailyDocument(request.date());
                         return minioService.getFileUrl(existingDoc.getObjectKey(), BucketName.SETTLEMENTS);
+                } catch (com.chaing.domain.settlements.exception.SettlementException e) {
+                        // 문서가 아직 생성되지 않은 경우(DOCUMENT_STILL_GENERATING)는 예외를 잡아서 아래 생성 로직 진행
+                        if (e.getErrorCode() != com.chaing.domain.settlements.exception.SettlementErrorCode.DOCUMENT_STILL_GENERATING) {
+                                throw e;
+                        }
                 }
 
                 try {
@@ -411,8 +416,9 @@ public class HQSettlementFacade {
                                         .getAllByDate(request.date(), null);
 
                         if (receipts.isEmpty()) {
+                                // 상황 2: 정산 데이터 자체가 없음 (휴무일 등)
                                 throw new com.chaing.domain.settlements.exception.SettlementException(
-                                                com.chaing.domain.settlements.exception.SettlementErrorCode.PROVISIONAL_SETTLEMENT_NOT_FOUND);
+                                                com.chaing.domain.settlements.exception.SettlementErrorCode.SETTLEMENT_DATA_EMPTY);
                         }
 
                         // 3. 파일 생성 서비스 호출
@@ -452,10 +458,14 @@ public class HQSettlementFacade {
         @Transactional
         public String getMonthlyAllSummaryPdf(HQSettlementMonthlyAllPdfRequest request) {
                 // 1. 이미 생성된 문서가 있는지 확인
-                com.chaing.domain.settlements.entity.SettlementDocument existingDoc = documentService
-                                .getHQMonthlyDocument(request.month());
-                if (existingDoc != null) {
+                try {
+                        com.chaing.domain.settlements.entity.SettlementDocument existingDoc = documentService
+                                        .getHQMonthlyDocument(request.month());
                         return minioService.getFileUrl(existingDoc.getObjectKey(), BucketName.SETTLEMENTS);
+                } catch (com.chaing.domain.settlements.exception.SettlementException e) {
+                        if (e.getErrorCode() != com.chaing.domain.settlements.exception.SettlementErrorCode.DOCUMENT_STILL_GENERATING) {
+                                throw e;
+                        }
                 }
 
                 try {
@@ -510,10 +520,15 @@ public class HQSettlementFacade {
                                         .getByFranchiseAndDate(franchiseId, request.date());
 
                         // 1. 이미 생성된 문서가 있는지 확인
-                        com.chaing.domain.settlements.entity.SettlementDocument existingDoc = documentService
-                                        .getDailyDocument(receipt.getDailyReceiptId());
-                        if (existingDoc != null) {
+                        try {
+                                com.chaing.domain.settlements.entity.SettlementDocument existingDoc = documentService
+                                                .getDailyDocument(receipt.getDailyReceiptId());
                                 return minioService.getFileUrl(existingDoc.getObjectKey(), BucketName.SETTLEMENTS);
+                        } catch (com.chaing.domain.settlements.exception.SettlementException e) {
+                                // 상황 1: 문서가 아직 생성되지 않음 -> 아래에서 생성 진행
+                                if (e.getErrorCode() != com.chaing.domain.settlements.exception.SettlementErrorCode.DOCUMENT_STILL_GENERATING) {
+                                        throw e;
+                                }
                         }
 
                         List<com.chaing.domain.settlements.entity.DailyReceiptLine> lines = dailyService

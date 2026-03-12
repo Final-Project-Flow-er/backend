@@ -1,6 +1,10 @@
 package com.chaing.api.controller.hq;
 
+import com.chaing.api.dto.hq.inventorylogs.request.InventoryOrderLogTestRequest;
+import com.chaing.api.dto.hq.inventorylogs.request.InventoryReturnLogTestRequest;
 import com.chaing.api.security.principal.UserPrincipal;
+import com.chaing.domain.inventorylogs.enums.ActorType;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 
@@ -22,6 +26,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -144,5 +150,29 @@ public class HQInventoryLogController {
         FactoryLogRequest request = new FactoryLogRequest(productName, logType, startDate, endDate, transactionCode);
         return ResponseEntity
                 .ok(ApiResponse.success(hqInventoryLogFacade.findFactoryInventoryLogs(factoryId, request, pageable)));
+    }
+
+    @PostMapping("/order")
+    public ResponseEntity<ApiResponse<String>> testOrderLog(@Valid @RequestBody InventoryOrderLogTestRequest request) {
+        inventoryLogFacade.recordOrderLogs(
+                request.orderId(),
+                request.fromType(),   // "FRANCHISE" | "HQ"
+                request.fromId(),
+                request.logType(),
+                request.actorType(),  // "FACTORY" | "HQ" | "FRANCHISE"
+                request.actorId()
+        );
+        return ResponseEntity.ok(ApiResponse.success("ORDER_LOG_CREATED"));
+    }
+
+    @PostMapping("/return")
+    public ResponseEntity<ApiResponse<String>> testReturnLog(@Valid @RequestBody InventoryReturnLogTestRequest request) {
+        inventoryLogFacade.recordReturnLogs(
+                request.returnId(),
+                request.logType(),
+                ActorType.valueOf(request.actorType().toUpperCase()),
+                request.actorId()
+        );
+        return ResponseEntity.ok(ApiResponse.success("RETURN_LOG_CREATED"));
     }
 }

@@ -400,11 +400,13 @@ public class FranchiseReturnService {
             throw new FranchiseReturnException(FranchiseReturnErrorCode.DATA_OMISSION);
         }
 
+        // Set<Returns>
+        Set<Returns> returns = items.stream()
+                .map(ReturnItem::getReturns)
+                .collect(Collectors.toSet());
+
         // 반품 요청 상태 변경
-        items.forEach(item -> {
-            Returns returns = item.getReturns();
-            returns.deliveryReturn();
-        });
+        returns.forEach(Returns::deliveryReturn);
 
         return items.stream()
                 .collect(Collectors.groupingBy(

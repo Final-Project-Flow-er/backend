@@ -8,11 +8,13 @@ import com.chaing.domain.orders.dto.command.FranchiseOrderDetailCommand;
 import com.chaing.domain.orders.dto.command.FranchiseOrderItemCommand;
 import com.chaing.domain.orders.dto.request.FranchiseOrderCreateRequest;
 import com.chaing.domain.orders.dto.request.FranchiseOrderCreateRequestItem;
+import com.chaing.domain.orders.dto.request.FranchiseOrderStatusUpdateRequest;
 import com.chaing.domain.orders.dto.request.FranchiseOrderUpdateRequest;
 import com.chaing.domain.orders.dto.response.FranchiseOrderCancelResponse;
 import com.chaing.domain.orders.dto.response.FranchiseOrderCreateResponse;
 import com.chaing.domain.orders.dto.response.FranchiseOrderDetailResponse;
 import com.chaing.domain.orders.dto.response.FranchiseOrderItemDetailResponse;
+import com.chaing.domain.orders.dto.response.FranchiseOrderStatusShippingPendingResponse;
 import com.chaing.domain.orders.dto.response.FranchiseOrderUpdateResponse;
 import com.chaing.domain.orders.exception.OrderErrorCode;
 import com.chaing.domain.orders.exception.OrderException;
@@ -20,6 +22,7 @@ import com.chaing.domain.orders.service.FranchiseOrderCodeGenerator;
 import com.chaing.domain.orders.service.FranchiseOrderService;
 import com.chaing.domain.products.service.ProductService;
 import com.chaing.domain.users.service.UserManagementService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -294,5 +297,17 @@ public class FranchiseOrderFacade {
                 .deliveryDate(order.deliveryDate())
                 .items(orderItems)
                 .build();
+    }
+
+    // 발주 상태 SHIPPING_PENDING으로 수정
+    public List<FranchiseOrderStatusShippingPendingResponse> updateShippingPending(List<FranchiseOrderStatusUpdateRequest> requests) {
+        // 수정
+        // Map<orderId, FranchiseOrderCommand>
+        Map<Long, FranchiseOrderCommand> orders = franchiseOrderService.updateShippingPending(requests);
+
+        // 반환
+        return orders.values().stream()
+                .map(FranchiseOrderStatusShippingPendingResponse::from)
+                .toList();
     }
 }

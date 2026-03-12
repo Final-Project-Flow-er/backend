@@ -24,6 +24,8 @@ public interface FranchiseReturnRepository extends JpaRepository<Returns, Long> 
             LocalDateTime start, LocalDateTime end);
     List<Returns> findAllByReturnCodeInAndDeletedAtIsNull(List<String> returnCodes);
 
+    List<Returns> findAllByReturnCodeInAndDeletedAtIsNull(Set<String> returnCodes);
+
     Optional<Returns> findByUserIdAndFranchiseIdAndReturnCodeAndDeletedAtIsNull(Long userId, Long franchiseId, String returnCode);
 
     Optional<Returns> findByFranchiseIdAndUserIdAndReturnCode(Long franchiseId, Long userId, String returnCode);

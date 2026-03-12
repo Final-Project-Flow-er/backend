@@ -4,6 +4,6 @@ import jakarta.validation.constraints.NotBlank;
 
 public record HQOrderStatusUpdateRequest(
         @NotBlank
-        String orderCode
+        String returnCode
 ) {
 }

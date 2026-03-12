@@ -94,4 +94,11 @@ public class Returns extends BaseEntity {
         }
         this.returnStatus = ReturnStatus.SHIPPING;
     }
+
+    public void updateStatusToShippingPending() {
+        if (!this.returnStatus.equals(ReturnStatus.ACCEPTED)) {
+            throw new FranchiseReturnException(FranchiseReturnErrorCode.INVALID_RETURN_STATUS);
+        }
+        this.returnStatus = ReturnStatus.SHIPPING_PENDING;
+    }
 }

@@ -435,6 +435,7 @@ public class HQOrderFacade {
     }
 
     // 발주 상태 SHIPPING_PENDING으로 수정
+    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public List<FranchiseOrderStatusShippingPendingResponse> updateShippingPending(List<FranchiseOrderStatusUpdateRequest> requests) {
         // List<orderCode>
         Set<String> orderCodes = requests.stream().map(FranchiseOrderStatusUpdateRequest::orderCode).collect(Collectors.toSet());

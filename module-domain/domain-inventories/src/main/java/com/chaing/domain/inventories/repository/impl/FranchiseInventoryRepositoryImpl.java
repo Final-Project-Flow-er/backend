@@ -23,6 +23,9 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
@@ -86,55 +89,84 @@ public class FranchiseInventoryRepositoryImpl implements FranchiseInventoryRepos
 
         // 중분류
         @Override
-        public List<FranchiseInventoryBatchResponse> getFranchiseBatches(Long franchiseId, Long productId) {
-                NumberExpression<Integer> quantity = franchiseInventory.inventoryId.count().intValue();
+        public Page<FranchiseInventoryBatchResponse> getFranchiseBatches(Long franchiseId, Long productId, Pageable pageable) {
+            NumberExpression<Integer> quantity = franchiseInventory.inventoryId.count().intValue();
 
-                NumberExpression<Integer> availableQuantity = new CaseBuilder()
-                                .when(franchiseInventory.status.eq(LogType.AVAILABLE)).then(1)
-                                .otherwise(0).sum().intValue();
+            NumberExpression<Integer> availableQuantity = new CaseBuilder()
+                    .when(franchiseInventory.status.eq(LogType.AVAILABLE)).then(1)
+                    .otherwise(0).sum().intValue();
 
-                NumberExpression<Integer> returnPending = new CaseBuilder()
-                                .when(franchiseInventory.status.eq(LogType.RETURN_WAIT)).then(1)
-                                .otherwise(0).sum().intValue();
+            NumberExpression<Integer> returnPending = new CaseBuilder()
+                    .when(franchiseInventory.status.eq(LogType.RETURN_WAIT)).then(1)
+                    .otherwise(0).sum().intValue();
 
-                return queryFactory
-                                .select(Projections.constructor(
-                                                FranchiseInventoryBatchResponse.class,
-                                                franchiseInventory.manufactureDate,
-                                                quantity,
-                                                availableQuantity,
-                                                returnPending))
-                                .from(franchiseInventory)
-                                .where(
-                                                franchiseInventory.franchiseId.eq(franchiseId),
-                                                franchiseInventory.productId.eq(productId))
-                                .groupBy(franchiseInventory.manufactureDate)
-                                .fetch();
+            List<FranchiseInventoryBatchResponse> content = queryFactory
+                    .select(Projections.constructor(
+                            FranchiseInventoryBatchResponse.class,
+                            franchiseInventory.manufactureDate,
+                            quantity,
+                            availableQuantity,
+                            returnPending))
+                    .from(franchiseInventory)
+                    .where(
+                            franchiseInventory.franchiseId.eq(franchiseId),
+                            franchiseInventory.productId.eq(productId))
+                    .groupBy(franchiseInventory.manufactureDate)
+                    .orderBy(franchiseInventory.manufactureDate.desc())
+                    .offset(pageable.getOffset())
+                    .limit(pageable.getPageSize())
+                    .fetch();
+
+            Long total = queryFactory
+                    .select(franchiseInventory.manufactureDate.countDistinct())
+                    .from(franchiseInventory)
+                    .where(
+                            franchiseInventory.franchiseId.eq(franchiseId),
+                            franchiseInventory.productId.eq(productId))
+                    .fetchOne();
+
+            return new PageImpl<>(content, pageable, total == null ? 0L : total);
         }
 
-        // 소분류
-        @Override
-        public List<FranchiseInventoryItemResponse> getFranchiseItems(Long franchiseId,
-                        FranchiseInventoryItemsRequest request) {
-                return queryFactory
-                                .select(Projections.constructor(
-                                                FranchiseInventoryItemResponse.class,
-                                                franchiseInventory.inventoryId,
-                                                franchiseInventory.serialCode,
-                                                franchiseInventory.boxCode,
-                                                franchiseInventory.status.stringValue(),
-                                                franchiseInventory.shippedAt,
-                                                franchiseInventory.receivedAt))
-                                .from(franchiseInventory)
-                                .where(
-                                                franchiseInventory.productId.eq(request.productId()),
-                                                franchiseInventory.franchiseId.eq(franchiseId),
-                                                containsSerialCode(request.serialCode()),
-                                                franchiseInventory.manufactureDate.eq(request.manufactureDate()),
-                                                containsShippedAt(request.shippedAt()),
-                                                containsReceivedAt(request.receivedAt()))
-                                .fetch();
-        }
+    // 소분류
+    @Override
+    public Page<FranchiseInventoryItemResponse> getFranchiseItems(Long franchiseId, FranchiseInventoryItemsRequest request, Pageable pageable) {
+        List<FranchiseInventoryItemResponse> content = queryFactory
+                .select(Projections.constructor(
+                        FranchiseInventoryItemResponse.class,
+                        franchiseInventory.inventoryId,
+                        franchiseInventory.serialCode,
+                        franchiseInventory.boxCode,
+                        franchiseInventory.status.stringValue(),
+                        franchiseInventory.shippedAt,
+                        franchiseInventory.receivedAt))
+                .from(franchiseInventory)
+                .where(
+                        franchiseInventory.productId.eq(request.productId()),
+                        franchiseInventory.franchiseId.eq(franchiseId),
+                        containsSerialCode(request.serialCode()),
+                        franchiseInventory.manufactureDate.eq(request.manufactureDate()),
+                        containsShippedAt(request.shippedAt()),
+                        containsReceivedAt(request.receivedAt()))
+                .orderBy(franchiseInventory.inventoryId.desc())
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
+
+        Long total = queryFactory
+                .select(franchiseInventory.count())
+                .from(franchiseInventory)
+                .where(
+                        franchiseInventory.productId.eq(request.productId()),
+                        franchiseInventory.franchiseId.eq(franchiseId),
+                        containsSerialCode(request.serialCode()),
+                        franchiseInventory.manufactureDate.eq(request.manufactureDate()),
+                        containsShippedAt(request.shippedAt()),
+                        containsReceivedAt(request.receivedAt()))
+                .fetchOne();
+
+        return new PageImpl<>(content, pageable, total == null ? 0L : total);
+    }
 
         @Override
         public void deleteFranchiseInventory(Long franchiseId, List<String> serialCode) {

@@ -33,6 +33,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.data.domain.Page;
@@ -135,7 +136,7 @@ public class FranchiseInventoryFacade {
         return result;
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public Void increaseInventory(@Valid InventoryBatchRequest inventoryBatchRequest) {
         List<InventoryLogCreateRequest> logs = convert(inventoryBatchRequest);
         inventoryLogService.recordInventoryLog(logs);
@@ -164,7 +165,7 @@ public class FranchiseInventoryFacade {
                 .toList();
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public Void decreaseInventory(@Valid InventoryBatchRequest inventoryBatchRequest) {
         List<String> serialCodes = convertsSerialCode(inventoryBatchRequest.boxes());
         inventoryService.updateFranchiseShippingStatus(inventoryBatchRequest.fromLocationId(), serialCodes);
@@ -248,7 +249,7 @@ public class FranchiseInventoryFacade {
         return result;
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public Void disposalInventory(DisposalRequest request, Long locationId) {
         String actorTypeRaw = request.actorType().toUpperCase();
         List<InventoryLogCreateRequest> logs = new ArrayList<>();
@@ -289,12 +290,13 @@ public class FranchiseInventoryFacade {
         return null;
     }
 
+    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public void setSafetyStock(SafetyStockRequest request) {
         inventoryService.setSafetyStock(request);
         evictInventoryCache();
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public void resetSafetyStock(Long franchiseId, Long productId) {
         inventoryService.resetSafetyStockToDefault("FRANCHISE", franchiseId, productId);
         evictInventoryCache();

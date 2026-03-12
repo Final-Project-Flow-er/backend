@@ -41,18 +41,24 @@ import com.chaing.domain.sales.dto.response.FranchiseSalesDailyQuantityResponse;
 import com.chaing.domain.sales.service.FranchiseSalesService;
 import com.chaing.domain.users.enums.UserRole;
 import com.chaing.domain.users.service.UserManagementService;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static com.chaing.domain.inventories.enums.LocationType.FACTORY;
@@ -63,12 +69,16 @@ import static com.chaing.domain.inventories.enums.LocationType.FRANCHISE;
 @Transactional(readOnly = true)
 public class HQInventoryFacade {
 
+    private static final Duration CACHE_TTL = Duration.ofSeconds(30);
+
     private final InventoryService inventoryService;
     private final ProductService productService;
     private final InventoryLogService inventoryLogService;
     private final UserManagementService userManagementService;
     private final FranchiseRepository franchiseRepository;
     private final FranchiseSalesService franchiseSalesService;
+    private final StringRedisTemplate redisTemplate;
+    private final ObjectMapper objectMapper;
 
     public Map<Long, String> getFranchiseList() {
         return franchiseRepository.findAll().stream()
@@ -76,152 +86,204 @@ public class HQInventoryFacade {
     }
 
     public List<HQInventoryProductResponse> getStock(StockSearchRequest request) {
+        String key = "inv:hq:stock:%s:%s:%s".formatted(
+                nullToDash(request.productCode()),
+                nullToDash(request.name()),
+                nullToDash(request.status()));
+
+        List<HQInventoryProductResponse> cached = readListCache(
+                key, new TypeReference<List<HQInventoryProductResponse>>() {});
+        if (cached != null) return cached;
+
         List<ProductInfoResponse> products = productService.getInventoryProducts(request.productCode(), request.name());
-
-        List<Long> ids = products.stream()
-                .map(ProductInfoResponse::productId)
-                .toList();
-
+        List<Long> ids = products.stream().map(ProductInfoResponse::productId).toList();
         Map<Long, InventoryProductInfoResponse> productInfos = inventoryService.getStock(ids, request.status());
 
-        return products.stream()
+        List<HQInventoryProductResponse> result = products.stream()
                 .map(p -> {
                     InventoryProductInfoResponse info = productInfos.get(p.productId());
-
                     if (info == null) {
                         return new HQInventoryProductResponse(
-                                p.productId(),
-                                p.productCode(),
-                                p.name(),
-                                0,
-                                p.productCode().substring(4, 6),
-                                0,
-                                null);
+                                p.productId(), p.productCode(), p.name(), 0,
+                                p.productCode().substring(4, 6), 0, null);
                     }
-
                     return new HQInventoryProductResponse(
-                            p.productId(),
-                            p.productCode(),
-                            p.name(),
-                            info.totalQuantity(),
-                            p.productCode().substring(4, 6),
-                            info.safetyStock(),
-                            info.status());
+                            p.productId(), p.productCode(), p.name(),
+                            info.totalQuantity(), p.productCode().substring(4, 6),
+                            info.safetyStock(), info.status());
                 })
                 .toList();
+
+        writeCache(key, result);
+        return result;
     }
 
     public List<HQInventoryBatchResponse> getBatches(Long productId) {
-        return inventoryService.getBatches(productId);
+        String key = "inv:hq:batches:%d".formatted(productId);
+        List<HQInventoryBatchResponse> cached = readListCache(
+                key, new TypeReference<List<HQInventoryBatchResponse>>() {});
+        if (cached != null) return cached;
+
+        List<HQInventoryBatchResponse> result = inventoryService.getBatches(productId);
+        writeCache(key, result);
+        return result;
     }
 
     public List<HQInventoryItemResponse> getItems(HQInventoryItemsRequest request) {
-        return inventoryService.getItems(request);
+        String key = "inv:hq:items:%d:%s:%s:%s:%s".formatted(
+                request.productId(),
+                nullToDash(request.serialCode()),
+                request.manufactureDate() == null ? "-" : request.manufactureDate().toString(),
+                request.shippedAt() == null ? "-" : request.shippedAt().toString(),
+                request.receivedAt() == null ? "-" : request.receivedAt().toString());
+
+        List<HQInventoryItemResponse> cached = readListCache(
+                key, new TypeReference<List<HQInventoryItemResponse>>() {});
+        if (cached != null) return cached;
+
+        List<HQInventoryItemResponse> result = inventoryService.getItems(request);
+        writeCache(key, result);
+        return result;
     }
 
     public List<FranchiseInventoryProductResponse> getFranchiseStock(Long franchiseId, StockSearchRequest request) {
-        List<ProductInfoResponse> products = productService.getInventoryProducts(request.productCode(), request.name());
+        String key = "inv:fr:stock:%d:%s:%s:%s".formatted(
+                franchiseId,
+                nullToDash(request.productCode()),
+                nullToDash(request.name()),
+                nullToDash(request.status()));
 
-        List<Long> ids = products.stream()
-                .map(ProductInfoResponse::productId)
-                .toList();
+        List<FranchiseInventoryProductResponse> cached = readListCache(
+                key, new TypeReference<List<FranchiseInventoryProductResponse>>() {});
+        if (cached != null) return cached;
+
+        List<ProductInfoResponse> products = productService.getInventoryProducts(request.productCode(), request.name());
+        List<Long> ids = products.stream().map(ProductInfoResponse::productId).toList();
 
         Map<Long, InventoryProductInfoResponse> productInfos = inventoryService.getFranchiseStock(
                 franchiseId, ids, request.status());
 
-        return products.stream()
+        List<FranchiseInventoryProductResponse> result = products.stream()
                 .map(p -> {
                     InventoryProductInfoResponse info = productInfos.get(p.productId());
-
                     if (info == null) {
                         return new FranchiseInventoryProductResponse(
-                                p.productId(),
-                                p.productCode(),
-                                p.name(),
-                                0,
-                                p.productCode().substring(4, 6),
-                                0,
-                                null);
+                                p.productId(), p.productCode(), p.name(), 0,
+                                p.productCode().substring(4, 6), 0, null);
                     }
-
                     return new FranchiseInventoryProductResponse(
-                            p.productId(),
-                            p.productCode(),
-                            p.name(),
-                            info.totalQuantity(),
-                            p.productCode().substring(4, 6),
-                            info.safetyStock(),
-                            info.status());
+                            p.productId(), p.productCode(), p.name(),
+                            info.totalQuantity(), p.productCode().substring(4, 6),
+                            info.safetyStock(), info.status());
                 })
                 .toList();
+
+        writeCache(key, result);
+        return result;
     }
 
     public List<FranchiseInventoryBatchResponse> getFranchiseBatches(Long franchiseId, Long productId) {
-        return inventoryService.getFranchiseBatches(franchiseId, productId);
+        String key = "inv:fr:batches:%d:%d".formatted(franchiseId, productId);
+        List<FranchiseInventoryBatchResponse> cached = readListCache(
+                key, new TypeReference<List<FranchiseInventoryBatchResponse>>() {});
+        if (cached != null) return cached;
+
+        List<FranchiseInventoryBatchResponse> result = inventoryService.getFranchiseBatches(franchiseId, productId);
+        writeCache(key, result);
+        return result;
     }
 
     public List<FranchiseInventoryItemResponse> getFranchiseItems(Long franchiseId,
                                                                   FranchiseInventoryItemsRequest request) {
-        return inventoryService.getFranchiseItems(franchiseId, request);
+        String key = "inv:fr:items:%d:%d:%s:%s:%s:%s:%s".formatted(
+                franchiseId,
+                request.productId(),
+                nullToDash(request.serialCode()),
+                nullToDash(request.boxCode()),
+                request.manufactureDate() == null ? "-" : request.manufactureDate().toString(),
+                request.shippedAt() == null ? "-" : request.shippedAt().toString(),
+                request.receivedAt() == null ? "-" : request.receivedAt().toString());
+
+        List<FranchiseInventoryItemResponse> cached = readListCache(
+                key, new TypeReference<List<FranchiseInventoryItemResponse>>() {});
+        if (cached != null) return cached;
+
+        List<FranchiseInventoryItemResponse> result = inventoryService.getFranchiseItems(franchiseId, request);
+        writeCache(key, result);
+        return result;
     }
 
     @Scheduled(cron = "0 0 0 * * *")
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public void calculateSafetyStock() {
-        inventoryService.updateExpiredStatus();
+        String lockKey = "lock:safety-stock:refresh";
+        String lockValue = UUID.randomUUID().toString();
 
-        List<Long> franchiseIds = inventoryService.getAllFranchiseIds();
-        List<Long> productIds = productService.getAllProductIds();
+        Boolean locked = redisTemplate.opsForValue()
+                .setIfAbsent(lockKey, lockValue, Duration.ofMinutes(10));
 
-        LocalDate today = LocalDate.now();
-        LocalDate startDate = today.minusDays(90);
-        LocalDate endDate = today.minusDays(60);
+        if (!Boolean.TRUE.equals(locked)) return;
 
-        List<FranchiseSalesDailyQuantityResponse> salesRows = franchiseSalesService.getDailyProductSalesForSafetyStock(
-                franchiseIds, productIds, startDate, endDate);
+        try {
+            inventoryService.updateExpiredStatus();
 
-        List<ActorProductSalesResponse> salesData = toActorProductSales(salesRows);
+            List<Long> franchiseIds = inventoryService.getAllFranchiseIds();
+            List<Long> productIds = productService.getAllProductIds();
 
-        for (ActorProductSalesResponse franchise : salesData) {
-            Long franchiseId = franchise.actorId();
-            for (ProductSalesResponse product : franchise.products()) {
-                double stdDev = calculateStdDev(product.sales());
-                double z = 1.65; // 95% 서비스 수준
-                int leadTime = 3; // 예시 리드타임
-                double safetyStock = z * stdDev * Math.sqrt(leadTime);
-                int safetyStockInt = (int) Math.ceil(safetyStock);
+            LocalDate today = LocalDate.now();
+            LocalDate startDate = today.minusDays(90);
+            LocalDate endDate = today.minusDays(60);
 
-                inventoryService.updateSafetyStock(
-                        FRANCHISE,
-                        franchiseId,
-                        product.productId(),
-                        safetyStockInt);
+            List<FranchiseSalesDailyQuantityResponse> salesRows =
+                    franchiseSalesService.getDailyProductSalesForSafetyStock(
+                            franchiseIds, productIds, startDate, endDate);
+
+            List<ActorProductSalesResponse> salesData = toActorProductSales(salesRows);
+
+            for (ActorProductSalesResponse franchise : salesData) {
+                Long franchiseId = franchise.actorId();
+                for (ProductSalesResponse product : franchise.products()) {
+                    double stdDev = calculateStdDev(product.sales());
+                    double z = 1.65;
+                    int leadTime = 3;
+                    int safetyStockInt = (int) Math.ceil(z * stdDev * Math.sqrt(leadTime));
+
+                    inventoryService.updateSafetyStock(
+                            FRANCHISE, franchiseId, product.productId(), safetyStockInt);
+                }
             }
-        }
 
-        List<Long> factoryIds = userManagementService.getBusinessUnitIdsByRole(UserRole.FACTORY);
-        List<ActorProductSalesResponse> factoryOutboundData = inventoryLogService.getProductSales(
-                factoryIds, productIds, ActorType.FACTORY, LogType.OUTBOUND);
+            List<Long> factoryIds = userManagementService.getBusinessUnitIdsByRole(UserRole.FACTORY);
+            List<ActorProductSalesResponse> factoryOutboundData = inventoryLogService.getProductSales(
+                    factoryIds, productIds, ActorType.FACTORY, LogType.OUTBOUND);
 
-        for (ActorProductSalesResponse factory : factoryOutboundData) {
-            Long actorId = factory.actorId();
-            for (ProductSalesResponse product : factory.products()) {
-                double stdDev = calculateStdDev(product.sales());
-                double z = 1.65; // 95% 서비스 수준
-                int leadTime = 3; // 예시 리드타임
-                double safetyStock = z * stdDev * Math.sqrt(leadTime);
-                int safetyStockInt = (int) Math.ceil(safetyStock);
+            for (ActorProductSalesResponse factory : factoryOutboundData) {
+                Long actorId = factory.actorId();
+                for (ProductSalesResponse product : factory.products()) {
+                    double stdDev = calculateStdDev(product.sales());
+                    double z = 1.65;
+                    int leadTime = 3;
+                    int safetyStockInt = (int) Math.ceil(z * stdDev * Math.sqrt(leadTime));
 
-                inventoryService.updateSafetyStock(
-                        FACTORY,
-                        actorId,
-                        product.productId(),
-                        safetyStockInt);
+                    inventoryService.updateSafetyStock(
+                            FACTORY, actorId, product.productId(), safetyStockInt);
+                }
+            }
+
+            evictInventoryCache();
+        } finally {
+            String current = redisTemplate.opsForValue().get(lockKey);
+            if (lockValue.equals(current)) {
+                redisTemplate.delete(lockKey);
             }
         }
     }
 
     public InventoryAlertResponse getInventoryAlerts() {
+        String key = "inv:hq:alerts";
+        InventoryAlertResponse cached = readObjectCache(key, InventoryAlertResponse.class);
+        if (cached != null) return cached;
+
         List<SafetyStockResponse> safetyStockAlert = inventoryService.getLowStockAlerts("FACTORY", 1L);
         List<ExpirationBatchResultResponse> expirationAlerts = inventoryService.getExpirationAlerts("FACTORY", 1L);
 
@@ -246,13 +308,20 @@ public class HQInventoryFacade {
                         k.daysUntilExpiration()))
                 .toList();
 
-        return InventoryAlertResponse.builder()
+        InventoryAlertResponse result = InventoryAlertResponse.builder()
                 .safetyStockAlerts(safetyStockAlerts)
                 .expirationAlerts(expirationAlert)
                 .build();
+
+        writeCache(key, result);
+        return result;
     }
 
     public InventoryAlertResponse getFranchiseInventoryAlerts(Long franchiseId) {
+        String key = "inv:fr:alerts:%d".formatted(franchiseId);
+        InventoryAlertResponse cached = readObjectCache(key, InventoryAlertResponse.class);
+        if (cached != null) return cached;
+
         List<SafetyStockResponse> safetyStockAlert = inventoryService.getLowStockAlerts("FRANCHISE", franchiseId);
         List<ExpirationBatchResultResponse> expirationAlerts = inventoryService.getExpirationAlerts("FRANCHISE", franchiseId);
 
@@ -277,10 +346,13 @@ public class HQInventoryFacade {
                         k.daysUntilExpiration()))
                 .toList();
 
-        return InventoryAlertResponse.builder()
+        InventoryAlertResponse result = InventoryAlertResponse.builder()
                 .safetyStockAlerts(safetyStockAlerts)
                 .expirationAlerts(expirationAlert)
                 .build();
+
+        writeCache(key, result);
+        return result;
     }
 
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
@@ -308,6 +380,8 @@ public class HQInventoryFacade {
         } else {
             inventoryService.deleteHqInventory(serialCodes);
         }
+
+        evictInventoryCache();
         return null;
     }
 
@@ -326,6 +400,7 @@ public class HQInventoryFacade {
         List<InventoryLogCreateRequest> logs = convert(inventoryBatchRequest);
         inventoryLogService.recordInventoryLog(logs);
 
+        evictInventoryCache();
         return null;
     }
 
@@ -349,8 +424,7 @@ public class HQInventoryFacade {
         Map<Long, Map<Long, List<DailySales>>> grouped = new HashMap<>();
 
         for (FranchiseSalesDailyQuantityResponse row : rows) {
-            grouped
-                    .computeIfAbsent(row.franchiseId(), k -> new HashMap<>())
+            grouped.computeIfAbsent(row.franchiseId(), k -> new HashMap<>())
                     .computeIfAbsent(row.productId(), k -> new ArrayList<>())
                     .add(new DailySales(row.date(), row.quantity()));
         }
@@ -413,10 +487,7 @@ public class HQInventoryFacade {
 
         if (actorTypeRaw.equals("HQ")) {
             List<HQInventory> inventories = inventoryService.getHqInventoriesByIds(request.inventoryIds());
-            List<Long> productIds = inventories.stream()
-                    .map(HQInventory::getProductId)
-                    .distinct()
-                    .toList();
+            List<Long> productIds = inventories.stream().map(HQInventory::getProductId).distinct().toList();
             Map<Long, ProductInfo> productInfos = productIds.isEmpty() ? Map.of() : productService.getProductInfos(productIds);
 
             for (HQInventory inv : inventories) {
@@ -439,10 +510,7 @@ public class HQInventoryFacade {
             }
         } else if (actorTypeRaw.equals("FACTORY")) {
             List<FactoryInventory> inventories = inventoryService.getFactoryInventoriesByIds(request.inventoryIds());
-            List<Long> productIds = inventories.stream()
-                    .map(FactoryInventory::getProductId)
-                    .distinct()
-                    .toList();
+            List<Long> productIds = inventories.stream().map(FactoryInventory::getProductId).distinct().toList();
             Map<Long, ProductInfo> productInfos = productIds.isEmpty() ? Map.of() : productService.getProductInfos(productIds);
 
             for (FactoryInventory inv : inventories) {
@@ -465,10 +533,7 @@ public class HQInventoryFacade {
             }
         } else if (actorTypeRaw.equals("FRANCHISE")) {
             List<FranchiseInventory> inventories = inventoryService.getFranchiseInventoriesByIds(request.inventoryIds());
-            List<Long> productIds = inventories.stream()
-                    .map(FranchiseInventory::getProductId)
-                    .distinct()
-                    .toList();
+            List<Long> productIds = inventories.stream().map(FranchiseInventory::getProductId).distinct().toList();
             Map<Long, ProductInfo> productInfos = productIds.isEmpty() ? Map.of() : productService.getProductInfos(productIds);
 
             for (FranchiseInventory inv : inventories) {
@@ -496,23 +561,69 @@ public class HQInventoryFacade {
         }
 
         inventoryService.disposalInventory(request);
+        evictInventoryCache();
         return null;
     }
 
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public void setSafetyStock(SafetyStockRequest request) {
         inventoryService.setSafetyStock(request);
+        evictInventoryCache();
     }
 
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public void resetSafetyStock(Long locationId, Long productId) {
-        inventoryService.resetSafetyStockToDefault(
-                "FACTORY",
-                locationId,
-                productId);
+        inventoryService.resetSafetyStockToDefault("FACTORY", locationId, productId);
+        evictInventoryCache();
     }
 
     public boolean verifyAdminPassword(Long userId, String password) {
         return userManagementService.verifyPassword(userId, password);
+    }
+
+    private String nullToDash(String value) {
+        return value == null ? "-" : value;
+    }
+
+    private <T> List<T> readListCache(String key, TypeReference<List<T>> typeRef) {
+        try {
+            String cached = redisTemplate.opsForValue().get(key);
+            if (cached == null) return null;
+            return objectMapper.readValue(cached, typeRef);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private <T> T readObjectCache(String key, Class<T> clazz) {
+        try {
+            String cached = redisTemplate.opsForValue().get(key);
+            if (cached == null) return null;
+            return objectMapper.readValue(cached, clazz);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private void writeCache(String key, Object value) {
+        try {
+            redisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(value), CACHE_TTL);
+        } catch (Exception ignored) {
+        }
+    }
+
+    private void evictByPattern(String pattern) {
+        try {
+            Set<String> keys = redisTemplate.keys(pattern);
+            if (keys != null && !keys.isEmpty()) {
+                redisTemplate.delete(keys);
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
+    private void evictInventoryCache() {
+        evictByPattern("inv:hq:*");
+        evictByPattern("inv:fr:*");
     }
 }

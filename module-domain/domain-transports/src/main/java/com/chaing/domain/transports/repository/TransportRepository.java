@@ -15,4 +15,8 @@ public interface TransportRepository extends JpaRepository<Transport, Long> {
 
     @Query("select t.unitPrice from Transport t where t.transportId = :transportId")
     Long findUnitPriceByTransportId(@Param("transportId") Long transportId);
+
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE Transport t SET t.deletedAt = CURRENT_TIMESTAMP, t.status = 'INACTIVE' WHERE t.transportId = :id")
+    void softDeleteById(@Param("id") Long id);
 }

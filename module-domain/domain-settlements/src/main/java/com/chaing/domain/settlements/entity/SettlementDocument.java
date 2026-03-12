@@ -92,22 +92,40 @@ public class SettlementDocument extends BaseEntity {
         if (periodType == null) {
             throw new IllegalStateException("periodType은 필수입니다");
         }
-        // HQ 소유의 전체 요약/전표 문서는 특정 ID가 없을 수도 있지만 날짜/월은 있어야 함
-        if (documentOwner == DocumentOwner.HQ && (documentType == DocumentType.HQ_DAILY_SUM
-                || documentType == DocumentType.HQ_MONTHLY_SUM || documentType == DocumentType.VOUCHER_EXCEL)) {
-            if (documentType == DocumentType.HQ_DAILY_SUM && settlementDate == null) {
-                throw new IllegalStateException("HQ 일별 요약은 settlementDate가 필수입니다");
+        // 1. 문서 타입별 소유자 및 주기 엄격 검증 (보험)
+        if (documentType == DocumentType.HQ_DAILY_SUM) {
+            if (documentOwner != DocumentOwner.HQ || periodType != PeriodType.DAILY) {
+                throw new IllegalStateException("본사 일별 요약 리포트는 HQ 소유이며 DAILY 주기여야 합니다.");
             }
-            if ((documentType == DocumentType.HQ_MONTHLY_SUM || documentType == DocumentType.VOUCHER_EXCEL)
-                    && settlementMonth == null) {
-                throw new IllegalStateException("HQ 월별 문서(요약/엑셀)는 settlementMonth가 필수입니다");
+            if (settlementDate == null) {
+                throw new IllegalStateException("본사 일별 요약 리포트는 settlementDate가 필수입니다.");
             }
             return;
         }
 
-        // 가맹점 문서인 경우 franchiseId 필수 체크
-        if (documentOwner == DocumentOwner.FRANCHISE && franchiseId == null) {
-            throw new IllegalStateException("가맹점 문서는 franchiseId가 필수입니다");
+        if (documentType == DocumentType.HQ_MONTHLY_SUM) {
+            if (documentOwner != DocumentOwner.HQ || periodType != PeriodType.MONTHLY) {
+                throw new IllegalStateException("본사 월별 요약 리포트는 HQ 소유이며 MONTHLY 주기여야 합니다.");
+            }
+            if (settlementMonth == null) {
+                throw new IllegalStateException("본사 월별 요약 리포트는 settlementMonth가 필수입니다.");
+            }
+            return;
+        }
+
+        if (documentType == DocumentType.VOUCHER_EXCEL) {
+            if (documentOwner != DocumentOwner.HQ || periodType != PeriodType.MONTHLY) {
+                throw new IllegalStateException("본사 월별 정산 엑셀은 HQ 소유이며 MONTHLY 주기여야 합니다.");
+            }
+            if (settlementMonth == null) {
+                throw new IllegalStateException("본사 월별 정산 엑셀은 settlementMonth가 필수입니다.");
+            }
+            return;
+        }
+
+        // 2. 가맹점 문서인 경우 franchiseId 필수 체크
+        if (documentOwner == DocumentOwner.FRANCHISE && (franchiseId == null || franchiseId <= 0)) {
+            throw new IllegalStateException("가맹점 문서는 franchiseId가 필수이며 양수여야 합니다.");
         }
 
         // 가집계(PROVISIONAL) 문서는 연관 ID가 없어도 허용

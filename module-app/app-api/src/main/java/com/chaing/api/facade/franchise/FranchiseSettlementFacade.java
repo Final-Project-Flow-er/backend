@@ -326,15 +326,11 @@ public class FranchiseSettlementFacade {
                         DailySettlementReceipt receipt = dailyService.getByFranchiseAndDate(franchiseId, date);
 
                         // 2. 해당 정산 ID로 이미 생성된 문서가 있는지 확인
-                        try {
-                                SettlementDocument existingDoc = documentService
-                                                .getDailyDocument(receipt.getDailyReceiptId());
-                                return minioService.getFileUrl(existingDoc.getObjectKey(), BucketName.SETTLEMENTS);
-                        } catch (SettlementException e) {
-                                // 상황 1: 문서가 아직 생성되지 않음 -> 아래에서 생성 진행
-                                if (e.getErrorCode() != SettlementErrorCode.DOCUMENT_STILL_GENERATING) {
-                                        throw e;
-                                }
+                        java.util.Optional<SettlementDocument> existingDoc = documentService
+                                        .getDailyDocument(receipt.getDailyReceiptId());
+                        if (existingDoc.isPresent()) {
+                                return minioService.getFileUrl(existingDoc.get().getObjectKey(),
+                                                BucketName.SETTLEMENTS);
                         }
 
                         // 3. 문서가 없으면 실시간 생성

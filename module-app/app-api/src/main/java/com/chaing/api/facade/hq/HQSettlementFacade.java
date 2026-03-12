@@ -49,9 +49,6 @@ public class HQSettlementFacade {
                 List<com.chaing.domain.settlements.entity.DailySettlementReceipt> receipts = dailyService
                                 .getAllByDate(request.date(), null);
 
-                BigDecimal totalFinal = receipts.stream()
-                                .map(com.chaing.domain.settlements.entity.DailySettlementReceipt::getFinalAmount)
-                                .reduce(BigDecimal.ZERO, BigDecimal::add);
                 BigDecimal totalOrder = receipts.stream()
                                 .map(com.chaing.domain.settlements.entity.DailySettlementReceipt::getOrderAmount)
                                 .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -71,7 +68,12 @@ public class HQSettlementFacade {
                                 .map(com.chaing.domain.settlements.entity.DailySettlementReceipt::getLossAmount)
                                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-                return HQSettlementSummaryResponse.of(totalFinal, totalOrder, totalSale, totalCommission, totalDelivery,
+                // 본사 관점 최종 정산 금액 = 발주 매출 + 수수료 수익 + 배송 수익 - 반품 차감액 - 본사 손실
+                BigDecimal hqTotalFinal = totalOrder.add(totalCommission).add(totalDelivery)
+                                .subtract(totalRefund).subtract(totalLoss);
+
+                return HQSettlementSummaryResponse.of(hqTotalFinal, totalOrder, totalSale, totalCommission,
+                                totalDelivery,
                                 totalRefund, totalLoss);
         }
 
@@ -147,9 +149,6 @@ public class HQSettlementFacade {
                 List<com.chaing.domain.settlements.entity.MonthlySettlement> settlements = monthlyService
                                 .getAllByMonth(request.month(), null);
 
-                BigDecimal totalFinal = settlements.stream()
-                                .map(com.chaing.domain.settlements.entity.MonthlySettlement::getFinalSettlementAmount)
-                                .reduce(BigDecimal.ZERO, BigDecimal::add);
                 BigDecimal totalOrder = settlements.stream()
                                 .map(com.chaing.domain.settlements.entity.MonthlySettlement::getOrderAmount)
                                 .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -169,7 +168,12 @@ public class HQSettlementFacade {
                                 .map(com.chaing.domain.settlements.entity.MonthlySettlement::getLossAmount)
                                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-                return HQSettlementSummaryResponse.of(totalFinal, totalOrder, totalSale, totalCommission, totalDelivery,
+                // 본사 관점 최종 정산 금액
+                BigDecimal hqTotalFinal = totalOrder.add(totalCommission).add(totalDelivery)
+                                .subtract(totalRefund).subtract(totalLoss);
+
+                return HQSettlementSummaryResponse.of(hqTotalFinal, totalOrder, totalSale, totalCommission,
+                                totalDelivery,
                                 totalRefund, totalLoss);
         }
 
@@ -399,15 +403,10 @@ public class HQSettlementFacade {
         public String getDailyAllSummaryPdf(HQSettlementDailyAllPdfRequest request) {
                 log.info("[DEBUG] Facade - getDailyAllSummaryPdf requested for date: {}", request.date());
                 // 1. 이미 생성된 문서가 있는지 확인
-                try {
-                        com.chaing.domain.settlements.entity.SettlementDocument existingDoc = documentService
-                                        .getHQDailyDocument(request.date());
-                        return minioService.getFileUrl(existingDoc.getObjectKey(), BucketName.SETTLEMENTS);
-                } catch (com.chaing.domain.settlements.exception.SettlementException e) {
-                        // 문서가 아직 생성되지 않은 경우(DOCUMENT_STILL_GENERATING)는 예외를 잡아서 아래 생성 로직 진행
-                        if (e.getErrorCode() != com.chaing.domain.settlements.exception.SettlementErrorCode.DOCUMENT_STILL_GENERATING) {
-                                throw e;
-                        }
+                java.util.Optional<com.chaing.domain.settlements.entity.SettlementDocument> existingDoc = documentService
+                                .getHQDailyDocument(request.date());
+                if (existingDoc.isPresent()) {
+                        return minioService.getFileUrl(existingDoc.get().getObjectKey(), BucketName.SETTLEMENTS);
                 }
 
                 try {
@@ -417,6 +416,7 @@ public class HQSettlementFacade {
 
                         if (receipts.isEmpty()) {
                                 // 상황 2: 정산 데이터 자체가 없음 (휴무일 등)
+                                log.warn("[WARN] No receipts found for HQ Daily PDF: {}", request.date());
                                 throw new com.chaing.domain.settlements.exception.SettlementException(
                                                 com.chaing.domain.settlements.exception.SettlementErrorCode.SETTLEMENT_DATA_EMPTY);
                         }
@@ -458,14 +458,10 @@ public class HQSettlementFacade {
         @Transactional
         public String getMonthlyAllSummaryPdf(HQSettlementMonthlyAllPdfRequest request) {
                 // 1. 이미 생성된 문서가 있는지 확인
-                try {
-                        com.chaing.domain.settlements.entity.SettlementDocument existingDoc = documentService
-                                        .getHQMonthlyDocument(request.month());
-                        return minioService.getFileUrl(existingDoc.getObjectKey(), BucketName.SETTLEMENTS);
-                } catch (com.chaing.domain.settlements.exception.SettlementException e) {
-                        if (e.getErrorCode() != com.chaing.domain.settlements.exception.SettlementErrorCode.DOCUMENT_STILL_GENERATING) {
-                                throw e;
-                        }
+                java.util.Optional<com.chaing.domain.settlements.entity.SettlementDocument> existingDoc = documentService
+                                .getHQMonthlyDocument(request.month());
+                if (existingDoc.isPresent()) {
+                        return minioService.getFileUrl(existingDoc.get().getObjectKey(), BucketName.SETTLEMENTS);
                 }
 
                 try {
@@ -475,7 +471,7 @@ public class HQSettlementFacade {
 
                         if (settlements.isEmpty()) {
                                 throw new com.chaing.domain.settlements.exception.SettlementException(
-                                                com.chaing.domain.settlements.exception.SettlementErrorCode.MONTHLY_SETTLEMENT_NOT_FOUND);
+                                                com.chaing.domain.settlements.exception.SettlementErrorCode.SETTLEMENT_DATA_EMPTY);
                         }
 
                         // 3. 파일 생성 서비스 호출
@@ -520,15 +516,11 @@ public class HQSettlementFacade {
                                         .getByFranchiseAndDate(franchiseId, request.date());
 
                         // 1. 이미 생성된 문서가 있는지 확인
-                        try {
-                                com.chaing.domain.settlements.entity.SettlementDocument existingDoc = documentService
-                                                .getDailyDocument(receipt.getDailyReceiptId());
-                                return minioService.getFileUrl(existingDoc.getObjectKey(), BucketName.SETTLEMENTS);
-                        } catch (com.chaing.domain.settlements.exception.SettlementException e) {
-                                // 상황 1: 문서가 아직 생성되지 않음 -> 아래에서 생성 진행
-                                if (e.getErrorCode() != com.chaing.domain.settlements.exception.SettlementErrorCode.DOCUMENT_STILL_GENERATING) {
-                                        throw e;
-                                }
+                        java.util.Optional<com.chaing.domain.settlements.entity.SettlementDocument> existingDoc = documentService
+                                        .getDailyDocument(receipt.getDailyReceiptId());
+                        if (existingDoc.isPresent()) {
+                                return minioService.getFileUrl(existingDoc.get().getObjectKey(),
+                                                BucketName.SETTLEMENTS);
                         }
 
                         List<com.chaing.domain.settlements.entity.DailyReceiptLine> lines = dailyService
@@ -637,7 +629,7 @@ public class HQSettlementFacade {
 
                         if (settlements.isEmpty()) {
                                 throw new com.chaing.domain.settlements.exception.SettlementException(
-                                                com.chaing.domain.settlements.exception.SettlementErrorCode.MONTHLY_SETTLEMENT_NOT_FOUND);
+                                                com.chaing.domain.settlements.exception.SettlementErrorCode.SETTLEMENT_DATA_EMPTY);
                         }
 
                         // 2. 파일 생성 서비스 호출 (Excel 생성)

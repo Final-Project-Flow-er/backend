@@ -227,8 +227,8 @@ public class SettlementFileServiceImpl implements SettlementFileService {
             document.add(new Paragraph("총 가맹점 수: " + receipts.size()));
             document.add(new Paragraph("--------------------------------------------"));
 
-            BigDecimal totalFinal = receipts.stream()
-                    .map(DailySettlementReceipt::getFinalAmount)
+            BigDecimal totalOrder = receipts.stream()
+                    .map(DailySettlementReceipt::getOrderAmount)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
             BigDecimal totalSale = receipts.stream()
                     .map(DailySettlementReceipt::getTotalSaleAmount)
@@ -236,11 +236,28 @@ public class SettlementFileServiceImpl implements SettlementFileService {
             BigDecimal totalFee = receipts.stream()
                     .map(DailySettlementReceipt::getCommissionFee)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal totalDelivery = receipts.stream()
+                    .map(DailySettlementReceipt::getDeliveryFee)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal totalRefund = receipts.stream()
+                    .map(DailySettlementReceipt::getRefundAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal totalLoss = receipts.stream()
+                    .map(DailySettlementReceipt::getLossAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-            document.add(new Paragraph("1. 전체 매출 합계: " + totalSale + "원"));
-            document.add(new Paragraph("2. 전체 수수료 수익: " + totalFee + "원"));
+            // 본사 관점 최종 정산 금액 = 발주 매출 + 수수료 + 배송비 - 반품 - 손실
+            BigDecimal hqTotalFinal = totalOrder.add(totalFee).add(totalDelivery)
+                    .subtract(totalRefund).subtract(totalLoss);
+
+            document.add(new Paragraph("1. 전체 매출 합계(참고): " + totalSale + "원"));
+            document.add(new Paragraph("2. 전체 발주 매출: " + totalOrder + "원"));
+            document.add(new Paragraph("3. 전체 수수료 수익: " + totalFee + "원"));
+            document.add(new Paragraph("4. 전체 배송 수익: " + totalDelivery + "원"));
+            document.add(new Paragraph("5. 전체 반품 차감액: -" + totalRefund + "원"));
+            document.add(new Paragraph("6. 전체 본사 손실액: -" + totalLoss + "원"));
             document.add(new Paragraph("--------------------------------------------"));
-            document.add(new Paragraph("전체 최종 정산 합계: " + totalFinal + "원").setBold().setFontSize(14));
+            document.add(new Paragraph("전체 최종 정산 합계: " + hqTotalFinal + "원").setBold().setFontSize(14));
 
             document.add(new Paragraph("\n[가맹점별 요약 내역]"));
             Table table = new Table(UnitValue.createPointArray(new float[] { 80, 120, 120, 120 }));
@@ -281,16 +298,34 @@ public class SettlementFileServiceImpl implements SettlementFileService {
             document.add(new Paragraph("총 가맹점 수: " + settlements.size()));
             document.add(new Paragraph("--------------------------------------------"));
 
-            BigDecimal totalFinal = settlements.stream()
-                    .map(MonthlySettlement::getFinalSettlementAmount)
+            BigDecimal totalOrder = settlements.stream()
+                    .map(MonthlySettlement::getOrderAmount)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
             BigDecimal totalSale = settlements.stream()
                     .map(MonthlySettlement::getTotalSaleAmount)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal totalFee = settlements.stream()
+                    .map(MonthlySettlement::getCommissionFee)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal totalDelivery = settlements.stream()
+                    .map(MonthlySettlement::getDeliveryFee)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal totalRefund = settlements.stream()
+                    .map(MonthlySettlement::getRefundAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal totalLoss = settlements.stream()
+                    .map(MonthlySettlement::getLossAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-            document.add(new Paragraph("1. 전체 매출 합계: " + totalSale + "원"));
+            // 본사 관점 최종 정산 금액
+            BigDecimal hqTotalFinal = totalOrder.add(totalFee).add(totalDelivery)
+                    .subtract(totalRefund).subtract(totalLoss);
+
+            document.add(new Paragraph("1. 전체 매출 합계(참고): " + totalSale + "원"));
+            document.add(new Paragraph("2. 전체 발주 매출: " + totalOrder + "원"));
+            document.add(new Paragraph("3. 전체 수수료 수익: " + totalFee + "원"));
             document.add(new Paragraph("--------------------------------------------"));
-            document.add(new Paragraph("전체 최종 정산 합계: " + totalFinal + "원").setBold().setFontSize(14));
+            document.add(new Paragraph("전체 최종 정산 합계: " + hqTotalFinal + "원").setBold().setFontSize(14));
 
             document.add(new Paragraph("\n[가맹점별 요약 내역]"));
             Table table = new Table(UnitValue.createPointArray(new float[] { 80, 150, 150 }));

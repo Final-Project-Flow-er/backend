@@ -41,7 +41,9 @@ public class HQSettlementController {
         @GetMapping("/daily-documents/{dailyReceiptId}")
         public ResponseEntity<ApiResponse<SettlementDocument>> getDailyDocument(
                         @PathVariable("dailyReceiptId") Long dailyReceiptId) {
-                SettlementDocument document = documentService.getDailyDocument(dailyReceiptId);
+                SettlementDocument document = documentService.getDailyDocument(dailyReceiptId)
+                                .orElseThrow(() -> new com.chaing.domain.settlements.exception.SettlementException(
+                                                com.chaing.domain.settlements.exception.SettlementErrorCode.DOCUMENT_STILL_GENERATING));
                 return ResponseEntity.ok(ApiResponse.success(document));
         }
 

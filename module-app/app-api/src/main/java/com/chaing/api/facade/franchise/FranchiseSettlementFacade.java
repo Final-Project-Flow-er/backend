@@ -548,8 +548,23 @@ public class FranchiseSettlementFacade {
                 String fileName = "settlement/provisional/FR_" + franchiseId + "_" + month + "_Preview_"
                                 + System.currentTimeMillis() + ".pdf";
                 minioService.uploadFile(pdfBytes, fileName, "application/pdf", BucketName.SETTLEMENTS);
+                String fileUrl = minioService.getFileUrl(fileName, BucketName.SETTLEMENTS);
 
-                return minioService.getFileUrl(fileName, BucketName.SETTLEMENTS);
+                // 6. DB에 메타데이터 저장 (추적용)
+                documentService.save(SettlementDocument.builder()
+                                .periodType(PeriodType.MONTHLY)
+                                .documentType(DocumentType.PROVISIONAL_RECEIPT_PDF)
+                                .documentOwner(DocumentOwner.FRANCHISE)
+                                .storageProvider("MINIO")
+                                .bucket(BucketName.SETTLEMENTS.getBucketName())
+                                .objectKey(fileName)
+                                .fileUrl(fileUrl)
+                                .fileName(fileName.substring(fileName.lastIndexOf("/") + 1))
+                                .contentType("application/pdf")
+                                .fileSize((long) pdfBytes.length)
+                                .build());
+
+                return fileUrl;
         }
 
         private String generateProvisionalMonthlyExcel(Long franchiseId, YearMonth month) {
@@ -580,8 +595,23 @@ public class FranchiseSettlementFacade {
                 minioService.uploadFile(excelBytes, fileName,
                                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                                 BucketName.SETTLEMENTS);
+                String fileUrl = minioService.getFileUrl(fileName, BucketName.SETTLEMENTS);
 
-                return minioService.getFileUrl(fileName, BucketName.SETTLEMENTS);
+                // 5. DB에 메타데이터 저장 (추적용)
+                documentService.save(SettlementDocument.builder()
+                                .periodType(PeriodType.MONTHLY)
+                                .documentType(DocumentType.PROVISIONAL_VOUCHER_EXCEL)
+                                .documentOwner(DocumentOwner.FRANCHISE)
+                                .storageProvider("MINIO")
+                                .bucket(BucketName.SETTLEMENTS.getBucketName())
+                                .objectKey(fileName)
+                                .fileUrl(fileUrl)
+                                .fileName(fileName.substring(fileName.lastIndexOf("/") + 1))
+                                .contentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                                .fileSize((long) excelBytes.length)
+                                .build());
+
+                return fileUrl;
         }
 
         private MonthlySettlement aggregateMonthlySettlement(Long franchiseId, YearMonth month,
@@ -685,7 +715,22 @@ public class FranchiseSettlementFacade {
                 String fileName = "settlement/provisional/FR_" + franchiseId + "_Daily_Preview_" + date + "_"
                                 + System.currentTimeMillis() + ".pdf";
                 minioService.uploadFile(pdfBytes, fileName, "application/pdf", BucketName.SETTLEMENTS);
+                String fileUrl = minioService.getFileUrl(fileName, BucketName.SETTLEMENTS);
 
-                return minioService.getFileUrl(fileName, BucketName.SETTLEMENTS);
+                // 5. DB에 메타데이터 저장 (추적용)
+                documentService.save(SettlementDocument.builder()
+                                .periodType(PeriodType.DAILY)
+                                .documentType(DocumentType.PROVISIONAL_RECEIPT_PDF)
+                                .documentOwner(DocumentOwner.FRANCHISE)
+                                .storageProvider("MINIO")
+                                .bucket(BucketName.SETTLEMENTS.getBucketName())
+                                .objectKey(fileName)
+                                .fileUrl(fileUrl)
+                                .fileName(fileName.substring(fileName.lastIndexOf("/") + 1))
+                                .contentType("application/pdf")
+                                .fileSize((long) pdfBytes.length)
+                                .build());
+
+                return fileUrl;
         }
 }

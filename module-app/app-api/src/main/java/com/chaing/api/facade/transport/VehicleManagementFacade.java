@@ -5,7 +5,11 @@ import com.chaing.api.dto.transport.management.request.UpdateVehicleRequest;
 import com.chaing.api.dto.transport.management.request.UpdateVehicleStatusRequest;
 import com.chaing.api.dto.transport.management.response.VehicleDetailResponse;
 import com.chaing.api.dto.transport.management.response.VehicleSummaryResponse;
+import com.chaing.core.enums.UsableStatus;
+import com.chaing.domain.transports.entity.Transport;
 import com.chaing.domain.transports.entity.Vehicle;
+import com.chaing.domain.transports.exception.TransportErrorCode;
+import com.chaing.domain.transports.exception.TransportException;
 import com.chaing.domain.transports.service.TransportManagementService;
 import com.chaing.domain.transports.service.VehicleManagementService;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +29,8 @@ public class VehicleManagementFacade {
     // 운송 차량 등록
     @Transactional
     public VehicleDetailResponse createVehicle(CreateVehicleRequest request) {
-        transportManagementService.getById(request.transportId());
+        validateTransportIsActive(request.transportId());
+//        transportManagementService.getById(request.transportId());
         Vehicle vehicle = vehicleManagementService.createVehicle(request.toCommand());
         return VehicleDetailResponse.from(vehicle);
     }
@@ -45,17 +50,27 @@ public class VehicleManagementFacade {
     // 운송 차량 수정
     @Transactional
     public VehicleDetailResponse updateVehicle(Long id, UpdateVehicleRequest request) {
-        if (request.transportId() != null) {
-            transportManagementService.getById(request.transportId());
+        Vehicle vehicle = vehicleManagementService.getById(id);
+
+        if (request.status() == UsableStatus.ACTIVE) {
+            validateTransportIsActive(vehicle.getTransportId());
+        }
+        if (request.transportId() != null && !request.transportId().equals(vehicle.getTransportId())) {
+            validateTransportIsActive(request.transportId());
         }
 
-        Vehicle vehicle = vehicleManagementService.updateVehicle(id, request.toCommand());
-        return VehicleDetailResponse.from(vehicle);
+        Vehicle updatedVehicle = vehicleManagementService.updateVehicle(id, request.toCommand());
+        return VehicleDetailResponse.from(updatedVehicle);
     }
 
     // 운송 차량 상태 변경
     @Transactional
     public VehicleDetailResponse updateVehicleStatus(Long id, UpdateVehicleStatusRequest request) {
+        if (request.status() == UsableStatus.ACTIVE) {
+            Vehicle vehicle = vehicleManagementService.getById(id);
+            validateTransportIsActive(vehicle.getTransportId());
+        }
+
         Vehicle vehicle = vehicleManagementService.updateStatus(id, request.status());
         return VehicleDetailResponse.from(vehicle);
     }
@@ -64,5 +79,13 @@ public class VehicleManagementFacade {
     @Transactional
     public void deleteVehicle(Long id) {
         vehicleManagementService.deleteVehicle(id);
+    }
+
+    // 운송 업체가 활성화 상태인지 검증
+    private void validateTransportIsActive(Long transportId) {
+        Transport transport = transportManagementService.getById(transportId);
+        if (transport.getStatus() == UsableStatus.INACTIVE) {
+            throw new TransportException(TransportErrorCode.INACTIVE_TRANSPORT_VEHICLE);
+        }
     }
 }

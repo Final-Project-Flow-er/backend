@@ -369,7 +369,7 @@ public class HQOrderService {
         // Set<orderCode>
         Set<String> requestedOrderCodes = new HashSet<>(orderCodes);
 
-        if (requestedOrderCodes.containsAll(existingOrderCodes)) {
+        if (!requestedOrderCodes.containsAll(existingOrderCodes)) {
             throw new HQOrderException(HQOrderErrorCode.DATA_OMISSION);
         }
 

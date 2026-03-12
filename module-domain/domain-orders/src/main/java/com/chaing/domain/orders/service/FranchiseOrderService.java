@@ -598,7 +598,7 @@ public class FranchiseOrderService {
         // Set<FranchiseOrder OrderCode>
         Set<String> existingOrderCodes = orders.stream().map(FranchiseOrder::getOrderCode).collect(Collectors.toSet());
 
-        if (!orderCodes.containsAll(existingOrderCodes)) {
+        if (!existingOrderCodes.containsAll(orderCodes)) {
             throw new FranchiseOrderException(FranchiseOrderErrorCode.DATA_OMISSION);
         }
 

@@ -7,7 +7,16 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDate;
+import java.util.List;
+
 public interface TransportRepository extends JpaRepository<Transport, Long> {
+
+    List<Transport> findAllByContractEndDateBeforeAndStatus(LocalDate today, UsableStatus status);
+
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE Transport t SET t.status = 'INACTIVE' WHERE t.transportId IN :ids")
+    void deactivateTransportsByIds(@Param("ids") List<Long> ids);
 
     @Modifying(clearAutomatically = true)
     @Query("UPDATE Transport t SET t.status = :status WHERE t.transportId = :id AND t.deletedAt IS NULL")

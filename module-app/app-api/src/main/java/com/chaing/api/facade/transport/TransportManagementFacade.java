@@ -15,6 +15,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -71,5 +73,14 @@ public class TransportManagementFacade {
     public void deleteTransport(Long id) {
         transportManagementService.deleteTransport(id);
         vehicleManagementService.deleteVehiclesByTransportId(id);
+    }
+
+    // 만료 업체 및 차량 일괄 처리
+    @Transactional
+    public void processExpiredContracts() {
+        List<Long> expiredIds = transportManagementService.deactivateExpiredContractsAndGetIds();
+        for (Long transportId : expiredIds) {
+            vehicleManagementService.deactivateVehiclesByTransportId(transportId);
+        }
     }
 }

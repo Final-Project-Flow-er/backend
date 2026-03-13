@@ -32,7 +32,7 @@ import com.chaing.domain.settlements.exception.SettlementErrorCode;
 import com.chaing.domain.settlements.exception.SettlementException;
 import com.chaing.domain.settlements.repository.interfaces.SettlementVoucherRepository;
 import com.chaing.domain.settlements.entity.SettlementVoucher;
-import com.chaing.api.service.settlement.SettlementFileService;
+import com.chaing.domain.settlements.service.SettlementFileService;
 import com.chaing.core.enums.BucketName;
 import com.chaing.core.service.MinioService;
 import com.chaing.domain.settlements.entity.SettlementDocument;

@@ -1,9 +1,10 @@
-package com.chaing.api.service.settlement;
+package com.chaing.domain.settlements.service.impl;
 
 import com.chaing.domain.settlements.entity.DailyReceiptLine;
 import com.chaing.domain.settlements.entity.DailySettlementReceipt;
 import com.chaing.domain.settlements.entity.MonthlySettlement;
 import com.chaing.domain.settlements.entity.SettlementVoucher;
+import com.chaing.domain.settlements.service.SettlementFileService;
 import com.itextpdf.kernel.font.PdfFont;
 import com.itextpdf.kernel.font.PdfFontFactory;
 import com.itextpdf.kernel.pdf.PdfDocument;
@@ -154,48 +155,40 @@ public class SettlementFileServiceImpl implements SettlementFileService {
     }
 
     @Override
-    public byte[] createMonthlyReceiptPdf(com.chaing.domain.settlements.entity.MonthlySettlement settlement,
-            List<com.chaing.domain.settlements.entity.SettlementVoucher> vouchers) {
+    public byte[] createMonthlyReceiptPdf(MonthlySettlement settlement, List<SettlementVoucher> vouchers) {
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
             PdfWriter writer = new PdfWriter(baos);
-            com.itextpdf.kernel.pdf.PdfDocument pdf = new com.itextpdf.kernel.pdf.PdfDocument(writer);
-            com.itextpdf.layout.Document document = new com.itextpdf.layout.Document(pdf);
+            PdfDocument pdf = new PdfDocument(writer);
+            Document document = new Document(pdf);
             PdfFont font = getKoreanFont();
             if (font != null) {
                 document.setFont(font);
             }
 
-            document.add(
-                    new com.itextpdf.layout.element.Paragraph("Monthly Settlement Receipt").setBold().setFontSize(20));
-            document.add(new com.itextpdf.layout.element.Paragraph("가맹점 ID: " + settlement.getFranchiseId()));
-            document.add(new com.itextpdf.layout.element.Paragraph("정산 월: " + settlement.getSettlementMonth()));
-            document.add(new com.itextpdf.layout.element.Paragraph("--------------------------------------------"));
-            document.add(
-                    new com.itextpdf.layout.element.Paragraph("1. 총 매출액: " + settlement.getTotalSaleAmount() + "원"));
-            document.add(new com.itextpdf.layout.element.Paragraph("2. 차감 내역:"));
-            document.add(
-                    new com.itextpdf.layout.element.Paragraph("   - 발주 대금: -" + settlement.getOrderAmount() + "원"));
-            document.add(
-                    new com.itextpdf.layout.element.Paragraph("   - 정산 수수료: -" + settlement.getCommissionFee() + "원"));
-            document.add(new com.itextpdf.layout.element.Paragraph("   - 배송비: -" + settlement.getDeliveryFee() + "원"));
-            document.add(
-                    new com.itextpdf.layout.element.Paragraph("   - 본사 손실액: -" + settlement.getLossAmount() + "원"));
-            document.add(new com.itextpdf.layout.element.Paragraph("3. 가산 내역:"));
-            document.add(
-                    new com.itextpdf.layout.element.Paragraph("   - 반품 환급액: +" + settlement.getRefundAmount() + "원"));
-            document.add(new com.itextpdf.layout.element.Paragraph("--------------------------------------------"));
-            document.add(new com.itextpdf.layout.element.Paragraph(
-                    "최종 정산 금액: " + settlement.getFinalSettlementAmount() + "원").setBold().setFontSize(14));
+            document.add(new Paragraph("Monthly Settlement Receipt").setBold().setFontSize(20));
+            document.add(new Paragraph("가맹점 ID: " + settlement.getFranchiseId()));
+            document.add(new Paragraph("정산 월: " + settlement.getSettlementMonth()));
+            document.add(new Paragraph("--------------------------------------------"));
+            document.add(new Paragraph("1. 총 매출액: " + settlement.getTotalSaleAmount() + "원"));
+            document.add(new Paragraph("2. 차감 내역:"));
+            document.add(new Paragraph("   - 발주 대금: -" + settlement.getOrderAmount() + "원"));
+            document.add(new Paragraph("   - 정산 수수료: -" + settlement.getCommissionFee() + "원"));
+            document.add(new Paragraph("   - 배송비: -" + settlement.getDeliveryFee() + "원"));
+            document.add(new Paragraph("   - 본사 손실액: -" + settlement.getLossAmount() + "원"));
+            document.add(new Paragraph("3. 가산 내역:"));
+            document.add(new Paragraph("   - 반품 환급액: +" + settlement.getRefundAmount() + "원"));
+            document.add(new Paragraph("--------------------------------------------"));
+            document.add(new Paragraph("최종 정산 금액: " + settlement.getFinalSettlementAmount() + "원").setBold()
+                    .setFontSize(14));
 
-            document.add(new com.itextpdf.layout.element.Paragraph("\n[상세 전표 목록]"));
-            com.itextpdf.layout.element.Table table = new com.itextpdf.layout.element.Table(
-                    com.itextpdf.layout.properties.UnitValue.createPointArray(new float[] { 100, 80, 150, 100 }));
+            document.add(new Paragraph("\n[상세 전표 목록]"));
+            Table table = new Table(UnitValue.createPointArray(new float[] { 100, 80, 150, 100 }));
             table.addCell("날짜");
             table.addCell("유형");
             table.addCell("설명");
             table.addCell("금액");
 
-            for (com.chaing.domain.settlements.entity.SettlementVoucher v : vouchers) {
+            for (SettlementVoucher v : vouchers) {
                 table.addCell(v.getOccurredAt().toLocalDate().toString());
                 table.addCell(v.getVoucherType().name());
                 table.addCell(v.getDescription());
@@ -246,7 +239,6 @@ public class SettlementFileServiceImpl implements SettlementFileService {
                     .map(DailySettlementReceipt::getLossAmount)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-            // 본사 관점 최종 정산 금액 = 발주 매출 + 수수료 + 배송비 - 반품 - 손실
             BigDecimal hqTotalFinal = totalOrder.add(totalFee).add(totalDelivery)
                     .subtract(totalRefund).subtract(totalLoss);
 
@@ -323,7 +315,6 @@ public class SettlementFileServiceImpl implements SettlementFileService {
                     .map(MonthlySettlement::getLossAmount)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-            // 본사 관점 최종 정산 금액
             BigDecimal hqTotalFinal = totalOrder.add(totalFee).add(totalDelivery)
                     .subtract(totalRefund).subtract(totalLoss);
 
@@ -362,8 +353,6 @@ public class SettlementFileServiceImpl implements SettlementFileService {
 
     private PdfFont getKoreanFont() {
         try {
-            // 프로젝트 내부 리소스(NanumGothic.ttf)에서 폰트를 로드합니다.
-            // 모든 배포 환경에서도 동일한 폰트가 보장됩니다.
             ClassPathResource fontResource = new ClassPathResource("fonts/NanumGothic.ttf");
             if (!fontResource.exists()) {
                 log.warn("NanumGothic.ttf not found in resources, falling back to default font");
@@ -373,7 +362,7 @@ public class SettlementFileServiceImpl implements SettlementFileService {
             return PdfFontFactory.createFont(fontBytes, PdfEncodings.IDENTITY_H);
         } catch (Exception e) {
             log.error("Failed to load Korean font from resources", e);
-            return null; // 폰트 로드 실패 시 기본 폰트로 대체 (영어만 나옴)
+            return null;
         }
     }
 }

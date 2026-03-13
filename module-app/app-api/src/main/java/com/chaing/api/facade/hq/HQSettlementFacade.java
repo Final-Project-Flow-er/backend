@@ -8,7 +8,7 @@ import com.chaing.domain.settlements.enums.PeriodType;
 import com.chaing.domain.settlements.enums.VoucherType;
 import com.chaing.domain.settlements.service.DailySettlementService;
 import com.chaing.domain.settlements.service.MonthlySettlementService;
-import com.chaing.api.service.settlement.SettlementFileService;
+import com.chaing.domain.settlements.service.SettlementFileService;
 import com.chaing.core.enums.BucketName;
 import com.chaing.core.service.MinioService;
 import lombok.RequiredArgsConstructor;

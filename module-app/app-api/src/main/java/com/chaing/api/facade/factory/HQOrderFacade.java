@@ -213,7 +213,7 @@ public class HQOrderFacade {
                             .orderId(item.orderId())
                             .orderItemId(item.orderItemId())
                             .productId(item.productId())
-                            .productCode(info != null ? info.productCode() : null)
+                            .productCode(info.productCode())
                             .quantity(item.quantity())
                             .unitPrice(item.unitPrice())
                             .totalPrice(item.totalPrice())

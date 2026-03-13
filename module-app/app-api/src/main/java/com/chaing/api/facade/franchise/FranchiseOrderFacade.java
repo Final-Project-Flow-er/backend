@@ -184,6 +184,10 @@ public class FranchiseOrderFacade {
                                 FranchiseOrderItemCommand orderItem = orderItemCommandByOrderItemId.get(orderItemId);
                                 ProductInfo productInfo = productInfoByProductId.get(entry.getKey());
 
+                                if (productInfo == null) {
+                                    throw new OrderException(OrderErrorCode.PRODUCT_NOT_FOUND);
+                                }
+
                                 return FranchiseOrderItemDetailResponse.builder()
                                         .productCode(productInfo.productCode())
                                         .productName(productInfo.productName())

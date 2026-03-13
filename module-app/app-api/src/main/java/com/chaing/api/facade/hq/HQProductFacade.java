@@ -1,8 +1,10 @@
 package com.chaing.api.facade.hq;
 
+import com.chaing.api.dto.hq.products.request.HQComponentCreateRequest;
 import com.chaing.api.dto.hq.products.request.HQProductCreateRequest;
 import com.chaing.api.dto.hq.products.request.HQProductSearchRequest;
 import com.chaing.api.dto.hq.products.request.HQProductUpdateRequest;
+import com.chaing.api.dto.hq.products.response.HQComponentResponse;
 import com.chaing.api.dto.hq.products.response.HQProductListResponse;
 import com.chaing.api.dto.hq.products.response.HQProductResponse;
 import com.chaing.core.enums.BucketName;
@@ -11,6 +13,7 @@ import com.chaing.domain.products.dto.request.ProductRequest;
 import com.chaing.domain.products.dto.request.ProductSearchRequest;
 import com.chaing.domain.products.dto.request.ProductUpdateRequest;
 import com.chaing.domain.products.dto.response.ProductListResponse;
+import com.chaing.domain.products.entity.Component;
 import com.chaing.domain.products.exception.ProductErrorCode;
 import com.chaing.domain.products.exception.ProductException;
 import com.chaing.domain.products.service.ProductService;
@@ -65,6 +68,12 @@ public class HQProductFacade {
 
     }
 
+    public List<HQComponentResponse> getComponents() {
+        return productService.getComponents().stream()
+                .map(this::toComponentResponse)
+                .toList();
+    }
+
     private String spicyValid(String productCode) {
         if (productCode == null || productCode.length() < 4)
             throw new ProductException(ProductErrorCode.INVALID_PRODUCT_CODE_FORMAT);
@@ -109,6 +118,17 @@ public class HQProductFacade {
         productService.createProductTypes(type, productName);
     }
 
+    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
+    public HQComponentResponse createComponent(HQComponentCreateRequest request) {
+        Component component = productService.createComponent(request.name());
+        return toComponentResponse(component);
+    }
+
+    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
+    public void deleteComponent(Long componentId) {
+        productService.deleteComponent(componentId);
+    }
+
     private ProductSearchRequest convertProductSearchRequest(HQProductSearchRequest hqProductSearchRequest) {
         return ProductSearchRequest.builder()
                 .productCode(hqProductSearchRequest.productCode())
@@ -144,6 +164,7 @@ public class HQProductFacade {
                 request.supplyPrice(),
                 request.status(),
                 request.kcal(),
+                request.weight(),
                 request.startDate(),
                 request.endDate(),
                 request.description(),
@@ -187,6 +208,13 @@ public class HQProductFacade {
                 }
             });
         }
+    }
+
+    private HQComponentResponse toComponentResponse(Component component) {
+        return HQComponentResponse.builder()
+                .componentId(component.getComponentId())
+                .name(component.getName())
+                .build();
     }
 
 }

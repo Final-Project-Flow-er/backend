@@ -20,6 +20,7 @@ import com.chaing.domain.products.repository.ProductTypeRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
@@ -254,5 +255,50 @@ public class ProductService {
 
     public List<ProductInfoResponse> getInventoryProducts(String productCode, String name) {
         return productRepository.getInventoryProducts(productCode, name);
+    }
+
+    public List<Component> getComponents() {
+        return componentRepository.findAll(Sort.by(Sort.Direction.ASC, "name", "componentId"));
+    }
+
+    public Component createComponent(String rawName) {
+        String normalizedName = normalizeComponentName(rawName);
+
+        if (componentRepository.findFirstByNameOrderByComponentIdAsc(normalizedName).isPresent()) {
+            throw new ProductException(ProductErrorCode.DUPLICATE_COMPONENT_NAME);
+        }
+
+        try {
+            return componentRepository.save(
+                    Component.builder()
+                            .name(normalizedName)
+                            .build());
+        } catch (DataIntegrityViolationException e) {
+            throw new ProductException(ProductErrorCode.DUPLICATE_COMPONENT_NAME);
+        }
+    }
+
+    public void deleteComponent(Long componentId) {
+        Component component = componentRepository.findById(componentId)
+                .orElseThrow(() -> new ProductException(ProductErrorCode.COMPONENT_NOT_FOUND));
+
+        if (productComponentRepository.existsByComponentId(componentId)) {
+            throw new ProductException(ProductErrorCode.COMPONENT_IN_USE);
+        }
+
+        componentRepository.delete(component);
+    }
+
+    private String normalizeComponentName(String rawName) {
+        if (rawName == null) {
+            throw new ProductException(ProductErrorCode.INVALID_COMPONENT_NAME);
+        }
+
+        String normalized = rawName.trim();
+        if (normalized.isEmpty()) {
+            throw new ProductException(ProductErrorCode.INVALID_COMPONENT_NAME);
+        }
+
+        return normalized;
     }
 }

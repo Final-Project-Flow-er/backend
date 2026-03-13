@@ -1,9 +1,11 @@
 package com.chaing.api.controller.hq;
 
 
+import com.chaing.api.dto.hq.products.request.HQComponentCreateRequest;
 import com.chaing.api.dto.hq.products.request.HQProductSearchRequest;
 import com.chaing.api.dto.hq.products.request.HQProductUpdateRequest;
 import com.chaing.api.dto.hq.products.request.HQProductCreateRequest;
+import com.chaing.api.dto.hq.products.response.HQComponentResponse;
 import com.chaing.api.dto.hq.products.response.HQProductListResponse;
 import com.chaing.api.facade.hq.HQProductFacade;
 import com.chaing.core.dto.ApiResponse;
@@ -19,11 +21,15 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -71,5 +77,26 @@ public class HQProductController {
     ) {
         hqProductFacade.createProductTypes(type, productName);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(null));
+    }
+
+    @Operation(summary = "구성용품 목록 조회", description = "등록된 구성용품 목록을 조회합니다.")
+    @GetMapping("/components")
+    public ResponseEntity<ApiResponse<List<HQComponentResponse>>> getComponents() {
+        return ResponseEntity.ok(ApiResponse.success(hqProductFacade.getComponents()));
+    }
+
+    @Operation(summary = "구성용품 추가", description = "구성용품을 추가합니다.")
+    @PostMapping("/components")
+    public ResponseEntity<ApiResponse<HQComponentResponse>> createComponent(
+            @Valid @RequestBody HQComponentCreateRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(hqProductFacade.createComponent(request)));
+    }
+
+    @Operation(summary = "구성용품 삭제", description = "구성용품을 삭제합니다.")
+    @DeleteMapping("/components/{componentId}")
+    public ResponseEntity<ApiResponse<Void>> deleteComponent(
+            @PathVariable Long componentId) {
+        hqProductFacade.deleteComponent(componentId);
+        return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

@@ -253,7 +253,6 @@ public class FranchiseOrderFacade {
 
         return FranchiseOrderUpdateResponse.builder()
                 .orderCode(orderCode)
-                .cancelReason(order.canceledReason())
                 .items(itemResponses)
                 .build();
     }

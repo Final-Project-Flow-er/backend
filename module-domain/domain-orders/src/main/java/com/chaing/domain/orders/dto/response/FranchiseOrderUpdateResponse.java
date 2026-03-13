@@ -8,8 +8,6 @@ import java.util.List;
 public record FranchiseOrderUpdateResponse(
         String orderCode,
 
-        String cancelReason,
-
         List<FranchiseOrderItemDetailResponse> items
 ) {
 }

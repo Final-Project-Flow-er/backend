@@ -443,7 +443,7 @@ public class FranchiseReturnService {
     }
 
     public List<FranchiseReturnCommandForTransit> getReturnForTransit(@NotNull(message = "주문을 선택해주세요") List<Long> returnIds) {
-        List<Returns> selectedReturns = franchiseReturnRepository.findAllByReturnIdIn(returnIds);
+        List<Returns> selectedReturns = franchiseReturnRepository.findAllByReturnIdInAndDeletedAtIsNull(returnIds);
 
         return selectedReturns.stream()
                 .map(selectedReturn -> FranchiseReturnCommandForTransit.from(

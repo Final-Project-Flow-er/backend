@@ -76,7 +76,10 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        configuration.setAllowedOrigins(List.of("http://localhost:5173"));
+        configuration.setAllowedOrigins(List.of(
+                "http://localhost:5173",
+                "http://k8s-default-frontend-76be4407a1-230010893.ap-northeast-2.elb.amazonaws.com"
+        ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Authorization-Refresh", "Content-Type", "Cache-Control", "Connection"));
         configuration.setAllowCredentials(true);

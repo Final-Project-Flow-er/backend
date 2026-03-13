@@ -443,7 +443,20 @@ public class FranchiseReturnService {
     }
 
     public List<FranchiseReturnCommandForTransit> getReturnForTransit(@NotNull(message = "주문을 선택해주세요") List<Long> returnIds) {
+
+        if(returnIds == null || returnIds.isEmpty()) {
+            throw new FranchiseReturnException(FranchiseReturnErrorCode.DATA_OMISSION);
+        }
+
         List<Returns> selectedReturns = franchiseReturnRepository.findAllByReturnIdInAndDeletedAtIsNull(returnIds);
+
+        Set<Long> foundIds = selectedReturns.stream()
+                .map(Returns::getReturnId)
+                .collect(Collectors.toSet());
+
+        if(!foundIds.containsAll(returnIds)) {
+            throw new FranchiseReturnException(FranchiseReturnErrorCode.DATA_OMISSION);
+        }
 
         return selectedReturns.stream()
                 .map(selectedReturn -> FranchiseReturnCommandForTransit.from(

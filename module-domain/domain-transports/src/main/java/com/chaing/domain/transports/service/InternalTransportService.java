@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -58,6 +59,8 @@ public class InternalTransportService {
             Map<String, String> trackingMap,
             Long newWeight) {
 
+        List<String> orderCase = List.of();
+
         // 최대 적재량 조회
         Long maxLoad = reader.getVehicleMaxLoad(vehicleId);
 
@@ -71,7 +74,7 @@ public class InternalTransportService {
         validator.checkTrackingNumber(orders, trackingMap);
 
         // 차량 배정
-        executor.createTransits(vehicleId, orders, trackingMap, null);
+        executor.createTransits(vehicleId, orders, trackingMap, orderCase);
 
         // 차량 상태 확인 및 변경
         if(maxLoad < currentWeight + newWeight + 100) {

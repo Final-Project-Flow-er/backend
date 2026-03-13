@@ -212,7 +212,11 @@ public class InternalTransportFacade {
 
         List<FranchiseReturnCommandForTransit> returns = franchisereturnService.getReturnForTransit(request.selectedIds());
 
-        List<Long> orderIds = returns.stream().map(FranchiseReturnCommandForTransit::franchiseId).toList();
+        List<Long> orderIds = returns.stream().map(FranchiseReturnCommandForTransit::franchiseOrderId).toList();
+
+        for(Long orderId : orderIds) {
+            System.out.println("orderId = " + orderId);
+        }
 
         List<FranchiseOrderForTransitResponse> orders = franchiseOrderService.getOrdersForTransit(orderIds);
 
@@ -231,7 +235,7 @@ public class InternalTransportFacade {
         // 송장 번호 가져오기
         Map<String, String> trackingMap = Map.of(
                 "SE0320260207001", "TRACK-12345",
-                "ORD002", "TRACK-67890"
+                "SE0120260207002", "TRACK-67890"
         );
                 /* 외부 운송 모듈 구현 전 임시 값으로 대체
                 externalTrackingModule.getTrackingNumbers(

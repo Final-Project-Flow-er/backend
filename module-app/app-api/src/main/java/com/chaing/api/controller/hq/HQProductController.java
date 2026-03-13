@@ -12,16 +12,18 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequiredArgsConstructor
@@ -40,21 +42,23 @@ public class HQProductController {
     }
 
     @Operation(summary = "상품 추가", description = "입력한 정보로 상품을 추가합니다.")
-    @PostMapping("/create")
+    @PostMapping(value = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Void> createProduct(
-            @Valid @RequestBody HQProductCreateRequest request
+            @Valid @RequestPart("request") HQProductCreateRequest request,
+            @RequestPart(value = "image", required = false) MultipartFile image
     ) {
-        hqProductFacade.createProduct(request);
+        hqProductFacade.createProduct(request, image);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @Operation(summary = "상품 수정", description = "입력한 정보로 상품을 수정합니다.")
-    @PatchMapping("/{productId}")
+    @PatchMapping(value = "/{productId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<Void>> updateProduct(
             @PathVariable Long productId,
-            @RequestBody HQProductUpdateRequest request) {
+            @RequestPart("request") HQProductUpdateRequest request,
+            @RequestPart(value = "image", required = false) MultipartFile image) {
         {
-            hqProductFacade.updateProduct(productId,request);
+            hqProductFacade.updateProduct(productId, request, image);
             return ResponseEntity.ok(ApiResponse.success(null));
         }
     }

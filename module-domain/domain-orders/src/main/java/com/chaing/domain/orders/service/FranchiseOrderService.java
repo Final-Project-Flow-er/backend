@@ -102,7 +102,7 @@ public class FranchiseOrderService {
                 return item;
             } else {
                 // 추가
-                return FranchiseOrderItem.builder().franchiseOrder(order).productId(productId).quantity(request.quantity()).unitPrice(productInfo.retailPrice()).build();
+                return FranchiseOrderItem.builder().franchiseOrder(order).productId(productId).quantity(request.quantity()).unitPrice(productInfo.tradePrice()).build();
             }
         }).toList();
 
@@ -298,7 +298,7 @@ public class FranchiseOrderService {
 
                     Integer quantity = item.quantity();
                     Long productId = productInfo.productId();
-                    BigDecimal unitPrice = productInfo.retailPrice();
+                    BigDecimal unitPrice = productInfo.tradePrice();
                     BigDecimal totalPrice = unitPrice.multiply(new BigDecimal(quantity));
 
                     return FranchiseOrderItem.builder()

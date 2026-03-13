@@ -664,7 +664,7 @@ public class FranchiseOrderService {
         List<FranchiseOrder> orders = franchiseOrderRepository.findAllByOrderCodeInAndDeletedAtIsNull(orderCodes);
 
         if (orders == null || orders.isEmpty()) {
-            throw new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_ITEM_NOT_FOUND);
+            throw new OrderException(OrderErrorCode.ORDER_NOT_FOUND);
         }
 
         // Set<orderCode>
@@ -681,7 +681,7 @@ public class FranchiseOrderService {
 
         return orders.stream()
                 .collect(Collectors.toMap(
-                        FranchiseOrder::getFranchiseId,
+                        FranchiseOrder::getFranchiseOrderId,
                         FranchiseOrderDetailCommand::from
                 ));
     }

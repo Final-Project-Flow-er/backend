@@ -47,6 +47,10 @@ public class InventoryLogFacade {
     // orderType: FRANCHISE | HQ
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public void recordOrderLogs(Long orderId, String orderType, Long fromId, LogType logType, String actorType, Long actorId) {
+        if (orderId == null || fromId == null || logType == null || actorId == null) {
+            throw new InventoryLogException(InventoryLogtErrorCode.INVALID_INPUT);
+        }
+
         ActorType parsedActorType = parseActorType(actorType);
         if ("FRANCHISE".equalsIgnoreCase(orderType)) {
             FranchiseOrder order = franchiseOrderRepository
@@ -57,6 +61,7 @@ public class InventoryLogFacade {
             recordFranchiseOrderLogs(order, inventories, logType, fromId, parsedActorType, actorId);
             return;
         }
+
         if ("HQ".equalsIgnoreCase(orderType)) {
             HeadOfficeOrder order = headOfficeOrderRepository
                     .findByHeadOfficeOrderIdAndDeletedAtIsNull(orderId)
@@ -67,12 +72,12 @@ public class InventoryLogFacade {
             recordHqOrderLogs(order, inventories, logType, fromId, parsedActorType, actorId);
             return;
         }
+
         throw new InventoryLogException(InventoryLogtErrorCode.INVALID_INPUT);
     }
 
     // FRANCHISE 주문: Factory -> Franchise
     // boxCode 기준 1박스 1로그, quantity는 박스 내 개수
-    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public void recordFranchiseOrderLogs(FranchiseOrder order, List<FactoryInventory> inventories, LogType logType, Long fromId, ActorType actorType, Long actorId) {
         Map<String, List<FactoryInventory>> inventoriesByBox = inventories.stream()
                 .filter(inv -> inv.getBoxCode() != null && !inv.getBoxCode().isBlank())
@@ -116,7 +121,6 @@ public class InventoryLogFacade {
 
     // HQ 주문: Factory -> HQ
     // boxCode 기준 1박스 1로그, quantity는 박스 내 개수
-    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public void recordHqOrderLogs(HeadOfficeOrder order, List<FranchiseInventory> inventories, LogType logType, Long fromId, ActorType actorType, Long actorId) {
         Map<String, List<FranchiseInventory>> inventoriesByBox = inventories.stream()
                 .filter(inv -> inv.getBoxCode() != null && !inv.getBoxCode().isBlank())

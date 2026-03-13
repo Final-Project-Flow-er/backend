@@ -29,6 +29,8 @@ import com.chaing.domain.orders.dto.response.HQRequestedOrderResponse;
 import com.chaing.domain.orders.enums.FranchiseOrderStatus;
 import com.chaing.domain.orders.exception.HQOrderErrorCode;
 import com.chaing.domain.orders.exception.HQOrderException;
+import com.chaing.domain.orders.exception.OrderErrorCode;
+import com.chaing.domain.orders.exception.OrderException;
 import com.chaing.domain.orders.service.FranchiseOrderService;
 import com.chaing.domain.orders.service.HQOrderService;
 import com.chaing.domain.products.service.ProductService;
@@ -307,11 +309,19 @@ public class HQOrderFacade {
             // List<FranchiseOrderCodeAndQuantityCommand> requestItemCommands
             List<FranchiseOrderCodeAndQuantityCommand> requestItemCommands = orderItemByOrderItemId.values().stream()
                     .flatMap(List::stream)
-                    .map(item -> FranchiseOrderCodeAndQuantityCommand.builder()
-                            .productCode(productInfoByProductId.get(item.productId()).productCode())
-                            .quantity(item.quantity())
-                            .build()
-                    )
+                    .map(item -> {
+                        Long productId = item.productId();
+                        ProductInfo productInfo = productInfoByProductId.get(productId);
+
+                        if (productInfo == null) {
+                            throw new OrderException(OrderErrorCode.PRODUCT_NOT_FOUND);
+                        }
+
+                        return FranchiseOrderCodeAndQuantityCommand.builder()
+                                .productCode(productInfo.productCode())
+                                .quantity(item.quantity())
+                                .build();
+                    })
                     .toList();
 
             // Map<orderCode, ProductInfo> productInfoByProductCode

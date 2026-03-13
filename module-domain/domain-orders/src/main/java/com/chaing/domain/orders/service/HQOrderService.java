@@ -4,7 +4,6 @@ import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.domain.orders.dto.command.HQOrderCancelCommand;
 import com.chaing.domain.orders.dto.info.HQOrderCommand;
 import com.chaing.domain.orders.dto.info.HQOrderItemCommand;
-import com.chaing.domain.orders.dto.request.FactoryOrderRequest;
 import com.chaing.domain.orders.dto.request.HQOrderCreateRequest;
 import com.chaing.domain.orders.dto.request.HQOrderItemCreateCommand;
 import com.chaing.domain.orders.dto.request.HQOrderItemUpdateRequest;
@@ -16,8 +15,6 @@ import com.chaing.domain.orders.exception.HQOrderErrorCode;
 import com.chaing.domain.orders.exception.HQOrderException;
 import com.chaing.domain.orders.repository.HeadOfficeOrderItemRepository;
 import com.chaing.domain.orders.repository.HeadOfficeOrderRepository;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -295,7 +292,7 @@ public class HQOrderService {
     // 대기 상태 발주 제품 정보 조회
     // return: Map<orderId, List<HQOrderItemCommand>>
     public Map<Long, List<com.chaing.domain.orders.dto.command.HQOrderItemCommand>> getOrderItemIdsByOrderId(List<Long> orderIds) {
-        List<HeadOfficeOrderItem> orderItems = orderItemRepository.findAllByHeadOfficeOrder_HeadOfficeOrderIdIn(orderIds);
+        List<HeadOfficeOrderItem> orderItems = orderItemRepository.findAllByHeadOfficeOrder_HeadOfficeOrderIdInAndDeletedAtIsNull(orderIds);
 
         if (orderItems == null || orderItems.isEmpty()) {
             throw new HQOrderException(HQOrderErrorCode.ORDER_ITEM_NOT_FOUND);

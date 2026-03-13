@@ -45,14 +45,14 @@ public class HQOrderController {
 
     @Operation(summary = "발주 조회", description = "본사의 발주 전체 조회")
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'HQ')")
+    @PreAuthorize("hasAnyRole('HQ')")
     public ResponseEntity<ApiResponse<List<HQOrderResponse>>> getAllOrders() {
         return ResponseEntity.ok(ApiResponse.success(hqOrderFacade.getAllOrders()));
     }
 
     @Operation(summary = "특정 발주 조회", description = "발주 번호로 특정 발주 조회")
     @GetMapping("/{order-code}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'HQ')")
+    @PreAuthorize("hasAnyRole('HQ')")
     public ResponseEntity<ApiResponse<HQOrderDetailResponse>> getOrder(
             @PathVariable("order-code") String orderCode
     ) {
@@ -61,7 +61,7 @@ public class HQOrderController {
 
     @Operation(summary = "발주 수정", description = "발주 번호로 특정 발주 수정")
     @PatchMapping("/{order-code}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'HQ')")
+    @PreAuthorize("hasAnyRole('HQ')")
     public ResponseEntity<ApiResponse<HQOrderUpdateResponse>> updateOrder(
             @PathVariable("order-code") String orderCode,
             @Valid @RequestBody HQOrderUpdateRequest request,
@@ -74,7 +74,7 @@ public class HQOrderController {
 
     @Operation(summary = "가맹점 발주 요청 조회", description = "가맹점이 생성한 발주 요청 전체 조회")
     @GetMapping("/requested")
-    @PreAuthorize("hasAnyRole('ADMIN', 'HQ')")
+    @PreAuthorize("hasAnyRole('HQ')")
     public ResponseEntity<ApiResponse<List<HQRequestedOrderResponse>>> getRequestedOrders(
             @RequestParam(defaultValue = "false") boolean isPending
     ) {
@@ -83,7 +83,7 @@ public class HQOrderController {
 
     @Operation(summary = "가맹점의 발주 상태 변경", description = "가맹점의 발주의 상태를 접수/반려로 변경")
     @PatchMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'HQ')")
+    @PreAuthorize("hasAnyRole('HQ')")
     public ResponseEntity<ApiResponse<List<HQOrderStatusUpdateResponse>>> updateOrderStatus(
             @Valid @RequestBody HQOrderUpdateStatusRequest request
     ) {
@@ -101,7 +101,7 @@ public class HQOrderController {
 
     @Operation(summary = "발주 취소", description = "발주 번호로 특정 발주 취소")
     @PatchMapping("/{order-code}/cancellation")
-    @PreAuthorize("hasAnyRole('ADMIN', 'HQ')")
+    @PreAuthorize("hasAnyRole('HQ')")
     public ResponseEntity<ApiResponse<HQOrderCancelResponse>> cancelOrder(
             @PathVariable("order-code") String orderCode,
             @AuthenticationPrincipal UserPrincipal userPrincipal
@@ -113,7 +113,7 @@ public class HQOrderController {
 
     @Operation(summary = "발주 생성", description = "본사 직원의 요청에 따른 발주 생성")
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'HQ')")
+    @PreAuthorize("hasAnyRole('HQ')")
     public ResponseEntity<ApiResponse<HQOrderCreateResponse>> createOrder(
             @Valid @RequestBody HQOrderCreateRequest request,
             @AuthenticationPrincipal UserPrincipal userPrincipal
@@ -125,7 +125,7 @@ public class HQOrderController {
 
     @Operation(summary = "발주 상태 수정", description = "차량 배정 후 해당 발주 상태를 배송 대기로 수정")
     @PatchMapping("/shipping-pending")
-    @PreAuthorize("hasAnyRole('ADMIN', 'HQ')")
+    @PreAuthorize("hasAnyRole('HQ')")
     public ResponseEntity<ApiResponse<List<FranchiseOrderStatusShippingPendingResponse>>> updateOrderShippingPending(
             @RequestBody List<@Valid FranchiseOrderStatusUpdateRequest> request
     ) {

@@ -476,7 +476,7 @@ public class FranchiseReturnFacade {
                             .boxCode(inventory.boxCode())
                             .productCode(productInfo.productCode())
                             .productName(productInfo.productName())
-                            .unitPrice(productInfo.retailPrice())
+                            .unitPrice(productInfo.tradePrice())
                             .build();
                 })
                 .toList();

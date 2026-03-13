@@ -101,7 +101,7 @@ public class FranchiseOrderService {
                 return item;
             } else {
                 // 추가
-                return FranchiseOrderItem.builder().franchiseOrder(order).productId(productId).quantity(request.quantity()).unitPrice(productInfo.retailPrice()).build();
+                return FranchiseOrderItem.builder().franchiseOrder(order).productId(productId).quantity(request.quantity()).unitPrice(productInfo.tradePrice()).build();
             }
         }).toList();
 

@@ -530,7 +530,7 @@ public class InventoryService {
             throw new InventoriesException(InventoriesErrorCode.PRODUCT_NOT_FOUND);
         }
 
-        if (!productIds.containsAll(existingProductIds)) {
+        if (!existingProductIds.containsAll(productIds)) {
             throw new InventoriesException(InventoriesErrorCode.DATA_OMISSION);
         }
 

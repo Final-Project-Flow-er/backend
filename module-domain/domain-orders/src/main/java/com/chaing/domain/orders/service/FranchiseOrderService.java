@@ -23,11 +23,13 @@ import com.chaing.domain.orders.exception.OrderErrorCode;
 import com.chaing.domain.orders.exception.OrderException;
 import com.chaing.domain.orders.repository.FranchiseOrderItemRepository;
 import com.chaing.domain.orders.repository.FranchiseOrderRepository;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -654,6 +656,33 @@ public class FranchiseOrderService {
                 .collect(Collectors.toMap(
                         FranchiseOrder::getOrderCode,
                         FranchiseOrder::getOrderStatus
+                ));
+    }
+
+    // return: Map<orderId, FranchiseOrderDetailCommand>
+    public Map<Long, FranchiseOrderDetailCommand> getOrdersByOrderCode(List<String> orderCodes) {
+        List<FranchiseOrder> orders = franchiseOrderRepository.findAllByOrderCodeInAndDeletedAtIsNull(orderCodes);
+
+        if (orders == null || orders.isEmpty()) {
+            throw new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_ITEM_NOT_FOUND);
+        }
+
+        // Set<orderCode>
+        Set<String> requestedOrderCodes = new HashSet<>(orderCodes);
+
+        // Set<orderCode>
+        Set<String> existingOrderCodes = orders.stream()
+                .map(FranchiseOrder::getOrderCode)
+                .collect(Collectors.toSet());
+
+        if (!existingOrderCodes.containsAll(requestedOrderCodes)) {
+            throw new FranchiseOrderException(FranchiseOrderErrorCode.DATA_OMISSION);
+        }
+
+        return orders.stream()
+                .collect(Collectors.toMap(
+                        FranchiseOrder::getFranchiseId,
+                        FranchiseOrderDetailCommand::from
                 ));
     }
 }

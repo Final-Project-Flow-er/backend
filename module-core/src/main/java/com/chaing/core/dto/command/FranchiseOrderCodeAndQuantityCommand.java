@@ -4,6 +4,8 @@ import com.chaing.core.dto.request.FranchiseOrderCreateRequestItem;
 import com.chaing.core.dto.request.FranchiseOrderUpdateRequest;
 import lombok.Builder;
 
+import java.util.List;
+
 @Builder
 public record FranchiseOrderCodeAndQuantityCommand(
         String productCode,

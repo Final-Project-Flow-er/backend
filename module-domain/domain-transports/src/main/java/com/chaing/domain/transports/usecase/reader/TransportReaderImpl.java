@@ -66,4 +66,18 @@ public class TransportReaderImpl implements TransportReader {
 
         return unitPrice;
     }
+
+    @Override
+    public String getTransportName(Long transportId) {
+        String transportName = transportRepository.findCompanyNameByTransportId(transportId);
+        if(transportName == null) {
+            throw new TransportException(TransportErrorCode.TRANSPORT_VENDOR_NOT_FOUND);
+        }
+        return transportName;
+    }
+
+    @Override
+    public List<Vehicle> getAllAvailableVehicles() {
+        return vehicleRepository.findAllByDispatchable(Dispatchable.DISPATCHED, Dispatchable.AVAILABLE);
+    }
 }

@@ -33,6 +33,9 @@ public class Transit extends BaseEntity {
     @Column(nullable = false)
     private String orderCode;
 
+    // 반품 코드(반품 시만)
+    private String returnCode;
+
     // 차량 정보
     @NotNull
     @Column(nullable = false)
@@ -58,9 +61,10 @@ public class Transit extends BaseEntity {
     @Column(nullable = false)
     private Long franchiseId;
 
-    public static Transit create(Long vehicleId, String orderCode, Long weight, String trackingNumber, Long franchiseId) {
+    public static Transit create(Long vehicleId, String orderCode, Long weight, String trackingNumber, Long franchiseId, String returnCode) {
         return Transit.builder()
                 .orderCode(orderCode)
+                .returnCode(returnCode)
                 .vehicleId(vehicleId)
                 .status(DeliverStatus.PENDING)
                 .trackingNumber(trackingNumber)

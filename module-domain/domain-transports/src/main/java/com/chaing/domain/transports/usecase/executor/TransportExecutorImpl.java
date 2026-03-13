@@ -5,29 +5,41 @@ import com.chaing.domain.transports.entity.Transit;
 import com.chaing.domain.transports.exception.TransportErrorCode;
 import com.chaing.domain.transports.exception.TransportException;
 import com.chaing.domain.transports.repository.TransitRepository;
+import com.chaing.domain.transports.repository.VehicleRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 @Component
 @RequiredArgsConstructor
 public class TransportExecutorImpl implements TransportExecutor {
 
     private final TransitRepository transitRepository;
+    private final VehicleRepository vehicleRepository;
 
     @Override
-    public void createTransits(Long vehicleId, List<OrderInfo> orders, Map<String, String> trackingMap) {
+    public void createTransits(Long vehicleId, List<OrderInfo> orders, Map<String, String> trackingMap, List<String> returnCodes) {
 
         List<Transit> transits = orders.stream()
-                .map(order -> Transit.create(
-                        vehicleId,
-                        order.orderCode(),
-                        order.weight(),
-                        trackingMap.get(order.orderCode()),
-                        order.franchiseId()
-                ))
+                .flatMap(order -> {
+                    if (returnCodes == null || returnCodes.isEmpty()) {
+                        return Stream.of(Transit.create(
+                                vehicleId, order.orderCode(), order.weight(),
+                                trackingMap.get(order.orderCode()), order.franchiseId(),
+                                ""
+                        ));
+                    }
+
+                    return returnCodes.stream()
+                            .map(code -> Transit.create(
+                                    vehicleId, order.orderCode(), order.weight(),
+                                    trackingMap.get(order.orderCode()), order.franchiseId(),
+                                    code
+                            ));
+                })
                 .toList();
 
         transitRepository.saveAll(transits);
@@ -43,5 +55,10 @@ public class TransportExecutorImpl implements TransportExecutor {
         transitRepository.delete(transit);
 
         return orderCode;
+    }
+
+    @Override
+    public void updateDispatchableStatus(Long vehicleId) {
+        vehicleRepository.updateDispatchable(vehicleId);
     }
 }

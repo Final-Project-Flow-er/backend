@@ -15,4 +15,7 @@ public interface TransportRepository extends JpaRepository<Transport, Long> {
 
     @Query("select t.unitPrice from Transport t where t.transportId = :transportId")
     Long findUnitPriceByTransportId(@Param("transportId") Long transportId);
+
+    @Query("select t.companyName from Transport t where t.transportId = :transportId")
+    String findCompanyNameByTransportId(@Param("transportId") Long transportId);
 }

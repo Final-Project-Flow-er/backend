@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -44,7 +45,8 @@ public class InternalTransportService {
                 })
                 .map(vehicle -> {
                     Long currentWeight = reader.getCurrentTransitWeight(vehicle.getVehicleId());
-                    return AvailableVehicleInfo.from(vehicle, currentWeight);
+                    String transportName = reader.getTransportName(vehicle.getTransportId());
+                    return AvailableVehicleInfo.from(transportName, vehicle, currentWeight);
                 })
                 .toList();
     }
@@ -56,6 +58,8 @@ public class InternalTransportService {
             List<OrderInfo> orders,
             Map<String, String> trackingMap,
             Long newWeight) {
+
+        List<String> orderCase = List.of();
 
         // 최대 적재량 조회
         Long maxLoad = reader.getVehicleMaxLoad(vehicleId);
@@ -70,7 +74,12 @@ public class InternalTransportService {
         validator.checkTrackingNumber(orders, trackingMap);
 
         // 차량 배정
-        executor.createTransits(vehicleId, orders, trackingMap);
+        executor.createTransits(vehicleId, orders, trackingMap, orderCase);
+
+        // 차량 상태 확인 및 변경
+        if(maxLoad < currentWeight + newWeight + 100) {
+            executor.updateDispatchableStatus(vehicleId);
+        }
     }
 
     @Transactional
@@ -98,5 +107,27 @@ public class InternalTransportService {
         return franchiseList.stream()
                 .map(franchiseId -> new DeliveryFeeInfo(franchiseId, deliveryFee))
                 .toList();
+    }
+
+    public List<AvailableVehicleInfo> getAllAvailableVehicle() {
+        List <Vehicle> vehicleList = reader.getAllAvailableVehicles();
+
+        return vehicleList.stream()
+                .map(vehicle -> {
+                    Long currentWeight = reader.getCurrentTransitWeight(vehicle.getVehicleId());
+                    String transportName = reader.getTransportName(vehicle.getTransportId());
+                    return AvailableVehicleInfo.from(transportName, vehicle, currentWeight);
+                }).toList();
+    }
+
+    public void assignVehicleReturn(@NotNull(message = "차량을 선택해주세요") Long vehicleId,
+                                    List<OrderInfo> orderInfos, Map<String, String> trackingMap,
+                                    Long totalWeight, List<String> returnCodes) {
+
+        // 송장 유효성 검증
+        validator.checkTrackingNumber(orderInfos, trackingMap);
+
+        // 차량 배정
+        executor.createTransits(vehicleId, orderInfos, trackingMap, returnCodes);
     }
 }

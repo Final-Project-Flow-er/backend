@@ -57,4 +57,7 @@ public interface FactoryInventoryRepository extends JpaRepository<FactoryInvento
 
     @Query("SELECT i FROM FactoryInventory i WHERE i.boxCode = :boxCode")
     List<FactoryInventory> findAllByBoxCode(String boxCode);
+
+    List<FactoryInventory> findByInventoryIdIn(List<Long> ids);
+    List<FactoryInventory> findByBoxCodeIn(List<String> boxCodes);
 }

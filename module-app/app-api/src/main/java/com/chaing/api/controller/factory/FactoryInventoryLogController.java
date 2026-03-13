@@ -40,7 +40,7 @@ public class FactoryInventoryLogController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             @RequestParam(required = false) String transactionCode,
 
-            @PageableDefault(size = 10) Pageable pageable) {
+            @PageableDefault(size = 20) Pageable pageable) {
         FactoryLogRequest request = new FactoryLogRequest(productName, logType, startDate, endDate, transactionCode);
         return ResponseEntity.ok(
                 ApiResponse.success(factoryInventoryLogFacade.findFactoryInventoryLogs(factoryId, request, pageable)));

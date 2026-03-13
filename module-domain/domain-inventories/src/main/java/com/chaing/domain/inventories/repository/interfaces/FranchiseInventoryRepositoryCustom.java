@@ -6,6 +6,8 @@ import com.chaing.domain.inventories.dto.response.ExpirationBatchResultResponse;
 import com.chaing.domain.inventories.dto.response.FranchiseInventoryBatchResponse;
 import com.chaing.domain.inventories.dto.response.FranchiseInventoryItemResponse;
 import com.chaing.domain.inventories.dto.response.InventoryProductInfoResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Map;
@@ -13,9 +15,10 @@ import java.util.Map;
 public interface FranchiseInventoryRepositoryCustom {
     Map<Long, InventoryProductInfoResponse> getFranchiseStock(Long franchiseId, List<Long> ids, String status);
 
-    List<FranchiseInventoryBatchResponse> getFranchiseBatches(Long franchiseId, Long productId);
+    Page<FranchiseInventoryBatchResponse> getFranchiseBatches(Long franchiseId, Long productId, Pageable pageable);
 
-    List<FranchiseInventoryItemResponse> getFranchiseItems(Long franchiseId, FranchiseInventoryItemsRequest request);
+    Page<FranchiseInventoryItemResponse> getFranchiseItems(Long franchiseId, FranchiseInventoryItemsRequest request, Pageable pageable);
+
 
     void deleteFranchiseInventory(Long franchiseId, List<String> serialCode);
 

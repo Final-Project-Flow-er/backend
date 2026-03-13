@@ -27,7 +27,9 @@ public record FranchiseOrderDetailCommand(
 
         String address,
 
-        Long userId
+        Long userId,
+
+        String canceledReason
 ) {
     public static FranchiseOrderDetailCommand from(FranchiseOrder order) {
         return FranchiseOrderDetailCommand.builder()
@@ -41,6 +43,7 @@ public record FranchiseOrderDetailCommand(
                 .deliveryTime(order.getDeliveryTime())
                 .address(order.getAddress())
                 .userId(order.getUserId())
+                .canceledReason(order.getCancelledReason())
                 .build();
     }
 }

@@ -8,7 +8,7 @@ import lombok.RequiredArgsConstructor;
 public enum DeliverStatus {
 
     PENDING("배송 대기"),
-    IN_TRANSIT("배송 중"),
+    IN_TRANSIT("배송중"),
     DELIVERED("배송 완료");
 
     private final String description;

@@ -29,4 +29,7 @@ public interface TransportRepository extends JpaRepository<Transport, Long>, Tra
     @Modifying(clearAutomatically = true)
     @Query("UPDATE Transport t SET t.deletedAt = CURRENT_TIMESTAMP, t.status = 'INACTIVE' WHERE t.transportId = :id")
     void softDeleteById(@Param("id") Long id);
+
+    @Query("select t.companyName from Transport t where t.transportId = :transportId")
+    String findCompanyNameByTransportId(@Param("transportId") Long transportId);
 }

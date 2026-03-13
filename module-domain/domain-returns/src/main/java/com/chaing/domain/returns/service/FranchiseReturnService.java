@@ -2,6 +2,7 @@ package com.chaing.domain.returns.service;
 
 import com.chaing.core.dto.command.FranchiseInventoryCommand;
 import com.chaing.core.enums.ReturnItemStatus;
+import com.chaing.domain.returns.dto.command.FranchiseReturnCommandForTransit;
 import com.chaing.domain.returns.dto.command.HQReturnCommand;
 import com.chaing.domain.returns.dto.command.HQReturnDetailCommand;
 import com.chaing.domain.returns.dto.command.ReturnCommand;
@@ -18,9 +19,11 @@ import com.chaing.domain.returns.exception.FranchiseReturnException;
 import com.chaing.domain.returns.repository.FranchiseReturnItemRepository;
 import com.chaing.domain.returns.repository.FranchiseReturnRepository;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -380,5 +383,88 @@ public class FranchiseReturnService {
             throw new FranchiseReturnException(FranchiseReturnErrorCode.RETURN_ITEM_NOT_FOUND);
         }
         return items;
+    }
+
+    // 반품 요청 상태 배송 대기로 수정
+    // return: Map<returnCode, List<boxCode>>
+    public Map<String, List<String>> delivery(Set<String> requestedBoxCodes) {
+        List<ReturnItem> items = franchiseReturnItemRepository.findAllByBoxCodeInAndDeletedAtIsNull(requestedBoxCodes);
+
+        if (items == null || items.isEmpty()) {
+            throw new FranchiseReturnException(FranchiseReturnErrorCode.RETURN_ITEM_NOT_FOUND);
+        }
+
+        // Set<ReturnItem BoxCode>
+        Set<String> existingBoxCodes = items.stream()
+                .map(ReturnItem::getBoxCode)
+                .collect(Collectors.toSet());
+
+        if (!existingBoxCodes.containsAll(requestedBoxCodes)) {
+            throw new FranchiseReturnException(FranchiseReturnErrorCode.DATA_OMISSION);
+        }
+
+        // Set<Returns>
+        Set<Returns> returns = items.stream()
+                .map(ReturnItem::getReturns)
+                .collect(Collectors.toSet());
+
+        // 반품 요청 상태 변경
+        returns.forEach(Returns::deliveryReturn);
+
+        return items.stream()
+                .collect(Collectors.groupingBy(
+                        item -> item.getReturns().getReturnCode(),
+                        Collectors.mapping(ReturnItem::getBoxCode, Collectors.toList())
+                ));
+    }
+
+    // 반품 상태 SHIPPING_PENDING으로 수정
+    // return: Map<returnCode, ReturnCommand>
+    public Map<Long, ReturnCommand> updateShippingPending(Set<String> returnCodes) {
+        List<Returns> returns = franchiseReturnRepository.findAllByReturnCodeInAndDeletedAtIsNull(returnCodes);
+
+        if (returns == null || returns.isEmpty()) {
+            throw new FranchiseReturnException(FranchiseReturnErrorCode.RETURN_NOT_FOUND);
+        }
+
+        // Set<Returns ReturnCode>
+        Set<String> existingReturnCodes = returns.stream().map(Returns::getReturnCode).collect(Collectors.toSet());
+
+        if (!returnCodes.containsAll(existingReturnCodes)) {
+            throw new FranchiseReturnException(FranchiseReturnErrorCode.DATA_OMISSION);
+        }
+
+        returns.forEach(Returns::updateStatusToShippingPending);
+
+        return returns.stream()
+                .collect(Collectors.toMap(
+                        Returns::getReturnId,
+                        ReturnCommand::from
+                ));
+    }
+
+    @Transactional
+    public List<FranchiseReturnCommandForTransit> getReturnForTransit(@NotNull(message = "주문을 선택해주세요") List<Long> returnIds) {
+
+        if(returnIds == null || returnIds.isEmpty()) {
+            throw new FranchiseReturnException(FranchiseReturnErrorCode.DATA_OMISSION);
+        }
+
+        List<Returns> selectedReturns = franchiseReturnRepository.findAllByReturnIdInAndDeletedAtIsNull(returnIds);
+
+        Set<Long> foundIds = selectedReturns.stream()
+                .map(Returns::getReturnId)
+                .collect(Collectors.toSet());
+
+        if(!foundIds.containsAll(returnIds)) {
+            throw new FranchiseReturnException(FranchiseReturnErrorCode.DATA_OMISSION);
+        }
+
+        return selectedReturns.stream()
+                .map(selectedReturn -> FranchiseReturnCommandForTransit.from(
+                        selectedReturn.getFranchiseOrderId(),
+                        selectedReturn.getReturnCode(),
+                        selectedReturn.getFranchiseId()
+                )).toList();
     }
 }

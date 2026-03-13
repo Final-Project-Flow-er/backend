@@ -34,9 +34,11 @@ public class FactoryInventory extends BaseEntity {
 
     private Long orderId;
 
+    private Long orderItemId;
+
     // 제품식별코드
     @NotBlank
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String serialCode;
 
     // 제품ID

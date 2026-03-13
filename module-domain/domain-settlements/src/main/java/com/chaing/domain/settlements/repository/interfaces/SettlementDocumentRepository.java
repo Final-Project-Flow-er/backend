@@ -14,4 +14,11 @@ public interface SettlementDocumentRepository extends JpaRepository<SettlementDo
 
     // 일별 영수증의 문서
     Optional<SettlementDocument> findByDailyReceiptId(Long dailyReceiptId);
+
+    // 본사 통합 문서 조회
+    Optional<SettlementDocument> findByDocumentOwnerAndSettlementDate(
+            com.chaing.domain.settlements.enums.DocumentOwner documentOwner, java.time.LocalDate settlementDate);
+
+    Optional<SettlementDocument> findByDocumentOwnerAndSettlementMonth(
+            com.chaing.domain.settlements.enums.DocumentOwner documentOwner, java.time.YearMonth settlementMonth);
 }

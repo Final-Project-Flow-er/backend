@@ -15,7 +15,6 @@ public record ProductRequest(
                 BigDecimal price,
                 BigDecimal costPrice,
                 BigDecimal supplyPrice,
-                Integer safetyStock,
                 String status,
                 Integer kcal,
                 Integer weight,

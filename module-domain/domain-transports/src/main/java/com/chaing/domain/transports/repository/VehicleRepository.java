@@ -39,4 +39,14 @@ public interface VehicleRepository extends JpaRepository<Vehicle, Long>, Vehicle
 
     @Query("SELECT v.transportId FROM Vehicle v WHERE v.vehicleId = :vehicleId")
     Long findTransportIdByVehicleId(Long vehicleId);
+
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE Vehicle v SET " +
+            "v.updatedAt = CURRENT_TIMESTAMP, " +
+            "v.dispatchable = com.chaing.domain.transports.enums.Dispatchable.DISPATCHED " +
+            "WHERE v.vehicleId = :vehicleId AND v.deletedAt IS NULL")
+    void updateDispatchable(@Param("vehicleId") Long vehicleId);
+
+    @Query("SELECT v FROM Vehicle v WHERE v.dispatchable in (:available, :dispatched)")
+    List<Vehicle> findAllByDispatchable(@Param("available") Dispatchable available, @Param("dispatched") Dispatchable dispatched);
 }

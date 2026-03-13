@@ -7,6 +7,7 @@ import java.util.List;
 
 public interface ProductComponentRepository extends JpaRepository<ProductComponent,Long> {
     List<ProductComponent> findByProductId(Long productId);
+    boolean existsByComponentId(Long componentId);
 
 //    void deleteAllByProductId(Long productId);
 }

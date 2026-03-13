@@ -4,7 +4,6 @@ import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.domain.orders.dto.command.HQOrderCancelCommand;
 import com.chaing.domain.orders.dto.info.HQOrderCommand;
 import com.chaing.domain.orders.dto.info.HQOrderItemCommand;
-import com.chaing.domain.orders.dto.request.FactoryOrderRequest;
 import com.chaing.domain.orders.dto.request.HQOrderCreateRequest;
 import com.chaing.domain.orders.dto.request.HQOrderItemCreateCommand;
 import com.chaing.domain.orders.dto.request.HQOrderItemUpdateRequest;
@@ -24,8 +23,10 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -359,14 +360,22 @@ public class HQOrderService {
     public Map<String, HQOrderStatus> updateOrders(List<String> orderCodes, boolean isAccept) {
         List<HeadOfficeOrder> orders = orderRepository.findAllByOrderCodeInAndDeletedAtIsNull(orderCodes);
 
-        // List<orderCode>
-        List<String> distinctOrderCodes = orderCodes.stream().distinct().toList();
-
-        if (orders == null || orders.isEmpty() || orders.size() != distinctOrderCodes.size()) {
+        if (orders == null || orders.isEmpty()) {
             throw new HQOrderException(HQOrderErrorCode.ORDER_NOT_FOUND);
         }
 
+        // Set<orderCode>
+        Set<String> existingOrderCodes = orders.stream().map(HeadOfficeOrder::getOrderCode).collect(Collectors.toSet());
+
+        // Set<orderCode>
+        Set<String> requestedOrderCodes = new HashSet<>(orderCodes);
+
+        if (!existingOrderCodes.containsAll(requestedOrderCodes)) {
+            throw new HQOrderException(HQOrderErrorCode.DATA_OMISSION);
+        }
+
         if (isAccept) {
+            // 접수
             orders.forEach(HeadOfficeOrder::accept);
         } else {
             orders.forEach(HeadOfficeOrder::reject);

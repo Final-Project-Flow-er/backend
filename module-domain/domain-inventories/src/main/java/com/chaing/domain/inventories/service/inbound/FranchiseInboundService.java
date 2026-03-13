@@ -2,6 +2,7 @@ package com.chaing.domain.inventories.service.inbound;
 
 import com.chaing.core.enums.LogType;
 import com.chaing.domain.inventories.dto.command.FranchiseInboundCreateCommand;
+import com.chaing.domain.inventories.dto.info.InboundPendingItemInfo;
 import com.chaing.domain.inventories.dto.raw.FranchiseInventoryRawData;
 import com.chaing.domain.inventories.usecase.inbound.executor.InboundExecutor;
 import com.chaing.domain.inventories.usecase.inbound.reader.InboundReader;
@@ -68,5 +69,18 @@ public class FranchiseInboundService extends InboundService<FranchiseInboundCrea
 
         // 상태 INBOUND로 변경(승인 확정)
         inboundExecutor.confirmAll(confirmedIds);
+    }
+
+    @Override
+    public List<InboundPendingItemInfo> getInboundBoxDetails(String boxCode) {
+        List<FranchiseInventoryRawData> details = inboundReader.findAllByBoxCode(boxCode);
+        return details.stream()
+                .map(detail -> InboundPendingItemInfo.create(
+                        detail.getSerialCode(),
+                        detail.getProductId(),
+                        detail.manufactureDate(),
+                        detail.orderId(),
+                        detail.orderItemId()
+                )).toList();
     }
 }

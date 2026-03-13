@@ -72,6 +72,9 @@ public class FranchiseOrder extends BaseEntity {
     @Column(nullable = false)
     private String deliveryTime;
 
+    @Column
+    private String cancelledReason;
+
     @OneToMany(mappedBy = "franchiseOrder", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<FranchiseOrderItem> franchiseOrderItems = new ArrayList<>();
@@ -146,5 +149,22 @@ public class FranchiseOrder extends BaseEntity {
             throw new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_INVALID_STATUS);
         }
         this.orderStatus = FranchiseOrderStatus.REJECTED;
+    }
+
+    // 상태를 SHIPPING_PENDING으로 수정
+    public void updateStatusToShippingPending() {
+        if (this.orderStatus != FranchiseOrderStatus.ACCEPTED) {
+            throw new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_INVALID_STATUS);
+        }
+        this.orderStatus = FranchiseOrderStatus.SHIPPING_PENDING;
+    }
+
+    // 본사에서 가맹점의 발주 요청 취소
+    public void cancelOrderByHQ(String cancelledReason) {
+        if (this.orderStatus != FranchiseOrderStatus.ACCEPTED) {
+            throw new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_INVALID_STATUS);
+        }
+        this.orderStatus = FranchiseOrderStatus.CANCELED;
+        this.cancelledReason = cancelledReason;
     }
 }

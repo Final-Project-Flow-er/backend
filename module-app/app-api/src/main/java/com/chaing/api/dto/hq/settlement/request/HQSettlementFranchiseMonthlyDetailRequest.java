@@ -7,13 +7,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import java.time.YearMonth;
 
 public record HQSettlementFranchiseMonthlyDetailRequest(
-        @Schema(description = "가맹점 ID (PathVariable)", example = "1", requiredMode = Schema.RequiredMode.REQUIRED)
-        @NotNull
-        Long franchiseId,
+        @Schema(description = "가맹점 ID (PathVariable)", example = "1", requiredMode = Schema.RequiredMode.REQUIRED) @NotNull Long franchiseId,
 
-        @Schema(description = "조회 월(yyyy-MM)", example = "2026-02", requiredMode = Schema.RequiredMode.REQUIRED)
-        @NotNull
-        @DateTimeFormat(pattern = "yyyy-MM")
-        YearMonth month
-) {
+        @Schema(description = "조회 월(yyyy-MM)", example = "2026-02", requiredMode = Schema.RequiredMode.REQUIRED) @NotNull @DateTimeFormat(pattern = "yyyy-MM") YearMonth month) {
 }

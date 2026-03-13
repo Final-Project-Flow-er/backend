@@ -1,11 +1,15 @@
 package com.chaing.api.controller.hq;
 
 import com.chaing.api.security.principal.UserPrincipal;
+import com.chaing.domain.orders.dto.request.FranchiseOrderStatusUpdateRequest;
+import com.chaing.domain.orders.dto.request.HQFranchiseOrderCancelRequest;
 import com.chaing.domain.orders.dto.request.HQOrderCreateRequest;
 import com.chaing.domain.orders.dto.request.HQOrderUpdateStatusRequest;
 import com.chaing.api.facade.factory.HQOrderFacade;
 import com.chaing.core.dto.ApiResponse;
 import com.chaing.domain.orders.dto.request.HQOrderUpdateRequest;
+import com.chaing.domain.orders.dto.response.FranchiseOrderStatusShippingPendingResponse;
+import com.chaing.domain.orders.dto.response.HQFranchiseOrderCancelResponse;
 import com.chaing.domain.orders.dto.response.HQOrderCancelResponse;
 import com.chaing.domain.orders.dto.response.HQOrderCreateResponse;
 import com.chaing.domain.orders.dto.response.HQOrderDetailResponse;
@@ -86,6 +90,15 @@ public class HQOrderController {
         return ResponseEntity.ok(ApiResponse.success(hqOrderFacade.updateStatus(request)));
     }
 
+    @Operation(summary = "가맹점의 발주 취소", description = "접수된 가맹점의 발주 요청을 취소 처리")
+    @PatchMapping("/cancellation")
+    @PreAuthorize("hasRole('HQ')")
+    public ResponseEntity<ApiResponse<List<HQFranchiseOrderCancelResponse>>> cancelFranchiseOrder(
+            @RequestBody List<@Valid HQFranchiseOrderCancelRequest> request
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(hqOrderFacade.cancelFranchiseOrder(request)));
+    }
+
     @Operation(summary = "발주 취소", description = "발주 번호로 특정 발주 취소")
     @PatchMapping("/{order-code}/cancellation")
     @PreAuthorize("hasAnyRole('ADMIN', 'HQ')")
@@ -108,5 +121,14 @@ public class HQOrderController {
         Long userId = userPrincipal.getId();
 
         return ResponseEntity.ok(ApiResponse.success(hqOrderFacade.create(userId, request)));
+    }
+
+    @Operation(summary = "발주 상태 수정", description = "차량 배정 후 해당 발주 상태를 배송 대기로 수정")
+    @PatchMapping("/shipping-pending")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HQ')")
+    public ResponseEntity<ApiResponse<List<FranchiseOrderStatusShippingPendingResponse>>> updateOrderShippingPending(
+            @RequestBody List<@Valid FranchiseOrderStatusUpdateRequest> request
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(hqOrderFacade.updateShippingPending(request)));
     }
 }

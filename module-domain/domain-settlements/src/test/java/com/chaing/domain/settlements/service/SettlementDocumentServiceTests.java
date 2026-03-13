@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -38,22 +37,23 @@ class SettlementDocumentServiceTests {
                 when(documentRepository.findByDailyReceiptId(dailyReceiptId))
                                 .thenReturn(Optional.of(mockDocument));
                 // when
-                SettlementDocument result = documentService.getDailyDocument(dailyReceiptId);
+                Optional<SettlementDocument> result = documentService.getDailyDocument(dailyReceiptId);
                 // then
-                assertThat(result.getFileUrl()).isEqualTo("https://dummy-url.com/receipt.pdf");
+                assertThat(result.isPresent()).isTrue();
+                assertThat(result.get().getFileUrl()).isEqualTo("https://dummy-url.com/receipt.pdf");
         }
 
-        @DisplayName("일별 영수증 단건 조회 - 실패 (IllegalArgumentException 발생)")
+        @DisplayName("일별 영수증 단건 조회 - 데이터 없음")
         @Test
-        void getDailyDocument_Fail_NotFound() {
+        void getDailyDocument_NotFound() {
                 // given
                 Long dailyReceiptId = 999L;
                 when(documentRepository.findByDailyReceiptId(dailyReceiptId))
                                 .thenReturn(Optional.empty());
-                // when & then
-                assertThatThrownBy(() -> documentService.getDailyDocument(dailyReceiptId))
-                                .isInstanceOf(IllegalArgumentException.class)
-                                .hasMessageContaining("해당 일별 영수증 문서를 찾을 수 없습니다.");
+                // when
+                Optional<SettlementDocument> result = documentService.getDailyDocument(dailyReceiptId);
+                // then
+                assertThat(result.isPresent()).isFalse();
         }
 
         @DisplayName("월별 정산 영수증 목록 조회 - 성공")

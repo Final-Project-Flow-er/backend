@@ -8,6 +8,7 @@ import com.chaing.domain.orders.dto.command.FranchiseOrderItemCommand;
 import com.chaing.domain.orders.dto.request.FranchiseOrderCreateRequest;
 import com.chaing.domain.orders.dto.request.FranchiseOrderCreateRequestItem;
 import com.chaing.domain.orders.dto.request.FranchiseOrderUpdateRequest;
+import com.chaing.domain.orders.dto.request.HQFranchiseOrderCancelRequest;
 import com.chaing.domain.orders.dto.request.HQOrderUpdateStatusRequest;
 import com.chaing.domain.orders.dto.response.FranchiseOrderCancelResponse;
 import com.chaing.domain.orders.dto.response.FranchiseOrderForTransitResponse;
@@ -30,6 +31,7 @@ import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -179,7 +181,7 @@ public class FranchiseOrderService {
     // 반품 대상이 되는 발주 반환
     public List<FranchiseReturnTargetResponse> getAllTargetOrders(Long franchiseId, Long userId, String username) {
         // 발주 조회
-        List<FranchiseOrder> orders = franchiseOrderRepository.findAllByFranchiseIdAndUserIdAndOrderStatusNot(franchiseId, userId, FranchiseOrderStatus.PENDING);
+        List<FranchiseOrder> orders = franchiseOrderRepository.findAllByFranchiseIdAndUserIdAndOrderStatus(franchiseId, userId, FranchiseOrderStatus.COMPLETED);
 
         List<String> orderCodes = orders.stream().map(FranchiseOrder::getOrderCode).toList();
 
@@ -189,9 +191,9 @@ public class FranchiseOrderService {
     }
 
     // 본사에서 가맹점의 발주 상태 수정
-    public List<HQOrderStatusUpdateResponse> updateStatus(@Valid HQOrderUpdateStatusRequest request) {
+    public List<HQOrderStatusUpdateResponse> updateStatus(HQOrderUpdateStatusRequest request) {
         // 발주 조회
-        List<FranchiseOrder> orders = franchiseOrderRepository.findAllByOrderCodeIn(request.orderCodes());
+        List<FranchiseOrder> orders = franchiseOrderRepository.findAllByOrderCodeInAndDeletedAtIsNull(request.orderCodes());
 
         if (orders == null || orders.isEmpty()) {
             throw new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_NOT_FOUND);
@@ -583,5 +585,76 @@ public class FranchiseOrderService {
                         order.getDeliveryDate()
                 ))
                 .toList();
+    }
+
+    // 발주 상태 SHIPPING_PENDING으로 수정
+    // return: Map<orderId, FranchiseOrderCommand>
+    public Map<Long, FranchiseOrderCommand> updateShippingPending(Set<String> orderCodes) {
+        List<FranchiseOrder> orders = franchiseOrderRepository.findAllByOrderCodeInAndDeletedAtIsNull(orderCodes);
+
+        if (orders == null || orders.isEmpty()) {
+            throw new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_NOT_FOUND);
+        }
+
+        // Set<FranchiseOrder OrderCode>
+        Set<String> existingOrderCodes = orders.stream().map(FranchiseOrder::getOrderCode).collect(Collectors.toSet());
+
+        if (!existingOrderCodes.containsAll(orderCodes)) {
+            throw new FranchiseOrderException(FranchiseOrderErrorCode.DATA_OMISSION);
+        }
+
+        orders.forEach(FranchiseOrder::updateStatusToShippingPending);
+
+        return orders.stream()
+                .collect(Collectors.toMap(
+                        FranchiseOrder::getFranchiseOrderId,
+                        FranchiseOrderCommand::from
+                ));
+    }
+
+    // 본사의 발주 조회
+    public FranchiseOrderDetailCommand getOrderByHQ(String orderCode) {
+        FranchiseOrder order = franchiseOrderRepository.findByOrderCodeAndDeletedAtIsNull(orderCode)
+                .orElseThrow(() -> new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_NOT_FOUND));
+
+        return FranchiseOrderDetailCommand.from(order);
+    }
+
+    // 본사의 가맹점 발주 요청 취소
+    // return: Map<orderCode, FranchiseOrderStatus>
+    public Map<String, FranchiseOrderStatus> cancelFranchiseOrder(List<HQFranchiseOrderCancelRequest> requests) {
+        // Set<orderCode>
+        Set<String> orderCodes = requests.stream().map(HQFranchiseOrderCancelRequest::orderCode).collect(Collectors.toSet());
+
+        // Map<orderCode, canceledReason>
+        Map<String, String> reasonByOrderCode = requests.stream()
+                .collect(Collectors.toMap(
+                        HQFranchiseOrderCancelRequest::orderCode,
+                        HQFranchiseOrderCancelRequest::canceledReason
+                ));
+
+        // List<FranchiseOrder>
+        List<FranchiseOrder> orders = franchiseOrderRepository.findAllByOrderCodeInAndDeletedAtIsNull(orderCodes);
+
+        if (orders == null || orders.isEmpty()) {
+            throw new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_NOT_FOUND);
+        }
+
+        // Set<FranchiseOrder orderCode>
+        Set<String> existingOrderCodes = orders.stream().map(FranchiseOrder::getOrderCode).collect(Collectors.toSet());
+
+        if (!existingOrderCodes.containsAll(orderCodes)) {
+            throw new FranchiseOrderException(FranchiseOrderErrorCode.DATA_OMISSION);
+        }
+
+        orders.forEach(order -> {
+            order.cancelOrderByHQ(reasonByOrderCode.get(order.getOrderCode()));
+        });
+
+        return orders.stream()
+                .collect(Collectors.toMap(
+                        FranchiseOrder::getOrderCode,
+                        FranchiseOrder::getOrderStatus
+                ));
     }
 }

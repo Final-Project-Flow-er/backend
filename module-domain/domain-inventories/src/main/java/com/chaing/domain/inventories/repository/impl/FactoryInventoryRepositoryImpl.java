@@ -23,6 +23,9 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
@@ -34,6 +37,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Repository
 public class FactoryInventoryRepositoryImpl implements FactoryInventoryRepositoryCustom {
+
+        private static final Long DEFAULT_FACTORY_POLICY_LOCATION_ID = 1L;
 
         @PersistenceContext
         private EntityManager em;
@@ -68,7 +73,7 @@ public class FactoryInventoryRepositoryImpl implements FactoryInventoryRepositor
                                                 factoryInventory.productId.eq(inventoryPolicy.productId)
                                                                 .and(inventoryPolicy.locationType
                                                                                 .eq(LocationType.FACTORY))
-                                                                .and(inventoryPolicy.locationId.eq(1L)))
+                                                                .and(inventoryPolicy.locationId.eq(DEFAULT_FACTORY_POLICY_LOCATION_ID)))
                                 .where(
                                                 factoryInventory.productId.in(products),
                                                 factoryInventory.status.eq(LogType.AVAILABLE))
@@ -85,41 +90,68 @@ public class FactoryInventoryRepositoryImpl implements FactoryInventoryRepositor
 
         // 중분류
         @Override
-        public List<HQInventoryBatchResponse> getBatches(Long productId) {
-                NumberExpression<Integer> quantity = factoryInventory.manufactureDate.count().intValue();
+        public Page<HQInventoryBatchResponse> getBatches(Long productId, Pageable pageable) {
+            NumberExpression<Integer> quantity = factoryInventory.inventoryId.count().intValue();
 
-                return queryFactory
-                                .select(Projections.constructor(
-                                                HQInventoryBatchResponse.class,
-                                                factoryInventory.manufactureDate,
-                                                quantity))
-                                .from(factoryInventory)
-                                .where(factoryInventory.productId.eq(productId))
-                                .groupBy(factoryInventory.manufactureDate)
-                                .fetch();
+            List<HQInventoryBatchResponse> content = queryFactory
+                    .select(Projections.constructor(
+                            HQInventoryBatchResponse.class,
+                            factoryInventory.manufactureDate,
+                            quantity))
+                    .from(factoryInventory)
+                    .where(factoryInventory.productId.eq(productId))
+                    .groupBy(factoryInventory.manufactureDate)
+                    .orderBy(factoryInventory.manufactureDate.desc())
+                    .offset(pageable.getOffset())
+                    .limit(pageable.getPageSize())
+                    .fetch();
+
+            Long total = queryFactory
+                    .select(factoryInventory.manufactureDate.countDistinct())
+                    .from(factoryInventory)
+                    .where(factoryInventory.productId.eq(productId))
+                    .fetchOne();
+
+            return new PageImpl<>(content, pageable, total == null ? 0L : total);
         }
 
-        // 소분류
-        @Override
-        public List<HQInventoryItemResponse> getItems(HQInventoryItemsRequest request) {
-                return queryFactory
-                                .select(Projections.constructor(
-                                                HQInventoryItemResponse.class,
-                                                factoryInventory.inventoryId,
-                                                factoryInventory.serialCode,
-                                                factoryInventory.boxCode,
-                                                factoryInventory.status.stringValue(),
-                                                factoryInventory.shippedAt,
-                                                factoryInventory.receivedAt))
-                                .from(factoryInventory)
-                                .where(
-                                                factoryInventory.productId.eq(request.productId()),
-                                                containsSerialCode(request.serialCode()),
-                                                containsManufactureDate(request.manufactureDate()),
-                                                containsShippedAt(request.shippedAt()),
-                                                containsReceivedAt(request.receivedAt()))
-                                .fetch();
-        }
+    // 소분류
+    @Override
+    public Page<HQInventoryItemResponse> getItems(HQInventoryItemsRequest request, Pageable pageable) {
+        List<HQInventoryItemResponse> content = queryFactory
+                .select(Projections.constructor(
+                        HQInventoryItemResponse.class,
+                        factoryInventory.inventoryId,
+                        factoryInventory.serialCode,
+                        factoryInventory.boxCode,
+                        factoryInventory.status.stringValue(),
+                        factoryInventory.shippedAt,
+                        factoryInventory.receivedAt))
+                .from(factoryInventory)
+                .where(
+                        factoryInventory.productId.eq(request.productId()),
+                        containsSerialCode(request.serialCode()),
+                        containsManufactureDate(request.manufactureDate()),
+                        containsShippedAt(request.shippedAt()),
+                        containsReceivedAt(request.receivedAt()))
+                .orderBy(factoryInventory.inventoryId.desc())
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
+
+        Long total = queryFactory
+                .select(factoryInventory.count())
+                .from(factoryInventory)
+                .where(
+                        factoryInventory.productId.eq(request.productId()),
+                        containsSerialCode(request.serialCode()),
+                        containsManufactureDate(request.manufactureDate()),
+                        containsShippedAt(request.shippedAt()),
+                        containsReceivedAt(request.receivedAt()))
+                .fetchOne();
+
+        return new PageImpl<>(content, pageable, total == null ? 0L : total);
+    }
 
         // 유통기한 체크
         @Override

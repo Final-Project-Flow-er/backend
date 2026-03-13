@@ -285,7 +285,7 @@ public class ProductService {
                                 .build()
                 ));
     }
-  
+
     public List<Component> getComponents() {
         return componentRepository.findAll(Sort.by(Sort.Direction.ASC, "name", "componentId"));
     }

@@ -3,7 +3,6 @@ package com.chaing.domain.inventories.service;
 import com.chaing.core.dto.command.FranchiseInventoryCommand;
 import com.chaing.core.dto.command.FranchiseOrderCodeAndQuantityCommand;
 import com.chaing.core.dto.info.ProductInfo;
-import com.chaing.core.dto.request.FranchiseOrderCreateRequestItem;
 import com.chaing.core.enums.LogType;
 import com.chaing.core.enums.ReturnItemStatus;
 import com.chaing.domain.inventories.dto.request.DisposalRequest;

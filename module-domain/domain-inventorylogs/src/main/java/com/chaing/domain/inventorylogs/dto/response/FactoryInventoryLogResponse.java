@@ -22,6 +22,12 @@ public record FactoryInventoryLogResponse(
         // 수량 (박스), 개
         Integer quantity,
 
+        // 보낸 곳
+        Long fromLocationId,
+
+        // 받는 곳
+        Long toLocationId,
+
         // 변경 수량 (개)
         Integer changedQuantity
 ) {

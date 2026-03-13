@@ -224,7 +224,7 @@ public class FranchiseInventoryFacade {
         List<InventoryLogCreateRequest> result = new ArrayList<>();
 
         for (InventoryBoxRequest box : request.boxes()) {
-            int quantity = box.productList().size();
+            int quantity = 1; // 박스 단위 로그
 
             for (InventoryRequest product : box.productList()) {
                 InventoryLogCreateRequest log = new InventoryLogCreateRequest(
@@ -234,30 +234,38 @@ public class FranchiseInventoryFacade {
                         request.transactionCode(),
                         product.productLogType(),
                         quantity,
-                        request.supplyPrice(),
-                        box.price(),
                         fromType,
                         request.fromLocationId(),
                         toType,
                         request.toLocationId(),
                         actorType,
                         request.fromLocationId());
-
                 result.add(log);
             }
         }
         return result;
     }
 
+
+
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public Void disposalInventory(DisposalRequest request, Long locationId) {
         String actorTypeRaw = request.actorType().toUpperCase();
         List<InventoryLogCreateRequest> logs = new ArrayList<>();
 
-        if (actorTypeRaw.equals("FRANCHISE")) {
-            List<FranchiseInventory> inventories = inventoryService
-                    .getFranchiseInventoriesByIds(request.inventoryIds());
+        List<Long> expandedIds = inventoryService.expandInventoryIdsByBoxCode(
+                actorTypeRaw,
+                request.inventoryIds(),
+                locationId,
+                locationId
+        );
 
+        if (expandedIds.isEmpty()) {
+            return null;
+        }
+
+        if (actorTypeRaw.equals("FRANCHISE")) {
+            List<FranchiseInventory> inventories = inventoryService.getFranchiseInventoriesByIds(expandedIds);
             Map<Long, ProductInfo> productInfos = productService.getProductInfos(
                     inventories.stream().map(FranchiseInventory::getProductId).distinct().toList());
 
@@ -270,14 +278,13 @@ public class FranchiseInventoryFacade {
                         null,
                         LogType.DISPOSAL,
                         1,
-                        pInfo != null ? pInfo.tradePrice() : null,
-                        pInfo != null ? pInfo.retailPrice() : null,
                         LocationType.FRANCHISE,
                         locationId,
                         null,
                         null,
                         ActorType.FRANCHISE,
-                        locationId));
+                        locationId
+                ));
             }
         }
 
@@ -285,10 +292,12 @@ public class FranchiseInventoryFacade {
             inventoryLogService.recordInventoryLog(logs);
         }
 
-        inventoryService.disposalInventory(request);
+        inventoryService.disposalInventoryByIds(actorTypeRaw, expandedIds, locationId, locationId);
         evictInventoryCache();
         return null;
     }
+
+
 
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public void setSafetyStock(SafetyStockRequest request) {

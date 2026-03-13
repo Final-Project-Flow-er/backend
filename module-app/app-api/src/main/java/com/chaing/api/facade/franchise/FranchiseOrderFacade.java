@@ -268,8 +268,13 @@ public class FranchiseOrderFacade {
         // franchiseId
         Long franchiseId = userManagementService.getFranchiseIdByUserId(userId);
 
-        // 취소 및 반환
-        return franchiseOrderService.cancelOrder(userId, franchiseId, orderCode);
+        // 취소
+        FranchiseOrderCancelResponse response = franchiseOrderService.cancelOrder(userId, franchiseId, orderCode);
+
+        // 정산 취소
+
+        // 반환
+        return response;
     }
 
     // 가맹점 발주 생성

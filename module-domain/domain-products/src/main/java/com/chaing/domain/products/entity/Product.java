@@ -108,6 +108,7 @@ public class Product extends BaseEntity {
         if (req.supplyPrice() != null) this.supplyPrice = req.supplyPrice();
 
         if (req.kcal() != null) this.kcal = req.kcal();
+        if (req.weight() != null) this.weight = req.weight();
 
         if (req.startDate() != null) this.supplyPriceStartDate = req.startDate();
         if (req.endDate() != null) this.supplyPriceEndDate = req.endDate();

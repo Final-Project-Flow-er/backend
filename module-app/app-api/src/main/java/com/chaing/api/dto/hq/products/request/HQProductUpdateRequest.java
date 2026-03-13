@@ -11,6 +11,7 @@ public record HQProductUpdateRequest(
                 BigDecimal supplyPrice, // 공급가
                 String status, // 상태
                 Integer kcal, // 칼로리
+                Integer weight, // 무게
                 LocalDate startDate, // 적용 시작일
                 LocalDate endDate, // 적용 종료일
                 String description, // 상품 설명

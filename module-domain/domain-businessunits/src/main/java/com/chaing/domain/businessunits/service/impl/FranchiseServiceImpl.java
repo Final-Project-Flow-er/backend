@@ -91,6 +91,13 @@ public class FranchiseServiceImpl implements BusinessUnitManagementService {
         franchise.delete();
     }
 
+    // 가맹점 경고 조회
+    public int getWarningCount(Long franchiseId) {
+        Franchise franchise = franchiseRepository.findByFranchiseIdAndDeletedAtIsNull(franchiseId)
+                .orElseThrow(() -> new BusinessUnitException(BusinessUnitErrorCode.BUSINESS_UNIT_NOT_FOUND));
+        return franchise.getWarningCount();
+    }
+
     // 가맹점 경고 부여
     public BusinessUnitInternal addWarning(Long id) {
         Franchise franchise = franchiseRepository.findById(id)

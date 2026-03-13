@@ -214,10 +214,6 @@ public class InternalTransportFacade {
 
         List<Long> orderIds = returns.stream().map(FranchiseReturnCommandForTransit::franchiseOrderId).toList();
 
-        for(Long orderId : orderIds) {
-            System.out.println("orderId = " + orderId);
-        }
-
         List<FranchiseOrderForTransitResponse> orders = franchiseOrderService.getOrdersForTransit(orderIds);
 
         List<OrderInfo> orderInfos = getOrderInfos(orders);

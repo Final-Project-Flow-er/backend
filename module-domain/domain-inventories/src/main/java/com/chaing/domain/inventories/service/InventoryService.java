@@ -236,36 +236,6 @@ public class InventoryService {
         return franchiseInventoryRepository.findAllByOrderId(orderId);
     }
 
-    // 수정 예정
-    public List<ReturnToInventoryRequest> getProducts(List<String> serialCodes) {
-        return List.of(
-                new ReturnToInventoryRequest(
-                        "SerialCode",
-                        1L,
-                        "BoxCode"));
-    }
-
-    public List<Long> getProductsBySerialCodeAndBoxCode(List<FranchiseReturnUpdateRequest> requests) {
-        return List.of(1L, 2L);
-    }
-
-    // 수정 예정
-    public List<String> getSerialCodes(Long franchiseId, @NotBlank String boxCode) {
-        return List.of("SerialCode");
-    }
-
-    // boxCode, productId 조회
-    // return: Map<serialCode, returnItemCommand>
-    public Map<String, ReturnItemInfo> getAllReturnItemInfoBySerialCode(List<String> serialCodes) {
-        return franchiseInventoryRepository.findAllBySerialCodeIn(serialCodes).stream()
-                .collect(Collectors.toMap(
-                        FranchiseInventory::getSerialCode,
-                        item -> ReturnItemInfo.builder()
-                                .boxCode(item.getBoxCode())
-                                .productId(item.getProductId())
-                                .build()));
-    }
-
     // return: Map<boxCode, serialCode>
     public Map<String, String> getBoxCode(List<String> serialCodes) {
         List<FranchiseInventory> inventories = franchiseInventoryRepository.findAllBySerialCodeIn(serialCodes);
@@ -307,27 +277,6 @@ public class InventoryService {
                 .collect(Collectors.toMap(
                         FranchiseInventory::getSerialCode,
                         FranchiseInventory::getOrderItemId));
-    }
-
-    // return: Map<serialCode, FranchiseInventoryCommand>
-    public Map<String, FranchiseInventoryCommand> getInventoriesBySerialCodes(List<String> serialCodes) {
-        List<FranchiseInventory> inventories = franchiseInventoryRepository.findAllBySerialCodeIn(serialCodes);
-
-        if (inventories == null || inventories.isEmpty()) {
-            throw new InventoriesException(InventoriesErrorCode.PRODUCT_NOT_FOUND);
-        }
-
-        return inventories.stream()
-                .collect(Collectors.toMap(
-                        FranchiseInventory::getSerialCode,
-                        inventory -> FranchiseInventoryCommand.builder()
-                                .inventoryId(inventory.getInventoryId())
-                                .orderItemId(inventory.getOrderItemId())
-                                .orderId(inventory.getOrderId())
-                                .productId(inventory.getProductId())
-                                .serialCode(inventory.getSerialCode())
-                                .boxCode(inventory.getBoxCode())
-                                .build()));
     }
 
     // return: Map<boxCode, FranchiseInventoryCommand>

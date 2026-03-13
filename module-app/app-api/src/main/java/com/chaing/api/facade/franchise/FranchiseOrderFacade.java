@@ -273,6 +273,7 @@ public class FranchiseOrderFacade {
     public FranchiseOrderCreateResponse createOrder(Long userId, FranchiseOrderCreateRequest request) {
         // 발주 가능한지 재고 확인
 
+
         // TODO: 부분 접수되는건 어떻게 할거?
 
         // franchiseId
@@ -301,11 +302,6 @@ public class FranchiseOrderFacade {
 
         // FranchiseOrderCommand
         FranchiseOrderCommand order = franchiseOrderService.createOrder(request, orderCode, franchiseId, userId, productInfoByProductCode);
-
-        // List<productCode>
-        List<String> productCodes = request.items().stream()
-                .map(FranchiseOrderCreateRequestItem::productCode)
-                .toList();
 
         // List<FranchiseOrderItemCommand>
         List<FranchiseOrderItemDetailResponse> orderItems = franchiseOrderService.createOrderItems(request, productInfoByProductCode, orderCode);

@@ -1,6 +1,7 @@
 package com.chaing.domain.inventories.service;
 
 import com.chaing.core.dto.command.FranchiseInventoryCommand;
+import com.chaing.core.dto.command.FranchiseOrderCodeAndQuantityCommand;
 import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.core.dto.request.FranchiseOrderCreateRequestItem;
 import com.chaing.core.enums.LogType;
@@ -504,7 +505,7 @@ public class InventoryService {
         throw new IllegalArgumentException("Unsupported actorType: " + actorTypeRaw);
     }
 
-    public void checkStock(List<FranchiseOrderCreateRequestItem> items, Map<String, ProductInfo> productInfoByProductCode) {
+    public void checkStock(List<FranchiseOrderCodeAndQuantityCommand> items, Map<String, ProductInfo> productInfoByProductCode) {
         // Set<productId>
         Set<Long> productIds = items.stream()
                 .map(item -> productInfoByProductCode.get(item.productCode()).productId())
@@ -535,7 +536,7 @@ public class InventoryService {
         Map<Long, Integer> requestedQuantityByProductId = items.stream()
                 .collect(Collectors.toMap(
                         item -> productInfoByProductCode.get(item.productCode()).productId(),
-                        FranchiseOrderCreateRequestItem::quantity
+                        FranchiseOrderCodeAndQuantityCommand::quantity
                 ));
 
         // 수량 점검

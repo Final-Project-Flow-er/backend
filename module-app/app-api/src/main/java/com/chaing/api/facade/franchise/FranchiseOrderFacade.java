@@ -1,6 +1,7 @@
 package com.chaing.api.facade.franchise;
 
 import com.chaing.api.dto.franchise.orders.response.FranchiseOrderResponse;
+import com.chaing.core.dto.command.FranchiseOrderCodeAndQuantityCommand;
 import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.core.dto.request.FranchiseOrderCreateRequestItem;
 import com.chaing.domain.businessunits.service.impl.FranchiseServiceImpl;
@@ -214,6 +215,18 @@ public class FranchiseOrderFacade {
     // 가맹점의 발주 수정
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public FranchiseOrderUpdateResponse updateOrder(Long userId, String orderCode, List<FranchiseOrderUpdateRequest> requests) {
+        // List<FranchiseOrderCodeAndQuantityCommand>
+        List<FranchiseOrderCodeAndQuantityCommand> requestItemCommands = requests.stream().map(FranchiseOrderCodeAndQuantityCommand::from).toList();
+
+        // Set<productCode>
+        Set<String> productCodes = requests.stream().map(FranchiseOrderUpdateRequest::productCode).collect(Collectors.toSet());
+
+        // Map<productCode, ProductInfo>
+        Map<String, ProductInfo> productInfoByProductCode = productService.getProductInfosByProductCode(productCodes);
+
+        // 재고 체크
+        inventoryService.checkStock(requestItemCommands, productInfoByProductCode);
+
         // franchiseId
         Long franchiseId = userManagementService.getFranchiseIdByUserId(userId);
 
@@ -275,8 +288,11 @@ public class FranchiseOrderFacade {
         // Map<productCode, ProductInfo>
         Map<String, ProductInfo> productInfoByProductCode = productService.getProductInfosByProductCode(productCodes);
 
+        // List<FranchiseOrderCodeAndQuantityCommand>
+        List<FranchiseOrderCodeAndQuantityCommand> requestItemCommands = request.items().stream().map(FranchiseOrderCodeAndQuantityCommand::from).toList();
+
         // 발주 가능한지 재고 확인
-        inventoryService.checkStock(request.items(), productInfoByProductCode);
+        inventoryService.checkStock(requestItemCommands, productInfoByProductCode);
 
         // franchiseId
         Long franchiseId = userManagementService.getFranchiseIdByUserId(userId);

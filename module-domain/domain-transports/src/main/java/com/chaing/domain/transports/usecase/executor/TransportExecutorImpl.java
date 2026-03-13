@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 @Component
 @RequiredArgsConstructor
@@ -23,16 +24,22 @@ public class TransportExecutorImpl implements TransportExecutor {
     public void createTransits(Long vehicleId, List<OrderInfo> orders, Map<String, String> trackingMap, List<String> returnCodes) {
 
         List<Transit> transits = orders.stream()
-                .flatMap(order -> returnCodes.stream()
-                .map(code -> Transit.create(
-                        vehicleId,
-                        order.orderCode(),
-                        order.weight(),
-                        trackingMap.get(order.orderCode()),
-                        order.franchiseId(),
-                        code
-                ))
-                )
+                .flatMap(order -> {
+                    if (returnCodes == null || returnCodes.isEmpty()) {
+                        return Stream.of(Transit.create(
+                                vehicleId, order.orderCode(), order.weight(),
+                                trackingMap.get(order.orderCode()), order.franchiseId(),
+                                ""
+                        ));
+                    }
+
+                    return returnCodes.stream()
+                            .map(code -> Transit.create(
+                                    vehicleId, order.orderCode(), order.weight(),
+                                    trackingMap.get(order.orderCode()), order.franchiseId(),
+                                    code
+                            ));
+                })
                 .toList();
 
         transitRepository.saveAll(transits);

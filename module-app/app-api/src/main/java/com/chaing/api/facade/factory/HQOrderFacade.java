@@ -204,6 +204,11 @@ public class HQOrderFacade {
         List<HQOrderItemCommand> items = orderItemByOrderItemId.values().stream()
                 .map(item -> {
                     ProductInfo info = productInfoByProductId.get(item.productId());
+
+                    if (info == null) {
+                        throw new HQOrderException(HQOrderErrorCode.PRODUCT_NOT_FOUND);
+                    }
+
                     return HQOrderItemCommand.builder()
                             .orderId(item.orderId())
                             .orderItemId(item.orderItemId())

@@ -60,10 +60,19 @@ public class InventoryLogService {
 
     public void recordInventoryLog(List<InventoryLogCreateRequest> logs) {
         List<InventoryLog> entities = logs.stream()
+                .filter(request -> !inventoryLogRepository
+                        .existsByTransactionCodeAndBoxCodeAndLogTypeAndActorTypeAndActorIdAndDeletedAtIsNull(
+                                request.transactionCode(),
+                                request.boxCode(),
+                                request.logType(),
+                                request.actorType(),
+                                request.actorId()))
                 .map(this::toEntity)
                 .toList();
 
-        inventoryLogRepository.saveAll(entities);
+        if (!entities.isEmpty()) {
+            inventoryLogRepository.saveAll(entities);
+        }
     }
 
     private InventoryLog toEntity(InventoryLogCreateRequest request) {

@@ -58,7 +58,7 @@ public class FranchiseSalesFacade {
     }
 
     // 판매 취소
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public FranchiseSalesCancellationResponse cancel(Long userId, String salesCode) {
         // franchiseId
         Long franchiseId = userManagementService.getFranchiseIdByUserId(userId);

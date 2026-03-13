@@ -553,7 +553,7 @@ public class InventoryService {
             Integer requestedQuantity = requestedQuantityByProductId.get(productId);
             int existingQuantity = stockByProductId.get(productId).size();
 
-            if (requestedQuantity == null || requestedQuantity < existingQuantity) {
+            if (requestedQuantity == null || requestedQuantity > existingQuantity) {
                 throw new InventoriesException(InventoriesErrorCode.INVALID_STOCK);
             }
         });

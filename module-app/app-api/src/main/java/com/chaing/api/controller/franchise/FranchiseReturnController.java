@@ -68,7 +68,6 @@ public class FranchiseReturnController {
             @PathVariable("return-code") String returnCode,
             @Valid @RequestBody List<FranchiseReturnUpdateRequest> requests,
             @AuthenticationPrincipal UserPrincipal userPrincipal
-
     ) {
         Long userId = userPrincipal.getId();
 

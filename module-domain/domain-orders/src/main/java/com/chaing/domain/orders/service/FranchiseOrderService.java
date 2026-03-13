@@ -640,6 +640,13 @@ public class FranchiseOrderService {
             throw new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_NOT_FOUND);
         }
 
+        // Set<FranchiseOrder orderCode>
+        Set<String> existingOrderCodes = orders.stream().map(FranchiseOrder::getOrderCode).collect(Collectors.toSet());
+
+        if (!orderCodes.containsAll(existingOrderCodes)) {
+            throw new FranchiseOrderException(FranchiseOrderErrorCode.DATA_OMISSION);
+        }
+
         orders.forEach(order -> {
             order.cancelOrderByHQ(reasonByOrderCode.get(order.getOrderCode()));
         });

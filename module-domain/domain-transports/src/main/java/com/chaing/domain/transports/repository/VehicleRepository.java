@@ -13,7 +13,6 @@ import java.util.List;
 
 @Repository
 public interface VehicleRepository extends JpaRepository<Vehicle, Long> {
-
     List<Vehicle> findAllByStatusAndDispatchable(UsableStatus status, Dispatchable dispatchable);
 
     @Query("SELECT v.maxLoad FROM Vehicle v WHERE v.vehicleId = :vehicleId")
@@ -42,4 +41,7 @@ public interface VehicleRepository extends JpaRepository<Vehicle, Long> {
     @Modifying(clearAutomatically = true)
     @Query("UPDATE Vehicle v SET v.dispatchable = 'DISPATCHED' where v.vehicleId = :vehicleId")
     void updateDispatchable(@Param("vehicleId") Long vehicleId);
+
+    @Query("SELECT v FROM Vehicle v WHERE v.dispatchable in (:available, :dispatched)")
+    List<Vehicle> findAllByDispatchable(@Param("available") Dispatchable available, @Param("dispatched") Dispatchable dispatched);
 }

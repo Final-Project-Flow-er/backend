@@ -44,7 +44,8 @@ public class InternalTransportService {
                 })
                 .map(vehicle -> {
                     Long currentWeight = reader.getCurrentTransitWeight(vehicle.getVehicleId());
-                    return AvailableVehicleInfo.from(vehicle, currentWeight);
+                    String transportName = reader.getTransportName(vehicle.getTransportId());
+                    return AvailableVehicleInfo.from(transportName, vehicle, currentWeight);
                 })
                 .toList();
     }
@@ -103,5 +104,16 @@ public class InternalTransportService {
         return franchiseList.stream()
                 .map(franchiseId -> new DeliveryFeeInfo(franchiseId, deliveryFee))
                 .toList();
+    }
+
+    public List<AvailableVehicleInfo> getAllAvailableVehicle() {
+        List <Vehicle> vehicleList = reader.getAllAvailableVehicles();
+
+        return vehicleList.stream()
+                .map(vehicle -> {
+                    Long currentWeight = reader.getCurrentTransitWeight(vehicle.getVehicleId());
+                    String transportName = reader.getTransportName(vehicle.getTransportId());
+                    return AvailableVehicleInfo.from(transportName, vehicle, currentWeight);
+                }).toList();
     }
 }

@@ -4,6 +4,7 @@ import com.chaing.api.dto.transport.internal.request.VehicleAssignmentRequest;
 import com.chaing.api.dto.transport.internal.response.AvailableVehicleResponse;
 import com.chaing.api.dto.transport.internal.response.TransportCancelResponse;
 import com.chaing.api.dto.transport.internal.response.UnassignedOrderResponse;
+import com.chaing.api.dto.transport.internal.response.UnassignedReturnResponse;
 import com.chaing.domain.businessunits.dto.internal.BusinessUnitInternal;
 import com.chaing.domain.businessunits.exception.BusinessUnitErrorCode;
 import com.chaing.domain.businessunits.exception.BusinessUnitException;
@@ -11,6 +12,8 @@ import com.chaing.domain.businessunits.service.BusinessUnitService;
 import com.chaing.domain.orders.dto.response.FranchiseOrderForTransitResponse;
 import com.chaing.domain.orders.service.FranchiseOrderService;
 import com.chaing.domain.products.service.ProductService;
+import com.chaing.domain.returns.dto.command.HQReturnCommand;
+import com.chaing.domain.returns.service.FranchiseReturnService;
 import com.chaing.domain.transports.dto.DeliveryFeeInfo;
 import com.chaing.domain.transports.dto.OrderInfo;
 import com.chaing.domain.transports.dto.response.AvailableVehicleInfo;
@@ -25,6 +28,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static com.chaing.domain.returns.enums.ReturnStatus.ACCEPTED;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -34,6 +39,7 @@ public class InternalTransportFacade {
     private final FranchiseOrderService franchiseOrderService;
     private final ProductService productService;
     private final BusinessUnitService franchiseServiceImpl;
+    private final FranchiseReturnService franchisereturnService;
 
     // 운송 가능 차량 리스트 조회
     public List<AvailableVehicleResponse> getAvailableVehicle() {
@@ -43,9 +49,12 @@ public class InternalTransportFacade {
         return domainResponses.stream()
                 .map(res -> {
                     long safeMaxLoad = res.maxLoad() == null ? 0L : Math.max(0L, res.maxLoad());
-                    long safeCurrentLoad = res.currentWeight() == null ? 0L : Math.max(0L, res.currentWeight());
+                    long safeCurrentLoad = res.currentLoad() == null ? 0L : Math.max(0L, res.currentLoad());
                     long safeAvailableLoad = Math.max(0L, safeMaxLoad - safeCurrentLoad);
                     return new AvailableVehicleResponse(
+                            res.transportName(),
+                            res.driverName(),
+                            res.driverPhoneNumber(),
                             res.vehicleId(),
                             res.vehicleNumber(),
                             safeMaxLoad,
@@ -166,4 +175,32 @@ public class InternalTransportFacade {
                 .toList();
     }
 
+    public List<AvailableVehicleResponse> getVehicleForReturn() {
+        List<AvailableVehicleInfo> domainResponses = transportService.getAllAvailableVehicle();
+
+        return domainResponses.stream()
+                .map(AvailableVehicleResponse::from)
+                .toList();
+    }
+
+    public List<UnassignedReturnResponse> getUnassignedReturns() {
+
+        Map<Long, HQReturnCommand> returnCommandMap = franchisereturnService.getAllReturnByStatus(ACCEPTED);
+
+        Map<Long, BusinessUnitInternal> franchiseMap = returnCommandMap.values().stream()
+                .map(command -> franchiseServiceImpl.getById(command.franchiseId()))
+                .collect(Collectors.toMap(
+                        BusinessUnitInternal::id,
+                        info -> info,
+                        (existing, replacement) -> existing
+                ));
+
+        return returnCommandMap.values().stream()
+                .map(returnInfo -> {
+                    BusinessUnitInternal franchiseInfo = franchiseMap.get(returnInfo.franchiseId());
+
+                    return UnassignedReturnResponse.from(returnInfo, franchiseInfo);
+                })
+                .collect(Collectors.toList());
+    }
 }

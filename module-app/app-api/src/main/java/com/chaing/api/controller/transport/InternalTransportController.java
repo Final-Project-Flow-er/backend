@@ -4,6 +4,7 @@ import com.chaing.api.dto.transport.internal.request.VehicleAssignmentRequest;
 import com.chaing.api.dto.transport.internal.response.AvailableVehicleResponse;
 import com.chaing.api.dto.transport.internal.response.TransportCancelResponse;
 import com.chaing.api.dto.transport.internal.response.UnassignedOrderResponse;
+import com.chaing.api.dto.transport.internal.response.UnassignedReturnResponse;
 import com.chaing.api.facade.transport.InternalTransportFacade;
 import com.chaing.core.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -29,7 +30,7 @@ public class    InternalTransportController {
 
     private final InternalTransportFacade transportFacade;
 
-    @Operation(summary = "운송 가능 차량 조회", description = "배차 가능 차량 리스트 출력한다.")
+    @Operation(summary = "발주 운송 가능 차량 조회", description = "발주 건에 배차 가능 차량 리스트 출력한다.")
     @GetMapping("/available-vehicles")
     public ResponseEntity<ApiResponse<List<AvailableVehicleResponse>>> getAvailableVehicles() {
 
@@ -45,7 +46,7 @@ public class    InternalTransportController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
-    @Operation(summary = "차량 배정", description = "미배정 주문 차량 배정한다.")
+    @Operation(summary = "발주 차량 배정", description = "차량 미배정 발주 건에 차량 배정한다.")
     @PostMapping("/assignments")
     public ResponseEntity<ApiResponse<Void>> assignVehicle(
             @Valid @RequestBody VehicleAssignmentRequest request) {
@@ -64,6 +65,20 @@ public class    InternalTransportController {
 
         return ResponseEntity.ok(ApiResponse.success(response));
     }
+
+    @Operation(summary = "반품 운송 가능 차량 조회", description = "반품 건에 배차 가능 차량 리스트 출력한다.")
+    @GetMapping("/returns/available-vehicles")
+    public ResponseEntity<ApiResponse<List<AvailableVehicleResponse>>> getReturnAvailableVehicles() {
+        return ResponseEntity.ok(ApiResponse.success(transportFacade.getVehicleForReturn()));
+    }
+
+    @Operation(summary = "차량 미배정 반품 목록 조회", description = "차량이 배정되지 않은 반품 목록을 조회한다.")
+    @GetMapping("/unassigned-returns")
+    public ResponseEntity<ApiResponse<List<UnassignedReturnResponse>>> getUnassignedReturns() {
+        return ResponseEntity.ok(ApiResponse.success((transportFacade.getUnassignedReturns())));
+    }
+
+//    @Operation(summary = "반품 차량 배정", description = "차량 미배정 반품 건에 차량을 배정한다.")
 
     // 고려 사항으로 인해 추후 구현
 /*    @Operation(summary = "입고 승인 상태 변경", description = "입고 승인 시 상태 변경")

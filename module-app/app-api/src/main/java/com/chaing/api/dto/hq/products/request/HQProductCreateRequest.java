@@ -20,8 +20,8 @@ public record HQProductCreateRequest(
                 // 설명
                 @NotBlank String description,
 
-                // 이미지 URL
-                @NotBlank String imageUrl,
+                // 이미지 URL(직접 입력 시). 파일 업로드 시 null 가능
+                String imageUrl,
 
                 // 소비자 판매가
                 @NotNull BigDecimal price,
@@ -31,9 +31,6 @@ public record HQProductCreateRequest(
 
                 // 공급가
                 @NotNull BigDecimal supplyPrice,
-
-                // 안전재고
-                @NotNull Integer safetyStock,
 
                 // 판매 상태
                 @NotNull String status,

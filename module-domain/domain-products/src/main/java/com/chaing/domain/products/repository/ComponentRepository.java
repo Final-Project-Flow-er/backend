@@ -7,4 +7,5 @@ import java.util.Optional;
 
 public interface ComponentRepository extends JpaRepository<Component, Long> {
     Optional<Component> findByName(String name);
+    Optional<Component> findFirstByNameOrderByComponentIdAsc(String name);
 }

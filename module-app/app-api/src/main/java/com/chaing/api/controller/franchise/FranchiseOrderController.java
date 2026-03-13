@@ -39,7 +39,7 @@ public class FranchiseOrderController {
 
     @Operation(summary = "발주 조회", description = "가맹점 id로 해당 가맹점의 발주 전체 조회")
     @GetMapping
-    @PreAuthorize("hasAnyRole('FRANCHISE', 'HQ')")
+    @PreAuthorize("hasRole('FRANCHISE')")
     public ResponseEntity<ApiResponse<List<FranchiseOrderResponse>>> getAllOrders(
             @AuthenticationPrincipal UserPrincipal userPrincipal
             ) {
@@ -50,7 +50,7 @@ public class FranchiseOrderController {
 
     @Operation(summary = "특정 발주 조회", description = "가맹점 id와 발주 번호로 특정 발주 조회")
     @GetMapping("/{order-code}")
-    @PreAuthorize("hasAnyRole('FRANCHISE', 'HQ')")
+    @PreAuthorize("hasRole('FRANCHISE')")
     public ResponseEntity<ApiResponse<FranchiseOrderDetailResponse>> getOrder(
             @PathVariable("order-code") String orderCode,
             @AuthenticationPrincipal UserPrincipal userPrincipal
@@ -62,7 +62,7 @@ public class FranchiseOrderController {
 
     @Operation(summary = "발주 수정", description = "가맹점 id와 발주 번호로 특정 발주 수정")
     @PatchMapping("/{order-code}")
-    @PreAuthorize("hasAnyRole('FRANCHISE')")
+    @PreAuthorize("hasRole('FRANCHISE')")
     public ResponseEntity<ApiResponse<FranchiseOrderUpdateResponse>> updateOrder(
             @PathVariable("order-code") String orderCode,
             @RequestBody List<FranchiseOrderUpdateRequest> requests,
@@ -75,7 +75,7 @@ public class FranchiseOrderController {
 
     @Operation(summary = "발주 취소", description = "가맹점 id와 발주 번호로 특정 발주 취소")
     @PatchMapping("/{order-code}/cancellation")
-    @PreAuthorize("hasAnyRole('FRANCHISE')")
+    @PreAuthorize("hasRole('FRANCHISE')")
     public ResponseEntity<ApiResponse<FranchiseOrderCancelResponse>> cancelOrder(
             @PathVariable("order-code") String orderCode,
             @AuthenticationPrincipal UserPrincipal userPrincipal
@@ -87,7 +87,7 @@ public class FranchiseOrderController {
 
     @Operation(summary = "발주 생성", description = "가맹점 id로 발주 생성")
     @PostMapping
-    @PreAuthorize("hasAnyRole('FRANCHISE')")
+    @PreAuthorize("hasRole('FRANCHISE')")
     public ResponseEntity<ApiResponse<FranchiseOrderCreateResponse>> createOrder(
             @Valid @RequestBody FranchiseOrderCreateRequest request,
             @AuthenticationPrincipal UserPrincipal userPrincipal

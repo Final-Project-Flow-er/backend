@@ -19,6 +19,8 @@ public record HQOrderItemCommand(
 
         Long productId,
 
+        String productCode,
+
         Integer quantity,
 
         BigDecimal unitPrice,
@@ -37,6 +39,7 @@ public record HQOrderItemCommand(
                 .orderId(item.getHeadOfficeOrder().getHeadOfficeOrderId())
                 .orderItemId(item.getHeadOfficeOrderItemId())
                 .productId(productId)
+                .productCode(info.productCode())
                 .quantity(item.getQuantity())
                 .unitPrice(item.getUnitPrice())
                 .totalPrice(item.getTotalPrice())
@@ -54,6 +57,7 @@ public record HQOrderItemCommand(
                 .orderId(item.getHeadOfficeOrder().getHeadOfficeOrderId())
                 .orderItemId(item.getHeadOfficeOrderItemId())
                 .productId(item.getProductId())
+                .productCode(null)
                 .quantity(item.getQuantity())
                 .unitPrice(item.getUnitPrice())
                 .totalPrice(item.getTotalPrice())

@@ -46,4 +46,9 @@ public class TransportExecutorImpl implements TransportExecutor {
 
         return orderCode;
     }
+
+    @Override
+    public void updateDispatchableStatus(Long vehicleId) {
+        vehicleRepository.updateDispatchable(vehicleId);
+    }
 }

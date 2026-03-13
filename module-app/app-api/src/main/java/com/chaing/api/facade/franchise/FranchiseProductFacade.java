@@ -39,7 +39,6 @@ public class FranchiseProductFacade {
                         .kcal(p.product().getKcal())
                         .spicy(spicyValid(p.product().getProductCode()))
                         .weight(p.product().getWeight())
-                        .safetyStock(p.product().getSafetyStock())
                         .price(p.product().getPrice())
                         .supplyPrice(p.product().getSupplyPrice())
                         .startDate(p.product().getSupplyPriceStartDate())

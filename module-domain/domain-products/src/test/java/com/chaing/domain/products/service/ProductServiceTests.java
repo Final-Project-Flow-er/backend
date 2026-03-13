@@ -87,7 +87,6 @@ class ProductServiceTests {
                                 .price(new BigDecimal("10000"))
                                 .costPrice(new BigDecimal("7000"))
                                 .supplyPrice(new BigDecimal("8000"))
-                                .safetyStock(5)
                                 .status("ON_SALE")
                                 .kcal(500)
                                 .weight(400)
@@ -156,7 +155,6 @@ class ProductServiceTests {
                                 .price(new BigDecimal("10000"))
                                 .costPrice(new BigDecimal("7000"))
                                 .supplyPrice(new BigDecimal("8000"))
-                                .safetyStock(5)
                                 .status(ProductStatus.ON_SALE)
                                 .kcal(500)
                                 .weight(400)
@@ -181,7 +179,6 @@ class ProductServiceTests {
 
                 assertThat(product.getDescription()).isEqualTo("기존 설명");
                 assertThat(product.getSupplyPrice()).isEqualByComparingTo("8000");
-                assertThat(product.getSafetyStock()).isEqualTo(5);
                 assertThat(product.getKcal()).isEqualTo(500);
         }
 
@@ -247,7 +244,6 @@ class ProductServiceTests {
                                 .price(new BigDecimal("10000"))
                                 .costPrice(new BigDecimal("7000"))
                                 .supplyPrice(new BigDecimal("8000"))
-                                .safetyStock(5)
                                 .status(ProductStatus.ON_SALE)
                                 .kcal(500)
                                 .weight(400)

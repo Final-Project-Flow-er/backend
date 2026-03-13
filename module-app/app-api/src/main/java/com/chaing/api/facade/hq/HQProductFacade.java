@@ -47,7 +47,6 @@ public class HQProductFacade {
                         .spicy(spicyValid(p.product().getProductCode()))
                         .kcal(p.product().getKcal())
                         .weight(p.product().getWeight())
-                        .safetyStock(p.product().getSafetyStock())
                         .price(p.product().getPrice())
                         .supplyPrice(p.product().getSupplyPrice())
                         .costPrice(p.product().getCostPrice())
@@ -128,7 +127,6 @@ public class HQProductFacade {
                 .price(request.price())
                 .costPrice(request.costPrice())
                 .supplyPrice(request.supplyPrice())
-                .safetyStock(request.safetyStock())
                 .status(request.status())
                 .kcal(request.kcal())
                 .weight(request.weight())
@@ -145,7 +143,6 @@ public class HQProductFacade {
                 request.originalPrice(),
                 request.supplyPrice(),
                 request.status(),
-                request.baseSafeStock(),
                 request.kcal(),
                 request.startDate(),
                 request.endDate(),

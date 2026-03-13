@@ -74,11 +74,6 @@ public class Product extends BaseEntity {
     @Column(nullable = false)
     private BigDecimal supplyPrice;
 
-    // 안전재고
-    @NotNull
-    @Column(nullable = false)
-    private Integer safetyStock;
-
     // 판매 중, 판매예정, 임시 품절, 단종
     @NotNull
     @Enumerated(EnumType.STRING)
@@ -112,7 +107,6 @@ public class Product extends BaseEntity {
         if (req.originalPrice() != null) this.costPrice = req.originalPrice();
         if (req.supplyPrice() != null) this.supplyPrice = req.supplyPrice();
 
-        if (req.baseSafeStock() != null) this.safetyStock = req.baseSafeStock();
         if (req.kcal() != null) this.kcal = req.kcal();
 
         if (req.startDate() != null) this.supplyPriceStartDate = req.startDate();

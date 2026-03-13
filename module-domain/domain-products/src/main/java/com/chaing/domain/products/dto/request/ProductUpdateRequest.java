@@ -13,7 +13,6 @@ public record ProductUpdateRequest(
                 BigDecimal originalPrice, // 원가
                 BigDecimal supplyPrice, // 공급가
                 String status, // 상태
-                Integer baseSafeStock, // 기준 안전재고
                 Integer kcal, // 칼로리
                 LocalDate startDate, // 적용 시작일
                 LocalDate endDate, // 적용 종료일

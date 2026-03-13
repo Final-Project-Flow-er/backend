@@ -32,9 +32,6 @@ public record HQProductCreateRequest(
                 // 공급가
                 @NotNull BigDecimal supplyPrice,
 
-                // 안전재고
-                @NotNull Integer safetyStock,
-
                 // 판매 상태
                 @NotNull String status,
 

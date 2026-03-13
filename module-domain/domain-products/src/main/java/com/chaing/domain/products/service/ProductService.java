@@ -60,7 +60,6 @@ public class ProductService {
                 .price(request.price())
                 .costPrice(request.costPrice())
                 .supplyPrice(request.supplyPrice())
-                .safetyStock(request.safetyStock())
                 .status(status)
                 .kcal(request.kcal())
                 .weight(request.weight())
@@ -137,7 +136,7 @@ public class ProductService {
     }
 
     private Component getOrCreateComponent(String name) {
-        return componentRepository.findByName(name)
+        return componentRepository.findFirstByNameOrderByComponentIdAsc(name)
                 .orElseGet(() -> {
                     try {
                         return componentRepository.save(
@@ -145,7 +144,7 @@ public class ProductService {
                                         .name(name)
                                         .build());
                     } catch (DataIntegrityViolationException e) {
-                        return componentRepository.findByName(name)
+                        return componentRepository.findFirstByNameOrderByComponentIdAsc(name)
                                 .orElseThrow(() -> e);
                     }
                 });

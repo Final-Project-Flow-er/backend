@@ -63,11 +63,7 @@ public class FranchiseSalesFacade {
         // franchiseId
         Long franchiseId = userManagementService.getFranchiseIdByUserId(userId);
 
-        FranchiseSalesCancellationResponse response = franchiseSalesService.cancel(franchiseId, salesCode);
-
-        // 정산 취소
-
-        return response;
+        return franchiseSalesService.cancel(franchiseId, salesCode);
     }
 
     // 판매 생성

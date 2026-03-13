@@ -41,7 +41,7 @@ public class InternalTransportFacade {
     private final FranchiseOrderService franchiseOrderService;
     private final ProductService productService;
     private final BusinessUnitService franchiseServiceImpl;
-    private final FranchiseReturnService franchisereturnService;
+    private final FranchiseReturnService franchiseReturnService;
 
     // 운송 가능 차량 리스트 조회
     public List<AvailableVehicleResponse> getAvailableVehicle() {
@@ -187,7 +187,7 @@ public class InternalTransportFacade {
 
     public List<UnassignedReturnResponse> getUnassignedReturns() {
 
-        Map<Long, HQReturnCommand> returnCommandMap = franchisereturnService.getAllReturnByStatus(ACCEPTED);
+        Map<Long, HQReturnCommand> returnCommandMap = franchiseReturnService.getAllReturnByStatus(ACCEPTED);
 
         Map<Long, BusinessUnitInternal> franchiseMap = returnCommandMap.values().stream()
                 .map(command -> franchiseServiceImpl.getById(command.franchiseId()))
@@ -210,7 +210,7 @@ public class InternalTransportFacade {
     @Transactional
     public void assignVehicleReturns(@Valid VehicleAssignmentRequest request) {
 
-        List<FranchiseReturnCommandForTransit> returns = franchisereturnService.getReturnForTransit(request.selectedIds());
+        List<FranchiseReturnCommandForTransit> returns = franchiseReturnService.getReturnForTransit(request.selectedIds());
 
         List<Long> orderIds = returns.stream().map(FranchiseReturnCommandForTransit::franchiseOrderId).toList();
 

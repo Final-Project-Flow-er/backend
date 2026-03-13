@@ -168,8 +168,6 @@ public class FactoryFacade {
     // 발주 접수/반려
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public List<FactoryOrderUpdateResponse> updateOrders(FactoryOrderRequest request, boolean isAccept) {
-        // 재고 확인
-
         // Map<orderCode, HQOrderStatus>
         Map<String, HQOrderStatus> orderStatusByOrderCode = hqOrderService.updateOrders(request.orderCodes(), isAccept);
 

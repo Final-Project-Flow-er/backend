@@ -7,6 +7,7 @@ import com.chaing.domain.orders.dto.command.HQOrderCancelCommand;
 import com.chaing.domain.orders.dto.command.FranchiseOrderDetailCommand;
 import com.chaing.domain.orders.dto.command.FranchiseOrderItemCommand;
 import com.chaing.domain.orders.dto.request.FranchiseOrderStatusUpdateRequest;
+import com.chaing.domain.orders.dto.request.HQFranchiseOrderCancelRequest;
 import com.chaing.domain.orders.dto.request.HQOrderCreateRequest;
 import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.domain.orders.dto.info.HQOrderCommand;
@@ -15,6 +16,7 @@ import com.chaing.domain.orders.dto.request.HQOrderItemCreateCommand;
 import com.chaing.domain.orders.dto.request.HQOrderUpdateRequest;
 import com.chaing.domain.orders.dto.request.HQOrderUpdateStatusRequest;
 import com.chaing.domain.orders.dto.response.FranchiseOrderStatusShippingPendingResponse;
+import com.chaing.domain.orders.dto.response.HQFranchiseOrderCancelResponse;
 import com.chaing.domain.orders.dto.response.HQOrderCancelResponse;
 import com.chaing.domain.orders.dto.response.HQOrderCreateResponse;
 import com.chaing.domain.orders.dto.response.HQOrderDetailResponse;
@@ -22,12 +24,14 @@ import com.chaing.domain.orders.dto.response.HQOrderResponse;
 import com.chaing.domain.orders.dto.response.HQOrderStatusUpdateResponse;
 import com.chaing.domain.orders.dto.response.HQOrderUpdateResponse;
 import com.chaing.domain.orders.dto.response.HQRequestedOrderResponse;
+import com.chaing.domain.orders.enums.FranchiseOrderStatus;
 import com.chaing.domain.orders.exception.HQOrderErrorCode;
 import com.chaing.domain.orders.exception.HQOrderException;
 import com.chaing.domain.orders.service.FranchiseOrderService;
 import com.chaing.domain.orders.service.HQOrderService;
 import com.chaing.domain.products.service.ProductService;
 import com.chaing.domain.users.service.UserManagementService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -196,8 +200,26 @@ public class HQOrderFacade {
                         Collectors.mapping(HQOrderItemCommand::orderItemId, Collectors.toList())
                 ));
 
-        // List<HQOrderItemCommand>
-        List<HQOrderItemCommand> items = orderItemByOrderItemId.values().stream().toList();
+        // List<HQOrderItemCommand> — productCode 보강
+        List<HQOrderItemCommand> items = orderItemByOrderItemId.values().stream()
+                .map(item -> {
+                    ProductInfo info = productInfoByProductId.get(item.productId());
+
+                    if (info == null) {
+                        throw new HQOrderException(HQOrderErrorCode.PRODUCT_NOT_FOUND);
+                    }
+
+                    return HQOrderItemCommand.builder()
+                            .orderId(item.orderId())
+                            .orderItemId(item.orderItemId())
+                            .productId(item.productId())
+                            .productCode(info.productCode())
+                            .quantity(item.quantity())
+                            .unitPrice(item.unitPrice())
+                            .totalPrice(item.totalPrice())
+                            .build();
+                })
+                .toList();
 
         // 반환
         return HQOrderDetailResponse.builder()
@@ -447,6 +469,19 @@ public class HQOrderFacade {
         // 반환
         return orders.values().stream()
                 .map(FranchiseOrderStatusShippingPendingResponse::from)
+                .toList();
+    }
+
+    // 가맹점의 발주 요청 취소
+    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
+    public List<HQFranchiseOrderCancelResponse> cancelFranchiseOrder(@Valid List<HQFranchiseOrderCancelRequest> request) {
+        // 수정
+        // Map<orderCode, FranchiseOrderStatus>
+        Map<String, FranchiseOrderStatus> statusByOrderCode = franchiseOrderService.cancelFranchiseOrder(request);
+
+        // 반환
+        return statusByOrderCode.entrySet().stream()
+                .map(HQFranchiseOrderCancelResponse::of)
                 .toList();
     }
 }

@@ -11,6 +11,7 @@ public record FranchiseProductResponse(
         String name, // 제품이름
         String productCode, // 제품코드
         String description, // 제품 설명
+        String imageUrl, // 제품 이미지 URL
         String size, // 제품 사이즈
         String spicy, // 맵기
         Integer kcal, // 제품 칼로리

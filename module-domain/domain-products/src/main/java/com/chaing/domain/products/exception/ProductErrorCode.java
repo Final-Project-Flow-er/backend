@@ -15,6 +15,7 @@ public enum ProductErrorCode implements ErrorCode {
     // 400 BAD REQUEST
     INVALID_PRODUCT_CODE_FORMAT(400, "PR003", "상품 코드 형식이 올바르지 않습니다."),
     INVALID_PRODUCT_STATUS(400, "PR005", "잘못된 상품 상태 값입니다."),
+    DATA_OMISSION(400, "PR005", "데이터 누락이 존재합니다."),
 
     // 409 CONFLICT
     DUPLICATE_PRODUCT_CODE(409, "PR004", "상품 코드가 중복됩니다.");

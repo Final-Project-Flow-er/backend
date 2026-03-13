@@ -1,9 +1,8 @@
 package com.chaing.domain.inventories.service;
 
 import com.chaing.core.dto.command.FranchiseInventoryCommand;
-import com.chaing.core.dto.info.ReturnItemInfo;
-import com.chaing.core.dto.request.FranchiseReturnUpdateRequest;
-import com.chaing.core.dto.returns.request.ReturnToInventoryRequest;
+import com.chaing.core.dto.info.ProductInfo;
+import com.chaing.core.dto.request.FranchiseOrderCreateRequestItem;
 import com.chaing.core.enums.LogType;
 import com.chaing.core.enums.ReturnItemStatus;
 import com.chaing.domain.inventories.dto.request.DisposalRequest;
@@ -29,7 +28,6 @@ import com.chaing.domain.inventories.repository.FactoryInventoryRepository;
 import com.chaing.domain.inventories.repository.FranchiseInventoryRepository;
 import com.chaing.domain.inventories.repository.HQInventoryRepository;
 import com.chaing.domain.inventories.repository.InventoryPolicyRepository;
-import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -42,6 +40,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -503,5 +502,50 @@ public class InventoryService {
         }
 
         throw new IllegalArgumentException("Unsupported actorType: " + actorTypeRaw);
+    }
+
+    public void checkStock(List<FranchiseOrderCreateRequestItem> items, Map<String, ProductInfo> productInfoByProductCode) {
+        // Set<productId>
+        Set<Long> productIds = items.stream()
+                .map(item -> productInfoByProductCode.get(item.productCode()).productId())
+                .collect(Collectors.toSet());
+
+        // List<FactoryInventory>
+        List<FactoryInventory> inventories = factoryInventoryRepository.findAllByProductIdInAndStatusAndDeletedAtIsNull(productIds, LogType.AVAILABLE);
+
+        // Set<productId>
+        Set<Long> existingProductIds = inventories.stream().map(FactoryInventory::getProductId).collect(Collectors.toSet());
+
+        if (inventories.isEmpty()) {
+            throw new InventoriesException(InventoriesErrorCode.PRODUCT_NOT_FOUND);
+        }
+
+        if (!productIds.containsAll(existingProductIds)) {
+            throw new InventoriesException(InventoriesErrorCode.DATA_OMISSION);
+        }
+
+        // Map<productId, List<FactoryInventory>>
+        Map<Long, List<FactoryInventory>> stockByProductId = inventories.stream()
+                .collect(Collectors.groupingBy(
+                        FactoryInventory::getProductId,
+                        Collectors.mapping(Function.identity(), Collectors.toList())
+                ));
+
+        // Map<productId, quantity>
+        Map<Long, Integer> requestedQuantityByProductId = items.stream()
+                .collect(Collectors.toMap(
+                        item -> productInfoByProductCode.get(item.productCode()).productId(),
+                        FranchiseOrderCreateRequestItem::quantity
+                ));
+
+        // 수량 점검
+        stockByProductId.forEach((productId, factoryInventories) -> {
+            Integer requestedQuantity = requestedQuantityByProductId.get(productId);
+            int existingQuantity = stockByProductId.get(productId).size();
+
+            if (requestedQuantity == null || requestedQuantity < existingQuantity) {
+                throw new InventoriesException(InventoriesErrorCode.INVALID_STOCK);
+            }
+        });
     }
 }

@@ -1,4 +1,4 @@
-package com.chaing.domain.orders.dto.request;
+package com.chaing.core.dto.request;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;

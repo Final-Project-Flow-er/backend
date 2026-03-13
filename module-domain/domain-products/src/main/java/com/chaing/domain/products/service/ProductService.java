@@ -256,4 +256,33 @@ public class ProductService {
     public List<ProductInfoResponse> getInventoryProducts(String productCode, String name) {
         return productRepository.getInventoryProducts(productCode, name);
     }
+
+    // return: Map<productCode, ProductInfo>
+    public Map<String, ProductInfo> getProductInfosByProductCode(Set<String> productCodes) {
+        List<Product> products = productRepository.findAllByProductCodeInAndDeletedAtIsNull(productCodes);
+
+        if (products == null || products.isEmpty()) {
+            throw new ProductException(ProductErrorCode.PRODUCT_NOT_FOUND);
+        }
+
+        // Set<productCode>
+        Set<String> existingProductCodes = products.stream().map(Product::getProductCode).collect(Collectors.toSet());
+
+        if (!productCodes.containsAll(existingProductCodes)) {
+            throw new ProductException(ProductErrorCode.DATA_OMISSION);
+        }
+
+        return products.stream()
+                .collect(Collectors.toMap(
+                        Product::getProductCode,
+                        product -> ProductInfo.builder()
+                                .productId(product.getProductId())
+                                .productCode(product.getProductCode())
+                                .productName(product.getName())
+                                .retailPrice(product.getPrice())
+                                .costPrice(product.getCostPrice())
+                                .tradePrice(product.getSupplyPrice())
+                                .build()
+                ));
+    }
 }

@@ -6,7 +6,7 @@ import com.chaing.domain.orders.dto.command.FranchiseOrderCommand;
 import com.chaing.domain.orders.dto.command.FranchiseOrderDetailCommand;
 import com.chaing.domain.orders.dto.command.FranchiseOrderItemCommand;
 import com.chaing.domain.orders.dto.request.FranchiseOrderCreateRequest;
-import com.chaing.domain.orders.dto.request.FranchiseOrderCreateRequestItem;
+import com.chaing.core.dto.request.FranchiseOrderCreateRequestItem;
 import com.chaing.domain.orders.dto.request.FranchiseOrderUpdateRequest;
 import com.chaing.domain.orders.dto.request.HQOrderUpdateStatusRequest;
 import com.chaing.domain.orders.dto.response.FranchiseOrderCancelResponse;

@@ -2,29 +2,25 @@ package com.chaing.api.facade.franchise;
 
 import com.chaing.api.dto.franchise.orders.response.FranchiseOrderResponse;
 import com.chaing.core.dto.info.ProductInfo;
+import com.chaing.core.dto.request.FranchiseOrderCreateRequestItem;
 import com.chaing.domain.businessunits.service.impl.FranchiseServiceImpl;
 import com.chaing.domain.inventories.service.InventoryService;
 import com.chaing.domain.orders.dto.command.FranchiseOrderCommand;
 import com.chaing.domain.orders.dto.command.FranchiseOrderDetailCommand;
 import com.chaing.domain.orders.dto.command.FranchiseOrderItemCommand;
 import com.chaing.domain.orders.dto.request.FranchiseOrderCreateRequest;
-import com.chaing.domain.orders.dto.request.FranchiseOrderCreateRequestItem;
-import com.chaing.domain.orders.dto.request.FranchiseOrderStatusUpdateRequest;
 import com.chaing.domain.orders.dto.request.FranchiseOrderUpdateRequest;
 import com.chaing.domain.orders.dto.response.FranchiseOrderCancelResponse;
 import com.chaing.domain.orders.dto.response.FranchiseOrderCreateResponse;
 import com.chaing.domain.orders.dto.response.FranchiseOrderDetailResponse;
 import com.chaing.domain.orders.dto.response.FranchiseOrderItemDetailResponse;
-import com.chaing.domain.orders.dto.response.FranchiseOrderStatusShippingPendingResponse;
 import com.chaing.domain.orders.dto.response.FranchiseOrderUpdateResponse;
-import com.chaing.domain.orders.entity.FranchiseOrderItem;
 import com.chaing.domain.orders.exception.OrderErrorCode;
 import com.chaing.domain.orders.exception.OrderException;
 import com.chaing.domain.orders.service.FranchiseOrderCodeGenerator;
 import com.chaing.domain.orders.service.FranchiseOrderService;
 import com.chaing.domain.products.service.ProductService;
 import com.chaing.domain.users.service.UserManagementService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -273,12 +269,14 @@ public class FranchiseOrderFacade {
     // 가맹점 발주 생성
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public FranchiseOrderCreateResponse createOrder(Long userId, FranchiseOrderCreateRequest request) {
-        // 발주 가능한지 재고 확인
-        if (!inventoryService.checkStock(request.items())) {
-            throw new OrderException(OrderErrorCode.INVALID_STOCK);
-        }
+        // Set<productCode>
+        Set<String> productCodes = request.items().stream().map(FranchiseOrderCreateRequestItem::productCode).collect(Collectors.toSet());
 
-        // TODO: 부분 접수되는건 어떻게 할거?
+        // Map<productCode, ProductInfo>
+        Map<String, ProductInfo> productInfoByProductCode = productService.getProductInfosByProductCode(productCodes);
+
+        // 발주 가능한지 재고 확인
+        inventoryService.checkStock(request.items(), productInfoByProductCode);
 
         // franchiseId
         Long franchiseId = userManagementService.getFranchiseIdByUserId(userId);
@@ -288,21 +286,11 @@ public class FranchiseOrderFacade {
         log.info("franchiseId: {}", franchiseId);
         log.info("userId: {}", userId);
 
-        // username1, 2
+        // username
         String username = userManagementService.getUsernameByUserId(userId);
 
         // orderCode
         String orderCode = generator.generate(franchiseCode);
-
-        // Map<productId, ProductInfo>
-        Map<Long, ProductInfo> productInfoByProductId = productService.getAllProductInfo();
-
-        // Map<productCode, ProductInfo>
-        Map<String, ProductInfo> productInfoByProductCode = productInfoByProductId.values().stream()
-                .collect(Collectors.toMap(
-                        ProductInfo::productCode,
-                        Function.identity()
-                ));
 
         // FranchiseOrderCommand
         FranchiseOrderCommand order = franchiseOrderService.createOrder(request, orderCode, franchiseId, userId, productInfoByProductCode);

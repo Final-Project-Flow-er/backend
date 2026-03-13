@@ -22,6 +22,9 @@ import com.chaing.domain.settlements.enums.DocumentType;
 import com.chaing.domain.settlements.enums.PeriodType;
 import com.chaing.domain.settlements.enums.SettlementStatus;
 import com.chaing.domain.settlements.enums.VoucherType;
+import com.chaing.domain.returns.entity.Returns;
+import com.chaing.domain.returns.enums.ReturnStatus;
+import com.chaing.domain.returns.repository.FranchiseReturnRepository;
 import com.chaing.domain.settlements.service.DailySettlementService;
 import com.chaing.domain.settlements.service.MonthlySettlementService;
 import com.chaing.domain.settlements.service.SettlementDocumentService;
@@ -66,6 +69,7 @@ public class FranchiseSettlementFacade {
         private final FranchiseSalesItemRepository salesItemRepository;
         private final FranchiseOrderRepository orderRepository;
         private final FranchiseOrderItemRepository orderItemRepository;
+        private final FranchiseReturnRepository returnRepository;
 
         // 일별 정산 요약
         @Transactional(readOnly = true)
@@ -685,18 +689,29 @@ public class FranchiseSettlementFacade {
                                 .map(FranchiseOrder::getTotalAmount)
                                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+                // 3. 해당 날짜의 반품 내역 (ACCEPTED) 조회 및 집계 [추가]
+                List<Returns> returnsList = returnRepository.findAllByFranchiseIdAndReturnStatusAndCreatedAtBetween(
+                                franchiseId,
+                                ReturnStatus.ACCEPTED,
+                                date.atStartOfDay(),
+                                date.atTime(23, 59, 59));
+
+                BigDecimal refundAmount = returnsList.stream()
+                                .map(Returns::getTotalReturnAmount)
+                                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
                 // 간소화된 가집계 결과 반환
                 return DailySettlementReceipt.builder()
                                 .franchiseId(franchiseId)
                                 .settlementDate(date)
                                 .totalSaleAmount(totalSale)
                                 .orderAmount(orderAmount)
-                                .refundAmount(BigDecimal.ZERO) // 필요시 추가 구현
-                                .deliveryFee(BigDecimal.ZERO) // 필요시 추가 구현
-                                .lossAmount(BigDecimal.ZERO) // 필요시 추가 구현
-                                .commissionFee(BigDecimal.ZERO) // 필요시 추가 구현
+                                .refundAmount(refundAmount) // 실제 반품 환급액 반영
+                                .deliveryFee(BigDecimal.ZERO)
+                                .lossAmount(BigDecimal.ZERO)
+                                .commissionFee(BigDecimal.ZERO)
                                 .adjustmentAmount(BigDecimal.ZERO)
-                                .finalAmount(totalSale.subtract(orderAmount)) // 단순 차액
+                                .finalAmount(totalSale.subtract(orderAmount).add(refundAmount)) // 매출 - 발주 + 반품
                                 .build();
         }
 

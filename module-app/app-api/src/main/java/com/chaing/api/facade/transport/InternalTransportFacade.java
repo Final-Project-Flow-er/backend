@@ -16,10 +16,12 @@ import com.chaing.domain.returns.dto.command.HQReturnCommand;
 import com.chaing.domain.returns.service.FranchiseReturnService;
 import com.chaing.domain.transports.dto.DeliveryFeeInfo;
 import com.chaing.domain.transports.dto.OrderInfo;
+import com.chaing.domain.returns.dto.command.FranchiseReturnCommandForTransit;
 import com.chaing.domain.transports.dto.response.AvailableVehicleInfo;
 import com.chaing.domain.transports.exception.TransportErrorCode;
 import com.chaing.domain.transports.exception.TransportException;
 import com.chaing.domain.transports.service.InternalTransportService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -71,7 +73,7 @@ public class InternalTransportFacade {
 
         // 발주 도메인
         // 발주 Id, 중량 정보 받아오기
-        List<FranchiseOrderForTransitResponse> orders = franchiseOrderService.getOrdersForTransit(request.orderIds());
+        List<FranchiseOrderForTransitResponse> orders = franchiseOrderService.getOrdersForTransit(request.selectedIds());
 
         // 상품 Id 추출
         List<OrderInfo> orderInfos = getOrderInfos(orders);
@@ -202,5 +204,46 @@ public class InternalTransportFacade {
                     return UnassignedReturnResponse.from(returnInfo, franchiseInfo);
                 })
                 .collect(Collectors.toList());
+    }
+
+    // 반품 차량 배정
+    @Transactional
+    public void assignVehicleReturns(@Valid VehicleAssignmentRequest request) {
+
+        List<FranchiseReturnCommandForTransit> returns = franchisereturnService.getReturnForTransit(request.selectedIds());
+
+        List<Long> orderIds = returns.stream().map(FranchiseReturnCommandForTransit::franchiseId).toList();
+
+        List<FranchiseOrderForTransitResponse> orders = franchiseOrderService.getOrdersForTransit(orderIds);
+
+        List<OrderInfo> orderInfos = getOrderInfos(orders);
+
+        // 선택된 발주의 총 무게 계산
+        Long totalWeight = orderInfos.stream()
+                .mapToLong(OrderInfo::weight)
+                .sum();
+
+        List<String> returnCodes = returns.stream()
+                .map(FranchiseReturnCommandForTransit::returnCode)
+                .toList();
+
+        // 외부 운송 모듈
+        // 송장 번호 가져오기
+        Map<String, String> trackingMap = Map.of(
+                "SE0320260207001", "TRACK-12345",
+                "ORD002", "TRACK-67890"
+        );
+                /* 외부 운송 모듈 구현 전 임시 값으로 대체
+                externalTrackingModule.getTrackingNumbers(
+                orderInfos.stream().map(OrderInfo::orderCode).toList()
+        );*/
+
+        transportService.assignVehicleReturn(
+                request.vehicleId(),
+                orderInfos,
+                trackingMap,     // String
+                totalWeight,
+                returnCodes
+        );
     }
 }

@@ -20,16 +20,19 @@ public class TransportExecutorImpl implements TransportExecutor {
     private final VehicleRepository vehicleRepository;
 
     @Override
-    public void createTransits(Long vehicleId, List<OrderInfo> orders, Map<String, String> trackingMap) {
+    public void createTransits(Long vehicleId, List<OrderInfo> orders, Map<String, String> trackingMap, List<String> returnCodes) {
 
         List<Transit> transits = orders.stream()
-                .map(order -> Transit.create(
+                .flatMap(order -> returnCodes.stream()
+                .map(code -> Transit.create(
                         vehicleId,
                         order.orderCode(),
                         order.weight(),
                         trackingMap.get(order.orderCode()),
-                        order.franchiseId()
+                        order.franchiseId(),
+                        code
                 ))
+                )
                 .toList();
 
         transitRepository.saveAll(transits);

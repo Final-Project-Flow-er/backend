@@ -71,7 +71,7 @@ public class InternalTransportService {
         validator.checkTrackingNumber(orders, trackingMap);
 
         // 차량 배정
-        executor.createTransits(vehicleId, orders, trackingMap);
+        executor.createTransits(vehicleId, orders, trackingMap, null);
 
         // 차량 상태 확인 및 변경
         if(maxLoad < currentWeight + newWeight + 100) {
@@ -115,5 +115,16 @@ public class InternalTransportService {
                     String transportName = reader.getTransportName(vehicle.getTransportId());
                     return AvailableVehicleInfo.from(transportName, vehicle, currentWeight);
                 }).toList();
+    }
+
+    public void assignVehicleReturn(@NotNull(message = "차량을 선택해주세요") Long vehicleId,
+                                    List<OrderInfo> orderInfos, Map<String, String> trackingMap,
+                                    Long totalWeight, List<String> returnCodes) {
+
+        // 송장 유효성 검증
+        validator.checkTrackingNumber(orderInfos, trackingMap);
+
+        // 차량 배정
+        executor.createTransits(vehicleId, orderInfos, trackingMap, returnCodes);
     }
 }

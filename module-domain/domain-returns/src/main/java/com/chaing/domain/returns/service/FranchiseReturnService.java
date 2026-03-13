@@ -2,6 +2,7 @@ package com.chaing.domain.returns.service;
 
 import com.chaing.core.dto.command.FranchiseInventoryCommand;
 import com.chaing.core.enums.ReturnItemStatus;
+import com.chaing.domain.returns.dto.command.FranchiseReturnCommandForTransit;
 import com.chaing.domain.returns.dto.command.HQReturnCommand;
 import com.chaing.domain.returns.dto.command.HQReturnDetailCommand;
 import com.chaing.domain.returns.dto.command.ReturnCommand;
@@ -18,6 +19,7 @@ import com.chaing.domain.returns.exception.FranchiseReturnException;
 import com.chaing.domain.returns.repository.FranchiseReturnItemRepository;
 import com.chaing.domain.returns.repository.FranchiseReturnRepository;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -438,5 +440,16 @@ public class FranchiseReturnService {
                         Returns::getReturnId,
                         ReturnCommand::from
                 ));
+    }
+
+    public List<FranchiseReturnCommandForTransit> getReturnForTransit(@NotNull(message = "주문을 선택해주세요") List<Long> returnIds) {
+        List<Returns> selectedReturns = franchiseReturnRepository.findAllByReturnIdIn(returnIds);
+
+        return selectedReturns.stream()
+                .map(selectedReturn -> FranchiseReturnCommandForTransit.from(
+                        selectedReturn.getFranchiseOrderId(),
+                        selectedReturn.getReturnCode(),
+                        selectedReturn.getFranchiseId()
+                )).toList();
     }
 }

@@ -78,22 +78,14 @@ public class    InternalTransportController {
         return ResponseEntity.ok(ApiResponse.success((transportFacade.getUnassignedReturns())));
     }
 
-//    @Operation(summary = "반품 차량 배정", description = "차량 미배정 반품 건에 차량을 배정한다.")
+    @Operation(summary = "반품 차량 배정", description = "차량 미배정 반품 건에 차량을 배정한다.")
+    @PostMapping("/returns/assignments")
+    public ResponseEntity<ApiResponse<Void>> assignReturns(
+            @Valid @RequestBody VehicleAssignmentRequest request
+    ) {
+        transportFacade.assignVehicleReturns(request);
 
-    // 고려 사항으로 인해 추후 구현
-/*    @Operation(summary = "입고 승인 상태 변경", description = "입고 승인 시 상태 변경")
-    @PatchMapping("/{transportId}/arrival-approve")
-    public ResponseEntity<ApiResponse<?>> approveArrival(
-            @PathVariable Long transportId, @RequestBody ArrivalApprovalRequest req) {
-        // TODO: 상태 변경 로직 (예: ARRIVED)
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "상태 강제 수정", description = "운송 및 차량 상태 강제 수정")
-    @PutMapping("/{transportId}/force-update")
-    public ResponseEntity<ApiResponse<?>> forceUpdateStatus(
-            @PathVariable Long transportId, @RequestBody TransportForceUpdateRequest req) {
-        // TODO: 강제 수정 로직
-        return ResponseEntity.ok(ApiResponse.success(null));
-    }*/
 }

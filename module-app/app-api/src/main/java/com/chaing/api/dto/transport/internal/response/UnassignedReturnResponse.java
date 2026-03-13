@@ -6,6 +6,7 @@ import com.chaing.domain.returns.dto.command.HQReturnCommand;
 import java.time.LocalDateTime;
 
 public record UnassignedReturnResponse(
+        Long returnId,
         String returnCode,
         String franchiseName,
         String address,
@@ -15,6 +16,7 @@ public record UnassignedReturnResponse(
             HQReturnCommand returnInfo, BusinessUnitInternal franchiseInfo
     ) {
         return new UnassignedReturnResponse(
+                returnInfo.returnId(),
                 returnInfo.returnCode(),
                 franchiseInfo.name(),
                 franchiseInfo.address(),

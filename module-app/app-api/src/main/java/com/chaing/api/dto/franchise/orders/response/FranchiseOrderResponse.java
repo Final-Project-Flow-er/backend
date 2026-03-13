@@ -14,6 +14,8 @@ public record FranchiseOrderResponse(
 
         String productCode,
 
+        Integer quantity,
+
         BigDecimal unitPrice,
 
         BigDecimal totalPrice,

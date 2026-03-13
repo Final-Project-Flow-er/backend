@@ -35,6 +35,8 @@ import java.util.stream.Collectors;
 @Transactional
 public class InventoryLogFacade {
 
+        private static final Long HQ_ID = 1L;
+
         private final InventoryLogService inventoryLogService;
         private final HeadOfficeOrderRepository headOfficeOrderRepository;
         private final FranchiseOrderRepository franchiseOrderRepository;
@@ -177,7 +179,7 @@ public class InventoryLogFacade {
                                         LocationType.FACTORY,
                                         fromId,
                                         LocationType.HQ,
-                                        1L,
+                                        HQ_ID,
                                         actorType,
                                         actorId));
                 }
@@ -240,9 +242,9 @@ public class InventoryLogFacade {
                                         logType,
                                         quantity,
                                         actorType == ActorType.HQ ? LocationType.HQ : LocationType.FRANCHISE,
-                                        actorType == ActorType.HQ ? 1L : returns.getFranchiseId(),
+                                        actorType == ActorType.HQ ? HQ_ID : returns.getFranchiseId(),
                                         actorType == ActorType.HQ ? LocationType.FRANCHISE : LocationType.HQ,
-                                        actorType == ActorType.HQ ? returns.getFranchiseId() : 1L,
+                                        actorType == ActorType.HQ ? returns.getFranchiseId() : HQ_ID,
                                         actorType,
                                         actorId));
                 }

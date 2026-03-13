@@ -38,6 +38,8 @@ import java.util.stream.Collectors;
 @Repository
 public class FactoryInventoryRepositoryImpl implements FactoryInventoryRepositoryCustom {
 
+        private static final Long DEFAULT_FACTORY_POLICY_LOCATION_ID = 1L;
+
         @PersistenceContext
         private EntityManager em;
 
@@ -71,7 +73,7 @@ public class FactoryInventoryRepositoryImpl implements FactoryInventoryRepositor
                                                 factoryInventory.productId.eq(inventoryPolicy.productId)
                                                                 .and(inventoryPolicy.locationType
                                                                                 .eq(LocationType.FACTORY))
-                                                                .and(inventoryPolicy.locationId.eq(1L)))
+                                                                .and(inventoryPolicy.locationId.eq(DEFAULT_FACTORY_POLICY_LOCATION_ID)))
                                 .where(
                                                 factoryInventory.productId.in(products),
                                                 factoryInventory.status.eq(LogType.AVAILABLE))

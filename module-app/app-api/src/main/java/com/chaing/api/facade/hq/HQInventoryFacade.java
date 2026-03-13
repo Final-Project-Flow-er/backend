@@ -74,6 +74,7 @@ import static com.chaing.domain.inventories.enums.LocationType.FRANCHISE;
 public class HQInventoryFacade {
 
     private static final Duration CACHE_TTL = Duration.ofSeconds(30);
+    private static final Long DEFAULT_FACTORY_ID = 1L;
 
     private final InventoryService inventoryService;
     private final ProductService productService;
@@ -287,8 +288,8 @@ public class HQInventoryFacade {
         InventoryAlertResponse cached = readObjectCache(key, InventoryAlertResponse.class);
         if (cached != null) return cached;
 
-        List<SafetyStockResponse> safetyStockAlert = inventoryService.getLowStockAlerts("FACTORY", 1L);
-        List<ExpirationBatchResultResponse> expirationAlerts = inventoryService.getExpirationAlerts("FACTORY", 1L);
+        List<SafetyStockResponse> safetyStockAlert = inventoryService.getLowStockAlerts("FACTORY", DEFAULT_FACTORY_ID);
+        List<ExpirationBatchResultResponse> expirationAlerts = inventoryService.getExpirationAlerts("FACTORY", DEFAULT_FACTORY_ID);
 
         List<Long> ids = productService.getAllProductIds();
         Map<Long, ProductInfo> products = productService.getProductInfos(ids);

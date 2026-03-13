@@ -189,7 +189,7 @@ public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom 
                                 .from(log)
                                 .where(
                                                 log.logType.eq(LogType.DISPOSAL),
-                                                locationContains("HQ", 1L), // 본사Id
+                                                locationContains("HQ", hqId), // 본사Id
                                                 betweenDate(request.startDate(), request.endDate()),
                                                 containsTransactionCode(request.transactionCode()))
                                 .groupBy(

@@ -363,13 +363,17 @@ public class HQOrderService {
     public Map<String, HQOrderStatus> updateOrders(List<String> orderCodes, boolean isAccept) {
         List<HeadOfficeOrder> orders = orderRepository.findAllByOrderCodeInAndDeletedAtIsNull(orderCodes);
 
+        if (orders == null || orders.isEmpty()) {
+            throw new HQOrderException(HQOrderErrorCode.ORDER_NOT_FOUND);
+        }
+
         // Set<orderCode>
         Set<String> existingOrderCodes = orders.stream().map(HeadOfficeOrder::getOrderCode).collect(Collectors.toSet());
 
         // Set<orderCode>
         Set<String> requestedOrderCodes = new HashSet<>(orderCodes);
 
-        if (!requestedOrderCodes.containsAll(existingOrderCodes)) {
+        if (!existingOrderCodes.containsAll(requestedOrderCodes)) {
             throw new HQOrderException(HQOrderErrorCode.DATA_OMISSION);
         }
 

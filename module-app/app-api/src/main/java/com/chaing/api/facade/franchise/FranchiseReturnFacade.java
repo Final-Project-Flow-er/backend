@@ -210,7 +210,7 @@ public class FranchiseReturnFacade {
                             .boxCode(returnItemcommand.boxCode())
                             .productCode(productInfo.productCode())
                             .productName(productInfo.productName())
-                            .unitPrice(productInfo.retailPrice())
+                            .unitPrice(productInfo.tradePrice())
                             .build();
                 })
                 .toList();
@@ -294,7 +294,7 @@ public class FranchiseReturnFacade {
                                     .boxCode(item.boxCode())
                                     .productCode(productInfo.productCode())
                                     .productName(productInfo.productName())
-                                    .unitPrice(productInfo.retailPrice())
+                                    .unitPrice(productInfo.tradePrice())
                                     .build();
                         }
                 )

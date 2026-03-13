@@ -145,7 +145,7 @@ public class FranchiseOrderService {
                 .map(FranchiseOrderCreateRequestItem::quantity)
                 .reduce(0, Integer::sum);
         BigDecimal totalPrice = request.items().stream()
-                .map(item -> productInfoByProductCode.get(item.productCode()).retailPrice().multiply(BigDecimal.valueOf(item.quantity())))
+                .map(item -> productInfoByProductCode.get(item.productCode()).tradePrice().multiply(BigDecimal.valueOf(item.quantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         request.items().forEach(item -> {
@@ -297,7 +297,7 @@ public class FranchiseOrderService {
 
                     Integer quantity = item.quantity();
                     Long productId = productInfo.productId();
-                    BigDecimal unitPrice = productInfo.retailPrice();
+                    BigDecimal unitPrice = productInfo.tradePrice();
                     BigDecimal totalPrice = unitPrice.multiply(new BigDecimal(quantity));
 
                     return FranchiseOrderItem.builder()

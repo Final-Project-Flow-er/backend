@@ -51,14 +51,14 @@ public class FranchiseSalesService {
                 .orElseThrow(() -> new FranchiseSalesException(FranchiseSalesErrorCode.SALES_NOT_FOUND));
 
         // 제품 정보 가져옴
-        List<SalesItem> salesItems = franchiseSalesItemRepositoryCustom.searchAllSalesItemsBySalesCode(franchiseId, salesCode);
+        List<SalesItem> salesItems = franchiseSalesItemRepositoryCustom.searchAllSalesItemsBySalesCode(franchiseId,
+                salesCode);
 
         return FranchiseSalesDetailResponse.builder()
                 .salesCode(sales.getSalesCode())
                 .salesDate(sales.getCreatedAt())
                 .products(
-                        FranchiseSalesProductResponse.from(salesItems)
-                )
+                        FranchiseSalesProductResponse.from(salesItems))
                 .build();
     }
 
@@ -118,8 +118,7 @@ public class FranchiseSalesService {
             List<Long> franchiseIds,
             List<Long> productIds,
             LocalDate startDate,
-            LocalDate endDate
-    ) {
+            LocalDate endDate) {
         return franchiseSalesItemRepositoryCustom.searchDailyProductSalesForSafetyStock(
                 franchiseIds, productIds, startDate, endDate);
     }

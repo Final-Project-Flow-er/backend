@@ -10,10 +10,8 @@ import com.chaing.domain.orders.entity.FranchiseOrderItem;
 import com.chaing.domain.orders.enums.FranchiseOrderStatus;
 import com.chaing.domain.orders.repository.FranchiseOrderItemRepository;
 import com.chaing.domain.orders.repository.FranchiseOrderRepository;
-import com.chaing.domain.sales.entity.Sales;
 import com.chaing.domain.sales.entity.SalesItem;
 import com.chaing.domain.sales.repository.FranchiseSalesItemRepository;
-import com.chaing.domain.sales.repository.FranchiseSalesRepository;
 import com.chaing.domain.settlements.entity.DailyReceiptLine;
 import com.chaing.domain.settlements.entity.DailySettlementReceipt;
 import com.chaing.domain.settlements.entity.MonthlySettlement;
@@ -45,6 +43,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -65,7 +64,6 @@ public class FranchiseSettlementFacade {
         private final SettlementVoucherRepository voucherRepository;
 
         // 다른 도메인 Repository (메서드 추가 요청 후 사용)
-        private final FranchiseSalesRepository salesRepository;
         private final FranchiseSalesItemRepository salesItemRepository;
         private final FranchiseOrderRepository orderRepository;
         private final FranchiseOrderItemRepository orderItemRepository;
@@ -74,13 +72,36 @@ public class FranchiseSettlementFacade {
         // 일별 정산 요약
         @Transactional(readOnly = true)
         public FranchiseSettlementSummaryResponse getDailySummary(Long franchiseId, LocalDate date) {
+                return toSummary(getInternalDailyReceipt(franchiseId, date));
+        }
+
+        // 내부 합산용 일별 정산 조회 (실시간 또는 DB)
+        private DailySettlementReceipt getInternalDailyReceipt(Long franchiseId, LocalDate date) {
+                // 당일 요청인 경우, DB에 저장된 예전 기록(있을 경우)보다 실시간 집계를 우선함
+                if (date.equals(LocalDate.now())) {
+                        log.info("[DEBUG] Requesting today's settlement for franchiseId: {}. Performing real-time aggregation.",
+                                        franchiseId);
+                        return aggregateDailySettlement(franchiseId, date);
+                }
+
                 try {
-                        DailySettlementReceipt r = dailyService.getByFranchiseAndDate(franchiseId, date);
-                        return toSummary(r);
+                        DailySettlementReceipt receipt = dailyService.getByFranchiseAndDate(franchiseId, date);
+
+                        // 이미 DB에 기록이 있더라도 매출액이 0이라면 실시간으로 다시 집계해본다 (데이터 실시간 반영 보장)
+                        // 소급 입력 등을 고려하여 매출이 0인 경우 적극적으로 재집계함
+                        if (receipt.getTotalSaleAmount().compareTo(BigDecimal.ZERO) == 0) {
+                                log.info("[DEBUG] Persistent receipt exists but has 0 sales. Re-aggregating for franchiseId: {}, date: {}",
+                                                franchiseId, date);
+                                return aggregateDailySettlement(franchiseId, date);
+                        }
+
+                        return receipt;
                 } catch (SettlementException e) {
                         if (e.getErrorCode() == SettlementErrorCode.DAILY_SETTLEMENT_NOT_FOUND) {
                                 // 데이터가 없으면 실시간 가집계 시도
-                                return toSummary(aggregateDailySettlement(franchiseId, date));
+                                log.info("[DEBUG] Daily receipt not found in DB for franchiseId: {}, date: {}. Aggregating on the fly.",
+                                                franchiseId, date);
+                                return aggregateDailySettlement(franchiseId, date);
                         }
                         throw e;
                 }
@@ -90,16 +111,26 @@ public class FranchiseSettlementFacade {
         @Transactional(readOnly = true)
         public List<FranchiseSalesItemResponse> getDailySalesItems(
                         Long franchiseId, LocalDate date, Integer limit) {
-                // Sales에서 해당 날짜 판매 목록 가져오기
-                List<Sales> salesList = salesRepository
-                                .findAllByFranchiseIdAndIsCanceledFalseAndCreatedAtBetween(
-                                                franchiseId,
-                                                date.atStartOfDay(),
-                                                date.atTime(23, 59, 59));
-                // SalesItem 가져오기
-                List<Long> salesIds = salesList.stream()
-                                .map(Sales::getSalesId).toList();
-                List<SalesItem> items = salesItemRepository.findAllBySalesSalesIdIn(salesIds);
+                LocalDateTime start = date.atStartOfDay();
+                LocalDateTime end = date.plusDays(1).atStartOfDay().minusNanos(1);
+
+                log.info("[DEBUG] getDailySalesItems - franchiseId: {}, date: {}, range: {} ~ {}",
+                                franchiseId, date, start, end);
+
+                // 명시적인 필터링을 위해 전체 조회 후 필터링 (데이터 양이 많지 않은 가맹점 레벨이므로 안전)
+                List<SalesItem> items = salesItemRepository.findAllBySalesFranchiseId(franchiseId).stream()
+                                .filter(item -> {
+                                        LocalDateTime createdAt = item.getCreatedAt();
+                                        return createdAt != null && !createdAt.isBefore(start)
+                                                        && !createdAt.isAfter(end);
+                                })
+                                .filter(item -> {
+                                        Boolean canceled = item.getSales().getIsCanceled();
+                                        return canceled == null || !canceled;
+                                })
+                                .toList();
+
+                log.info("[DEBUG] getDailySalesItems - found items count: {}", items.size());
 
                 // 상품별 집계 (상품명 기준 그룹핑)
                 return aggregateSalesItems(items, limit);
@@ -109,11 +140,19 @@ public class FranchiseSettlementFacade {
         @Transactional(readOnly = true)
         public List<FranchiseOrderItemResponse> getDailyOrderItems(
                         Long franchiseId, LocalDate date, Integer limit) {
-                // Orders에서 해당 날짜 발주 목록 (ACCEPTED만)
+                List<FranchiseOrderStatus> validStatuses = List.of(
+                                FranchiseOrderStatus.PENDING,
+                                FranchiseOrderStatus.ACCEPTED,
+                                FranchiseOrderStatus.PARTIAL,
+                                FranchiseOrderStatus.SHIPPING_PENDING,
+                                FranchiseOrderStatus.SHIPPING,
+                                FranchiseOrderStatus.COMPLETED);
+
+                // Orders에서 해당 날짜 발주 목록 (PENDING 포함)
                 List<FranchiseOrder> orders = orderRepository
-                                .findAllByFranchiseIdAndOrderStatusAndCreatedAtBetween(
+                                .findAllByFranchiseIdAndOrderStatusInAndCreatedAtBetween(
                                                 franchiseId,
-                                                FranchiseOrderStatus.ACCEPTED,
+                                                validStatuses,
                                                 date.atStartOfDay(),
                                                 date.atTime(23, 59, 59));
                 // OrderItem 가져오기
@@ -128,32 +167,74 @@ public class FranchiseSettlementFacade {
         // 월별 정산 요약
         @Transactional(readOnly = true)
         public FranchiseSettlementSummaryResponse getMonthlySummary(Long franchiseId, YearMonth month) {
-                MonthlySettlement s = monthlyService.getByFranchiseAndMonth(franchiseId, month);
-                return new FranchiseSettlementSummaryResponse(
-                                s.getFinalSettlementAmount(),
-                                s.getTotalSaleAmount(),
-                                s.getRefundAmount(),
-                                s.getOrderAmount(),
-                                s.getDeliveryFee(),
-                                s.getLossAmount(),
-                                s.getCommissionFee(),
-                                s.getAdjustmentAmount());
+                try {
+                        MonthlySettlement s = monthlyService.getByFranchiseAndMonth(franchiseId, month);
+                        return new FranchiseSettlementSummaryResponse(
+                                        s.getFinalSettlementAmount(),
+                                        s.getTotalSaleAmount(),
+                                        s.getRefundAmount(),
+                                        s.getOrderAmount(),
+                                        s.getDeliveryFee(),
+                                        s.getLossAmount(),
+                                        s.getCommissionFee(),
+                                        s.getAdjustmentAmount());
+                } catch (SettlementException e) {
+                        if (e.getErrorCode() == SettlementErrorCode.MONTHLY_SETTLEMENT_NOT_FOUND) {
+                                log.info("[DEBUG] Monthly settlement not found for franchiseId: {}, month: {}. Aggregating on the fly.",
+                                                franchiseId, month);
+                                // 해당 월의 모든 날짜(1일~말일 또는 오늘까지)에 대해 일별 정산 가집계 수행
+                                LocalDate start = month.atDay(1);
+                                LocalDate today = LocalDate.now();
+                                YearMonth currentMonth = YearMonth.now();
+                                LocalDate end;
+
+                                if (month.equals(currentMonth)) {
+                                        end = today;
+                                } else {
+                                        end = month.atEndOfMonth();
+                                }
+
+                                List<DailySettlementReceipt> dailyReceipts = new ArrayList<>();
+                                for (LocalDate date = start; !date.isAfter(end); date = date.plusDays(1)) {
+                                        try {
+                                                // getDailySummary 내부 로직과 유사하게 가져오되, Receipt 객체로 합산
+                                                dailyReceipts.add(getInternalDailyReceipt(franchiseId, date));
+                                        } catch (Exception ex) {
+                                                log.warn("[DEBUG] Skip aggregation for date {} due to: {}", date,
+                                                                ex.getMessage());
+                                        }
+                                }
+
+                                if (dailyReceipts.isEmpty()) {
+                                        throw e; // 여전히 데이터가 없으면 원래 에러 던짐
+                                }
+
+                                return toSummary(aggregateMonthlySettlement(franchiseId, month, dailyReceipts));
+                        }
+                        throw e;
+                }
         }
 
         // 월별 매출 현황 top5, 전체
         @Transactional(readOnly = true)
         public List<FranchiseSalesItemResponse> getMonthlySalesItems(
                         Long franchiseId, YearMonth month, Integer limit) {
-                LocalDate start = month.atDay(1);
-                LocalDate end = month.atEndOfMonth();
-                List<Sales> salesList = salesRepository
-                                .findAllByFranchiseIdAndIsCanceledFalseAndCreatedAtBetween(
-                                                franchiseId,
-                                                start.atStartOfDay(),
-                                                end.atTime(23, 59, 59));
-                List<Long> salesIds = salesList.stream()
-                                .map(Sales::getSalesId).toList();
-                List<SalesItem> items = salesItemRepository.findAllBySalesSalesIdIn(salesIds);
+                LocalDateTime start = month.atDay(1).atStartOfDay();
+                LocalDateTime end = month.atEndOfMonth().atTime(23, 59, 59, 999999999);
+
+                // SalesItem에서 직접 조회 후 메모리 필터링
+                List<SalesItem> items = salesItemRepository.findAllBySalesFranchiseId(franchiseId).stream()
+                                .filter(item -> {
+                                        LocalDateTime createdAt = item.getCreatedAt();
+                                        return createdAt != null && !createdAt.isBefore(start)
+                                                        && !createdAt.isAfter(end);
+                                })
+                                .filter(item -> {
+                                        Boolean canceled = item.getSales().getIsCanceled();
+                                        return canceled == null || !canceled;
+                                })
+                                .toList();
+
                 return aggregateSalesItems(items, limit);
         }
 
@@ -163,10 +244,18 @@ public class FranchiseSettlementFacade {
                         Long franchiseId, YearMonth month, Integer limit) {
                 LocalDate start = month.atDay(1);
                 LocalDate end = month.atEndOfMonth();
+                List<FranchiseOrderStatus> validStatuses = List.of(
+                                FranchiseOrderStatus.PENDING,
+                                FranchiseOrderStatus.ACCEPTED,
+                                FranchiseOrderStatus.PARTIAL,
+                                FranchiseOrderStatus.SHIPPING_PENDING,
+                                FranchiseOrderStatus.SHIPPING,
+                                FranchiseOrderStatus.COMPLETED);
+
                 List<FranchiseOrder> orders = orderRepository
-                                .findAllByFranchiseIdAndOrderStatusAndCreatedAtBetween(
+                                .findAllByFranchiseIdAndOrderStatusInAndCreatedAtBetween(
                                                 franchiseId,
-                                                FranchiseOrderStatus.ACCEPTED,
+                                                validStatuses,
                                                 start.atStartOfDay(),
                                                 end.atTime(23, 59, 59));
                 List<Long> orderIds = orders.stream()
@@ -197,10 +286,25 @@ public class FranchiseSettlementFacade {
                         LocalDate date, YearMonth month,
                         VoucherType type, Pageable pageable) {
                 if (period == PeriodType.DAILY) {
-                        DailySettlementReceipt receipt = dailyService.getByFranchiseAndDate(franchiseId, date);
-                        Page<DailyReceiptLine> lines = dailyService.getReceiptLines(receipt.getDailyReceiptId(), type,
-                                        pageable);
-                        return lines.map(this::toVoucherResponse);
+                        try {
+                                DailySettlementReceipt receipt = dailyService.getByFranchiseAndDate(franchiseId, date);
+                                // 과거 데이터인 경우 DB에서 조회
+                                if (!date.equals(LocalDate.now())) {
+                                        Page<DailyReceiptLine> lines = dailyService.getReceiptLines(
+                                                        receipt.getDailyReceiptId(),
+                                                        type,
+                                                        pageable);
+                                        return lines.map(this::toVoucherResponse);
+                                }
+                                // 오늘 데이터라면 실시간 집계와 병합하거나 실시간을 우선함
+                                return getProvisionalVouchers(franchiseId, date, type, pageable);
+                        } catch (SettlementException e) {
+                                if (e.getErrorCode() == SettlementErrorCode.DAILY_SETTLEMENT_NOT_FOUND) {
+                                        // 데이터가 없으면 실시간 가집계 리스트 반환
+                                        return getProvisionalVouchers(franchiseId, date, type, pageable);
+                                }
+                                throw e;
+                        }
                 } else {
                         // MONTHLY → SettlementVoucher 조회
                         MonthlySettlement settlement = monthlyService.getByFranchiseAndMonth(franchiseId, month);
@@ -231,6 +335,18 @@ public class FranchiseSettlementFacade {
                                 r.getAdjustmentAmount());
         }
 
+        private FranchiseSettlementSummaryResponse toSummary(MonthlySettlement s) {
+                return new FranchiseSettlementSummaryResponse(
+                                s.getFinalSettlementAmount(),
+                                s.getTotalSaleAmount(),
+                                s.getRefundAmount(),
+                                s.getOrderAmount(),
+                                s.getDeliveryFee(),
+                                s.getLossAmount(),
+                                s.getCommissionFee(),
+                                s.getAdjustmentAmount());
+        }
+
         // 전표 상세 보기 탭 목록
         private FranchiseVoucherResponse toVoucherResponse(DailyReceiptLine line) {
                 return new FranchiseVoucherResponse(
@@ -250,6 +366,106 @@ public class FranchiseSettlementFacade {
                                 voucher.getQuantity(),
                                 voucher.getAmount(),
                                 voucher.getOccurredAt());
+        }
+
+        /**
+         * 오늘 날짜의 실시간 전표 목록을 생성하여 반환함
+         */
+        private Page<FranchiseVoucherResponse> getProvisionalVouchers(
+                        Long franchiseId, LocalDate date, VoucherType filterType, Pageable pageable) {
+                List<FranchiseVoucherResponse> allVouchers = new ArrayList<>();
+
+                // 1. 매출 (Sales)
+                if (filterType == null || filterType == VoucherType.SALES) {
+                        LocalDateTime start = date.atStartOfDay();
+                        LocalDateTime end = date.plusDays(1).atStartOfDay().minusNanos(1);
+
+                        List<SalesItem> salesItems = salesItemRepository.findAllBySalesFranchiseId(franchiseId).stream()
+                                        .filter(item -> {
+                                                LocalDateTime createdAt = item.getCreatedAt();
+                                                return createdAt != null && !createdAt.isBefore(start)
+                                                                && !createdAt.isAfter(end);
+                                        })
+                                        .filter(item -> {
+                                                Boolean canceled = item.getSales().getIsCanceled();
+                                                return canceled == null || !canceled;
+                                        })
+                                        .toList();
+
+                        for (SalesItem item : salesItems) {
+                                allVouchers.add(new FranchiseVoucherResponse(
+                                                item.getSales().getSalesCode(),
+                                                VoucherType.SALES,
+                                                item.getProductName() + " (판매)",
+                                                item.getQuantity(),
+                                                item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity())),
+                                                item.getCreatedAt()));
+                        }
+                }
+
+                // 2. 발주 (Order)
+                if (filterType == null || filterType == VoucherType.ORDER) {
+                        List<FranchiseOrderStatus> validOrderStatuses = List.of(
+                                        FranchiseOrderStatus.PENDING,
+                                        FranchiseOrderStatus.ACCEPTED,
+                                        FranchiseOrderStatus.PARTIAL,
+                                        FranchiseOrderStatus.SHIPPING_PENDING,
+                                        FranchiseOrderStatus.SHIPPING,
+                                        FranchiseOrderStatus.COMPLETED);
+                        List<FranchiseOrder> orderList = orderRepository
+                                        .findAllByFranchiseIdAndOrderStatusInAndCreatedAtBetween(
+                                                        franchiseId, validOrderStatuses, date.atStartOfDay(),
+                                                        date.atTime(23, 59, 59));
+                        for (FranchiseOrder o : orderList) {
+                                allVouchers.add(new FranchiseVoucherResponse(
+                                                o.getOrderCode(),
+                                                VoucherType.ORDER,
+                                                "가맹점 발주 (승인대기 포함)",
+                                                1, // 발주 건수
+                                                o.getTotalAmount(),
+                                                o.getCreatedAt()));
+                        }
+                }
+
+                // 3. 반품 (Refund)
+                if (filterType == null || filterType == VoucherType.REFUND) {
+                        List<ReturnStatus> validReturnStatuses = List.of(
+                                        ReturnStatus.PENDING,
+                                        ReturnStatus.ACCEPTED,
+                                        ReturnStatus.SHIPPING_PENDING,
+                                        ReturnStatus.SHIPPING,
+                                        ReturnStatus.COMPLETED,
+                                        ReturnStatus.INSPECTING,
+                                        ReturnStatus.DEDUCTION_COMPLETED);
+                        List<Returns> returnList = returnRepository
+                                        .findAllByFranchiseIdAndReturnStatusInAndCreatedAtBetween(
+                                                        franchiseId, validReturnStatuses, date.atStartOfDay(),
+                                                        date.atTime(23, 59, 59));
+                        for (Returns r : returnList) {
+                                allVouchers.add(new FranchiseVoucherResponse(
+                                                r.getReturnCode(),
+                                                VoucherType.REFUND,
+                                                "가맹점 반품 (신청대기 포함)",
+                                                1,
+                                                r.getTotalReturnAmount(),
+                                                r.getCreatedAt()));
+                        }
+                }
+
+                // 발생시간 역순 정렬
+                allVouchers.sort((a, b) -> b.occurredAt().compareTo(a.occurredAt()));
+
+                // 페이징 처리
+                int start = (int) pageable.getOffset();
+                int end = Math.min((start + pageable.getPageSize()), allVouchers.size());
+
+                if (start > allVouchers.size()) {
+                        return new org.springframework.data.domain.PageImpl<>(new ArrayList<>(), pageable,
+                                        allVouchers.size());
+                }
+
+                return new org.springframework.data.domain.PageImpl<>(
+                                allVouchers.subList(start, end), pageable, allVouchers.size());
         }
 
         // SalesItem 집계: 상품명별 수량/금액 합산 후에 순위 매기기
@@ -669,30 +885,66 @@ public class FranchiseSettlementFacade {
         }
 
         private DailySettlementReceipt aggregateDailySettlement(Long franchiseId, LocalDate date) {
-                // 1. 해당 날짜의 판매 내역 조회 및 집계
-                List<Sales> salesList = salesRepository.findAllByFranchiseIdAndIsCanceledFalseAndCreatedAtBetween(
-                                franchiseId, date.atStartOfDay(), date.atTime(23, 59, 59));
+                // 1. 해당 날짜의 판매 내역 조회 및 집계 (취소 안 된 것만)
+                LocalDateTime start = date.atStartOfDay();
+                LocalDateTime end = date.plusDays(1).atStartOfDay().minusNanos(1);
 
-                BigDecimal totalSale = salesList.stream()
-                                .map(Sales::getTotalAmount)
+                log.info("[DEBUG] aggregateDailySettlement - franchiseId: {}, date: {}, range: {} ~ {}",
+                                franchiseId, date, start, end);
+
+                // SalesItem 기준으로 집계하여 판매 관리 페이지와 100% 일치 보장
+                // Repository 메서드 대신 수동 필터링으로 정합성 극대화
+                List<SalesItem> salesItems = salesItemRepository.findAllBySalesFranchiseId(franchiseId).stream()
+                                .filter(item -> {
+                                        LocalDateTime createdAt = item.getCreatedAt();
+                                        return createdAt != null && !createdAt.isBefore(start)
+                                                        && !createdAt.isAfter(end);
+                                })
+                                .filter(item -> {
+                                        Boolean canceled = item.getSales().getIsCanceled();
+                                        return canceled == null || !canceled;
+                                })
+                                .toList();
+
+                log.info("[DEBUG] aggregateDailySettlement - found items count: {}", salesItems.size());
+
+                BigDecimal totalSale = salesItems.stream()
+                                .map(item -> item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
                                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
                 // TODO: 실제 정산 로직에 맞게 수수료, 발주금액, 배송비 등 추가 집계 필요
                 // 현재는 요약 페이지에서 보여주는 핵심 항목 위주로 가집계
 
-                // 2. 해당 날짜의 발주 내역 (ACCEPTED) 조회 및 집계
-                List<FranchiseOrder> orders = orderRepository.findAllByFranchiseIdAndOrderStatusAndCreatedAtBetween(
-                                franchiseId, FranchiseOrderStatus.ACCEPTED, date.atStartOfDay(),
+                // 2. 해당 날짜의 발주 내역 (PENDING 포함 모든 유효 단계) 조회 및 집계
+                List<FranchiseOrderStatus> validOrderStatuses = List.of(
+                                FranchiseOrderStatus.PENDING, // 발주 즉시 반영을 위해 추가
+                                FranchiseOrderStatus.ACCEPTED,
+                                FranchiseOrderStatus.PARTIAL,
+                                FranchiseOrderStatus.SHIPPING_PENDING,
+                                FranchiseOrderStatus.SHIPPING,
+                                FranchiseOrderStatus.COMPLETED);
+
+                List<FranchiseOrder> orders = orderRepository.findAllByFranchiseIdAndOrderStatusInAndCreatedAtBetween(
+                                franchiseId, validOrderStatuses, date.atStartOfDay(),
                                 date.atTime(23, 59, 59));
 
                 BigDecimal orderAmount = orders.stream()
                                 .map(FranchiseOrder::getTotalAmount)
                                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-                // 3. 해당 날짜의 반품 내역 (ACCEPTED) 조회 및 집계 [추가]
-                List<Returns> returnsList = returnRepository.findAllByFranchiseIdAndReturnStatusAndCreatedAtBetween(
-                                franchiseId,
+                // 3. 해당 날짜의 반품 내역 (PENDING 포함 모든 유효 단계) 조회 및 집계
+                List<ReturnStatus> validReturnStatuses = List.of(
+                                ReturnStatus.PENDING, // 반품 신청 즉시 반영을 위해 추가
                                 ReturnStatus.ACCEPTED,
+                                ReturnStatus.SHIPPING_PENDING,
+                                ReturnStatus.SHIPPING,
+                                ReturnStatus.COMPLETED,
+                                ReturnStatus.INSPECTING,
+                                ReturnStatus.DEDUCTION_COMPLETED);
+
+                List<Returns> returnsList = returnRepository.findAllByFranchiseIdAndReturnStatusInAndCreatedAtBetween(
+                                franchiseId,
+                                validReturnStatuses,
                                 date.atStartOfDay(),
                                 date.atTime(23, 59, 59));
 

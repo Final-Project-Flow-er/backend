@@ -18,15 +18,22 @@ public interface FranchiseReturnRepository extends JpaRepository<Returns, Long> 
 
     List<Returns> findAllByDeletedAtIsNull();
 
-    // 특정 가맹점의 날짜 범위 반품 (ACCEPTED 일때)
+    // 특정 가맹점의 날짜 범위 반품 (여러 상태 지원)
+    List<Returns> findAllByFranchiseIdAndReturnStatusInAndCreatedAtBetween(
+            Long franchiseId, List<ReturnStatus> statuses,
+            LocalDateTime start, LocalDateTime end);
+
+    // 특정 가맹점의 날짜 범위 반품 (ACCEPTED 일때) - 기존 메서드 유지
     List<Returns> findAllByFranchiseIdAndReturnStatusAndCreatedAtBetween(
             Long franchiseId, ReturnStatus returnStatus,
             LocalDateTime start, LocalDateTime end);
+
     List<Returns> findAllByReturnCodeInAndDeletedAtIsNull(List<String> returnCodes);
 
     List<Returns> findAllByReturnCodeInAndDeletedAtIsNull(Set<String> returnCodes);
 
-    Optional<Returns> findByUserIdAndFranchiseIdAndReturnCodeAndDeletedAtIsNull(Long userId, Long franchiseId, String returnCode);
+    Optional<Returns> findByUserIdAndFranchiseIdAndReturnCodeAndDeletedAtIsNull(Long userId, Long franchiseId,
+            String returnCode);
 
     Optional<Returns> findByFranchiseIdAndUserIdAndReturnCode(Long franchiseId, Long userId, String returnCode);
 

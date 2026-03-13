@@ -3,6 +3,7 @@ package com.chaing.api.facade.franchise;
 import com.chaing.api.dto.franchise.orders.response.FranchiseOrderResponse;
 import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.domain.businessunits.service.impl.FranchiseServiceImpl;
+import com.chaing.domain.inventories.service.InventoryService;
 import com.chaing.domain.orders.dto.command.FranchiseOrderCommand;
 import com.chaing.domain.orders.dto.command.FranchiseOrderDetailCommand;
 import com.chaing.domain.orders.dto.command.FranchiseOrderItemCommand;
@@ -48,6 +49,7 @@ public class FranchiseOrderFacade {
     private final ProductService productService;
     private final FranchiseOrderCodeGenerator generator;
     private final FranchiseServiceImpl franchiseService;
+    private final InventoryService inventoryService;
 
     // 가맹점 발주 조회
     public List<FranchiseOrderResponse> getAllOrders(Long userId) {
@@ -272,7 +274,9 @@ public class FranchiseOrderFacade {
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public FranchiseOrderCreateResponse createOrder(Long userId, FranchiseOrderCreateRequest request) {
         // 발주 가능한지 재고 확인
-
+        if (!inventoryService.checkStock(request.items())) {
+            throw new OrderException(OrderErrorCode.INVALID_STOCK);
+        }
 
         // TODO: 부분 접수되는건 어떻게 할거?
 

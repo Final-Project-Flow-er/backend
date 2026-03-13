@@ -40,7 +40,7 @@ public class FranchiseReturnController {
 
     @Operation(summary = "반품 조회", description = "가맹점 id로 해당 가맹점의 반품 요청 전체 조회")
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'FRANCHISE')")
+    @PreAuthorize("hasRole('FRANCHISE')")
     public ResponseEntity<ApiResponse<List<FranchiseReturnResponse>>> getAllReturns(
             @AuthenticationPrincipal UserPrincipal userPrincipal
             ) {
@@ -51,7 +51,7 @@ public class FranchiseReturnController {
 
     @Operation(summary = "특정 반품 조회", description = "가맹점 id와 반품 번호로 특정 반품 조회")
     @GetMapping("/{return-code}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'FRANCHISE')")
+    @PreAuthorize("hasRole('FRANCHISE')")
     public ResponseEntity<ApiResponse<FranchiseReturnDetailResponse>> getReturn(
             @PathVariable("return-code") String returnCode,
             @AuthenticationPrincipal UserPrincipal userPrincipal
@@ -63,7 +63,7 @@ public class FranchiseReturnController {
 
     @Operation(summary = "반품 수정", description = "가맹점 id와 반품 번호로 특정 반품 수정")
     @PatchMapping("/{return-code}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'FRANCHISE')")
+    @PreAuthorize("hasRole('FRANCHISE')")
     public ResponseEntity<ApiResponse<FranchiseReturnUpdateResponse>> updateReturn(
             @PathVariable("return-code") String returnCode,
             @Valid @RequestBody List<FranchiseReturnUpdateRequest> requests,
@@ -77,7 +77,7 @@ public class FranchiseReturnController {
 
     @Operation(summary = "반품 취소", description = "가맹점 id와 반품 번호로 특정 반품 취소")
     @PatchMapping("/{return-code}/cancellation")
-    @PreAuthorize("hasAnyRole('ADMIN', 'FRANCHISE')")
+    @PreAuthorize("hasRole('FRANCHISE')")
     public ResponseEntity<ApiResponse<String>> cancelReturn(
             @PathVariable("return-code") String returnCode,
             @AuthenticationPrincipal UserPrincipal userPrincipal
@@ -89,7 +89,7 @@ public class FranchiseReturnController {
 
     @Operation(summary = "반품 대상 조회", description = "가맹점 id로 반품 생성의 대상이 되는 발주 조회")
     @GetMapping("/target")
-    @PreAuthorize("hasAnyRole('ADMIN', 'FRANCHISE')")
+    @PreAuthorize("hasRole('FRANCHISE')")
     public ResponseEntity<ApiResponse<List<FranchiseReturnTargetResponse>>> getTargets(
             @AuthenticationPrincipal UserPrincipal userPrincipal
     ) {
@@ -100,7 +100,7 @@ public class FranchiseReturnController {
 
     @Operation(summary = "반품 생성 화면 데이터", description = "반품 요청 생성 시 발주 코드에 따라 보여지는 화면에 띄울 데이터 반환")
     @GetMapping("/{order-code}/target-info")
-    @PreAuthorize("hasAnyRole('ADMIN', 'FRANCHISE')")
+    @PreAuthorize("hasRole('FRANCHISE')")
     public ResponseEntity<ApiResponse<FranchiseReturnCreateResponse>> getReturnCreateInfo(
             @PathVariable("order-code") String orderCode,
             @AuthenticationPrincipal UserPrincipal userPrincipal
@@ -112,7 +112,7 @@ public class FranchiseReturnController {
 
     @Operation(summary = "반품 생성", description = "가맹점 id로 반품 생성")
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'FRANCHISE')")
+    @PreAuthorize("hasRole('FRANCHISE')")
     public ResponseEntity<ApiResponse<ReturnCreateResponse>> createReturn(
             @RequestBody FranchiseReturnCreateRequest request,
             @AuthenticationPrincipal UserPrincipal userPrincipal
@@ -124,7 +124,6 @@ public class FranchiseReturnController {
 
     @Operation(summary = "반품 출고", description = "외부 모듈용 가맹점에서 반품 신청한 제품들을 본사로 배송")
     @PatchMapping("/delivery")
-    @PreAuthorize("hasAnyRole('ADMIN', 'FRANCHISE')")
     public ResponseEntity<ApiResponse<List<FranchiseReturnDeliveryResponse>>> returnDelivery(
             @Valid @RequestBody List<FranchiseReturnDeliveryRequest> requests
     ) {

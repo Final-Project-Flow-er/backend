@@ -20,7 +20,7 @@ public enum ProductErrorCode implements ErrorCode {
     INVALID_COMPONENT_NAME(400, "PR007", "구성용품 이름이 올바르지 않습니다."),
 
     // 409 CONFLICT
-    DUPLICATE_PRODUCT_CODE(409, "PR004", "상품 코드가 중복됩니다."),
+    DUPLICATE_PRODUCT_CODE(409, "PR007", "상품 코드가 중복됩니다."),
     COMPONENT_IN_USE(409, "PR008", "상품에 사용 중인 구성용품은 삭제할 수 없습니다."),
     DUPLICATE_COMPONENT_NAME(409, "PR009", "구성용품 이름이 중복됩니다.");
 

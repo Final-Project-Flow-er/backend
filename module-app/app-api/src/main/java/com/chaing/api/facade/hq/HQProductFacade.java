@@ -1,14 +1,19 @@
 package com.chaing.api.facade.hq;
 
+import com.chaing.api.dto.hq.products.request.HQComponentCreateRequest;
 import com.chaing.api.dto.hq.products.request.HQProductCreateRequest;
 import com.chaing.api.dto.hq.products.request.HQProductSearchRequest;
 import com.chaing.api.dto.hq.products.request.HQProductUpdateRequest;
+import com.chaing.api.dto.hq.products.response.HQComponentResponse;
 import com.chaing.api.dto.hq.products.response.HQProductListResponse;
 import com.chaing.api.dto.hq.products.response.HQProductResponse;
+import com.chaing.core.enums.BucketName;
+import com.chaing.core.service.MinioService;
 import com.chaing.domain.products.dto.request.ProductRequest;
 import com.chaing.domain.products.dto.request.ProductSearchRequest;
 import com.chaing.domain.products.dto.request.ProductUpdateRequest;
 import com.chaing.domain.products.dto.response.ProductListResponse;
+import com.chaing.domain.products.entity.Component;
 import com.chaing.domain.products.exception.ProductErrorCode;
 import com.chaing.domain.products.exception.ProductException;
 import com.chaing.domain.products.service.ProductService;
@@ -16,6 +21,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -25,6 +33,7 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class HQProductFacade {
     private final ProductService productService;
+    private final MinioService minioService;
 
     public HQProductListResponse getProducts(HQProductSearchRequest request) {
         ProductSearchRequest productSearchRequest = convertProductSearchRequest(request);
@@ -36,11 +45,11 @@ public class HQProductFacade {
                         .name(p.product().getName())
                         .productCode(p.product().getProductCode())
                         .description(p.product().getDescription())
+                        .imageUrl(resolveImageUrl(p.product().getImageUrl()))
                         .size(sizeValid(p.product().getProductCode()))
                         .spicy(spicyValid(p.product().getProductCode()))
                         .kcal(p.product().getKcal())
                         .weight(p.product().getWeight())
-                        .safetyStock(p.product().getSafetyStock())
                         .price(p.product().getPrice())
                         .supplyPrice(p.product().getSupplyPrice())
                         .costPrice(p.product().getCostPrice())
@@ -57,6 +66,12 @@ public class HQProductFacade {
                 .HQProductList(HQProductResponses)
                 .build();
 
+    }
+
+    public List<HQComponentResponse> getComponents() {
+        return productService.getComponents().stream()
+                .map(this::toComponentResponse)
+                .toList();
     }
 
     private String spicyValid(String productCode) {
@@ -84,21 +99,34 @@ public class HQProductFacade {
     }
 
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
-    public void createProduct(HQProductCreateRequest request) {
-        ProductRequest productCreateRequest = convertProductRequest(request);
+    public void createProduct(HQProductCreateRequest request, MultipartFile image) {
+        String imagePath = resolveImagePath(request.imageUrl(), image);
+        ProductRequest productCreateRequest = convertProductRequest(request, imagePath);
         productService.createProduct(productCreateRequest);
     }
 
     // 트랜잭션 따로 붙여야 함
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
-    public void updateProduct(Long productId, HQProductUpdateRequest request) {
-        ProductUpdateRequest productUpdateRequest = convertProductUpdateRequest(request);
+    public void updateProduct(Long productId, HQProductUpdateRequest request, MultipartFile image) {
+        String imagePath = resolveImagePath(request.imageUrl(), image);
+        ProductUpdateRequest productUpdateRequest = convertProductUpdateRequest(request, imagePath);
         productService.updateProduct(productId, productUpdateRequest);
     }
 
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public void createProductTypes(String type, String productName) {
         productService.createProductTypes(type, productName);
+    }
+
+    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
+    public HQComponentResponse createComponent(HQComponentCreateRequest request) {
+        Component component = productService.createComponent(request.name());
+        return toComponentResponse(component);
+    }
+
+    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
+    public void deleteComponent(Long componentId) {
+        productService.deleteComponent(componentId);
     }
 
     private ProductSearchRequest convertProductSearchRequest(HQProductSearchRequest hqProductSearchRequest) {
@@ -110,16 +138,15 @@ public class HQProductFacade {
                 .build();
     }
 
-    private ProductRequest convertProductRequest(HQProductCreateRequest request) {
+    private ProductRequest convertProductRequest(HQProductCreateRequest request, String imagePath) {
         return ProductRequest.builder()
                 .productCode(request.productCode())
                 .name(request.name())
                 .description(request.description())
-                .imageUrl(request.imageUrl())
+                .imageUrl(imagePath)
                 .price(request.price())
                 .costPrice(request.costPrice())
                 .supplyPrice(request.supplyPrice())
-                .safetyStock(request.safetyStock())
                 .status(request.status())
                 .kcal(request.kcal())
                 .weight(request.weight())
@@ -129,20 +156,65 @@ public class HQProductFacade {
                 .build();
     }
 
-    private ProductUpdateRequest convertProductUpdateRequest(HQProductUpdateRequest request) {
+    private ProductUpdateRequest convertProductUpdateRequest(HQProductUpdateRequest request, String imagePath) {
         return new ProductUpdateRequest(
                 request.name(),
                 request.price(),
                 request.originalPrice(),
                 request.supplyPrice(),
                 request.status(),
-                request.baseSafeStock(),
                 request.kcal(),
+                request.weight(),
                 request.startDate(),
                 request.endDate(),
                 request.description(),
-                request.imageUrl(),
+                imagePath,
                 request.components());
+    }
+
+    private String resolveImagePath(String imageUrl, MultipartFile image) {
+        if (image != null && !image.isEmpty()) {
+            String storedName = minioService.generateFileName(image);
+            minioService.uploadFile(image, storedName, BucketName.PRODUCTS);
+            registerFileRollback(storedName);
+            return storedName;
+        }
+
+        if (imageUrl == null || imageUrl.isBlank()) {
+            return null;
+        }
+        return imageUrl;
+    }
+
+    private String resolveImageUrl(String storedOrRaw) {
+        if (storedOrRaw == null || storedOrRaw.isBlank()) {
+            return null;
+        }
+        if (storedOrRaw.startsWith("http://") || storedOrRaw.startsWith("https://")
+                || storedOrRaw.startsWith("data:")) {
+            return storedOrRaw;
+        }
+        return minioService.getFileUrl(storedOrRaw, BucketName.PRODUCTS);
+    }
+
+    private void registerFileRollback(String fileName) {
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCompletion(int status) {
+                    if (status == STATUS_ROLLED_BACK) {
+                        minioService.deleteFile(fileName, BucketName.PRODUCTS);
+                    }
+                }
+            });
+        }
+    }
+
+    private HQComponentResponse toComponentResponse(Component component) {
+        return HQComponentResponse.builder()
+                .componentId(component.getComponentId())
+                .name(component.getName())
+                .build();
     }
 
 }

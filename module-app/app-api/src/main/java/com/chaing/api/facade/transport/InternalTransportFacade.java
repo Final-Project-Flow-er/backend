@@ -4,6 +4,7 @@ import com.chaing.api.dto.transport.internal.request.VehicleAssignmentRequest;
 import com.chaing.api.dto.transport.internal.response.AvailableVehicleResponse;
 import com.chaing.api.dto.transport.internal.response.TransportCancelResponse;
 import com.chaing.api.dto.transport.internal.response.UnassignedOrderResponse;
+import com.chaing.api.dto.transport.internal.response.UnassignedReturnResponse;
 import com.chaing.domain.businessunits.dto.internal.BusinessUnitInternal;
 import com.chaing.domain.businessunits.exception.BusinessUnitErrorCode;
 import com.chaing.domain.businessunits.exception.BusinessUnitException;
@@ -11,12 +12,16 @@ import com.chaing.domain.businessunits.service.BusinessUnitService;
 import com.chaing.domain.orders.dto.response.FranchiseOrderForTransitResponse;
 import com.chaing.domain.orders.service.FranchiseOrderService;
 import com.chaing.domain.products.service.ProductService;
+import com.chaing.domain.returns.dto.command.HQReturnCommand;
+import com.chaing.domain.returns.service.FranchiseReturnService;
 import com.chaing.domain.transports.dto.DeliveryFeeInfo;
 import com.chaing.domain.transports.dto.OrderInfo;
+import com.chaing.domain.returns.dto.command.FranchiseReturnCommandForTransit;
 import com.chaing.domain.transports.dto.response.AvailableVehicleInfo;
 import com.chaing.domain.transports.exception.TransportErrorCode;
 import com.chaing.domain.transports.exception.TransportException;
 import com.chaing.domain.transports.service.InternalTransportService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +29,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import static com.chaing.domain.returns.enums.ReturnStatus.ACCEPTED;
 
 @Service
 @RequiredArgsConstructor
@@ -34,6 +41,7 @@ public class InternalTransportFacade {
     private final FranchiseOrderService franchiseOrderService;
     private final ProductService productService;
     private final BusinessUnitService franchiseServiceImpl;
+    private final FranchiseReturnService franchiseReturnService;
 
     // 운송 가능 차량 리스트 조회
     public List<AvailableVehicleResponse> getAvailableVehicle() {
@@ -43,9 +51,12 @@ public class InternalTransportFacade {
         return domainResponses.stream()
                 .map(res -> {
                     long safeMaxLoad = res.maxLoad() == null ? 0L : Math.max(0L, res.maxLoad());
-                    long safeCurrentLoad = res.currentWeight() == null ? 0L : Math.max(0L, res.currentWeight());
+                    long safeCurrentLoad = res.currentLoad() == null ? 0L : Math.max(0L, res.currentLoad());
                     long safeAvailableLoad = Math.max(0L, safeMaxLoad - safeCurrentLoad);
                     return new AvailableVehicleResponse(
+                            res.transportName(),
+                            res.driverName(),
+                            res.driverPhoneNumber(),
                             res.vehicleId(),
                             res.vehicleNumber(),
                             safeMaxLoad,
@@ -62,7 +73,7 @@ public class InternalTransportFacade {
 
         // 발주 도메인
         // 발주 Id, 중량 정보 받아오기
-        List<FranchiseOrderForTransitResponse> orders = franchiseOrderService.getOrdersForTransit(request.orderIds());
+        List<FranchiseOrderForTransitResponse> orders = franchiseOrderService.getOrdersForTransit(request.selectedIds());
 
         // 상품 Id 추출
         List<OrderInfo> orderInfos = getOrderInfos(orders);
@@ -166,4 +177,73 @@ public class InternalTransportFacade {
                 .toList();
     }
 
+    public List<AvailableVehicleResponse> getVehicleForReturn() {
+        List<AvailableVehicleInfo> domainResponses = transportService.getAllAvailableVehicle();
+
+        return domainResponses.stream()
+                .map(AvailableVehicleResponse::from)
+                .toList();
+    }
+
+    public List<UnassignedReturnResponse> getUnassignedReturns() {
+
+        Map<Long, HQReturnCommand> returnCommandMap = franchiseReturnService.getAllReturnByStatus(ACCEPTED);
+
+        Map<Long, BusinessUnitInternal> franchiseMap = returnCommandMap.values().stream()
+                .map(command -> franchiseServiceImpl.getById(command.franchiseId()))
+                .collect(Collectors.toMap(
+                        BusinessUnitInternal::id,
+                        info -> info,
+                        (existing, replacement) -> existing
+                ));
+
+        return returnCommandMap.values().stream()
+                .map(returnInfo -> {
+                    BusinessUnitInternal franchiseInfo = franchiseMap.get(returnInfo.franchiseId());
+
+                    return UnassignedReturnResponse.from(returnInfo, franchiseInfo);
+                })
+                .collect(Collectors.toList());
+    }
+
+    // 반품 차량 배정
+    @Transactional
+    public void assignVehicleReturns(@Valid VehicleAssignmentRequest request) {
+
+        List<FranchiseReturnCommandForTransit> returns = franchiseReturnService.getReturnForTransit(request.selectedIds());
+
+        List<Long> orderIds = returns.stream().map(FranchiseReturnCommandForTransit::franchiseOrderId).toList();
+
+        List<FranchiseOrderForTransitResponse> orders = franchiseOrderService.getOrdersForTransit(orderIds);
+
+        List<OrderInfo> orderInfos = getOrderInfos(orders);
+
+        // 선택된 발주의 총 무게 계산
+        Long totalWeight = orderInfos.stream()
+                .mapToLong(OrderInfo::weight)
+                .sum();
+
+        List<String> returnCodes = returns.stream()
+                .map(FranchiseReturnCommandForTransit::returnCode)
+                .toList();
+
+        // 외부 운송 모듈
+        // 송장 번호 가져오기
+        Map<String, String> trackingMap = Map.of(
+                "SE0320260207001", "TRACK-12345",
+                "SE0120260207002", "TRACK-67890"
+        );
+                /* 외부 운송 모듈 구현 전 임시 값으로 대체
+                externalTrackingModule.getTrackingNumbers(
+                orderInfos.stream().map(OrderInfo::orderCode).toList()
+        );*/
+
+        transportService.assignVehicleReturn(
+                request.vehicleId(),
+                orderInfos,
+                trackingMap,     // String
+                totalWeight,
+                returnCodes
+        );
+    }
 }

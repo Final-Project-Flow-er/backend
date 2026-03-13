@@ -14,8 +14,8 @@ public enum OrderErrorCode implements ErrorCode {
     ORDER_ITEM_NOT_FOUND(404, "OR003", "해당 발주의 제품을 찾을 수 없습니다."),
 
     // 400 BAD REQUEST
-    INVALID_QUANTITY(404, "OR004", "수량이 올바르지 않습니다."),
-    INVALID_STATUS(404, "OR005", "발주의 상태가 올바르지 않습니다."),
+    INVALID_QUANTITY(400, "OR004", "수량이 올바르지 않습니다."),
+    INVALID_STATUS(400, "OR005", "발주의 상태가 올바르지 않습니다."),
 
     // 403 FORBIDDEN
     UNAUTHORIZED(403, "OR006", "권한이 없습니다.");

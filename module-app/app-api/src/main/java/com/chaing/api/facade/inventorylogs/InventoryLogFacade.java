@@ -73,7 +73,7 @@ public class InventoryLogFacade {
     // FRANCHISE 주문: Factory -> Franchise
     // boxCode 기준 1박스 1로그, quantity는 박스 내 개수
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
-    private void recordFranchiseOrderLogs(FranchiseOrder order, List<FactoryInventory> inventories, LogType logType, Long fromId, ActorType actorType, Long actorId) {
+    public void recordFranchiseOrderLogs(FranchiseOrder order, List<FactoryInventory> inventories, LogType logType, Long fromId, ActorType actorType, Long actorId) {
         Map<String, List<FactoryInventory>> inventoriesByBox = inventories.stream()
                 .filter(inv -> inv.getBoxCode() != null && !inv.getBoxCode().isBlank())
                 .collect(Collectors.groupingBy(
@@ -117,7 +117,7 @@ public class InventoryLogFacade {
     // HQ 주문: Factory -> HQ
     // boxCode 기준 1박스 1로그, quantity는 박스 내 개수
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
-    private void recordHqOrderLogs(HeadOfficeOrder order, List<FranchiseInventory> inventories, LogType logType, Long fromId, ActorType actorType, Long actorId) {
+    public void recordHqOrderLogs(HeadOfficeOrder order, List<FranchiseInventory> inventories, LogType logType, Long fromId, ActorType actorType, Long actorId) {
         Map<String, List<FranchiseInventory>> inventoriesByBox = inventories.stream()
                 .filter(inv -> inv.getBoxCode() != null && !inv.getBoxCode().isBlank())
                 .collect(Collectors.groupingBy(

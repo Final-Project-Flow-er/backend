@@ -16,6 +16,8 @@ public interface DailySettlementService {
     // 특정 가맹점 + 날짜
     DailySettlementReceipt getByFranchiseAndDate(Long franchiseId, LocalDate date);
 
+    java.util.Optional<DailySettlementReceipt> findByFranchiseAndDate(Long franchiseId, LocalDate date);
+
     // 기간별 조회 (그래프용)
     List<DailySettlementReceipt> getAllByDateRange(LocalDate start, LocalDate end);
 

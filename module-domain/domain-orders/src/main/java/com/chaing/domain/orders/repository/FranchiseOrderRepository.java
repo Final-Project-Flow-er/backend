@@ -16,6 +16,8 @@ import java.util.Set;
 public interface FranchiseOrderRepository extends JpaRepository<FranchiseOrder, Long> {
         List<FranchiseOrder> findAllByFranchiseIdAndUserId(Long franchiseId, Long username);
 
+        List<FranchiseOrder> findAllByFranchiseId(Long franchiseId);
+
         Optional<FranchiseOrder> findByFranchiseIdAndUserIdAndOrderCodeAndDeletedAtIsNull(Long franchiseId, Long userId,
                         String orderCode);
 

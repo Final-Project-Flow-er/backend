@@ -508,7 +508,16 @@ public class InventoryService {
     public void checkStock(List<FranchiseOrderCodeAndQuantityCommand> items, Map<String, ProductInfo> productInfoByProductCode) {
         // Set<productId>
         Set<Long> productIds = items.stream()
-                .map(item -> productInfoByProductCode.get(item.productCode()).productId())
+                .map(item -> {
+                    String productCode = item.productCode();
+                    ProductInfo productInfo = productInfoByProductCode.get(productCode);
+
+                    if (productInfo == null) {
+                        throw new InventoriesException(InventoriesErrorCode.PRODUCT_NOT_FOUND);
+                    }
+
+                    return productInfo.productId();
+                })
                 .collect(Collectors.toSet());
 
         // List<FactoryInventory>

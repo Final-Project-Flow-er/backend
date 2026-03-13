@@ -29,7 +29,7 @@ public class FranchiseInventoryLogController {
         private final FranchiseInventoryLogFacade franchiseInventoryLogFacade;
 
         @Operation(summary = "가맹점 물류 입출고 이력 조회", description = "가맹점 물류 입출고 이력을 확인합니다.")
-        @GetMapping("/inventory/{franchiseId}")
+        @GetMapping("/inventory")
         public ResponseEntity<ApiResponse<FranchiseInventoryLogListResponse>> findFranchiseInboundOutboundLogs(
                         @AuthenticationPrincipal UserPrincipal principal,
 
@@ -52,7 +52,7 @@ public class FranchiseInventoryLogController {
         }
 
         @Operation(summary = "가맹점 판매 환불 이력 조회", description = "가맹점 판매 환불 이력을 확인합니다.")
-        @GetMapping("/sales/{franchiseId}")
+        @GetMapping("/sales")
         public ResponseEntity<ApiResponse<FranchiseInventoryLogListResponse>> findFranchiseSalesRefundLogs(
                         @AuthenticationPrincipal UserPrincipal principal,
 

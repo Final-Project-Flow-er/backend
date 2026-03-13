@@ -2,10 +2,13 @@ package com.chaing.api.facade.franchise;
 
 import com.chaing.api.dto.franchise.sales.response.FranchiseSalesResponse;
 import com.chaing.domain.businessunits.service.impl.FranchiseServiceImpl;
+import com.chaing.domain.inventories.service.InventoryService;
+import com.chaing.domain.sales.dto.request.FranchiseSellItemRequest;
 import com.chaing.domain.sales.dto.request.FranchiseSellRequest;
 import com.chaing.domain.sales.dto.response.FranchiseSalesCancellationResponse;
 import com.chaing.domain.sales.dto.response.FranchiseSalesDetailResponse;
 import com.chaing.domain.sales.dto.response.FranchiseSalesInfoResponse;
+import com.chaing.domain.sales.dto.response.FranchiseSellItemResponse;
 import com.chaing.domain.sales.dto.response.FranchiseSellResponse;
 import com.chaing.domain.sales.service.FranchiseSalesService;
 import com.chaing.domain.users.service.UserManagementService;
@@ -24,6 +27,7 @@ public class FranchiseSalesFacade {
     private final FranchiseSalesService franchiseSalesService;
     private final UserManagementService userManagementService;
     private final FranchiseServiceImpl franchiseService;
+    private final InventoryService inventoryService;
 
     // 미취소 판매 기록 조회
     public List<FranchiseSalesResponse> getAllSales(Long userId) {
@@ -73,11 +77,15 @@ public class FranchiseSalesFacade {
         Long franchiseId = userManagementService.getFranchiseIdByUserId(userId);
 
         // franchiseCode
-        String franchiseCode = franchiseService.getById(franchiseId).businessNumber();
+        String franchiseCode = franchiseService.getById(franchiseId).code();
 
         FranchiseSellResponse response = franchiseSalesService.sell(franchiseId, franchiseCode, request);
 
-        //TODO: 재고 차감 로직 추가
+        // List<serialCode>
+        List<String> serialCodes = request.requestList().stream().map(FranchiseSellItemRequest::serialCode).toList();
+
+        //재고 차감
+        inventoryService.deleteFranchiseInventory(franchiseId, serialCodes);
 
         return response;
     }

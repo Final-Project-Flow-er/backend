@@ -165,6 +165,7 @@ public class HQInventoryLogController {
                                                 request, pageable)));
         }
 
+        @Operation(summary = "입출고 테스트", description = "입출고 로그를 테스트합니다.")
         @PostMapping("/order")
         public ResponseEntity<ApiResponse<String>> testOrderLog(
                         @Valid @RequestBody InventoryOrderLogTestRequest request) {
@@ -178,6 +179,7 @@ public class HQInventoryLogController {
                 return ResponseEntity.ok(ApiResponse.success("ORDER_LOG_CREATED"));
         }
 
+        @Operation(summary = "반품 입출고 테스트", description = "반품 입출고 로그를 테스트합니다.")
         @PostMapping("/return")
         public ResponseEntity<ApiResponse<String>> testReturnLog(
                         @Valid @RequestBody InventoryReturnLogTestRequest request) {

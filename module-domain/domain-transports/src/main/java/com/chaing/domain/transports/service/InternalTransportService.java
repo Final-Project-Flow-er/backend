@@ -71,6 +71,11 @@ public class InternalTransportService {
 
         // 차량 배정
         executor.createTransits(vehicleId, orders, trackingMap);
+
+        // 차량 상태 확인 및 변경
+        if(maxLoad < currentWeight + newWeight + 100) {
+            executor.updateDispatchableStatus(vehicleId);
+        }
     }
 
     @Transactional

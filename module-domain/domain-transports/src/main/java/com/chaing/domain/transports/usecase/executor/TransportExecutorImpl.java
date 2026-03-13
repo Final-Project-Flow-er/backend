@@ -5,6 +5,7 @@ import com.chaing.domain.transports.entity.Transit;
 import com.chaing.domain.transports.exception.TransportErrorCode;
 import com.chaing.domain.transports.exception.TransportException;
 import com.chaing.domain.transports.repository.TransitRepository;
+import com.chaing.domain.transports.repository.VehicleRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -16,6 +17,7 @@ import java.util.Map;
 public class TransportExecutorImpl implements TransportExecutor {
 
     private final TransitRepository transitRepository;
+    private final VehicleRepository vehicleRepository;
 
     @Override
     public void createTransits(Long vehicleId, List<OrderInfo> orders, Map<String, String> trackingMap) {

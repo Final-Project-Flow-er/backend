@@ -10,7 +10,7 @@ import com.chaing.domain.orders.dto.command.FranchiseOrderCommand;
 import com.chaing.domain.orders.dto.command.FranchiseOrderDetailCommand;
 import com.chaing.domain.orders.dto.command.FranchiseOrderItemCommand;
 import com.chaing.domain.orders.dto.request.FranchiseOrderCreateRequest;
-import com.chaing.domain.orders.dto.request.FranchiseOrderUpdateRequest;
+import com.chaing.core.dto.request.FranchiseOrderUpdateRequest;
 import com.chaing.domain.orders.dto.response.FranchiseOrderCancelResponse;
 import com.chaing.domain.orders.dto.response.FranchiseOrderCreateResponse;
 import com.chaing.domain.orders.dto.response.FranchiseOrderDetailResponse;
@@ -244,13 +244,6 @@ public class FranchiseOrderFacade {
 
         // Map<productId, ProductInfo>
         Map<Long, ProductInfo> productInfoByProductId = productService.getProductInfos(productIds);
-
-        // Map<productCode, ProductInfo>
-        Map<String, ProductInfo> productInfoByProductCode = productInfoByProductId.values().stream()
-                .collect(Collectors.toMap(
-                        ProductInfo::productCode,
-                        Function.identity()
-                ));
 
         // Map<productId, FranchiseOrderUpdateRequest>
         Map<Long, FranchiseOrderUpdateRequest> requestByProductId = requests.stream()

@@ -326,15 +326,8 @@ public class FranchiseReturnFacade {
         // franchiseCode
         String franchiseCode = franchiseService.getById(franchiseId).code();
 
-        // 경고 횟수
-        int warningCount = franchiseService.getWarningCount(franchiseId);
-
-        if (warningCount > 2) {
-            throw new FranchiseReturnException(FranchiseReturnErrorCode.INVALID_WARNING_COUNT);
-        }
-
-        // 가맹점 경고 횟수 증가
-        franchiseService.addWarning(franchiseId);
+        // 가맹점 경고 횟수 판별
+        franchiseService.validateWarningCount(franchiseId);
 
         // FranchiseOrderDetailCommand
         FranchiseOrderDetailCommand order = franchiseOrderService.getOrderByOrderCode(franchiseId, userId, request.orderCode());

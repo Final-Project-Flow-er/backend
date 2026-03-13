@@ -106,4 +106,16 @@ public class FranchiseServiceImpl implements BusinessUnitManagementService {
 
         return BusinessUnitInternal.from(franchise);
     }
+
+    public void validateWarningCount(Long franchiseId) {
+        // 경고 횟수
+        int warningCount = getWarningCount(franchiseId);
+
+        if (warningCount > 2) {
+            throw new BusinessUnitException(BusinessUnitErrorCode.INVALID_WARNING_COUNT);
+        }
+
+        // 가맹점 경고 횟수 증가
+        addWarning(franchiseId);
+    }
 }

@@ -157,11 +157,13 @@ class TransportManagementServiceTests {
 
         // given
         Long id = 1L;
+        given(transportRepository.findById(id)).willReturn(Optional.of(transport));
 
         // when
         transportManagementService.deleteTransport(id);
 
         // then
+        verify(transportRepository, times(1)).findById(id);
         verify(transportRepository, times(1)).softDeleteById(id);
     }
 

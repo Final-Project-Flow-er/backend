@@ -52,11 +52,11 @@ public class VehicleManagementFacade {
     public VehicleDetailResponse updateVehicle(Long id, UpdateVehicleRequest request) {
         Vehicle vehicle = vehicleManagementService.getById(id);
 
-        if (request.status() == UsableStatus.ACTIVE) {
-            validateTransportIsActive(vehicle.getTransportId());
-        }
-        if (request.transportId() != null && !request.transportId().equals(vehicle.getTransportId())) {
-            validateTransportIsActive(request.transportId());
+        boolean transportChanged = request.transportId() != null && !request.transportId().equals(vehicle.getTransportId());
+        Long targetTransportId = transportChanged ? request.transportId() : vehicle.getTransportId();
+
+        if (request.status() == UsableStatus.ACTIVE || transportChanged) {
+            validateTransportIsActive(targetTransportId);
         }
 
         Vehicle updatedVehicle = vehicleManagementService.updateVehicle(id, request.toCommand());

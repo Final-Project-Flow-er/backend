@@ -89,7 +89,7 @@ public class FranchiseSettlementFacade {
                 if (date.equals(LocalDate.now())) {
                         log.info("[DEBUG] Requesting today's settlement for franchiseId: {}. Performing real-time aggregation.",
                                         franchiseId);
-                        return aggregateDailySettlement(franchiseId, date);
+                        return aggregateDailySettlement(franchiseId, date).receipt();
                 }
 
                 DailySettlementReceipt receipt = dailyService.findByFranchiseAndDate(franchiseId, date).orElse(null);
@@ -97,7 +97,7 @@ public class FranchiseSettlementFacade {
                 if (receipt == null) {
                         log.info("[DEBUG] Daily receipt not found in DB for franchiseId: {}, date: {}. Aggregating on the fly.",
                                         franchiseId, date);
-                        return aggregateDailySettlement(franchiseId, date);
+                        return aggregateDailySettlement(franchiseId, date).receipt();
                 }
 
                 // 이미 DB에 기록이 있더라도 매출액이나 발주금액이 0이거나, 수수료가 집계되지 않은 경우 실시간으로 다시 집계함
@@ -106,7 +106,7 @@ public class FranchiseSettlementFacade {
                                                 && receipt.getCommissionFee().compareTo(BigDecimal.ZERO) == 0)) {
                         log.info("[DEBUG] Persistent receipt exists but needs update (0 values or missing commission). Re-aggregating for franchiseId: {}, date: {}",
                                         franchiseId, date);
-                        return aggregateDailySettlement(franchiseId, date);
+                        return aggregateDailySettlement(franchiseId, date).receipt();
                 }
 
                 return receipt;
@@ -551,53 +551,70 @@ public class FranchiseSettlementFacade {
         @Transactional
         public String getDailyReceiptPdf(Long franchiseId, LocalDate date) {
                 try {
-                        // 1. 해당 가맹점의 일별 정산 데이터 조회
-                        DailySettlementReceipt receipt = dailyService.getByFranchiseAndDate(franchiseId, date);
+                        // 1. 해당 가맹점의 일별 정산 데이터 조회 (Optional 사용으로 트랜잭션 롤백 방지)
+                        java.util.Optional<DailySettlementReceipt> receiptOpt = dailyService
+                                        .findByFranchiseAndDate(franchiseId, date);
 
-                        // 2. 해당 정산 ID로 이미 생성된 문서가 있는지 확인
-                        java.util.Optional<SettlementDocument> existingDoc = documentService
-                                        .getDailyDocument(receipt.getDailyReceiptId());
-                        if (existingDoc.isPresent()) {
-                                return minioService.getFileUrl(existingDoc.get().getObjectKey(),
-                                                BucketName.SETTLEMENTS);
+                        if (receiptOpt.isPresent()) {
+                                DailySettlementReceipt receipt = receiptOpt.get();
+                                // 2. 해당 정산 ID로 이미 생성된 문서가 있는지 확인
+                                java.util.Optional<SettlementDocument> existingDoc = documentService
+                                                .getDailyDocument(receipt.getDailyReceiptId());
+                                if (existingDoc.isPresent()) {
+                                        return minioService.getFileUrl(existingDoc.get().getObjectKey(),
+                                                        BucketName.SETTLEMENTS);
+                                }
                         }
 
-                        // 3. 문서가 없으면 실시간 생성
-                        List<DailyReceiptLine> lines = dailyService.getAllReceiptLines(receipt.getDailyReceiptId());
-                        byte[] pdfBytes = fileService.createDailyReceiptPdf(receipt, lines);
+                        // 3. 문서가 없으면 실시간 생성 (상세 라인 포함)
+                        AggregationResult result = aggregateDailySettlement(franchiseId, date);
+                        DailySettlementReceipt currentReceipt = result.receipt();
+                        List<DailyReceiptLine> currentLines = result.lines();
 
-                        // 4. MinIO 업로드
-                        String fileName = "settlement/daily/FR_" + franchiseId + "_Daily_" + date + "_"
+                        // 데이터가 전혀 없는 경우 (오늘 매출/발주 0) 예외 처리
+                        if (currentReceipt.getTotalSaleAmount().compareTo(BigDecimal.ZERO) == 0 &&
+                                        currentReceipt.getOrderAmount().compareTo(BigDecimal.ZERO) == 0) {
+                                throw new SettlementException(SettlementErrorCode.SETTLEMENT_DATA_EMPTY);
+                        }
+
+                        byte[] pdfBytes = fileService.createDailyReceiptPdf(currentReceipt, currentLines);
+
+                        // 4. MinIO 업로드 (확정 데이터면 daily, 아니면 provisional 폴더)
+                        String folder = receiptOpt.isPresent() ? "settlement/daily/" : "settlement/provisional/";
+                        String prefix = receiptOpt.isPresent() ? "FR_" : "FR_Preview_";
+                        String fileName = folder + prefix + franchiseId + "_Daily_" + date + "_"
                                         + System.currentTimeMillis() + ".pdf";
+
                         minioService.uploadFile(pdfBytes, fileName, "application/pdf", BucketName.SETTLEMENTS);
                         String fileUrl = minioService.getFileUrl(fileName, BucketName.SETTLEMENTS);
-                        log.info("====> {} ", fileUrl);
+
                         // 5. DB에 메타데이터 저장
-                        SettlementDocument newDoc = SettlementDocument.builder()
+                        SettlementDocument.SettlementDocumentBuilder docBuilder = SettlementDocument.builder()
                                         .periodType(PeriodType.DAILY)
-                                        .documentType(DocumentType.RECEIPT_PDF)
+                                        .documentType(receiptOpt.isPresent() ? DocumentType.RECEIPT_PDF
+                                                        : DocumentType.PROVISIONAL_RECEIPT_PDF)
                                         .documentOwner(DocumentOwner.FRANCHISE)
                                         .franchiseId(franchiseId)
-                                        .dailyReceiptId(receipt.getDailyReceiptId())
                                         .storageProvider("MINIO")
                                         .bucket(BucketName.SETTLEMENTS.getBucketName())
                                         .objectKey(fileName)
                                         .fileUrl(fileUrl)
                                         .fileName(fileName.substring(fileName.lastIndexOf("/") + 1))
                                         .contentType("application/pdf")
-                                        .fileSize((long) pdfBytes.length)
-                                        .build();
-                        documentService.save(newDoc);
+                                        .fileSize((long) pdfBytes.length);
+
+                        if (receiptOpt.isPresent()) {
+                                docBuilder.dailyReceiptId(receiptOpt.get().getDailyReceiptId());
+                        }
+
+                        documentService.save(docBuilder.build());
 
                         return fileUrl;
-                } catch (SettlementException e) {
-                        if (e.getErrorCode() == SettlementErrorCode.DAILY_SETTLEMENT_NOT_FOUND) {
-                                // 데이터가 없으면 실시간 집계 시도
-                                return generateProvisionalDailyPdf(franchiseId, date);
-                        }
-                        throw e;
                 } catch (Exception e) {
                         log.error("Failed to generate Daily Franchise Receipt PDF: ", e);
+                        if (e instanceof SettlementException || e instanceof RuntimeException) {
+                                throw e;
+                        }
                         throw new SettlementException(SettlementErrorCode.DOCUMENT_GENERATION_FAILED);
                 }
         }
@@ -605,85 +622,33 @@ public class FranchiseSettlementFacade {
         @Transactional
         public String getMonthlyReceiptPdf(Long franchiseId, YearMonth month) {
                 try {
-                        // 1. 해당 가맹점의 월별 정산 데이터 조회 (없으면 SettlementException 발생)
-                        MonthlySettlement settlement;
-                        List<SettlementVoucher> vouchers;
+                        // 1. 해당 가맹점의 월별 정산 데이터 조회 (Optional 사용으로 트랜잭션 롤백 방지)
+                        java.util.Optional<MonthlySettlement> settlementOpt = monthlyService
+                                        .findByFranchiseAndMonth(franchiseId, month);
 
-                        try {
-                                settlement = monthlyService.getByFranchiseAndMonth(franchiseId, month);
-                                vouchers = voucherRepository
-                                                .findAllByMonthlySettlementId(settlement.getMonthlySettlementId());
-                        } catch (SettlementException e) {
-                                if (e.getErrorCode() == SettlementErrorCode.MONTHLY_SETTLEMENT_NOT_FOUND) {
-                                        // 데이터가 없으면 실시간 집계 시도
-                                        return generateProvisionalMonthlyPdf(franchiseId, month);
-                                }
-                                throw e;
-                        }
-
-                        // 2. 이미 생성된 문서(RECEIPT_PDF)가 있는지 확인
-                        try {
-                                List<com.chaing.domain.settlements.entity.SettlementDocument> documents = documentService
+                        if (settlementOpt.isPresent()) {
+                                MonthlySettlement settlement = settlementOpt.get();
+                                // 2. 이미 생성된 문서(RECEIPT_PDF)가 있는지 확인
+                                java.util.List<com.chaing.domain.settlements.entity.SettlementDocument> documents = documentService
                                                 .getMonthlyDocuments(settlement.getMonthlySettlementId());
 
-                                String existingUrl = documents.stream()
+                                String existingKey = documents.stream()
                                                 .filter(doc -> doc.getDocumentType() == DocumentType.RECEIPT_PDF)
                                                 .findFirst()
-                                                .map(com.chaing.domain.settlements.entity.SettlementDocument::getFileUrl)
+                                                .map(com.chaing.domain.settlements.entity.SettlementDocument::getObjectKey)
                                                 .orElse(null);
 
-                                if (existingUrl != null) {
-                                        return minioService.getFileUrl(documents.stream()
-                                                        .filter(doc -> doc
-                                                                        .getDocumentType() == DocumentType.RECEIPT_PDF)
-                                                        .findFirst()
-                                                        .get().getObjectKey(), BucketName.SETTLEMENTS);
-                                }
-                        } catch (SettlementException e) {
-                                // 문서 목록 조회 시 에러가 나더라도(없으면), 아래에서 실시간 생성 진행을 위해 넘어감
-                                if (e.getErrorCode() == SettlementErrorCode.INVALID_SETTLEMENT_ID) {
-                                        throw e;
+                                if (existingKey != null) {
+                                        return minioService.getFileUrl(existingKey, BucketName.SETTLEMENTS);
                                 }
                         }
 
-                        // 4. 없으면 실시간 생성
-                        byte[] pdfBytes = fileService.createMonthlyReceiptPdf(settlement, vouchers);
-
-                        // 5. MinIO 업로드
-                        String fileName = "settlement/monthly/Franchise_" + franchiseId + "_Monthly_Receipt_" + month
-                                        + "_"
-                                        + System.currentTimeMillis() + ".pdf";
-                        minioService.uploadFile(pdfBytes, fileName, "application/pdf", BucketName.SETTLEMENTS);
-
-                        // 6. DB 메타데이터 저장
-                        String fileUrl = minioService.getFileUrl(fileName, BucketName.SETTLEMENTS);
-                        documentService.save(SettlementDocument.builder()
-                                        .monthlySettlementId(settlement.getMonthlySettlementId())
-                                        .periodType(PeriodType.MONTHLY)
-                                        .documentType(DocumentType.RECEIPT_PDF)
-                                        .documentOwner(DocumentOwner.FRANCHISE)
-                                        .franchiseId(franchiseId)
-                                        .storageProvider("MINIO")
-                                        .bucket(BucketName.SETTLEMENTS.getBucketName())
-                                        .objectKey(fileName)
-                                        .fileUrl(fileUrl)
-                                        .fileName(fileName.substring(fileName.lastIndexOf("/") + 1))
-                                        .contentType("application/pdf")
-                                        .fileSize((long) pdfBytes.length)
-                                        .build());
-
-                        return fileUrl;
-                } catch (SettlementException e) {
-                        if (e.getErrorCode() == SettlementErrorCode.MONTHLY_SETTLEMENT_NOT_FOUND) {
-                                if (month.isAfter(YearMonth.now().minusMonths(1))) { // 이번 달인 경우 안내 메시지 포함된 코드 사용
-                                        throw new SettlementException(
-                                                        SettlementErrorCode.MONTHLY_SETTLEMENT_NOT_FINALIZED);
-                                }
-                                throw e;
-                        }
-                        throw e;
+                        // 3. 데이터가 없거나 문서가 없으면 실시간 가집계 PDF 생성 시도
+                        return generateProvisionalMonthlyPdf(franchiseId, month);
                 } catch (Exception e) {
                         log.error("Failed to generate Monthly Franchise Receipt PDF: ", e);
+                        if (e instanceof SettlementException)
+                                throw (SettlementException) e;
                         throw new SettlementException(SettlementErrorCode.DOCUMENT_GENERATION_FAILED);
                 }
         }
@@ -691,71 +656,33 @@ public class FranchiseSettlementFacade {
         @Transactional
         public String getMonthlyVouchersExcel(Long franchiseId, YearMonth month) {
                 try {
-                        // 1. 해당 가맹점의 월별 정산 데이터 조회
-                        MonthlySettlement settlement;
-                        try {
-                                settlement = monthlyService.getByFranchiseAndMonth(franchiseId, month);
-                        } catch (SettlementException e) {
-                                if (e.getErrorCode() == SettlementErrorCode.MONTHLY_SETTLEMENT_NOT_FOUND) {
-                                        return generateProvisionalMonthlyExcel(franchiseId, month);
-                                }
-                                throw e;
-                        }
+                        // 1. 해당 가맹점의 월별 정산 데이터 조회 (Optional 사용으로 트랜잭션 롤백 방지)
+                        java.util.Optional<MonthlySettlement> settlementOpt = monthlyService
+                                        .findByFranchiseAndMonth(franchiseId, month);
 
-                        // 2. 이미 생성된 엑셀 문서가 있는지 확인
-                        List<SettlementDocument> documents = documentService
-                                        .getMonthlyDocuments(settlement.getMonthlySettlementId());
-                        if (documents != null) {
-                                var existingExcel = documents.stream()
-                                                .filter(doc -> doc.getDocumentType() == DocumentType.VOUCHER_EXCEL)
-                                                .findFirst();
-                                if (existingExcel.isPresent()) {
-                                        return minioService.getFileUrl(existingExcel.get().getObjectKey(),
-                                                        BucketName.SETTLEMENTS);
+                        if (settlementOpt.isPresent()) {
+                                MonthlySettlement settlement = settlementOpt.get();
+                                // 2. 이미 생성된 엑셀 문서가 있는지 확인
+                                List<SettlementDocument> documents = documentService
+                                                .getMonthlyDocuments(settlement.getMonthlySettlementId());
+                                if (documents != null) {
+                                        var existingExcel = documents.stream()
+                                                        .filter(doc -> doc
+                                                                        .getDocumentType() == DocumentType.VOUCHER_EXCEL)
+                                                        .findFirst();
+                                        if (existingExcel.isPresent()) {
+                                                return minioService.getFileUrl(existingExcel.get().getObjectKey(),
+                                                                BucketName.SETTLEMENTS);
+                                        }
                                 }
                         }
 
-                        // 3. 없으면 실시간 생성
-                        List<SettlementVoucher> vouchers = voucherRepository
-                                        .findAllByMonthlySettlementId(settlement.getMonthlySettlementId());
-                        byte[] excelBytes = fileService.createMonthlyVoucherExcel(vouchers);
-
-                        // 4. MinIO 업로드
-                        String fileName = "settlement/monthly/FR_" + franchiseId + "_Voucher_" + month + "_"
-                                        + System.currentTimeMillis() + ".xlsx";
-                        minioService.uploadFile(excelBytes, fileName,
-                                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                                        BucketName.SETTLEMENTS);
-                        String fileUrl = minioService.getFileUrl(fileName, BucketName.SETTLEMENTS);
-
-                        // 5. DB에 메타데이터 저장
-                        SettlementDocument newDoc = SettlementDocument.builder()
-                                        .periodType(PeriodType.MONTHLY)
-                                        .documentType(DocumentType.VOUCHER_EXCEL)
-                                        .documentOwner(DocumentOwner.FRANCHISE)
-                                        .franchiseId(franchiseId)
-                                        .monthlySettlementId(settlement.getMonthlySettlementId())
-                                        .storageProvider("MINIO")
-                                        .bucket(BucketName.SETTLEMENTS.getBucketName())
-                                        .objectKey(fileName)
-                                        .fileUrl(fileUrl)
-                                        .fileName(fileName.substring(fileName.lastIndexOf("/") + 1))
-                                        .contentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-                                        .fileSize((long) excelBytes.length)
-                                        .build();
-                        documentService.save(newDoc);
-
-                        return fileUrl;
-                } catch (SettlementException e) {
-                        if (e.getErrorCode() == SettlementErrorCode.MONTHLY_SETTLEMENT_NOT_FOUND) {
-                                if (month.isAfter(YearMonth.now().minusMonths(1))) {
-                                        throw new SettlementException(
-                                                        SettlementErrorCode.MONTHLY_SETTLEMENT_NOT_FINALIZED);
-                                }
-                        }
-                        throw e;
+                        // 3. 데이터가 없으면 실시간 가집계 엑셀 생성 시도
+                        return generateProvisionalMonthlyExcel(franchiseId, month);
                 } catch (Exception e) {
                         log.error("Failed to generate Monthly Franchise Vouchers Excel: ", e);
+                        if (e instanceof SettlementException)
+                                throw (SettlementException) e;
                         throw new SettlementException(SettlementErrorCode.DOCUMENT_GENERATION_FAILED);
                 }
         }
@@ -893,7 +820,15 @@ public class FranchiseSettlementFacade {
                                 .build();
         }
 
-        private DailySettlementReceipt aggregateDailySettlement(Long franchiseId, LocalDate date) {
+        // 실시간 가집계 데이터 및 상세 전표 라인 수집을 위한 내부 레코드
+        private record AggregationResult(
+                        DailySettlementReceipt receipt,
+                        List<DailyReceiptLine> lines) {
+        }
+
+        // 실시간 가집계 (매출, 수수료, 발주, 배송비, 반품 등)
+        private AggregationResult aggregateDailySettlement(Long franchiseId, LocalDate date) {
+                List<DailyReceiptLine> lines = new ArrayList<>();
                 // 1. 해당 날짜의 판매 내역 조회 및 집계 (취소 안 된 것만)
                 log.info("[DEBUG] 정산 조회 franchiseId={}, date={}", franchiseId, date);
 
@@ -915,6 +850,20 @@ public class FranchiseSettlementFacade {
                 BigDecimal totalSale = salesItems.stream()
                                 .map(item -> item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
                                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                // 판매 상세 라인 추가
+                for (SalesItem item : salesItems) {
+                        lines.add(DailyReceiptLine.builder()
+                                        .lineType(VoucherType.SALES)
+                                        .description(item.getProductName() + " (판매)")
+                                        .productName(item.getProductName())
+                                        .quantity(item.getQuantity())
+                                        .unitPrice(item.getUnitPrice())
+                                        .amount(item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
+                                        .occurredAt(item.getCreatedAt())
+                                        .referenceCode(item.getSales().getSalesCode())
+                                        .build());
+                }
 
                 // TODO: 실제 정산 로직에 맞게 수수료, 발주금액, 배송비 등 추가 집계 필요
                 // 현재는 요약 페이지에서 보여주는 핵심 항목 위주로 가집계
@@ -954,6 +903,28 @@ public class FranchiseSettlementFacade {
 
                         log.info("[DEBUG] 발주 품목 상세 집계 - 발주건수: {}, 전체품목수: {}, 총액: {}",
                                         orders.size(), orderItems.size(), orderAmount);
+
+                        // 발주 상세 라인 추가 (상품명 매핑 포함)
+                        // 여러 productId에 대한 상품 정보를 한 번에 조회
+                        List<Long> productIds = orderItems.stream().map(FranchiseOrderItem::getProductId).distinct()
+                                        .toList();
+                        Map<Long, String> productNames = productRepository.findAllByProductIdIn(productIds).stream()
+                                        .collect(Collectors.toMap(Product::getProductId, Product::getName));
+
+                        for (FranchiseOrderItem item : orderItems) {
+                                String name = productNames.getOrDefault(item.getProductId(),
+                                                "알 수 없는 상품 (ID: " + item.getProductId() + ")");
+                                lines.add(DailyReceiptLine.builder()
+                                                .lineType(VoucherType.ORDER)
+                                                .description(name + " (발주)")
+                                                .productName(name)
+                                                .quantity(item.getQuantity())
+                                                .unitPrice(item.getUnitPrice())
+                                                .amount(item.getTotalPrice())
+                                                .occurredAt(item.getCreatedAt())
+                                                .referenceCode(item.getFranchiseOrder().getOrderCode())
+                                                .build());
+                        }
                 }
 
                 // 3. 해당 날짜의 반품 내역 (PENDING 포함 모든 유효 단계) 조회 및 집계
@@ -1009,8 +980,22 @@ public class FranchiseSettlementFacade {
 
                                 if (ret.getReturnType() == ReturnType.PRODUCT_DEFECT) {
                                         refundAmount = refundAmount.add(returnTotal);
+                                        lines.add(DailyReceiptLine.builder()
+                                                        .lineType(VoucherType.REFUND)
+                                                        .description(ret.getReturnCode() + " (상품하자 반품)")
+                                                        .amount(returnTotal)
+                                                        .occurredAt(ret.getCreatedAt())
+                                                        .referenceCode(ret.getReturnCode())
+                                                        .build());
                                 } else if (ret.getReturnType() == ReturnType.MISORDER) {
                                         lossAmount = lossAmount.add(returnTotal);
+                                        lines.add(DailyReceiptLine.builder()
+                                                        .lineType(VoucherType.LOSS)
+                                                        .description(ret.getReturnCode() + " (오발주 손실)")
+                                                        .amount(returnTotal)
+                                                        .occurredAt(ret.getCreatedAt())
+                                                        .referenceCode(ret.getReturnCode())
+                                                        .build());
                                 }
                         }
                 }
@@ -1024,70 +1009,23 @@ public class FranchiseSettlementFacade {
                 log.info("[DEBUG] 수수료 계산 - 매출: {}, 요율: 3.3%, 산출수수료: {}", totalSale, commissionFee);
 
                 // 간소화된 가집계 결과 반환
-                return DailySettlementReceipt.builder()
-                                .franchiseId(franchiseId)
-                                .settlementDate(date)
-                                .totalSaleAmount(totalSale)
-                                .orderAmount(orderAmount)
-                                .refundAmount(refundAmount) // 상품하자 환급액
-                                .lossAmount(lossAmount) // 오발주 손실액
-                                .deliveryFee(BigDecimal.ZERO)
-                                .commissionFee(commissionFee)
-                                .adjustmentAmount(BigDecimal.ZERO)
-                                .finalAmount(totalSale.subtract(orderAmount.add(lossAmount).add(commissionFee))
-                                                .add(refundAmount))
-                                .build();
+                return new AggregationResult(
+                                DailySettlementReceipt.builder()
+                                                .franchiseId(franchiseId)
+                                                .settlementDate(date)
+                                                .totalSaleAmount(totalSale)
+                                                .orderAmount(orderAmount)
+                                                .refundAmount(refundAmount) // 상품하자 환급액
+                                                .lossAmount(lossAmount) // 오발주 손실액
+                                                .deliveryFee(BigDecimal.ZERO)
+                                                .commissionFee(commissionFee)
+                                                .adjustmentAmount(BigDecimal.ZERO)
+                                                .finalAmount(totalSale
+                                                                .subtract(orderAmount.add(lossAmount)
+                                                                                .add(commissionFee))
+                                                                .add(refundAmount))
+                                                .build(),
+                                lines);
         }
 
-        private String generateProvisionalDailyPdf(Long franchiseId, LocalDate date) {
-                // 1. 실시간 가집계 데이터 생성
-                DailySettlementReceipt provisionalReceipt = aggregateDailySettlement(franchiseId, date);
-
-                if (provisionalReceipt.getTotalSaleAmount().compareTo(BigDecimal.ZERO) == 0 &&
-                                provisionalReceipt.getOrderAmount().compareTo(BigDecimal.ZERO) == 0) {
-                        // 상황 2: 정산 데이터 자체가 없음
-                        throw new SettlementException(SettlementErrorCode.SETTLEMENT_DATA_EMPTY);
-                }
-
-                // 2. 가상 전표(Line) 생성 (요약 정보만 표시)
-                List<DailyReceiptLine> provisionalLines = new ArrayList<>();
-                provisionalLines.add(DailyReceiptLine.builder()
-                                .lineType(VoucherType.SALES)
-                                .amount(provisionalReceipt.getTotalSaleAmount())
-                                .description(date + " 실시간 총 매출 (가집계)")
-                                .occurredAt(date.atStartOfDay())
-                                .build());
-                provisionalLines.add(DailyReceiptLine.builder()
-                                .lineType(VoucherType.ORDER)
-                                .amount(provisionalReceipt.getOrderAmount())
-                                .description(date + " 실시간 총 발주 (가집계)")
-                                .occurredAt(date.atStartOfDay())
-                                .build());
-
-                // 3. PDF 생성
-                byte[] pdfBytes = fileService.createDailyReceiptPdf(provisionalReceipt, provisionalLines);
-
-                // 4. MinIO 업로드 (임시 폴더)
-                String fileName = "settlement/provisional/FR_" + franchiseId + "_Daily_Preview_" + date + "_"
-                                + System.currentTimeMillis() + ".pdf";
-                minioService.uploadFile(pdfBytes, fileName, "application/pdf", BucketName.SETTLEMENTS);
-                String fileUrl = minioService.getFileUrl(fileName, BucketName.SETTLEMENTS);
-
-                // 5. DB에 메타데이터 저장 (추적용)
-                documentService.save(SettlementDocument.builder()
-                                .periodType(PeriodType.DAILY)
-                                .documentType(DocumentType.PROVISIONAL_RECEIPT_PDF)
-                                .documentOwner(DocumentOwner.FRANCHISE)
-                                .storageProvider("MINIO")
-                                .bucket(BucketName.SETTLEMENTS.getBucketName())
-                                .franchiseId(franchiseId)
-                                .objectKey(fileName)
-                                .fileUrl(fileUrl)
-                                .fileName(fileName.substring(fileName.lastIndexOf("/") + 1))
-                                .contentType("application/pdf")
-                                .fileSize((long) pdfBytes.length)
-                                .build());
-
-                return fileUrl;
-        }
 }

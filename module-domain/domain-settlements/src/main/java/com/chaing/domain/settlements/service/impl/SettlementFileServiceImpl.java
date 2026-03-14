@@ -21,6 +21,7 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
+import org.springframework.util.FileCopyUtils;
 
 import java.math.BigDecimal;
 import java.io.ByteArrayOutputStream;
@@ -37,10 +38,10 @@ public class SettlementFileServiceImpl implements SettlementFileService {
             PdfWriter writer = new PdfWriter(baos);
             PdfDocument pdf = new PdfDocument(writer);
             Document document = new Document(pdf);
-            PdfFont font = getKoreanFont();
-            if (font != null) {
-                document.setFont(font);
-            }
+
+            // 1. 폰트 로드 (실패 시 IllegalStateException 발생하여 즉시 중단)
+            PdfFont font = loadKoreanFont();
+            document.setFont(font);
 
             document.add(new Paragraph("Daily Settlement Receipt").setBold().setFontSize(20));
             document.add(new Paragraph("가맹점 ID: " + receipt.getFranchiseId()));
@@ -57,15 +58,26 @@ public class SettlementFileServiceImpl implements SettlementFileService {
             document.add(new Paragraph("--------------------------------------------"));
             document.add(new Paragraph("최종 정산 금액: " + receipt.getFinalAmount() + "원").setBold().setFontSize(14));
 
-            document.add(new Paragraph("\n[상세 전표 내역]"));
-            Table table = new Table(UnitValue.createPointArray(new float[] { 100, 200, 100 }));
-            table.addCell("유형");
-            table.addCell("설명");
-            table.addCell("금액");
+            document.add(new Paragraph("\n[상세 내역]")
+                    .setFontSize(14)
+                    .setBold());
+
+            // 5개 컬럼: 유형, 상품/내역, 수량, 단가, 합계
+            float[] columnWidths = { 80, 180, 50, 80, 100 };
+            Table table = new Table(UnitValue.createPointArray(columnWidths));
+            table.setWidth(UnitValue.createPercentValue(100));
+
+            table.addCell("유형").setBold();
+            table.addCell("상품/내역").setBold();
+            table.addCell("수량").setBold();
+            table.addCell("단가").setBold();
+            table.addCell("합계").setBold();
 
             for (DailyReceiptLine line : lines) {
                 table.addCell(line.getLineType().name());
                 table.addCell(line.getDescription());
+                table.addCell(line.getQuantity() != null ? line.getQuantity().toString() : "-");
+                table.addCell(line.getUnitPrice() != null ? line.getUnitPrice().toString() + "원" : "-");
                 table.addCell(line.getAmount().toString() + "원");
             }
 
@@ -160,10 +172,10 @@ public class SettlementFileServiceImpl implements SettlementFileService {
             PdfWriter writer = new PdfWriter(baos);
             PdfDocument pdf = new PdfDocument(writer);
             Document document = new Document(pdf);
-            PdfFont font = getKoreanFont();
-            if (font != null) {
-                document.setFont(font);
-            }
+
+            // 1. 폰트 로드 (실패 시 IllegalStateException 발생하여 즉시 중단)
+            PdfFont font = loadKoreanFont();
+            document.setFont(font);
 
             document.add(new Paragraph("Monthly Settlement Receipt").setBold().setFontSize(20));
             document.add(new Paragraph("가맹점 ID: " + settlement.getFranchiseId()));
@@ -210,10 +222,10 @@ public class SettlementFileServiceImpl implements SettlementFileService {
             PdfWriter writer = new PdfWriter(baos);
             PdfDocument pdf = new PdfDocument(writer);
             Document document = new Document(pdf);
-            PdfFont font = getKoreanFont();
-            if (font != null) {
-                document.setFont(font);
-            }
+
+            // 1. 폰트 로드 (실패 시 IllegalStateException 발생하여 즉시 중단)
+            PdfFont font = loadKoreanFont();
+            document.setFont(font);
 
             document.add(new Paragraph("HQ Daily Settlement Summary").setBold().setFontSize(20));
             document.add(new Paragraph("정산 일자: " + date));
@@ -286,10 +298,10 @@ public class SettlementFileServiceImpl implements SettlementFileService {
             PdfWriter writer = new PdfWriter(baos);
             PdfDocument pdf = new PdfDocument(writer);
             Document document = new Document(pdf);
-            PdfFont font = getKoreanFont();
-            if (font != null) {
-                document.setFont(font);
-            }
+
+            // 1. 폰트 로드 (실패 시 IllegalStateException 발생하여 즉시 중단)
+            PdfFont font = loadKoreanFont();
+            document.setFont(font);
 
             document.add(new Paragraph("HQ Monthly Settlement Summary").setBold().setFontSize(20));
             document.add(new Paragraph("정산 월: " + month));
@@ -351,18 +363,28 @@ public class SettlementFileServiceImpl implements SettlementFileService {
         }
     }
 
-    private PdfFont getKoreanFont() {
+    private PdfFont loadKoreanFont() {
+        String fontPath = "fonts/NanumGothic.ttf";
         try {
-            ClassPathResource fontResource = new ClassPathResource("fonts/NanumGothic.ttf");
-            if (!fontResource.exists()) {
-                log.warn("NanumGothic.ttf not found in resources, falling back to default font");
-                return null;
+            log.info("[DEBUG] Attempting to load Korean font from classpath: {}", fontPath);
+            ClassPathResource resource = new ClassPathResource(fontPath);
+
+            if (!resource.exists()) {
+                log.error("[ERROR] Font file NOT found in classpath: {}", fontPath);
+                throw new java.io.IOException("Font file not found: " + fontPath);
             }
-            byte[] fontBytes = fontResource.getInputStream().readAllBytes();
-            return PdfFontFactory.createFont(fontBytes, PdfEncodings.IDENTITY_H);
+
+            byte[] fontBytes = FileCopyUtils.copyToByteArray(resource.getInputStream());
+            log.info("[DEBUG] Font file loaded. Size: {} bytes, Path: {}", fontBytes.length, fontPath);
+
+            log.info("[DEBUG] Creating PdfFont with IDENTITY_H and PREFER_EMBEDDED");
+            return PdfFontFactory.createFont(
+                    fontBytes,
+                    PdfEncodings.IDENTITY_H,
+                    PdfFontFactory.EmbeddingStrategy.PREFER_EMBEDDED);
         } catch (Exception e) {
-            log.error("Failed to load Korean font from resources", e);
-            return null;
+            log.error("[CRITICAL] Failed to load Korean font '{}': {}", fontPath, e.getMessage());
+            throw new IllegalStateException("한글 폰트 로드 실패: " + fontPath, e);
         }
     }
 }

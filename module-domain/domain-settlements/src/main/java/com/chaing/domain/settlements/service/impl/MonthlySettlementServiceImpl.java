@@ -31,9 +31,14 @@ public class MonthlySettlementServiceImpl implements MonthlySettlementService {
 
     @Override
     public MonthlySettlement getByFranchiseAndMonth(Long franchiseId, YearMonth month) {
-        return repository.findByFranchiseIdAndSettlementMonth(franchiseId, month)
+        return findByFranchiseAndMonth(franchiseId, month)
                 .orElseThrow(() -> new SettlementException(SettlementErrorCode.MONTHLY_SETTLEMENT_NOT_FOUND));
     } // 가맹점이 해당 '월'의 정산을 조회할 때
+
+    @Override
+    public java.util.Optional<MonthlySettlement> findByFranchiseAndMonth(Long franchiseId, YearMonth month) {
+        return repository.findByFranchiseIdAndSettlementMonth(franchiseId, month);
+    }
 
     @Override
     public Map<String, Long> getStatusCounts(YearMonth month) {

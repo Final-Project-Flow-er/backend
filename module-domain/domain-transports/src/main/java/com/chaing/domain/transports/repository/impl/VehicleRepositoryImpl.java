@@ -2,6 +2,7 @@ package com.chaing.domain.transports.repository.impl;
 
 import com.chaing.core.enums.UsableStatus;
 import com.chaing.domain.transports.dto.condition.VehicleSearchCondition;
+import com.chaing.domain.transports.entity.QTransport;
 import com.chaing.domain.transports.entity.QVehicle;
 import com.chaing.domain.transports.entity.Vehicle;
 import com.chaing.domain.transports.enums.Dispatchable;
@@ -29,11 +30,14 @@ public class VehicleRepositoryImpl implements VehicleRepositoryCustom {
     public Page<Vehicle> searchVehicles(VehicleSearchCondition condition, Pageable pageable) {
 
         QVehicle vehicle = QVehicle.vehicle;
+        QTransport transport = QTransport.transport;
 
         List<Vehicle> content = queryFactory
                 .selectFrom(vehicle)
+                .leftJoin(transport).on(vehicle.transportId.eq(transport.transportId))
                 .where(
                         transportIdEq(condition.transportId()),
+                        companyNameContains(condition.companyName(), transport),
                         vehicleNumberContains(condition.vehicleNumber()),
                         vehicleTypeEq(condition.vehicleType()),
                         maxLoadGoe(condition.maxLoad()),
@@ -47,8 +51,10 @@ public class VehicleRepositoryImpl implements VehicleRepositoryCustom {
         Long total = queryFactory
                 .select(vehicle.count())
                 .from(vehicle)
+                .leftJoin(transport).on(vehicle.transportId.eq(transport.transportId))
                 .where(
                         transportIdEq(condition.transportId()),
+                        companyNameContains(condition.companyName(), transport),
                         vehicleNumberContains(condition.vehicleNumber()),
                         vehicleTypeEq(condition.vehicleType()),
                         maxLoadGoe(condition.maxLoad()),
@@ -62,6 +68,11 @@ public class VehicleRepositoryImpl implements VehicleRepositoryCustom {
 
     private BooleanExpression transportIdEq(Long transportId) {
         return transportId != null ? QVehicle.vehicle.transportId.eq(transportId) : null;
+    }
+
+    private BooleanExpression companyNameContains(String companyName,
+            QTransport transport) {
+        return hasText(companyName) ? transport.companyName.contains(companyName) : null;
     }
 
     private BooleanExpression vehicleNumberContains(String vehicleNumber) {

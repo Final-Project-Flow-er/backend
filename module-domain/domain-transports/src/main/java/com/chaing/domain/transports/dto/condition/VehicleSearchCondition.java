@@ -6,10 +6,12 @@ import com.chaing.domain.transports.enums.VehicleType;
 
 public record VehicleSearchCondition(
 
-        Long transportId,
-        String vehicleNumber,
-        VehicleType vehicleType,
-        Long maxLoad,
-        Dispatchable dispatchable,
-        UsableStatus status) {
+                Long transportId,
+                String companyName,
+                String vehicleNumber,
+                VehicleType vehicleType,
+                Long maxLoad,
+                Dispatchable dispatchable,
+                UsableStatus status
+) {
 }

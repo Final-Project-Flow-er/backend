@@ -7,16 +7,18 @@ import com.chaing.domain.transports.enums.VehicleType;
 
 public record VehicleSearchRequest(
 
-        Long transportId,
-        String vehicleNumber,
-        VehicleType vehicleType,
-        Long maxLoad,
-        Dispatchable dispatchable,
-        UsableStatus status
+                Long transportId,
+                String companyName,
+                String vehicleNumber,
+                VehicleType vehicleType,
+                Long maxLoad,
+                Dispatchable dispatchable,
+                UsableStatus status
 ) {
     public VehicleSearchCondition toCondition() {
         return new VehicleSearchCondition(
                 transportId,
+                companyName,
                 vehicleNumber,
                 vehicleType,
                 maxLoad,

@@ -135,6 +135,7 @@ public class InternalTransportService {
         executor.createTransits(vehicleId, orderInfos, trackingMap, returnCodes);
     }
 
+    @Transactional
     public void updateDeliveryStatus(List<String> orderCodes) {
 
         if(orderCodes == null || orderCodes.isEmpty()) {

@@ -32,7 +32,7 @@ public enum FranchiseReturnErrorCode implements ErrorCode {
     INVALID_WARNING_COUNT(400, "RE017", "가맹점 경고 횟수가 3회 이상입니다."),
 
     // 403 FORBIDDEN
-    USER_FORBIDDEN(403, "RE017", "사용자 권한이 없습니다.");
+    USER_FORBIDDEN(403, "RE018", "사용자 권한이 없습니다.");
 
     private final Integer status;
     private final String code;

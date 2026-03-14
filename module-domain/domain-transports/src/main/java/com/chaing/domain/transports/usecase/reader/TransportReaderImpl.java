@@ -89,6 +89,16 @@ public class TransportReaderImpl implements TransportReader {
             throw new  TransportException(TransportErrorCode.TRANSPORT_NOT_FOUND);
         }
 
+        long requestedCount = orderCodes.stream().distinct().count();
+        long matchedCount = deliveryOrders.stream()
+                .map(Transit::getOrderCode)
+                .distinct()
+                .count();
+
+        if(requestedCount != matchedCount) {
+            throw new  TransportException(TransportErrorCode.TRANSPORT_NOT_FOUND);
+        }
+
         return deliveryOrders;
     }
 }

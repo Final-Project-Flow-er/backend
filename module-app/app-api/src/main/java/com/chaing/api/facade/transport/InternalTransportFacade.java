@@ -21,6 +21,7 @@ import com.chaing.domain.transports.dto.response.AvailableVehicleInfo;
 import com.chaing.domain.transports.exception.TransportErrorCode;
 import com.chaing.domain.transports.exception.TransportException;
 import com.chaing.domain.transports.service.InternalTransportService;
+import com.chaing.external.transport.ExternalTransportService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -42,6 +43,7 @@ public class InternalTransportFacade {
     private final ProductService productService;
     private final BusinessUnitService franchiseServiceImpl;
     private final FranchiseReturnService franchiseReturnService;
+    private final ExternalTransportService externalTrackingModule;
 
     // 운송 가능 차량 리스트 조회
     public List<AvailableVehicleResponse> getAvailableVehicle() {
@@ -86,14 +88,10 @@ public class InternalTransportFacade {
 
         // 외부 운송 모듈
         // 송장 번호 가져오기
-        Map<String, String> trackingMap = Map.of(
-                "SE0320260207001", "TRACK-12345",
-                "ORD002", "TRACK-67890"
-        );
-                /* 외부 운송 모듈 구현 전 임시 값으로 대체
-                externalTrackingModule.getTrackingNumbers(
-                orderInfos.stream().map(OrderInfo::orderCode).toList()
-        );*/
+        Map<String, String> trackingMap = externalTrackingModule
+                .getTrackingNumbers(orderInfos.stream()
+                        .map(OrderInfo::orderCode)
+                        .toList());
 
         // 운송 도메인
         transportService.assignVehicle(

@@ -96,10 +96,11 @@ public class FranchiseSettlementFacade {
                         return aggregateDailySettlement(franchiseId, date);
                 }
 
-                // 이미 DB에 기록이 있더라도 매출액이나 발주금액이 0이라면 실시간으로 다시 집계해본다
+                // 이미 DB에 기록이 있더라도 매출액이나 발주금액이 0이거나, 수수료가 집계되지 않은 경우 실시간으로 다시 집계함
                 if (receipt.getTotalSaleAmount().compareTo(BigDecimal.ZERO) == 0 ||
-                                receipt.getOrderAmount().compareTo(BigDecimal.ZERO) == 0) {
-                        log.info("[DEBUG] Persistent receipt exists but has 0 values. Re-aggregating for franchiseId: {}, date: {}",
+                                (receipt.getTotalSaleAmount().compareTo(BigDecimal.ZERO) > 0
+                                                && receipt.getCommissionFee().compareTo(BigDecimal.ZERO) == 0)) {
+                        log.info("[DEBUG] Persistent receipt exists but needs update (0 values or missing commission). Re-aggregating for franchiseId: {}, date: {}",
                                         franchiseId, date);
                         return aggregateDailySettlement(franchiseId, date);
                 }
@@ -995,6 +996,12 @@ public class FranchiseSettlementFacade {
 
                 log.info("[DEBUG] 최종 집계 결과 - 반품환급액(DEFECT): {}, 손실액(MISORDER): {}", refundAmount, lossAmount);
 
+                // 3.3% 수수료 산출 (정수 자리로 반올림하여 계산의 명확성 확보)
+                BigDecimal commissionFee = totalSale.multiply(new BigDecimal("0.033"))
+                                .setScale(0, java.math.RoundingMode.HALF_UP);
+
+                log.info("[DEBUG] 수수료 계산 - 매출: {}, 요율: 3.3%, 산출수수료: {}", totalSale, commissionFee);
+
                 // 간소화된 가집계 결과 반환
                 return DailySettlementReceipt.builder()
                                 .franchiseId(franchiseId)
@@ -1004,9 +1011,10 @@ public class FranchiseSettlementFacade {
                                 .refundAmount(refundAmount) // 상품하자 환급액
                                 .lossAmount(lossAmount) // 오발주 손실액
                                 .deliveryFee(BigDecimal.ZERO)
-                                .commissionFee(BigDecimal.ZERO)
+                                .commissionFee(commissionFee)
                                 .adjustmentAmount(BigDecimal.ZERO)
-                                .finalAmount(totalSale.subtract(orderAmount.add(lossAmount)).add(refundAmount))
+                                .finalAmount(totalSale.subtract(orderAmount.add(lossAmount).add(commissionFee))
+                                                .add(refundAmount))
                                 .build();
         }
 

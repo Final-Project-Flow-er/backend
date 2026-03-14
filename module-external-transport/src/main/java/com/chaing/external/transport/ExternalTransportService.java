@@ -11,11 +11,10 @@ import org.springframework.web.client.RestTemplate;
 
 import java.time.Instant;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,13 +31,13 @@ public class ExternalTransportService {
     private final String mainServerUrl;
 
     // orderCode와 trackingNumber를 1:1로 매핑하여 저장하는 저장소
-    private final Map<String, String> trackingStorage = new HashMap<>();
+    private final Map<String, String> trackingStorage = new ConcurrentHashMap<>();
 
     // trackingNumber를 통해 orderCode를 찾기 위한 역방향 저장소
-    private final Map<String, String> reverseTrackingStorage = new HashMap<>();
+    private final Map<String, String> reverseTrackingStorage = new ConcurrentHashMap<>();
 
     // 이미 할당된 전체 송장 번호를 관리하는 Set (중복 방지용)
-    private final Set<String> assignedTrackingNumbers = new HashSet<>();
+    private final Set<String> assignedTrackingNumbers = ConcurrentHashMap.newKeySet();
 
     public ExternalTransportService(TaskScheduler taskScheduler,
             @Value("${external.transport.main-server-url:http://localhost:8080}") String mainServerUrl) {

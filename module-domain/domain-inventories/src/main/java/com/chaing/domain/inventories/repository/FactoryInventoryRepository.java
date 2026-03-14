@@ -60,4 +60,7 @@ public interface FactoryInventoryRepository extends JpaRepository<FactoryInvento
 
     List<FactoryInventory> findByInventoryIdIn(List<Long> ids);
     List<FactoryInventory> findByBoxCodeIn(List<String> boxCodes);
+
+    @Query("select i.orderId from FactoryInventory i where i.serialCode in(:selectedList)")
+    List<Long> getOrderIdBySerialCodeIn(@Param("selectedList") List<String> selectedList);
 }

@@ -1,6 +1,7 @@
 package com.chaing.domain.transports.usecase.executor;
 
 import com.chaing.domain.transports.dto.OrderInfo;
+import com.chaing.domain.transports.enums.DeliverStatus;
 import jakarta.validation.constraints.NotNull;
 
 import java.util.List;
@@ -12,4 +13,6 @@ public interface TransportExecutor {
     String cancelTransit(Long transportId);
 
     void updateDispatchableStatus(Long vehicleId);
+
+    void updateDeliverStatus(String orderCode, DeliverStatus targetStatus);
 }

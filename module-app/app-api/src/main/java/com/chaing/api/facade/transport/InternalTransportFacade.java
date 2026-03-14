@@ -23,6 +23,8 @@ import com.chaing.domain.transports.exception.TransportException;
 import com.chaing.domain.transports.service.InternalTransportService;
 import com.chaing.external.transport.ExternalTransportService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -227,14 +229,10 @@ public class InternalTransportFacade {
 
         // 외부 운송 모듈
         // 송장 번호 가져오기
-        Map<String, String> trackingMap = Map.of(
-                "SE0320260207001", "TRACK-12345",
-                "SE0120260207002", "TRACK-67890"
-        );
-                /* 외부 운송 모듈 구현 전 임시 값으로 대체
+        Map<String, String> trackingMap =
                 externalTrackingModule.getTrackingNumbers(
                 orderInfos.stream().map(OrderInfo::orderCode).toList()
-        );*/
+        );
 
         transportService.assignVehicleReturn(
                 request.vehicleId(),
@@ -243,5 +241,15 @@ public class InternalTransportFacade {
                 totalWeight,
                 returnCodes
         );
+    }
+
+    public void updateDeliverStatus(@NotEmpty List<String> orderCodes) {
+
+        boolean isPendingOrders = transportService.filterPendingOrders(orderCodes);
+
+        transportService.updateDeliveryStatus(orderCodes);
+        if (isPendingOrders) {
+            externalTrackingModule.scheduleDeliveryCompletion(orderCodes);
+        }
     }
 }

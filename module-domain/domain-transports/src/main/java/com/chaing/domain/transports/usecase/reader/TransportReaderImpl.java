@@ -80,4 +80,15 @@ public class TransportReaderImpl implements TransportReader {
     public List<Vehicle> getAllAvailableVehicles() {
         return vehicleRepository.findAllByDispatchable(Dispatchable.DISPATCHED, Dispatchable.AVAILABLE);
     }
+
+    @Override
+    public List<Transit> getTransitInfo(List<String> orderCodes) {
+        List<Transit> deliveryOrders = transitRepository.findByOrderCodeIn(orderCodes);
+
+        if(deliveryOrders == null || deliveryOrders.isEmpty()) {
+            throw new  TransportException(TransportErrorCode.TRANSPORT_NOT_FOUND);
+        }
+
+        return deliveryOrders;
+    }
 }

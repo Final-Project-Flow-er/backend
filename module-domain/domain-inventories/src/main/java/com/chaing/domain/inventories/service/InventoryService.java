@@ -555,4 +555,13 @@ public class InventoryService {
 
         throw new IllegalArgumentException("Unsupported actorType: " + actorTypeRaw);
     }
+
+    public List<Long> getOrderInfo(List<String> selectedList) {
+        List<Long> orderIds = factoryInventoryRepository.getOrderIdBySerialCodeIn(selectedList);
+
+        if(orderIds == null || orderIds.isEmpty()) {
+            throw new InventoriesException(InventoriesErrorCode.INVENTORIES_IS_NULL);
+        }
+        return orderIds;
+    }
 }

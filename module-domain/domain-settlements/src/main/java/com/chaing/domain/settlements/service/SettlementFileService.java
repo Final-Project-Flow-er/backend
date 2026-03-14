@@ -1,4 +1,4 @@
-package com.chaing.api.service.settlement;
+package com.chaing.domain.settlements.service;
 
 import com.chaing.domain.settlements.entity.DailyReceiptLine;
 import com.chaing.domain.settlements.entity.DailySettlementReceipt;

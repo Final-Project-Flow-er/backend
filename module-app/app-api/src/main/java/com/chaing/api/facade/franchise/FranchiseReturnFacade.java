@@ -326,6 +326,9 @@ public class FranchiseReturnFacade {
         // franchiseCode
         String franchiseCode = franchiseService.getById(franchiseId).code();
 
+        // 가맹점 경고 횟수 판별
+        franchiseService.validateWarningCount(franchiseId);
+
         // FranchiseOrderDetailCommand
         FranchiseOrderDetailCommand order = franchiseOrderService.getOrderByOrderCode(franchiseId, userId, request.orderCode());
 

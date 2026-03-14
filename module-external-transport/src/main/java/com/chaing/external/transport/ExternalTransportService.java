@@ -1,5 +1,6 @@
 package com.chaing.external.transport;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -17,6 +18,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
+import org.springframework.beans.factory.annotation.Value;
 
 /**
  * 외부 운송 모듈
@@ -27,6 +29,7 @@ public class ExternalTransportService {
 
     private final TaskScheduler taskScheduler;
     private final RestTemplate restTemplate;
+    private final String mainServerUrl;
 
     // orderCode와 trackingNumber를 1:1로 매핑하여 저장하는 저장소
     private final Map<String, String> trackingStorage = new HashMap<>();
@@ -37,8 +40,10 @@ public class ExternalTransportService {
     // 이미 할당된 전체 송장 번호를 관리하는 Set (중복 방지용)
     private final Set<String> assignedTrackingNumbers = new HashSet<>();
 
-    public ExternalTransportService(TaskScheduler taskScheduler) {
+    public ExternalTransportService(TaskScheduler taskScheduler,
+            @Value("${external.transport.main-server-url:http://localhost:8080}") String mainServerUrl) {
         this.taskScheduler = taskScheduler;
+        this.mainServerUrl = mainServerUrl;
         // PATCH 요청을 지원하기 위해 설계된 설정을 포함한 RestTemplate 생성
         this.restTemplate = new RestTemplate(new HttpComponentsClientHttpRequestFactory());
     }
@@ -131,8 +136,8 @@ public class ExternalTransportService {
         }
 
         // 메인 서버 API 엔드포인트 설정 (자기 자신 호출)
-        String url = "http://localhost:8080/api/v1/transport/internal/updated-deliver-status";
-        
+        String url = mainServerUrl + "/api/v1/transport/internal/updated-deliver-status";
+
         // 요청 바디 생성 (List<String> orderCodes)
         UpdateDeliverStatusRequest requestBody = new UpdateDeliverStatusRequest(Collections.singletonList(orderCode));
         

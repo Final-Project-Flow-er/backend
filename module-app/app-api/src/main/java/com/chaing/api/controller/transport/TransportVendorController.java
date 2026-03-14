@@ -18,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -45,7 +46,7 @@ public class TransportVendorController {
     @Operation(summary = "운송 업체 목록 조회", description = "전체 운송 업체 목록 조회")
     @GetMapping
     public ResponseEntity<ApiResponse<Page<TransportSummaryResponse>>> getVendors(
-            TransportSearchRequest request,
+            @ModelAttribute TransportSearchRequest request,
             Pageable pageable
     ) {
         return ResponseEntity.ok(ApiResponse.success(transportManagementFacade.getTransportList(request, pageable)));

@@ -3,6 +3,7 @@ package com.chaing.domain.transports.service;
 import com.chaing.core.enums.UsableStatus;
 import com.chaing.domain.transports.dto.command.TransportCreateCommand;
 import com.chaing.domain.transports.dto.command.TransportUpdateCommand;
+import com.chaing.domain.transports.dto.condition.TransportSearchCondition;
 import com.chaing.domain.transports.entity.Transport;
 import com.chaing.domain.transports.exception.TransportErrorCode;
 import com.chaing.domain.transports.exception.TransportException;
@@ -48,6 +49,8 @@ class TransportManagementServiceTests {
                 .companyName("업체")
                 .officePhone("010-1234-5678")
                 .status(UsableStatus.ACTIVE)
+                .contractStartDate(LocalDate.now())
+                .contractEndDate(LocalDate.now().plusYears(1))
                 .build();
     }
 
@@ -73,17 +76,17 @@ class TransportManagementServiceTests {
     void getTransportList() {
 
         // given
+        TransportSearchCondition condition = new TransportSearchCondition(null, null, null, null, null);
         Pageable pageable = PageRequest.of(0, 10);
         Page<Transport> transportPage = new PageImpl<>(List.of(transport));
-        given(transportRepository.findAll(pageable)).willReturn(transportPage);
+        given(transportRepository.searchTransports(condition, pageable)).willReturn(transportPage);
 
         // when
-        Page<Transport> result = transportManagementService.getTransportList(pageable);
+        Page<Transport> result = transportManagementService.getTransportList(condition, pageable);
 
         // then
         assertThat(result.getTotalElements()).isEqualTo(1);
-        assertThat(result.getContent().get(0).getCompanyName()).isEqualTo("업체");
-        verify(transportRepository, times(1)).findAll(pageable);
+        verify(transportRepository, times(1)).searchTransports(condition, pageable);
     }
 
     @Test
@@ -118,15 +121,15 @@ class TransportManagementServiceTests {
     void updateTransport() {
 
         // given
-        given(transportRepository.findById(1L)).willReturn(Optional.of(transport));
+        Long id = 1L;
+        given(transportRepository.findById(id)).willReturn(Optional.of(transport));
         TransportUpdateCommand updateCommand = mock(TransportUpdateCommand.class);
-
         given(updateCommand.companyName()).willReturn("수정된 업체");
-        given(updateCommand.contractStartDate()).willReturn(LocalDate.parse("2026-01-01"));
-        given(updateCommand.contractEndDate()).willReturn(LocalDate.parse("2026-12-31"));
+        given(updateCommand.contractStartDate()).willReturn(LocalDate.now());
+        given(updateCommand.contractEndDate()).willReturn(LocalDate.now().plusYears(1));
 
         // when
-        Transport result = transportManagementService.updateTransport(1L, updateCommand);
+        Transport result = transportManagementService.updateTransport(id, updateCommand);
 
         // then
         assertThat(result.getCompanyName()).isEqualTo("수정된 업체");
@@ -139,15 +142,13 @@ class TransportManagementServiceTests {
         // given
         Long id = 1L;
         UsableStatus newStatus = UsableStatus.INACTIVE;
-        Transport updatedTransport = Transport.builder().companyName("업체").officePhone("010-1234-5678").status(newStatus).build();
-        given(transportRepository.findById(id)).willReturn(Optional.of(updatedTransport));
+        given(transportRepository.findById(id)).willReturn(Optional.of(transport));
 
         // when
-        Transport result = transportManagementService.updateStatus(id, newStatus);
+        transportManagementService.updateStatus(id, newStatus);
 
         // then
         verify(transportRepository).updateStatus(id, newStatus);
-        assertThat(result.getStatus()).isEqualTo(newStatus);
     }
 
     @Test
@@ -155,12 +156,31 @@ class TransportManagementServiceTests {
     void deleteTransport() {
 
         // given
-        given(transportRepository.findById(1L)).willReturn(Optional.of(transport));
+        Long id = 1L;
+        given(transportRepository.findById(id)).willReturn(Optional.of(transport));
 
         // when
-        transportManagementService.deleteTransport(1L);
+        transportManagementService.deleteTransport(id);
 
         // then
-        assertThat(transport.getDeletedAt()).isNotNull();
+        verify(transportRepository, times(1)).findById(id);
+        verify(transportRepository, times(1)).softDeleteById(id);
+    }
+
+    @Test
+    @DisplayName("계약 만료 업체 자동 비활성화")
+    void deactivateExpiredContracts() {
+
+        // given
+        LocalDate today = LocalDate.now();
+        given(transportRepository.findAllByContractEndDateBeforeAndStatus(today, UsableStatus.ACTIVE)).willReturn(List.of(transport));
+
+        // when
+        List<Long> expiredIds = transportManagementService.deactivateExpiredContractsAndGetIds();
+
+        // then
+        assertThat(expiredIds).asList().hasSize(1);
+        assertThat(expiredIds).asList().contains(transport.getTransportId());
+        verify(transportRepository).deactivateTransportsByIds(expiredIds);
     }
 }

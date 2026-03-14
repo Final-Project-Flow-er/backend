@@ -3,9 +3,14 @@ package com.chaing.api.facade.transport;
 import com.chaing.api.dto.transport.management.request.CreateVehicleRequest;
 import com.chaing.api.dto.transport.management.request.UpdateVehicleRequest;
 import com.chaing.api.dto.transport.management.request.UpdateVehicleStatusRequest;
+import com.chaing.api.dto.transport.management.request.VehicleSearchRequest;
 import com.chaing.api.dto.transport.management.response.VehicleDetailResponse;
 import com.chaing.api.dto.transport.management.response.VehicleSummaryResponse;
+import com.chaing.core.enums.UsableStatus;
+import com.chaing.domain.transports.entity.Transport;
 import com.chaing.domain.transports.entity.Vehicle;
+import com.chaing.domain.transports.exception.TransportErrorCode;
+import com.chaing.domain.transports.exception.TransportException;
 import com.chaing.domain.transports.service.TransportManagementService;
 import com.chaing.domain.transports.service.VehicleManagementService;
 import lombok.RequiredArgsConstructor;
@@ -23,16 +28,16 @@ public class VehicleManagementFacade {
     private final TransportManagementService transportManagementService;
 
     // 운송 차량 등록
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public VehicleDetailResponse createVehicle(CreateVehicleRequest request) {
-        transportManagementService.getById(request.transportId());
+        validateTransportIsActive(request.transportId());
         Vehicle vehicle = vehicleManagementService.createVehicle(request.toCommand());
         return VehicleDetailResponse.from(vehicle);
     }
 
     // 운송 차량 목록 조회
-    public Page<VehicleSummaryResponse> getVehicleList(Pageable pageable) {
-        Page<Vehicle> vehicles = vehicleManagementService.getVehicleList(pageable);
+    public Page<VehicleSummaryResponse> getVehicleList(VehicleSearchRequest request, Pageable pageable) {
+        Page<Vehicle> vehicles = vehicleManagementService.getVehicleList(request.toCondition(), pageable);
         return vehicles.map(VehicleSummaryResponse::from);
     }
 
@@ -43,26 +48,45 @@ public class VehicleManagementFacade {
     }
 
     // 운송 차량 수정
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public VehicleDetailResponse updateVehicle(Long id, UpdateVehicleRequest request) {
-        if (request.transportId() != null) {
-            transportManagementService.getById(request.transportId());
+        Vehicle vehicle = vehicleManagementService.getById(id);
+
+        boolean transportChanged = request.transportId() != null && !request.transportId().equals(vehicle.getTransportId());
+        Long targetTransportId = transportChanged ? request.transportId() : vehicle.getTransportId();
+
+        if (request.status() == UsableStatus.ACTIVE || transportChanged) {
+            validateTransportIsActive(targetTransportId);
         }
 
-        Vehicle vehicle = vehicleManagementService.updateVehicle(id, request.toCommand());
-        return VehicleDetailResponse.from(vehicle);
+        Vehicle updatedVehicle = vehicleManagementService.updateVehicle(id, request.toCommand());
+        return VehicleDetailResponse.from(updatedVehicle);
     }
 
     // 운송 차량 상태 변경
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public VehicleDetailResponse updateVehicleStatus(Long id, UpdateVehicleStatusRequest request) {
-        Vehicle vehicle = vehicleManagementService.updateStatus(id, request.status());
+        Vehicle vehicle = vehicleManagementService.getById(id);
+
+        if (request.status() == UsableStatus.ACTIVE) {
+            validateTransportIsActive(vehicle.getTransportId());
+        }
+
+        vehicle.updateStatus(request.status());
         return VehicleDetailResponse.from(vehicle);
     }
 
     // 운송 차량 삭제
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void deleteVehicle(Long id) {
         vehicleManagementService.deleteVehicle(id);
+    }
+
+    // 운송 업체가 활성화 상태인지 검증
+    private void validateTransportIsActive(Long transportId) {
+        Transport transport = transportManagementService.getById(transportId);
+        if (transport.getStatus() == UsableStatus.INACTIVE) {
+            throw new TransportException(TransportErrorCode.INACTIVE_TRANSPORT_VEHICLE);
+        }
     }
 }

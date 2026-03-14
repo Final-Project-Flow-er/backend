@@ -34,7 +34,7 @@ public class FranchiseSalesController {
 
     @Operation(summary = "미취소 판매 조회", description = "가맹점 id로 해당 가맹점의 판매 전체 조회")
     @GetMapping
-    @PreAuthorize("hasAnyRole('FRANCHISE', 'ADMIN')")
+    @PreAuthorize("hasRole('FRANCHISE')")
     public ResponseEntity<ApiResponse<List<FranchiseSalesResponse>>> getAllSales(
             @AuthenticationPrincipal UserPrincipal userPrincipal
             ) {
@@ -45,6 +45,7 @@ public class FranchiseSalesController {
 
     @Operation(summary = "취소 판매 조회", description = "가맹점 id로 해당 가맹점의 취소된 판매 전체 조회")
     @GetMapping("/canceled")
+    @PreAuthorize("hasRole('FRANCHISE')")
     public ResponseEntity<ApiResponse<List<FranchiseSalesResponse>>> getAllCanceledSales(
             @AuthenticationPrincipal UserPrincipal userPrincipal
     ) {
@@ -55,6 +56,7 @@ public class FranchiseSalesController {
 
     @Operation(summary = "판매 세부정보 조회", description = "가맹점 id와 판매 코드로 판매 세부사항 조회")
     @GetMapping("/{sales-code}")
+    @PreAuthorize("hasRole('FRANCHISE')")
     public ResponseEntity<ApiResponse<FranchiseSalesDetailResponse>> getSalesDetail(
             @PathVariable("sales-code") String salesCode,
             @AuthenticationPrincipal UserPrincipal userPrincipal
@@ -66,6 +68,7 @@ public class FranchiseSalesController {
 
     @Operation(summary = "판매 취소", description = "가맹점 id와 판매 코드로 특정 판매 취소")
     @PatchMapping("/{sales-code}")
+    @PreAuthorize("hasRole('FRANCHISE')")
     public ResponseEntity<ApiResponse<FranchiseSalesCancellationResponse>> cancelSales(
             @PathVariable("sales-code") String salesCode,
             @AuthenticationPrincipal UserPrincipal userPrincipal
@@ -77,6 +80,7 @@ public class FranchiseSalesController {
 
     @Operation(summary = "판매 생성", description = "가맹점 id로 판매 생성")
     @PostMapping
+    @PreAuthorize("hasRole('FRANCHISE')")
     public ResponseEntity<ApiResponse<FranchiseSellResponse>> createSale(
             @RequestBody FranchiseSellRequest request,
             @AuthenticationPrincipal UserPrincipal userPrincipal

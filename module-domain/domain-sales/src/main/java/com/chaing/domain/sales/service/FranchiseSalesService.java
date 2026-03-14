@@ -90,7 +90,7 @@ public class FranchiseSalesService {
                         .quantity(itemRequest.quantity())
                         .productCode(itemRequest.productCode())
                         .productName(itemRequest.productName())
-                        .lot(itemRequest.lot())
+                        .lot(itemRequest.serialCode())
                         .unitPrice(itemRequest.unitPrice())
                         .build();
                 salesItems.add(salesItem);

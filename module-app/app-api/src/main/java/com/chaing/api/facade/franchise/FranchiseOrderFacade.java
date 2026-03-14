@@ -1,29 +1,27 @@
 package com.chaing.api.facade.franchise;
 
 import com.chaing.api.dto.franchise.orders.response.FranchiseOrderResponse;
+import com.chaing.core.dto.command.FranchiseOrderCodeAndQuantityCommand;
 import com.chaing.core.dto.info.ProductInfo;
+import com.chaing.core.dto.request.FranchiseOrderCreateRequestItem;
 import com.chaing.domain.businessunits.service.impl.FranchiseServiceImpl;
+import com.chaing.domain.inventories.service.InventoryService;
 import com.chaing.domain.orders.dto.command.FranchiseOrderCommand;
 import com.chaing.domain.orders.dto.command.FranchiseOrderDetailCommand;
 import com.chaing.domain.orders.dto.command.FranchiseOrderItemCommand;
 import com.chaing.domain.orders.dto.request.FranchiseOrderCreateRequest;
-import com.chaing.domain.orders.dto.request.FranchiseOrderCreateRequestItem;
-import com.chaing.domain.orders.dto.request.FranchiseOrderStatusUpdateRequest;
-import com.chaing.domain.orders.dto.request.FranchiseOrderUpdateRequest;
+import com.chaing.core.dto.request.FranchiseOrderUpdateRequest;
 import com.chaing.domain.orders.dto.response.FranchiseOrderCancelResponse;
 import com.chaing.domain.orders.dto.response.FranchiseOrderCreateResponse;
 import com.chaing.domain.orders.dto.response.FranchiseOrderDetailResponse;
 import com.chaing.domain.orders.dto.response.FranchiseOrderItemDetailResponse;
-import com.chaing.domain.orders.dto.response.FranchiseOrderStatusShippingPendingResponse;
 import com.chaing.domain.orders.dto.response.FranchiseOrderUpdateResponse;
-import com.chaing.domain.orders.entity.FranchiseOrderItem;
 import com.chaing.domain.orders.exception.OrderErrorCode;
 import com.chaing.domain.orders.exception.OrderException;
 import com.chaing.domain.orders.service.FranchiseOrderCodeGenerator;
 import com.chaing.domain.orders.service.FranchiseOrderService;
 import com.chaing.domain.products.service.ProductService;
 import com.chaing.domain.users.service.UserManagementService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -48,6 +46,7 @@ public class FranchiseOrderFacade {
     private final ProductService productService;
     private final FranchiseOrderCodeGenerator generator;
     private final FranchiseServiceImpl franchiseService;
+    private final InventoryService inventoryService;
 
     // 가맹점 발주 조회
     public List<FranchiseOrderResponse> getAllOrders(Long userId) {
@@ -216,6 +215,18 @@ public class FranchiseOrderFacade {
     // 가맹점의 발주 수정
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public FranchiseOrderUpdateResponse updateOrder(Long userId, String orderCode, List<FranchiseOrderUpdateRequest> requests) {
+        // List<FranchiseOrderCodeAndQuantityCommand>
+        List<FranchiseOrderCodeAndQuantityCommand> requestItemCommands = requests.stream().map(FranchiseOrderCodeAndQuantityCommand::from).toList();
+
+        // Set<productCode>
+        Set<String> productCodes = requests.stream().map(FranchiseOrderUpdateRequest::productCode).collect(Collectors.toSet());
+
+        // Map<productCode, ProductInfo>
+        Map<String, ProductInfo> productInfoByProductCode = productService.getProductInfosByProductCode(productCodes);
+
+        // 재고 체크
+        inventoryService.checkStock(requestItemCommands, productInfoByProductCode);
+
         // franchiseId
         Long franchiseId = userManagementService.getFranchiseIdByUserId(userId);
 
@@ -233,13 +244,6 @@ public class FranchiseOrderFacade {
 
         // Map<productId, ProductInfo>
         Map<Long, ProductInfo> productInfoByProductId = productService.getProductInfos(productIds);
-
-        // Map<productCode, ProductInfo>
-        Map<String, ProductInfo> productInfoByProductCode = productInfoByProductId.values().stream()
-                .collect(Collectors.toMap(
-                        ProductInfo::productCode,
-                        Function.identity()
-                ));
 
         // Map<productId, FranchiseOrderUpdateRequest>
         Map<Long, FranchiseOrderUpdateRequest> requestByProductId = requests.stream()
@@ -264,16 +268,24 @@ public class FranchiseOrderFacade {
         // franchiseId
         Long franchiseId = userManagementService.getFranchiseIdByUserId(userId);
 
-        // 취소 및 반환
+        // 취소
         return franchiseOrderService.cancelOrder(userId, franchiseId, orderCode);
     }
 
     // 가맹점 발주 생성
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public FranchiseOrderCreateResponse createOrder(Long userId, FranchiseOrderCreateRequest request) {
-        // 발주 가능한지 재고 확인
+        // Set<productCode>
+        Set<String> productCodes = request.items().stream().map(FranchiseOrderCreateRequestItem::productCode).collect(Collectors.toSet());
 
-        // TODO: 부분 접수되는건 어떻게 할거?
+        // Map<productCode, ProductInfo>
+        Map<String, ProductInfo> productInfoByProductCode = productService.getProductInfosByProductCode(productCodes);
+
+        // List<FranchiseOrderCodeAndQuantityCommand>
+        List<FranchiseOrderCodeAndQuantityCommand> requestItemCommands = request.items().stream().map(FranchiseOrderCodeAndQuantityCommand::from).toList();
+
+        // 발주 가능한지 재고 확인
+        inventoryService.checkStock(requestItemCommands, productInfoByProductCode);
 
         // franchiseId
         Long franchiseId = userManagementService.getFranchiseIdByUserId(userId);
@@ -283,29 +295,14 @@ public class FranchiseOrderFacade {
         log.info("franchiseId: {}", franchiseId);
         log.info("userId: {}", userId);
 
-        // username1, 2
+        // username
         String username = userManagementService.getUsernameByUserId(userId);
 
         // orderCode
         String orderCode = generator.generate(franchiseCode);
 
-        // Map<productId, ProductInfo>
-        Map<Long, ProductInfo> productInfoByProductId = productService.getAllProductInfo();
-
-        // Map<productCode, ProductInfo>
-        Map<String, ProductInfo> productInfoByProductCode = productInfoByProductId.values().stream()
-                .collect(Collectors.toMap(
-                        ProductInfo::productCode,
-                        Function.identity()
-                ));
-
         // FranchiseOrderCommand
         FranchiseOrderCommand order = franchiseOrderService.createOrder(request, orderCode, franchiseId, userId, productInfoByProductCode);
-
-        // List<productCode>
-        List<String> productCodes = request.items().stream()
-                .map(FranchiseOrderCreateRequestItem::productCode)
-                .toList();
 
         // List<FranchiseOrderItemCommand>
         List<FranchiseOrderItemDetailResponse> orderItems = franchiseOrderService.createOrderItems(request, productInfoByProductCode, orderCode);

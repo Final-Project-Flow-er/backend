@@ -66,12 +66,13 @@ public class VehicleManagementFacade {
     // 운송 차량 상태 변경
     @Transactional(rollbackFor = Exception.class)
     public VehicleDetailResponse updateVehicleStatus(Long id, UpdateVehicleStatusRequest request) {
+        Vehicle vehicle = vehicleManagementService.getById(id);
+
         if (request.status() == UsableStatus.ACTIVE) {
-            Vehicle vehicle = vehicleManagementService.getById(id);
             validateTransportIsActive(vehicle.getTransportId());
         }
 
-        Vehicle vehicle = vehicleManagementService.updateStatus(id, request.status());
+        vehicle.updateStatus(request.status());
         return VehicleDetailResponse.from(vehicle);
     }
 

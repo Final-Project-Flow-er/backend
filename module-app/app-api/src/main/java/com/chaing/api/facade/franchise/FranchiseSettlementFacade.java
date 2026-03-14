@@ -33,6 +33,8 @@ import com.chaing.domain.settlements.exception.SettlementErrorCode;
 import com.chaing.domain.settlements.exception.SettlementException;
 import com.chaing.domain.settlements.repository.interfaces.SettlementVoucherRepository;
 import com.chaing.domain.settlements.entity.SettlementVoucher;
+import com.chaing.domain.products.entity.Product;
+import com.chaing.domain.products.repository.ProductRepository;
 import com.chaing.domain.settlements.service.SettlementFileService;
 import com.chaing.core.enums.BucketName;
 import com.chaing.core.service.MinioService;
@@ -72,6 +74,7 @@ public class FranchiseSettlementFacade {
         private final FranchiseOrderItemRepository orderItemRepository;
         private final FranchiseReturnRepository returnRepository;
         private final FranchiseReturnItemRepository returnItemRepository;
+        private final ProductRepository productRepository;
 
         // 일별 정산 요약
         @Transactional(readOnly = true)
@@ -500,17 +503,24 @@ public class FranchiseSettlementFacade {
                 return ranked;
         }
 
-        // OrderItem 집계 (FranchiseOrderItem에는 상품명이 없으므로 productId 사용)
+        // OrderItem 집계
         // 발주 상품별로 묶고 더해서 순위 매기기
         private List<FranchiseOrderItemResponse> aggregateOrderItems(
                         List<FranchiseOrderItem> items, Integer limit) {
                 // productId별 그룹핑
                 Map<Long, List<FranchiseOrderItem>> grouped = items.stream()
                                 .collect(Collectors.groupingBy(FranchiseOrderItem::getProductId));
+
+                // 여러 productId에 대한 상품 정보를 한 번에 조회
+                List<Long> productIds = new ArrayList<>(grouped.keySet());
+                Map<Long, String> productNames = productRepository.findAllByProductIdIn(productIds).stream()
+                                .collect(Collectors.toMap(Product::getProductId, Product::getName));
+
                 List<FranchiseOrderItemResponse> result = grouped.entrySet().stream()
                                 .map(entry -> {
                                         Long productId = entry.getKey();
-                                        String productName = "품목 ID " + productId; // TODO: 상품 도메인에서 조회 필요
+                                        String productName = productNames.getOrDefault(productId,
+                                                        "알 수 없는 상품 (ID: " + productId + ")");
                                         List<FranchiseOrderItem> group = entry.getValue();
                                         int totalQty = group.stream()
                                                         .mapToInt(FranchiseOrderItem::getQuantity).sum();
@@ -931,9 +941,19 @@ public class FranchiseSettlementFacade {
                                 orderRepository.findAllByFranchiseId(franchiseId).size(),
                                 orders.size());
 
-                BigDecimal orderAmount = orders.stream()
-                                .map(FranchiseOrder::getTotalAmount)
-                                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                BigDecimal orderAmount = BigDecimal.ZERO;
+                if (!orders.isEmpty()) {
+                        List<Long> orderIds = orders.stream().map(FranchiseOrder::getFranchiseOrderId).toList();
+                        List<FranchiseOrderItem> orderItems = orderItemRepository
+                                        .findAllByFranchiseOrder_FranchiseOrderIdInAndDeletedAtIsNull(orderIds);
+
+                        orderAmount = orderItems.stream()
+                                        .map(FranchiseOrderItem::getTotalPrice)
+                                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                        log.info("[DEBUG] 발주 품목 상세 집계 - 발주건수: {}, 전체품목수: {}, 총액: {}",
+                                        orders.size(), orderItems.size(), orderAmount);
+                }
 
                 // 3. 해당 날짜의 반품 내역 (PENDING 포함 모든 유효 단계) 조회 및 집계
                 List<ReturnStatus> validReturnStatuses = List.of(

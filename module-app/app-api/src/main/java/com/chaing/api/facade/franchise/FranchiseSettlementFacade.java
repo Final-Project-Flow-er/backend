@@ -35,11 +35,16 @@ import com.chaing.domain.settlements.repository.interfaces.SettlementVoucherRepo
 import com.chaing.domain.settlements.entity.SettlementVoucher;
 import com.chaing.domain.products.entity.Product;
 import com.chaing.domain.products.repository.ProductRepository;
-import com.chaing.domain.settlements.service.SettlementFileService;
+import com.chaing.domain.settlements.entity.SettlementDocument;
 import com.chaing.domain.settlements.service.SettlementFileService;
 import com.chaing.core.enums.BucketName;
 import com.chaing.core.service.MinioService;
-import com.chaing.domain.settlements.entity.SettlementDocument;
+import com.chaing.domain.transports.dto.DeliveryFeeInfo;
+import com.chaing.domain.transports.dto.OrderInfo;
+import com.chaing.domain.transports.entity.Transit;
+import com.chaing.domain.transports.enums.DeliverStatus;
+import com.chaing.domain.transports.repository.TransitRepository;
+import com.chaing.domain.transports.service.InternalTransportService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -76,6 +81,10 @@ public class FranchiseSettlementFacade {
         private final FranchiseReturnRepository returnRepository;
         private final FranchiseReturnItemRepository returnItemRepository;
         private final ProductRepository productRepository;
+
+        // 배송 정보 조회를 위한 Repository 및 Service 주입
+        private final TransitRepository transitRepository;
+        private final InternalTransportService transportService;
 
         // 일별 정산 요약
         @Transactional(readOnly = true)
@@ -371,91 +380,23 @@ public class FranchiseSettlementFacade {
          */
         private Page<FranchiseVoucherResponse> getProvisionalVouchers(
                         Long franchiseId, LocalDate date, VoucherType filterType, Pageable pageable) {
-                List<FranchiseVoucherResponse> allVouchers = new ArrayList<>();
+                log.info("[DEBUG] Generating real-time vouchers for franchiseId: {}, date: {}, filter: {}",
+                                franchiseId, date, filterType);
 
-                // 1. 매출 (Sales)
-                if (filterType == null || filterType == VoucherType.SALES) {
+                // 상위 집계 메서드 재사용 (데이터 일관성 확보)
+                AggregationResult result = aggregateDailySettlement(franchiseId, date);
 
-                        List<SalesItem> salesItems = salesItemRepository.findAllBySalesFranchiseId(franchiseId).stream()
-                                        .filter(item -> {
-                                                LocalDateTime createdAt = item.getCreatedAt();
-                                                return createdAt != null && createdAt.toLocalDate().equals(date);
-                                        })
-                                        .filter(item -> {
-                                                Boolean canceled = item.getSales().getIsCanceled();
-                                                return canceled == null || !canceled;
-                                        })
-                                        .toList();
+                List<FranchiseVoucherResponse> allVouchers = result.lines().stream()
+                                .filter(line -> filterType == null || line.getLineType() == filterType)
+                                .map(this::toVoucherResponse)
+                                .collect(Collectors.toList());
 
-                        for (SalesItem item : salesItems) {
-                                allVouchers.add(new FranchiseVoucherResponse(
-                                                item.getSales().getSalesCode(),
-                                                VoucherType.SALES,
-                                                item.getProductName() + " (판매)",
-                                                item.getQuantity(),
-                                                item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity())),
-                                                item.getCreatedAt()));
-                        }
-                }
-
-                // 2. 발주 (Order)
-                if (filterType == null || filterType == VoucherType.ORDER) {
-                        List<FranchiseOrderStatus> validOrderStatuses = List.of(
-                                        FranchiseOrderStatus.PENDING,
-                                        FranchiseOrderStatus.ACCEPTED,
-                                        FranchiseOrderStatus.PARTIAL,
-                                        FranchiseOrderStatus.SHIPPING_PENDING,
-                                        FranchiseOrderStatus.SHIPPING,
-                                        FranchiseOrderStatus.COMPLETED);
-                        List<FranchiseOrder> orderList = orderRepository.findAllByFranchiseId(franchiseId).stream()
-                                        .filter(o -> {
-                                                LocalDateTime createdAt = o.getCreatedAt();
-                                                return createdAt != null && createdAt.toLocalDate().equals(date);
-                                        })
-                                        .filter(o -> validOrderStatuses.contains(o.getOrderStatus()))
-                                        .toList();
-                        for (FranchiseOrder o : orderList) {
-                                allVouchers.add(new FranchiseVoucherResponse(
-                                                o.getOrderCode(),
-                                                VoucherType.ORDER,
-                                                "가맹점 발주 (승인대기 포함)",
-                                                1, // 발주 건수
-                                                o.getTotalAmount(),
-                                                o.getCreatedAt()));
-                        }
-                }
-
-                // 3. 반품 (Refund)
-                if (filterType == null || filterType == VoucherType.REFUND) {
-                        List<ReturnStatus> validReturnStatuses = List.of(
-                                        ReturnStatus.PENDING,
-                                        ReturnStatus.ACCEPTED,
-                                        ReturnStatus.SHIPPING_PENDING,
-                                        ReturnStatus.SHIPPING,
-                                        ReturnStatus.COMPLETED,
-                                        ReturnStatus.INSPECTING,
-                                        ReturnStatus.DEDUCTION_COMPLETED);
-                        List<Returns> returnList = returnRepository.findAllByFranchiseIdAndDeletedAtIsNull(franchiseId)
-                                        .stream()
-                                        .filter(r -> {
-                                                LocalDateTime createdAt = r.getCreatedAt();
-                                                return createdAt != null && createdAt.toLocalDate().equals(date);
-                                        })
-                                        .filter(r -> validReturnStatuses.contains(r.getReturnStatus()))
-                                        .toList();
-                        for (Returns r : returnList) {
-                                allVouchers.add(new FranchiseVoucherResponse(
-                                                r.getReturnCode(),
-                                                VoucherType.REFUND,
-                                                "가맹점 반품 (신청대기 포함)",
-                                                1,
-                                                r.getTotalReturnAmount(),
-                                                r.getCreatedAt()));
-                        }
-                }
-
-                // 발생시간 역순 정렬
-                allVouchers.sort((a, b) -> b.occurredAt().compareTo(a.occurredAt()));
+                // 발생시간 역순 정렬 (최신순)
+                allVouchers.sort((a, b) -> {
+                        if (a.occurredAt() == null || b.occurredAt() == null)
+                                return 0;
+                        return b.occurredAt().compareTo(a.occurredAt());
+                });
 
                 // 페이징 처리
                 int start = (int) pageable.getOffset();
@@ -1000,6 +941,52 @@ public class FranchiseSettlementFacade {
                         }
                 }
 
+                // 4. 해당 날짜, 해당 가맹점의 유효한 배송 기록(배송 중, 완료) 조회 및 집계
+                List<DeliverStatus> validDeliverStatuses = List.of(DeliverStatus.IN_TRANSIT, DeliverStatus.DELIVERED);
+                List<Transit> transits = transitRepository.findByFranchiseId(franchiseId).stream()
+                                .filter(t -> t.getCreatedAt() != null && t.getCreatedAt().toLocalDate().equals(date))
+                                .filter(t -> validDeliverStatuses.contains(t.getStatus()))
+                                .toList();
+
+                // 송장 번호(trackingNumber) 기준으로 그룹화하여 동일 배송은 1건으로 처리
+                Map<String, List<Transit>> transitsByTracking = transits.stream()
+                                .collect(Collectors.groupingBy(Transit::getTrackingNumber));
+
+                BigDecimal deliveryFee = BigDecimal.ZERO;
+                for (Map.Entry<String, List<Transit>> entry : transitsByTracking.entrySet()) {
+                        String trackingNumber = entry.getKey();
+                        List<Transit> group = entry.getValue();
+
+                        // 1. 배송 모듈 서비스 호출을 위한 OrderInfo 리스트 생성
+                        List<OrderInfo> orderInfos = group.stream()
+                                        .map(t -> new OrderInfo(null, t.getOrderCode(), t.getWeight(),
+                                                        t.getFranchiseId(), null, null))
+                                        .toList();
+
+                        // 2. 해당 배송 차량의 배송비 계산 서비스 호출
+                        Long vehicleId = group.get(0).getVehicleId();
+                        List<DeliveryFeeInfo> feeInfos = transportService.calculateDeliveryFee(orderInfos, vehicleId);
+
+                        // 3. 현재 가맹점의 배송비 반영
+                        for (DeliveryFeeInfo feeInfo : feeInfos) {
+                                if (feeInfo.franchiseId().equals(franchiseId)) {
+                                        BigDecimal fee = feeInfo.deliveryFee();
+                                        deliveryFee = deliveryFee.add(fee);
+
+                                        // 상세 영수증 라인에 배송비 추가
+                                        lines.add(DailyReceiptLine.builder()
+                                                        .lineType(VoucherType.DELIVERY)
+                                                        .description("배송비 (송장: " + trackingNumber + ")")
+                                                        .amount(fee)
+                                                        .occurredAt(group.get(0).getCreatedAt())
+                                                        .referenceCode(trackingNumber)
+                                                        .build());
+                                }
+                        }
+                }
+
+                log.info("[DEBUG] 배송비 집계 결과 - 건수: {}, 총액: {}", transitsByTracking.size(), deliveryFee);
+
                 log.info("[DEBUG] 최종 집계 결과 - 반품환급액(DEFECT): {}, 손실액(MISORDER): {}", refundAmount, lossAmount);
 
                 // 3.3% 수수료 산출 (정수 자리로 반올림하여 계산의 명확성 확보)
@@ -1007,6 +994,17 @@ public class FranchiseSettlementFacade {
                                 .setScale(0, java.math.RoundingMode.HALF_UP);
 
                 log.info("[DEBUG] 수수료 계산 - 매출: {}, 요율: 3.3%, 산출수수료: {}", totalSale, commissionFee);
+
+                // 수수료 내역 추가 (상세 전표 조회용)
+                if (commissionFee.compareTo(BigDecimal.ZERO) > 0) {
+                        lines.add(DailyReceiptLine.builder()
+                                        .lineType(VoucherType.COMMISSION)
+                                        .description("판매 수수료 (3.3%)")
+                                        .amount(commissionFee)
+                                        .occurredAt(date.atTime(23, 59, 59))
+                                        .referenceCode("COMM-" + date.toString().replace("-", ""))
+                                        .build());
+                }
 
                 // 간소화된 가집계 결과 반환
                 return new AggregationResult(
@@ -1017,12 +1015,13 @@ public class FranchiseSettlementFacade {
                                                 .orderAmount(orderAmount)
                                                 .refundAmount(refundAmount) // 상품하자 환급액
                                                 .lossAmount(lossAmount) // 오발주 손실액
-                                                .deliveryFee(BigDecimal.ZERO)
+                                                .deliveryFee(deliveryFee)
                                                 .commissionFee(commissionFee)
                                                 .adjustmentAmount(BigDecimal.ZERO)
                                                 .finalAmount(totalSale
                                                                 .subtract(orderAmount.add(lossAmount)
-                                                                                .add(commissionFee))
+                                                                                .add(commissionFee)
+                                                                                .add(deliveryFee))
                                                                 .add(refundAmount))
                                                 .build(),
                                 lines);

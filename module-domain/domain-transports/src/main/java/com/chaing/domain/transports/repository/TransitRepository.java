@@ -9,7 +9,9 @@ import java.util.Collection;
 import java.util.List;
 
 @Repository
-public interface TransitRepository extends JpaRepository<Transit,Long> {
+public interface TransitRepository extends JpaRepository<Transit, Long> {
 
     List<Transit> findByVehicleId(Long vehicleId);
+
+    List<Transit> findByFranchiseId(Long franchiseId);
 }

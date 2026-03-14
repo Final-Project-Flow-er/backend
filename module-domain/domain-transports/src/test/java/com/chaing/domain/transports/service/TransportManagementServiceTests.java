@@ -170,13 +170,15 @@ class TransportManagementServiceTests {
     void deactivateExpiredContracts() {
 
         // given
-        given(transportRepository.findAllByContractEndDateBeforeAndStatus(any(LocalDate.class), any(UsableStatus.class))).willReturn(List.of(transport));
+        LocalDate today = LocalDate.now();
+        given(transportRepository.findAllByContractEndDateBeforeAndStatus(today, UsableStatus.ACTIVE)).willReturn(List.of(transport));
 
         // when
         List<Long> expiredIds = transportManagementService.deactivateExpiredContractsAndGetIds();
 
         // then
-        verify(transportRepository).deactivateTransportsByIds(any());
-        assertThat(expiredIds).isNotNull();
+        assertThat(expiredIds).asList().hasSize(1);
+        assertThat(expiredIds).asList().contains(transport.getTransportId());
+        verify(transportRepository).deactivateTransportsByIds(expiredIds);
     }
 }

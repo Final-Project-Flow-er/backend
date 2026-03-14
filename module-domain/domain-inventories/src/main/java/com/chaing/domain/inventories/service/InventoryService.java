@@ -541,11 +541,12 @@ public class InventoryService {
                         Collectors.mapping(Function.identity(), Collectors.toList())
                 ));
 
-        // Map<productId, quantity>
+        // Map<productId, totalQuantity>
         Map<Long, Integer> requestedQuantityByProductId = items.stream()
                 .collect(Collectors.toMap(
                         item -> productInfoByProductCode.get(item.productCode()).productId(),
-                        FranchiseOrderCodeAndQuantityCommand::quantity
+                        FranchiseOrderCodeAndQuantityCommand::quantity,
+                        Integer::sum
                 ));
 
         // 수량 점검

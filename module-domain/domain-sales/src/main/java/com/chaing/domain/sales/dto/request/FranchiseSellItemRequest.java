@@ -26,6 +26,6 @@ public record FranchiseSellItemRequest(
         BigDecimal unitPrice,
 
         @NotBlank
-        String lot
+        String serialCode
 ) {
 }

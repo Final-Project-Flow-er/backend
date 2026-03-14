@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Set;
 
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Long>, ProductRepositoryCustom {
@@ -17,4 +18,6 @@ public interface ProductRepository extends JpaRepository<Product, Long>, Product
 
     @Query("SELECT p.productId FROM Product p")
     List<Long> findAllProductIds();
+
+    List<Product> findAllByProductCodeInAndDeletedAtIsNull(Set<String> productCodes);
 }

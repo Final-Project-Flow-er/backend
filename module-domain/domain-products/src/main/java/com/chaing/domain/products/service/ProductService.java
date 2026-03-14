@@ -268,7 +268,7 @@ public class ProductService {
         // Set<productCode>
         Set<String> existingProductCodes = products.stream().map(Product::getProductCode).collect(Collectors.toSet());
 
-        if (!productCodes.containsAll(existingProductCodes)) {
+        if (!existingProductCodes.containsAll(productCodes)) {
             throw new ProductException(ProductErrorCode.DATA_OMISSION);
         }
 

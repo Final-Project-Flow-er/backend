@@ -54,6 +54,7 @@ public class TransportManagementService {
 
     // 운송 업체 삭제
     public void deleteTransport(Long id) {
+        getById(id);
         transportRepository.softDeleteById(id);
     }
 

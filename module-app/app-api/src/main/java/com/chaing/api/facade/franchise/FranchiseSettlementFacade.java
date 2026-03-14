@@ -22,6 +22,9 @@ import com.chaing.domain.settlements.enums.SettlementStatus;
 import com.chaing.domain.settlements.enums.VoucherType;
 import com.chaing.domain.returns.entity.Returns;
 import com.chaing.domain.returns.enums.ReturnStatus;
+import com.chaing.domain.returns.enums.ReturnType;
+import com.chaing.domain.returns.entity.ReturnItem;
+import com.chaing.domain.returns.repository.FranchiseReturnItemRepository;
 import com.chaing.domain.returns.repository.FranchiseReturnRepository;
 import com.chaing.domain.settlements.service.DailySettlementService;
 import com.chaing.domain.settlements.service.MonthlySettlementService;
@@ -68,6 +71,7 @@ public class FranchiseSettlementFacade {
         private final FranchiseOrderRepository orderRepository;
         private final FranchiseOrderItemRepository orderItemRepository;
         private final FranchiseReturnRepository returnRepository;
+        private final FranchiseReturnItemRepository returnItemRepository;
 
         // 일별 정산 요약
         @Transactional(readOnly = true)
@@ -949,10 +953,47 @@ public class FranchiseSettlementFacade {
                                 })
                                 .filter(ret -> validReturnStatuses.contains(ret.getReturnStatus()))
                                 .toList();
+                log.info("[DEBUG] 반품 조회 결과 - 건수: {}", returnsList.size());
 
-                BigDecimal refundAmount = returnsList.stream()
-                                .map(Returns::getTotalReturnAmount)
-                                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                BigDecimal refundAmount = BigDecimal.ZERO;
+                BigDecimal lossAmount = BigDecimal.ZERO;
+
+                if (!returnsList.isEmpty()) {
+                        List<Long> returnIds = returnsList.stream().map(Returns::getReturnId).toList();
+                        List<ReturnItem> returnItems = returnItemRepository
+                                        .findAllByReturns_ReturnIdInAndDeletedAtIsNull(returnIds);
+
+                        // 각 반품 건별로 아이템들을 단가 합산하여 집계
+                        Map<Long, List<ReturnItem>> itemsByReturnId = returnItems.stream()
+                                        .collect(Collectors.groupingBy(item -> item.getReturns().getReturnId()));
+
+                        for (Returns ret : returnsList) {
+                                List<ReturnItem> items = itemsByReturnId.getOrDefault(ret.getReturnId(), List.of());
+
+                                // 품목별 단가 합산 (반품 관리 UI와 동일한 방식)
+                                BigDecimal returnTotal = BigDecimal.ZERO;
+                                for (ReturnItem item : items) {
+                                        // 연결된 발주 품목의 단가 정보를 가져옴
+                                        FranchiseOrderItem orderItem = orderItemRepository
+                                                        .findById(item.getFranchiseOrderItemId()).orElse(null);
+                                        if (orderItem != null) {
+                                                returnTotal = returnTotal.add(orderItem.getUnitPrice());
+                                        }
+                                }
+
+                                log.info("[DEBUG] 반품 건 상세 - 코드: {}, 유형: {}, 계산된 금액: {}, 상태: {}",
+                                                ret.getReturnCode(), ret.getReturnType(), returnTotal,
+                                                ret.getReturnStatus());
+
+                                if (ret.getReturnType() == ReturnType.PRODUCT_DEFECT) {
+                                        refundAmount = refundAmount.add(returnTotal);
+                                } else if (ret.getReturnType() == ReturnType.MISORDER) {
+                                        lossAmount = lossAmount.add(returnTotal);
+                                }
+                        }
+                }
+
+                log.info("[DEBUG] 최종 집계 결과 - 반품환급액(DEFECT): {}, 손실액(MISORDER): {}", refundAmount, lossAmount);
 
                 // 간소화된 가집계 결과 반환
                 return DailySettlementReceipt.builder()
@@ -960,12 +1001,12 @@ public class FranchiseSettlementFacade {
                                 .settlementDate(date)
                                 .totalSaleAmount(totalSale)
                                 .orderAmount(orderAmount)
-                                .refundAmount(refundAmount) // 실제 반품 환급액 반영
+                                .refundAmount(refundAmount) // 상품하자 환급액
+                                .lossAmount(lossAmount) // 오발주 손실액
                                 .deliveryFee(BigDecimal.ZERO)
-                                .lossAmount(BigDecimal.ZERO)
                                 .commissionFee(BigDecimal.ZERO)
                                 .adjustmentAmount(BigDecimal.ZERO)
-                                .finalAmount(totalSale.subtract(orderAmount).add(refundAmount)) // 매출 - 발주 + 반품
+                                .finalAmount(totalSale.subtract(orderAmount.add(lossAmount)).add(refundAmount))
                                 .build();
         }
 

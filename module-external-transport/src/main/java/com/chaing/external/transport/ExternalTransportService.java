@@ -1,6 +1,10 @@
 package com.chaing.external.transport;
 
 import lombok.RequiredArgsConstructor;
+import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.core5.util.Timeout;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -27,7 +31,7 @@ import org.springframework.beans.factory.annotation.Value;
 public class ExternalTransportService {
 
     private final TaskScheduler taskScheduler;
-    private final RestTemplate restTemplate;
+    private RestTemplate restTemplate;
     private final String mainServerUrl;
 
     // orderCode와 trackingNumber를 1:1로 매핑하여 저장하는 저장소
@@ -147,8 +151,16 @@ public class ExternalTransportService {
             HttpEntity<UpdateDeliverStatusRequest> requestEntity = new HttpEntity<>(requestBody, headers);
 
             // PATCH 요청 전송
-            restTemplate.patchForObject(url, requestEntity, Void.class);
-            
+            CloseableHttpClient httpClient = HttpClients.custom()
+                    .setDefaultRequestConfig(RequestConfig.custom()
+                            .setConnectTimeout(Timeout.ofMilliseconds(3000)) // 연결 대기 3초
+                            .setResponseTimeout(Timeout.ofMilliseconds(5000)) // 응답 대기 5초
+                            .build())
+                    .build();
+            HttpComponentsClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory(httpClient);
+            this.restTemplate = new RestTemplate(requestFactory);
+
+
             System.out.println("[외부 운송 시스템] 송장 번호: " + trackingNumber + " (발주 번호: " + orderCode + ") - 메인 서버 API로 배송 완료 요청 완료");
         } catch (Exception e) {
             System.err.println("[외부 운송 시스템] 메인 서버 API 호출 실패: " + e.getMessage());

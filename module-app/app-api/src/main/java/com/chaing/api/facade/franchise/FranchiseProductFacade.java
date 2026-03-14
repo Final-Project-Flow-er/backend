@@ -3,6 +3,8 @@ package com.chaing.api.facade.franchise;
 import com.chaing.api.dto.franchise.products.request.FranchiseProductSearchRequest;
 import com.chaing.api.dto.franchise.products.response.FranchiseProductListResponse;
 import com.chaing.api.dto.franchise.products.response.FranchiseProductResponse;
+import com.chaing.core.enums.BucketName;
+import com.chaing.core.service.MinioService;
 import com.chaing.domain.products.dto.request.ProductSearchRequest;
 import com.chaing.domain.products.dto.response.ProductListResponse;
 import com.chaing.domain.products.exception.ProductErrorCode;
@@ -21,6 +23,7 @@ import java.util.List;
 public class FranchiseProductFacade {
 
     private final ProductService productService;
+    private final MinioService minioService;
 
     public FranchiseProductListResponse getProducts(FranchiseProductSearchRequest request) {
         ProductSearchRequest productSearchRequest = convertProductSearchRequest(request);
@@ -31,11 +34,11 @@ public class FranchiseProductFacade {
                         .name(p.product().getName())
                         .productCode(p.product().getProductCode())
                         .description(p.product().getDescription())
+                        .imageUrl(resolveImageUrl(p.product().getImageUrl()))
                         .size(sizeValid(p.product().getProductCode()))
                         .kcal(p.product().getKcal())
                         .spicy(spicyValid(p.product().getProductCode()))
                         .weight(p.product().getWeight())
-                        .safetyStock(p.product().getSafetyStock())
                         .price(p.product().getPrice())
                         .supplyPrice(p.product().getSupplyPrice())
                         .startDate(p.product().getSupplyPriceStartDate())
@@ -50,6 +53,17 @@ public class FranchiseProductFacade {
         return FranchiseProductListResponse.builder()
                 .franchiseProductList(franchiseProductResponses)
                 .build();
+    }
+
+    private String resolveImageUrl(String storedOrRaw) {
+        if (storedOrRaw == null || storedOrRaw.isBlank()) {
+            return null;
+        }
+        if (storedOrRaw.startsWith("http://") || storedOrRaw.startsWith("https://")
+                || storedOrRaw.startsWith("data:")) {
+            return storedOrRaw;
+        }
+        return minioService.getFileUrl(storedOrRaw, BucketName.PRODUCTS);
     }
 
     private ProductSearchRequest convertProductSearchRequest(FranchiseProductSearchRequest request) {

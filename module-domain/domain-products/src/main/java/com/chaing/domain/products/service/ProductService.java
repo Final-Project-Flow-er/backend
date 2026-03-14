@@ -20,6 +20,7 @@ import com.chaing.domain.products.repository.ProductTypeRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
@@ -60,7 +61,6 @@ public class ProductService {
                 .price(request.price())
                 .costPrice(request.costPrice())
                 .supplyPrice(request.supplyPrice())
-                .safetyStock(request.safetyStock())
                 .status(status)
                 .kcal(request.kcal())
                 .weight(request.weight())
@@ -137,7 +137,7 @@ public class ProductService {
     }
 
     private Component getOrCreateComponent(String name) {
-        return componentRepository.findByName(name)
+        return componentRepository.findFirstByNameOrderByComponentIdAsc(name)
                 .orElseGet(() -> {
                     try {
                         return componentRepository.save(
@@ -145,7 +145,7 @@ public class ProductService {
                                         .name(name)
                                         .build());
                     } catch (DataIntegrityViolationException e) {
-                        return componentRepository.findByName(name)
+                        return componentRepository.findFirstByNameOrderByComponentIdAsc(name)
                                 .orElseThrow(() -> e);
                     }
                 });
@@ -284,5 +284,50 @@ public class ProductService {
                                 .tradePrice(product.getSupplyPrice())
                                 .build()
                 ));
+    }
+  
+    public List<Component> getComponents() {
+        return componentRepository.findAll(Sort.by(Sort.Direction.ASC, "name", "componentId"));
+    }
+
+    public Component createComponent(String rawName) {
+        String normalizedName = normalizeComponentName(rawName);
+
+        if (componentRepository.findFirstByNameOrderByComponentIdAsc(normalizedName).isPresent()) {
+            throw new ProductException(ProductErrorCode.DUPLICATE_COMPONENT_NAME);
+        }
+
+        try {
+            return componentRepository.save(
+                    Component.builder()
+                            .name(normalizedName)
+                            .build());
+        } catch (DataIntegrityViolationException e) {
+            throw new ProductException(ProductErrorCode.DUPLICATE_COMPONENT_NAME);
+        }
+    }
+
+    public void deleteComponent(Long componentId) {
+        Component component = componentRepository.findById(componentId)
+                .orElseThrow(() -> new ProductException(ProductErrorCode.COMPONENT_NOT_FOUND));
+
+        if (productComponentRepository.existsByComponentId(componentId)) {
+            throw new ProductException(ProductErrorCode.COMPONENT_IN_USE);
+        }
+
+        componentRepository.delete(component);
+    }
+
+    private String normalizeComponentName(String rawName) {
+        if (rawName == null) {
+            throw new ProductException(ProductErrorCode.INVALID_COMPONENT_NAME);
+        }
+
+        String normalized = rawName.trim();
+        if (normalized.isEmpty()) {
+            throw new ProductException(ProductErrorCode.INVALID_COMPONENT_NAME);
+        }
+
+        return normalized;
     }
 }

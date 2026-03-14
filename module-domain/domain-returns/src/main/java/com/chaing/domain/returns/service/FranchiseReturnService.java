@@ -2,6 +2,7 @@ package com.chaing.domain.returns.service;
 
 import com.chaing.core.dto.command.FranchiseInventoryCommand;
 import com.chaing.core.enums.ReturnItemStatus;
+import com.chaing.domain.returns.dto.command.FranchiseReturnCommandForTransit;
 import com.chaing.domain.returns.dto.command.HQReturnCommand;
 import com.chaing.domain.returns.dto.command.HQReturnDetailCommand;
 import com.chaing.domain.returns.dto.command.ReturnCommand;
@@ -18,9 +19,11 @@ import com.chaing.domain.returns.exception.FranchiseReturnException;
 import com.chaing.domain.returns.repository.FranchiseReturnItemRepository;
 import com.chaing.domain.returns.repository.FranchiseReturnRepository;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -438,5 +441,30 @@ public class FranchiseReturnService {
                         Returns::getReturnId,
                         ReturnCommand::from
                 ));
+    }
+
+    @Transactional
+    public List<FranchiseReturnCommandForTransit> getReturnForTransit(@NotNull(message = "주문을 선택해주세요") List<Long> returnIds) {
+
+        if(returnIds == null || returnIds.isEmpty()) {
+            throw new FranchiseReturnException(FranchiseReturnErrorCode.DATA_OMISSION);
+        }
+
+        List<Returns> selectedReturns = franchiseReturnRepository.findAllByReturnIdInAndDeletedAtIsNull(returnIds);
+
+        Set<Long> foundIds = selectedReturns.stream()
+                .map(Returns::getReturnId)
+                .collect(Collectors.toSet());
+
+        if(!foundIds.containsAll(returnIds)) {
+            throw new FranchiseReturnException(FranchiseReturnErrorCode.DATA_OMISSION);
+        }
+
+        return selectedReturns.stream()
+                .map(selectedReturn -> FranchiseReturnCommandForTransit.from(
+                        selectedReturn.getFranchiseOrderId(),
+                        selectedReturn.getReturnCode(),
+                        selectedReturn.getFranchiseId()
+                )).toList();
     }
 }

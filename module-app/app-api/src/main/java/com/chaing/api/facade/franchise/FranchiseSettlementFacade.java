@@ -178,8 +178,12 @@ public class FranchiseSettlementFacade {
         // 월별 정산 요약
         @Transactional(readOnly = true)
         public FranchiseSettlementSummaryResponse getMonthlySummary(Long franchiseId, YearMonth month) {
-                try {
-                        MonthlySettlement s = monthlyService.getByFranchiseAndMonth(franchiseId, month);
+                java.util.Optional<MonthlySettlement> settlementOpt = monthlyService.findByFranchiseAndMonth(
+                                franchiseId,
+                                month);
+
+                if (settlementOpt.isPresent()) {
+                        MonthlySettlement s = settlementOpt.get();
                         return new FranchiseSettlementSummaryResponse(
                                         s.getFinalSettlementAmount(),
                                         s.getTotalSaleAmount(),
@@ -189,41 +193,42 @@ public class FranchiseSettlementFacade {
                                         s.getLossAmount(),
                                         s.getCommissionFee(),
                                         s.getAdjustmentAmount());
-                } catch (SettlementException e) {
-                        if (e.getErrorCode() == SettlementErrorCode.MONTHLY_SETTLEMENT_NOT_FOUND) {
-                                log.info("[DEBUG] Monthly settlement not found for franchiseId: {}, month: {}. Aggregating on the fly.",
-                                                franchiseId, month);
-                                // 해당 월의 모든 날짜(1일~말일 또는 오늘까지)에 대해 일별 정산 가집계 수행
-                                LocalDate start = month.atDay(1);
-                                LocalDate today = LocalDate.now();
-                                YearMonth currentMonth = YearMonth.now();
-                                LocalDate end;
-
-                                if (month.equals(currentMonth)) {
-                                        end = today;
-                                } else {
-                                        end = month.atEndOfMonth();
-                                }
-
-                                List<DailySettlementReceipt> dailyReceipts = new ArrayList<>();
-                                for (LocalDate date = start; !date.isAfter(end); date = date.plusDays(1)) {
-                                        try {
-                                                // getDailySummary 내부 로직과 유사하게 가져오되, Receipt 객체로 합산
-                                                dailyReceipts.add(getInternalDailyReceipt(franchiseId, date));
-                                        } catch (Exception ex) {
-                                                log.warn("[DEBUG] Skip aggregation for date {} due to: {}", date,
-                                                                ex.getMessage());
-                                        }
-                                }
-
-                                if (dailyReceipts.isEmpty()) {
-                                        throw e; // 여전히 데이터가 없으면 원래 에러 던짐
-                                }
-
-                                return toSummary(aggregateMonthlySettlement(franchiseId, month, dailyReceipts));
-                        }
-                        throw e;
                 }
+
+                log.info("[DEBUG] Monthly settlement not found for franchiseId: {}, month: {}. Aggregating on the fly.",
+                                franchiseId, month);
+                // 해당 월의 모든 날짜(1일~말일 또는 오늘까지)에 대해 일별 정산 가집계 수행
+                LocalDate start = month.atDay(1);
+                LocalDate today = LocalDate.now();
+                YearMonth currentMonth = YearMonth.now();
+                LocalDate end;
+
+                if (month.equals(currentMonth)) {
+                        end = today;
+                } else {
+                        end = month.atEndOfMonth();
+                }
+
+                List<DailySettlementReceipt> dailyReceipts = new ArrayList<>();
+                for (LocalDate date = start; !date.isAfter(end); date = date.plusDays(1)) {
+                        try {
+                                // getDailySummary 내부 로직과 유사하게 가져오되, Receipt 객체로 합산
+                                dailyReceipts.add(getInternalDailyReceipt(franchiseId, date));
+                        } catch (Exception ex) {
+                                log.warn("[DEBUG] Skip aggregation for date {} due to: {}", date,
+                                                ex.getMessage());
+                        }
+                }
+
+                if (dailyReceipts.isEmpty()) {
+                        // 데이터가 아예 없는 경우 기본 응답 (0원) 반환하거나 예외 처리
+                        return new FranchiseSettlementSummaryResponse(
+                                        BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
+                                        BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
+                                        BigDecimal.ZERO, BigDecimal.ZERO);
+                }
+
+                return toSummary(aggregateMonthlySettlement(franchiseId, month, dailyReceipts));
         }
 
         // 월별 매출 현황 top5, 전체
@@ -313,8 +318,48 @@ public class FranchiseSettlementFacade {
                         // 오늘 데이터거나 DB에 없으면 실시간 가집계
                         return getProvisionalVouchers(franchiseId, date, type, pageable);
                 } else {
-                        // MONTHLY → SettlementVoucher 조회
-                        MonthlySettlement settlement = monthlyService.getByFranchiseAndMonth(franchiseId, month);
+                        // MONTHLY → 당월인 경우 실시간 합산, 과거인 경우 SettlementVoucher 조회
+                        YearMonth currentMonth = YearMonth.now();
+                        if (month.equals(currentMonth)) {
+                                log.info("[DEBUG] getVouchers (MONTHLY) - Current month detected. Aggregating daily vouchers.");
+                                List<FranchiseVoucherResponse> allVouchers = new ArrayList<>();
+                                LocalDate start = month.atDay(1);
+                                LocalDate today = LocalDate.now();
+
+                                for (LocalDate d = start; !d.isAfter(today); d = d.plusDays(1)) {
+                                        Page<FranchiseVoucherResponse> dailyVouchers = getProvisionalVouchers(
+                                                        franchiseId, d, type, Pageable.unpaged());
+                                        allVouchers.addAll(dailyVouchers.getContent());
+                                }
+
+                                // 최신순 정렬
+                                allVouchers.sort((a, b) -> {
+                                        if (a.occurredAt() == null || b.occurredAt() == null)
+                                                return 0;
+                                        return b.occurredAt().compareTo(a.occurredAt());
+                                });
+
+                                // 페이징
+                                int startIdx = (int) pageable.getOffset();
+                                int endIdx = Math.min((startIdx + pageable.getPageSize()), allVouchers.size());
+
+                                if (startIdx > allVouchers.size()) {
+                                        return new org.springframework.data.domain.PageImpl<>(new ArrayList<>(),
+                                                        pageable,
+                                                        allVouchers.size());
+                                }
+                                return new org.springframework.data.domain.PageImpl<>(
+                                                allVouchers.subList(startIdx, endIdx), pageable, allVouchers.size());
+                        }
+
+                        // 과거 데이터 (DB 조회)
+                        java.util.Optional<MonthlySettlement> settlementOpt = monthlyService.findByFranchiseAndMonth(
+                                        franchiseId,
+                                        month);
+                        if (settlementOpt.isEmpty()) {
+                                return Page.empty(pageable);
+                        }
+                        MonthlySettlement settlement = settlementOpt.get();
                         Page<SettlementVoucher> vouchers;
                         if (type != null) {
                                 vouchers = voucherRepository.findAllByMonthlySettlementIdAndVoucherType(

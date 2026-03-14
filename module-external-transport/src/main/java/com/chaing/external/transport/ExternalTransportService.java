@@ -31,7 +31,7 @@ import org.springframework.beans.factory.annotation.Value;
 public class ExternalTransportService {
 
     private final TaskScheduler taskScheduler;
-    private RestTemplate restTemplate;
+    private final RestTemplate restTemplate;
     private final String mainServerUrl;
 
     // orderCode와 trackingNumber를 1:1로 매핑하여 저장하는 저장소
@@ -47,8 +47,14 @@ public class ExternalTransportService {
             @Value("${external.transport.main-server-url:http://localhost:8080}") String mainServerUrl) {
         this.taskScheduler = taskScheduler;
         this.mainServerUrl = mainServerUrl;
-        // PATCH 요청을 지원하기 위해 설계된 설정을 포함한 RestTemplate 생성
-        this.restTemplate = new RestTemplate(new HttpComponentsClientHttpRequestFactory());
+        CloseableHttpClient httpClient = HttpClients.custom()
+                .setDefaultRequestConfig(RequestConfig.custom()
+                        .setConnectTimeout(Timeout.ofMilliseconds(3000))
+                        .setResponseTimeout(Timeout.ofMilliseconds(5000))
+                        .build())
+                .build();
+        HttpComponentsClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory(httpClient);
+        this.restTemplate = new RestTemplate(requestFactory);
     }
 
     /**
@@ -149,17 +155,6 @@ public class ExternalTransportService {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             HttpEntity<UpdateDeliverStatusRequest> requestEntity = new HttpEntity<>(requestBody, headers);
-
-            // PATCH 요청 전송
-            CloseableHttpClient httpClient = HttpClients.custom()
-                    .setDefaultRequestConfig(RequestConfig.custom()
-                            .setConnectTimeout(Timeout.ofMilliseconds(3000)) // 연결 대기 3초
-                            .setResponseTimeout(Timeout.ofMilliseconds(5000)) // 응답 대기 5초
-                            .build())
-                    .build();
-            HttpComponentsClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory(httpClient);
-            this.restTemplate = new RestTemplate(requestFactory);
-
 
             System.out.println("[외부 운송 시스템] 송장 번호: " + trackingNumber + " (발주 번호: " + orderCode + ") - 메인 서버 API로 배송 완료 요청 완료");
         } catch (Exception e) {

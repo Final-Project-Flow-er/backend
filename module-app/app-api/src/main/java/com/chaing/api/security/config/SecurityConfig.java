@@ -79,7 +79,8 @@ public class SecurityConfig {
 
         configuration.setAllowedOrigins(List.of(
                 "http://localhost:5173",
-                "http://k8s-default-frontend-76be4407a1-230010893.ap-northeast-2.elb.amazonaws.com"
+                "https://chaing.org",
+                "https://img.chaing.org"
         ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Authorization-Refresh", "Content-Type", "Cache-Control", "Connection"));

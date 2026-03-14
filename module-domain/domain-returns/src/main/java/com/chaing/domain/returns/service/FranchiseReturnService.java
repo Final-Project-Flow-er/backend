@@ -385,7 +385,7 @@ public class FranchiseReturnService {
         return items;
     }
 
-    // 반품 요청 상태 배송 대기로 수정
+    // 반품 요청 상태 배송 완료로 수정
     // return: Map<returnCode, List<boxCode>>
     public Map<String, List<String>> delivery(Set<String> requestedBoxCodes) {
         List<ReturnItem> items = franchiseReturnItemRepository.findAllByBoxCodeInAndDeletedAtIsNull(requestedBoxCodes);

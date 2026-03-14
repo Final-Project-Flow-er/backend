@@ -1,5 +1,6 @@
 package com.chaing.domain.orders.dto.request;
 
+import com.chaing.core.dto.request.FranchiseOrderCreateRequestItem;
 import com.chaing.domain.orders.dto.command.FranchiseOrderCreateCommand;
 import com.chaing.domain.orders.dto.info.FranchiseOrderCreateInfo;
 import jakarta.validation.constraints.NotBlank;

@@ -32,9 +32,9 @@ public class FranchiseSalesItemRepositoryImpl implements FranchiseSalesItemRepos
                         salesItem.createdAt,
                         salesItem.productCode,
                         salesItem.productName,
-                        salesItem.quantity,
+                        sales.quantity,
                         salesItem.unitPrice,
-                        salesItem.unitPrice.multiply(salesItem.quantity),
+                        salesItem.unitPrice.multiply(sales.quantity),
                         sales.isCanceled
                 ))
                 .from(salesItem)
@@ -54,7 +54,7 @@ public class FranchiseSalesItemRepositoryImpl implements FranchiseSalesItemRepos
                         salesItem.createdAt,
                         salesItem.productCode,
                         salesItem.productName,
-                        salesItem.quantity,
+                        sales.quantity,
                         salesItem.unitPrice,
                         sales.totalAmount,
                         sales.isCanceled
@@ -96,7 +96,7 @@ public class FranchiseSalesItemRepositoryImpl implements FranchiseSalesItemRepos
         DateExpression<java.sql.Date> salesDateExpr = Expressions.dateTemplate(
                 java.sql.Date.class, "DATE({0})", sales.createdAt);
 
-        var qtyExpr = salesItem.quantity.sum();
+        var qtyExpr = sales.quantity.sum();
 
         List<com.querydsl.core.Tuple> rows = queryFactory
                 .select(

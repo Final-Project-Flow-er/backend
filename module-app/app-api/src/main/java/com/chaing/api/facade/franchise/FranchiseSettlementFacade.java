@@ -258,11 +258,11 @@ public class FranchiseSettlementFacade {
                                 .map(entry -> {
                                         String name = entry.getKey();
                                         List<SalesItem> group = entry.getValue();
-                                    int totalQty = (int) group.stream()
-                                            .distinct()
-                                            .count();
-                                    BigDecimal total = group.stream()
-                                            .map(SalesItem::getUnitPrice)
+                                    int totalQty = group.stream().mapToInt(item ->
+                                            item.getSales().getQuantity()).sum();
+                                    BigDecimal total = group.stream().map(item ->
+                                            item.getUnitPrice().multiply(BigDecimal.valueOf(
+                                                    item.getSales().getQuantity())))
                                             .reduce(BigDecimal.ZERO, BigDecimal::add);
                                         BigDecimal displayPrice = group.get(0).getUnitPrice();
                                         return new FranchiseSalesItemResponse(0, name, totalQty, displayPrice, total);

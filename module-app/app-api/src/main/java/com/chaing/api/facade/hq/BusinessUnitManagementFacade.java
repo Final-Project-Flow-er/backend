@@ -24,6 +24,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -129,7 +131,17 @@ public class BusinessUnitManagementFacade {
             for (String storedName : deleteStoredFileNames) {
                 imageService.deleteByStoredName(storedName, BucketName.FRANCHISES);
             }
+
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCompletion(int status) {
+                    if (status == TransactionSynchronization.STATUS_COMMITTED) {
+                        deleteStoredFileNames.forEach(name -> minioService.deleteFile(name, BucketName.FRANCHISES));
+                    }
+                }
+            });
         }
+
         if (newImages != null && !newImages.isEmpty()) {
             imageService.saveImages(newImages, TargetType.FRANCHISE, id, BucketName.FRANCHISES);
         }

@@ -2,7 +2,6 @@ package com.chaing.domain.businessunits.service.impl;
 
 import com.chaing.core.enums.UsableStatus;
 import com.chaing.domain.businessunits.component.BusinessUnitCodeGenerator;
-import com.chaing.domain.businessunits.component.DistanceCalculator;
 import com.chaing.domain.businessunits.dto.command.BusinessUnitCreateCommand;
 import com.chaing.domain.businessunits.dto.command.BusinessUnitUpdateCommand;
 import com.chaing.domain.businessunits.dto.condition.BusinessUnitSearchCondition;
@@ -20,6 +19,7 @@ import org.springframework.stereotype.Service;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 @Service
@@ -28,7 +28,6 @@ public class FranchiseServiceImpl implements BusinessUnitManagementService {
 
     private final FranchiseRepository franchiseRepository;
     private final BusinessUnitCodeGenerator codeGenerator;
-    private final DistanceCalculator distanceCalculator;
 
     // 가맹점 아이디로 가맹점 조회
     @Override
@@ -51,10 +50,16 @@ public class FranchiseServiceImpl implements BusinessUnitManagementService {
     @Override
     public BusinessUnitInternal create(BusinessUnitCreateCommand command) {
         String generatedCode = codeGenerator.generateFranchiseCode(command.region());
-        Double distance = distanceCalculator.calculate(command.address());
+        Double distance = calculate();
         Franchise franchise = Franchise.from(command, generatedCode, distance);
         franchiseRepository.save(franchise);
         return BusinessUnitInternal.from(franchise);
+    }
+
+    // 공장과 가맹점 사이 거리 랜덤 생성
+    private Double calculate() {
+        double randomDistance = ThreadLocalRandom.current().nextDouble(10.0, 20.1);
+        return Math.round(randomDistance * 10.0) / 10.0;
     }
 
     // 가맹점 목록 조회

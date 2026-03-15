@@ -68,7 +68,7 @@ public class UserManagementFacade {
         if (profileImage != null && !profileImage.isEmpty()) {
             savedFileName = minioService.generateFileName(profileImage);
             minioService.uploadFile(profileImage, savedFileName, BucketName.PROFILES);
-            registerFileRollback(savedFileName, BucketName.PROFILES);
+            registerFileRollback(savedFileName);
         }
 
         String loginId = userManagementService.generateLoginId(request.role());
@@ -153,7 +153,7 @@ public class UserManagementFacade {
         if (profileImage != null && !profileImage.isEmpty()) {
             savedFileName = minioService.generateFileName(profileImage);
             minioService.uploadFile(profileImage, savedFileName, BucketName.PROFILES);
-            registerFileRollback(savedFileName, BucketName.PROFILES);
+            registerFileRollback(savedFileName);
         }
 
         userManagementService.updateUser(userId, request.toCommand(savedFileName));
@@ -227,13 +227,13 @@ public class UserManagementFacade {
     }
 
     // 트랜잭션 롤백 시 minio 파일 삭제
-    private void registerFileRollback(String fileName, BucketName bucket) {
+    private void registerFileRollback(String fileName) {
         if (TransactionSynchronizationManager.isActualTransactionActive()) {
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                 @Override
                 public void afterCompletion(int status) {
                     if (status == TransactionSynchronization.STATUS_ROLLED_BACK) {
-                        minioService.deleteFile(fileName, bucket);
+                        minioService.deleteFile(fileName, BucketName.PROFILES);
                     }
                 }
             });

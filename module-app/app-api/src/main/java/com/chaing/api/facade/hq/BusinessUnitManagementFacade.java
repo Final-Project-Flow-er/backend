@@ -131,23 +131,8 @@ public class BusinessUnitManagementFacade {
 
         if (deleteStoredFileNames != null && !deleteStoredFileNames.isEmpty()) {
             for (String storedName : deleteStoredFileNames) {
-                imageService.deleteByStoredName(storedName, BucketName.FRANCHISES);
+                imageService.deleteByStoredName(storedName, TargetType.FRANCHISE, id, BucketName.FRANCHISES);
             }
-
-            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-                @Override
-                public void afterCompletion(int status) {
-                    if (status == TransactionSynchronization.STATUS_COMMITTED) {
-                        deleteStoredFileNames.forEach(name -> {
-                            try {
-                                minioService.deleteFile(name, BucketName.FRANCHISES);
-                            } catch (Exception e) {
-                                log.error("MinIO 파일 삭제 실패: {} - 사유: {}", name, e.getMessage());
-                            }
-                        });
-                    }
-                }
-            });
         }
 
         if (newImages != null && !newImages.isEmpty()) {

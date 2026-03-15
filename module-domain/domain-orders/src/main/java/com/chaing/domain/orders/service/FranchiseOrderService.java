@@ -28,6 +28,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -507,7 +508,7 @@ public class FranchiseOrderService {
         List<FranchiseOrder> orders = franchiseOrderRepository.findAllByOrderStatusAndDeletedAtIsNull(FranchiseOrderStatus.PENDING);
 
         if (orders == null || orders.isEmpty()) {
-            throw new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_NOT_FOUND);
+            return Collections.emptyMap();
         }
 
         return orders.stream()
@@ -537,7 +538,7 @@ public class FranchiseOrderService {
         List<FranchiseOrder> orders = franchiseOrderRepository.findAllByDeletedAtIsNull();
 
         if (orders == null || orders.isEmpty()) {
-            throw new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_NOT_FOUND);
+            return Collections.emptyMap();
         }
 
         return orders.stream()

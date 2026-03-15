@@ -112,7 +112,15 @@ public class HQReturnFacade {
         List<String> serialCodes;
         Map<String, String> boxCodeBySerialCode;
         Map<String, Long> productIdBySerialCode;
-        if (!returnInfo.status().equals(ReturnStatus.COMPLETED)) {
+
+        Set<ReturnStatus> hqStatuses = Set.of(
+                ReturnStatus.COMPLETED,
+                ReturnStatus.INSPECTING,
+                ReturnStatus.DEDUCTION_COMPLETED,
+                ReturnStatus.DEDUCTION_REJECTED
+                );
+
+        if (!hqStatuses.contains(returnInfo.status())) {
             // FranchiseInventory에 제품 존재
             // 재고 정보 조회
             // Map<serialCode, orderItemId>

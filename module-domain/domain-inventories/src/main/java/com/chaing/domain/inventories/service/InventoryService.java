@@ -9,6 +9,7 @@ import com.chaing.domain.inventories.dto.request.DisposalRequest;
 import com.chaing.domain.inventories.dto.request.FranchiseInventoryItemsRequest;
 import com.chaing.domain.inventories.dto.request.HQInventoryItemsRequest;
 import com.chaing.domain.inventories.dto.request.InventoryBatchRequest;
+import com.chaing.domain.inventories.dto.request.InventoryRequest;
 import com.chaing.domain.inventories.dto.request.SafetyStockRequest;
 import com.chaing.domain.inventories.dto.response.ExpirationBatchResultResponse;
 import com.chaing.domain.inventories.dto.response.FranchiseInventoryBatchResponse;
@@ -28,6 +29,7 @@ import com.chaing.domain.inventories.repository.FactoryInventoryRepository;
 import com.chaing.domain.inventories.repository.FranchiseInventoryRepository;
 import com.chaing.domain.inventories.repository.HQInventoryRepository;
 import com.chaing.domain.inventories.repository.InventoryPolicyRepository;
+import jakarta.validation.constraints.NotEmpty;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -557,5 +559,31 @@ public class InventoryService {
                 throw new InventoriesException(InventoriesErrorCode.INVALID_STOCK);
             }
         });
+    }
+
+    public List<InventoryRequest> getItemBySerialCode(@NotEmpty(message = "선택된 제품이 존재하지 않습니다.") List<String> serialCodes) {
+
+        List<FranchiseInventory> scannedItems = franchiseInventoryRepository.getAllByStatusAndSerialCode(serialCodes);
+
+        if(scannedItems == null || scannedItems.isEmpty()) {
+            throw new InventoriesException(InventoriesErrorCode.INVENTORIES_IS_NULL);
+        }
+
+        long requestCount = serialCodes.stream().distinct().count();
+        long getCount = scannedItems.stream().distinct().count();
+
+        if(requestCount != getCount) {
+            throw new InventoriesException(InventoriesErrorCode.INVALID_STOCK);
+        }
+
+        return scannedItems.stream()
+                .map(item -> new InventoryRequest(
+                        item.getProductId(),
+                        item.getSerialCode(),
+                        item.getOrderItemId(),
+                        item.getStatus(),
+                        item.getManufactureDate()
+                ))
+                .toList();
     }
 }

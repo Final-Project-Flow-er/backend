@@ -1,6 +1,7 @@
 package com.chaing.api.controller.hq;
 
 import com.chaing.api.dto.hq.businessunit.request.BusinessUnitCreateRequest;
+import com.chaing.api.dto.hq.businessunit.request.BusinessUnitSearchRequest;
 import com.chaing.api.dto.hq.businessunit.request.BusinessUnitStatusUpdateRequest;
 import com.chaing.api.dto.hq.businessunit.request.BusinessUnitUpdateRequest;
 import com.chaing.api.dto.hq.businessunit.response.BusinessUnitDetailResponse;
@@ -21,6 +22,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -56,9 +58,10 @@ public class BusinessUnitManagementController {
     public ResponseEntity<ApiResponse<Page<BusinessUnitSummaryResponse>>> getBusinessUnits(
             @Schema(allowableValues = {"franchise", "factory"})
             @PathVariable BusinessUnitType type,
+            @ModelAttribute BusinessUnitSearchRequest searchRequest,
             @PageableDefault(size = 20) Pageable pageable
     ) {
-        return ResponseEntity.ok(ApiResponse.success(businessUnitManagementFacade.getList(type, pageable)));
+        return ResponseEntity.ok(ApiResponse.success(businessUnitManagementFacade.getList(type, searchRequest, pageable)));
     }
 
     @Operation(summary = "사업장 상세 조회", description = "특정 사업장의 상세 정보 조회")

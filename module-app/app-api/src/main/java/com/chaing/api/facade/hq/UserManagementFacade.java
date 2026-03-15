@@ -127,20 +127,27 @@ public class UserManagementFacade {
                         Collectors.mapping(User::getBusinessUnitId, Collectors.toList())
                 ));
 
-        Map<Long, String> unitNameMap = new HashMap<>();
+        final Map<Long, String> hqNameMap = new HashMap<>();
+        final Map<Long, String> franchiseNameMap = new HashMap<>();
+        final Map<Long, String> factoryNameMap = new HashMap<>();
 
         if (roleUnitIdsMap.containsKey(UserRole.HQ)) {
-            unitNameMap.putAll(headquarterServiceImpl.getNamesByIds(roleUnitIdsMap.get(UserRole.HQ)));
+            hqNameMap.putAll(headquarterServiceImpl.getNamesByIds(roleUnitIdsMap.get(UserRole.HQ)));
         }
         if (roleUnitIdsMap.containsKey(UserRole.FRANCHISE)) {
-            unitNameMap.putAll(franchiseServiceImpl.getNamesByIds(roleUnitIdsMap.get(UserRole.FRANCHISE)));
+            franchiseNameMap.putAll(franchiseServiceImpl.getNamesByIds(roleUnitIdsMap.get(UserRole.FRANCHISE)));
         }
         if (roleUnitIdsMap.containsKey(UserRole.FACTORY)) {
-            unitNameMap.putAll(factoryServiceImpl.getNamesByIds(roleUnitIdsMap.get(UserRole.FACTORY)));
+            factoryNameMap.putAll(factoryServiceImpl.getNamesByIds(roleUnitIdsMap.get(UserRole.FACTORY)));
         }
 
         return userPage.map(user -> {
-            String unitName = unitNameMap.getOrDefault(user.getBusinessUnitId(), "-");
+            String unitName = switch (user.getRole()) {
+                case HQ -> hqNameMap.getOrDefault(user.getBusinessUnitId(), "-");
+                case FRANCHISE -> franchiseNameMap.getOrDefault(user.getBusinessUnitId(), "-");
+                case FACTORY -> factoryNameMap.getOrDefault(user.getBusinessUnitId(), "-");
+                default -> "-";
+            };
             return UserSummaryResponse.from(user, unitName);
         });
     }

@@ -90,7 +90,7 @@ public class BusinessUnitManagementFacade {
             case HQ -> headquarterServiceImpl.updateInfo(id, command);
             case FRANCHISE -> franchiseServiceImpl.updateInfo(id, command);
             case FACTORY -> factoryServiceImpl.updateInfo(id, command);
-        };
+        }
         return getDetail(type, id);
     }
 
@@ -101,7 +101,7 @@ public class BusinessUnitManagementFacade {
             case FRANCHISE -> franchiseServiceImpl.updateStatus(id, request.status());
             case FACTORY -> factoryServiceImpl.updateStatus(id, request.status());
             default -> throw new BusinessUnitException(BusinessUnitErrorCode.INVALID_BUSINESS_UNIT_TYPE);
-        };
+        }
         return getDetail(type, id);
     }
 
@@ -141,7 +141,7 @@ public class BusinessUnitManagementFacade {
         if (type != BusinessUnitType.FRANCHISE) {
             throw new BusinessUnitException(BusinessUnitErrorCode.WARNING_ONLY_FOR_FRANCHISE);
         }
-        BusinessUnitInternal updated = franchiseServiceImpl.addWarning(id);
+        franchiseServiceImpl.addWarning(id);
         return getDetail(BusinessUnitType.FRANCHISE, id);
     }
 }

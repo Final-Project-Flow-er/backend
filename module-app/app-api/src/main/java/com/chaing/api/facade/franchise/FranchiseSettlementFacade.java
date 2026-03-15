@@ -258,12 +258,12 @@ public class FranchiseSettlementFacade {
                                 .map(entry -> {
                                         String name = entry.getKey();
                                         List<SalesItem> group = entry.getValue();
-                                        int totalQty = group.stream()
-                                                        .mapToInt(SalesItem::getQuantity).sum();
-                                        BigDecimal total = group.stream()
-                                                        .map(item -> item.getUnitPrice().multiply(
-                                                                        BigDecimal.valueOf(item.getQuantity())))
-                                                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+                                    int totalQty = (int) group.stream()
+                                            .distinct()
+                                            .count();
+                                    BigDecimal total = group.stream()
+                                            .map(SalesItem::getUnitPrice)
+                                            .reduce(BigDecimal.ZERO, BigDecimal::add);
                                         BigDecimal displayPrice = group.get(0).getUnitPrice();
                                         return new FranchiseSalesItemResponse(0, name, totalQty, displayPrice, total);
                                 }) // 단가가 변경될 경우

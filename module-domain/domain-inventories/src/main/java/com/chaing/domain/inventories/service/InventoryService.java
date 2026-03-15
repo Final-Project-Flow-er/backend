@@ -205,6 +205,8 @@ public class InventoryService {
         List<HQInventory> inventories = request.boxes().stream()
                 .flatMap(box -> box.productList().stream()
                         .map(product -> HQInventory.builder()
+                                .orderId(request.orderId())
+                                .orderItemId(product.orderItemId())
                                 .serialCode(product.serialCode())
                                 .productId(product.productId())
                                 .manufactureDate(product.manufactureDate())

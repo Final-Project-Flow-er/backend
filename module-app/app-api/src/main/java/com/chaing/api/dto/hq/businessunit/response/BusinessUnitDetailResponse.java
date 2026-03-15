@@ -8,6 +8,7 @@ import lombok.Builder;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.List;
 
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -27,7 +28,11 @@ public record BusinessUnitDetailResponse(
         FranchiseDetailResponse franchiseDetail,
         FactoryDetailResponse factoryDetail
 ) {
-    public static BusinessUnitDetailResponse from(BusinessUnitInternal internal) {
+
+    public record FileInfo(String originName, String storedName, String url, Long size) {
+    }
+
+    public static BusinessUnitDetailResponse from(BusinessUnitInternal internal, List<FileInfo> images) {
         return new BusinessUnitDetailResponse(
                 internal.id(),
                 internal.code(),
@@ -39,7 +44,7 @@ public record BusinessUnitDetailResponse(
                 internal.region(),
                 internal.status(),
                 internal.unitType(),
-                internal.franchiseDetail() != null ? FranchiseDetailResponse.from(internal.franchiseDetail()) : null,
+                internal.franchiseDetail() != null ? FranchiseDetailResponse.from(internal.franchiseDetail(), images) : null,
                 internal.factoryDetail() != null ? FactoryDetailResponse.from(internal.factoryDetail()) : null
         );
     }
@@ -48,15 +53,15 @@ public record BusinessUnitDetailResponse(
             String operatingDays,
             LocalTime openTime,
             LocalTime closeTime,
-            String imageUrl,
+            List<FileInfo> images,
             int warningCount,
             LocalDateTime penaltyEndDate,
             boolean isReturnBlocked,
             Double distanceToFactory
     ) {
-        public static FranchiseDetailResponse from(BusinessUnitInternal.FranchiseDetail detail) {
+        public static FranchiseDetailResponse from(BusinessUnitInternal.FranchiseDetail detail, List<FileInfo> images) {
             return new FranchiseDetailResponse(
-                    detail.operatingDays(), detail.openTime(), detail.closeTime(), detail.imageUrl(),
+                    detail.operatingDays(), detail.openTime(), detail.closeTime(), images,
                     detail.warningCount(), detail.penaltyEndDate(), detail.isReturnBlocked(), detail.distanceToFactory()
             );
         }

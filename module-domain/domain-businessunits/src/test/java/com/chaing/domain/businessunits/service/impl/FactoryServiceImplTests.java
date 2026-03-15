@@ -131,6 +131,9 @@ class FactoryServiceImplTests {
         // then
         assertEquals("변경 이름", factory.getName());
         assertEquals(10, factory.getProductionLineCount());
+        assertNotNull(result);
+        assertEquals("변경 이름", result.name());
+        assertEquals(id, result.id());
         verify(factoryRepository, times(1)).findById(id);
     }
 

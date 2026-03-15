@@ -1,5 +1,6 @@
 package com.chaing.api.facade.hq;
 
+import com.chaing.api.facade.notification.NotificationFacade;
 import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.core.enums.LogType;
 import com.chaing.domain.businessunits.entity.Franchise;
@@ -35,6 +36,8 @@ import com.chaing.domain.inventorylogs.dto.response.ProductSalesResponse;
 import com.chaing.domain.inventorylogs.enums.ActorType;
 import com.chaing.domain.inventorylogs.enums.LocationType;
 import com.chaing.domain.inventorylogs.service.InventoryLogService;
+import com.chaing.domain.notifications.enums.NotificationType;
+import com.chaing.domain.notifications.event.NotificationEvent;
 import com.chaing.domain.products.dto.response.ProductInfoResponse;
 import com.chaing.domain.products.service.ProductService;
 import com.chaing.domain.sales.dto.response.FranchiseSalesDailyQuantityResponse;
@@ -45,6 +48,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -75,6 +79,9 @@ public class HQInventoryFacade {
 
     private static final Duration CACHE_TTL = Duration.ofSeconds(30);
     private static final Long DEFAULT_FACTORY_ID = 1L;
+    private static final long FACTORY_STOCK_ALERT_TARGET_BASE = 2_000_000_000L;
+    private static final long FRANCHISE_STOCK_ALERT_TARGET_BASE = 3_000_000_000L;
+    private static final long TARGET_LOCATION_MULTIPLIER = 1_000_000L;
 
     private final InventoryService inventoryService;
     private final ProductService productService;
@@ -84,6 +91,8 @@ public class HQInventoryFacade {
     private final FranchiseSalesService franchiseSalesService;
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper;
+    private final NotificationFacade notificationFacade;
+    private final ApplicationEventPublisher eventPublisher;
 
     public Map<Long, String> getFranchiseList() {
         return franchiseRepository.findAll().stream()
@@ -275,6 +284,12 @@ public class HQInventoryFacade {
             }
 
             evictInventoryCache();
+            if (factoryIds == null || factoryIds.isEmpty()) {
+                publishStockAlert("FACTORY", DEFAULT_FACTORY_ID);
+            } else {
+                factoryIds.forEach(id -> publishStockAlert("FACTORY", id));
+            }
+            franchiseIds.forEach(id -> publishStockAlert("FRANCHISE", id));
         } finally {
             String current = redisTemplate.opsForValue().get(lockKey);
             if (lockValue.equals(current)) {
@@ -590,12 +605,14 @@ public class HQInventoryFacade {
     public void setSafetyStock(SafetyStockRequest request) {
         inventoryService.setSafetyStock(request);
         evictInventoryCache();
+        publishStockAlert(request.locationType(), request.locationId());
     }
 
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public void resetSafetyStock(Long locationId, Long productId) {
         inventoryService.resetSafetyStockToDefault("FACTORY", locationId, productId);
         evictInventoryCache();
+        publishStockAlert("FACTORY", locationId);
     }
 
     public boolean verifyAdminPassword(Long userId, String password) {
@@ -604,6 +621,58 @@ public class HQInventoryFacade {
 
     private String nullToDash(String value) {
         return value == null ? "-" : value;
+    }
+
+    private void publishStockAlert(String locationTypeRaw, Long locationId) {
+        if (locationTypeRaw == null || locationId == null) return;
+
+        String locationType = locationTypeRaw.toUpperCase();
+        if (!"FACTORY".equals(locationType) && !"FRANCHISE".equals(locationType)) return;
+
+        List<SafetyStockResponse> safetyAlerts = inventoryService.getLowStockAlerts(locationType, locationId);
+        List<ExpirationBatchResultResponse> expirationAlerts = inventoryService.getExpirationAlerts(locationType, locationId);
+        List<Long> recipientUserIds = resolveRecipientUserIds(locationType, locationId);
+        if (recipientUserIds.isEmpty()) return;
+
+        int lowStockCount = safetyAlerts.size();
+        int expirationCount = expirationAlerts.size();
+        String subject = "FACTORY".equals(locationType)
+                ? "본사(공장)"
+                : "가맹점(" + locationId + ")";
+        String message = "[재고 알림] %s - 안전재고 부족 %d건, 유통기한 임박 %d건"
+                .formatted(subject, lowStockCount, expirationCount);
+
+        for (Long userId : recipientUserIds) {
+            long targetId = resolveUserStockAlertTargetId(locationType, locationId, userId);
+            notificationFacade.deleteNotificationsByTarget(NotificationType.STOCK, targetId);
+
+            if (lowStockCount == 0 && expirationCount == 0) {
+                continue;
+            }
+
+            eventPublisher.publishEvent(NotificationEvent.ofUser(
+                    userId,
+                    NotificationType.STOCK,
+                    message,
+                    targetId
+            ));
+        }
+    }
+
+    private List<Long> resolveRecipientUserIds(String locationType, Long locationId) {
+        UserRole locationRole = "FACTORY".equals(locationType) ? UserRole.FACTORY : UserRole.FRANCHISE;
+        List<Long> locationUsers = userManagementService.getActiveUserIdsByRoleAndBusinessUnitId(locationRole, locationId);
+        List<Long> hqUsers = userManagementService.getActiveUserIdsByRole(UserRole.HQ);
+        return java.util.stream.Stream.concat(locationUsers.stream(), hqUsers.stream())
+                .distinct()
+                .toList();
+    }
+
+    private long resolveUserStockAlertTargetId(String locationType, Long locationId, Long userId) {
+        if ("FRANCHISE".equals(locationType)) {
+            return FRANCHISE_STOCK_ALERT_TARGET_BASE + (locationId * TARGET_LOCATION_MULTIPLIER) + userId;
+        }
+        return FACTORY_STOCK_ALERT_TARGET_BASE + (locationId * TARGET_LOCATION_MULTIPLIER) + userId;
     }
 
     private <T> List<T> readListCache(String key, TypeReference<List<T>> typeRef) {

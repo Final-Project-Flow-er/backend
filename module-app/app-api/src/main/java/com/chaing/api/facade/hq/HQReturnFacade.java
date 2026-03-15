@@ -11,7 +11,7 @@ import com.chaing.domain.products.service.ProductService;
 import com.chaing.domain.returns.dto.command.HQReturnCommand;
 import com.chaing.domain.returns.dto.command.HQReturnDetailCommand;
 import com.chaing.domain.returns.dto.command.ReturnCommand;
-import com.chaing.domain.returns.dto.command.ReturnItemInspection;
+import com.chaing.core.dto.info.ReturnItemInspection;
 import com.chaing.domain.returns.dto.request.HQOrderStatusUpdateRequest;
 import com.chaing.domain.returns.dto.request.HQReturnItemUpdateRequest;
 import com.chaing.domain.returns.dto.request.HQReturnUpdateRequest;
@@ -24,7 +24,6 @@ import com.chaing.domain.returns.exception.FranchiseReturnErrorCode;
 import com.chaing.domain.returns.exception.FranchiseReturnException;
 import com.chaing.domain.returns.service.FranchiseReturnService;
 import com.chaing.domain.users.service.UserManagementService;
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -106,25 +105,41 @@ public class HQReturnFacade {
         Map<Long, Long> orderItemIdByReturnItemId = franchiseReturnService.getReturnItemId(returnCode);
         List<Long> orderItemIds = orderItemIdByReturnItemId.values().stream().toList();
         List<Long> returnItemIds = orderItemIdByReturnItemId.keySet().stream().toList();
-        // Map<returnItemId, returnItemInspection>
-        Map<Long, ReturnItemInspection> returnItemInspectionByReturnItemId = franchiseReturnService.getReturnItemInspection(returnItemIds);
 
         // Map<boxCode, ReturnItemInspection>
-        Map<String, ReturnItemInspection> itemInspectionByBoxCode = returnItemInspectionByReturnItemId.values().stream()
-                .collect(Collectors.toMap(
-                        ReturnItemInspection::boxCode,
-                        Function.identity()
-                ));
+        Map<String, ReturnItemInspection> itemInspectionByBoxCode;
+        Map<String, Long> orderItemIdBySerialCode;
+        List<String> serialCodes;
+        Map<String, String> boxCodeBySerialCode;
+        Map<String, Long> productIdBySerialCode;
+        if (!returnInfo.status().equals(ReturnStatus.COMPLETED)) {
+            // FranchiseInventory에 제품 존재
+            // 재고 정보 조회
+            // Map<serialCode, orderItemId>
+            orderItemIdBySerialCode = inventoryService.getSerialCodesByOrderItemIdsFromFranchise(orderItemIds);
+            // List<serialCode>
+            serialCodes = orderItemIdBySerialCode.keySet().stream().toList();
+            // Map<boxCode, serialCode>
+            boxCodeBySerialCode = inventoryService.getBoxCodeFromFranchise(serialCodes);
+            // Map<serialCode, productId>
+            productIdBySerialCode = inventoryService.getProductIdBySerialCodeFromFranchise(serialCodes);
+            // Map<boxCode, returnItemInspection>
+            itemInspectionByBoxCode = inventoryService.getReturnItemInspectionFronFranchise(orderItemIds);
+        } else {
+            // HQInventory에 제품 존재
+            // 재고 정보 조회
+            // Map<serialCode, orderItemId>
+            orderItemIdBySerialCode = inventoryService.getSerialCodesByOrderItemIdsFromHQ(orderItemIds);
+            // List<serialCode>
+            serialCodes = orderItemIdBySerialCode.keySet().stream().toList();
+            // Map<boxCode, serialCode>
+            boxCodeBySerialCode = inventoryService.getBoxCodeFromHQ(serialCodes);
+            // Map<serialCode, productId>
+            productIdBySerialCode = inventoryService.getProductIdBySerialCodeFromHQ(serialCodes);
+            // Map<boxCode, returnItemInspection>
+            itemInspectionByBoxCode = inventoryService.getReturnItemInspection(orderItemIdByReturnItemId);
+        }
 
-        // 재고 정보 조회
-        // Map<serialCode, orderItemId>
-        Map<String, Long> orderItemIdBySerialCode = inventoryService.getSerialCodesByOrderItemIds(orderItemIds);
-        // List<serialCode>
-        List<String> serialCodes = orderItemIdBySerialCode.keySet().stream().toList();
-        // Map<boxCode, serialCode>
-        Map<String, String> boxCodeBySerialCode = inventoryService.getBoxCode(serialCodes);
-        // Map<serialCode, productId>
-        Map<String, Long> productIdBySerialCode = inventoryService.getProductIdBySerialCode(serialCodes);
         log.info("productIdBySerialCode: {}", productIdBySerialCode);
 
         // 제품 정보 조회

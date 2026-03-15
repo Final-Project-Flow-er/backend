@@ -280,28 +280,6 @@ public class FranchiseSettlementFacade {
                 return aggregateOrderItems(items, limit);
         }
 
-        // 월별 일자 매출 추이 그래프
-        @Transactional(readOnly = true)
-        public List<FranchiseDailyGraphResponse> getMonthlyDailyGraph(
-                        Long franchiseId, LocalDate start, LocalDate end) {
-                List<FranchiseDailyGraphResponse> responses = new ArrayList<>();
-
-                for (LocalDate date = start; !date.isAfter(end); date = date.plusDays(1)) {
-                        try {
-                                DailySettlementReceipt receipt = getInternalDailyAggregation(franchiseId, date)
-                                                .receipt();
-                                responses.add(new FranchiseDailyGraphResponse(date, receipt.getTotalSaleAmount()));
-                        } catch (Exception ex) {
-                                log.warn("[DEBUG] Skip graph data for date {} due to: {}", date, ex.getMessage());
-                                responses.add(new FranchiseDailyGraphResponse(date, BigDecimal.ZERO));
-                        }
-                }
-
-                return responses.stream()
-                                .sorted(Comparator.comparing(FranchiseDailyGraphResponse::date))
-                                .toList();
-        }
-
         // 전ㅍ 상세 목록 (일, 월)
         @Transactional(readOnly = true)
         public Page<FranchiseVoucherResponse> getVouchers(

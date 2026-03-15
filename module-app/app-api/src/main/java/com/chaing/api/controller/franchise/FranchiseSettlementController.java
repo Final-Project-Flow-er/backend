@@ -90,25 +90,6 @@ public class FranchiseSettlementController {
                                 facade.getMonthlySalesItems(franchiseId, month, limit)));
         }
 
-        @Operation(summary = "월별 일자 매출 추이 조회 그래프", description = "기간 선택 후 매출 추이 그래프 조회")
-        @GetMapping("/monthly/daily-sales-graph")
-        public ResponseEntity<ApiResponse<?>> getMonthlyDailySalesGraph(
-                        @RequestParam("month") @DateTimeFormat(pattern = "yyyy-MM") YearMonth month,
-                        @RequestParam("start") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start,
-                        @RequestParam("end") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end,
-                        @AuthenticationPrincipal UserPrincipal principal) {
-                if (start.isAfter(end)) {
-                        throw new SettlementException(SettlementErrorCode.INVALID_DATE_RANGE);
-                }
-                if (!YearMonth.from(start).equals(month) || !YearMonth.from(end).equals(month)) {
-                        throw new SettlementException(SettlementErrorCode.INVALID_PARAMETER);
-                }
-                Long franchiseId = principal.getBusinessUnitId();
-                // TODO: Swagger 테스트용 임시 응답. 추후 서비스 로직 연동 예정
-                return ResponseEntity.ok(ApiResponse.success(
-                                facade.getMonthlyDailyGraph(franchiseId, start, end)));
-        }
-
         @Operation(summary = "월별 발주 내역 상위 조회", description = "월별 발주 상품별 전체조회, limit있으면 수량기준 상위 5개 조회")
         @GetMapping("/monthly/order-items")
         public ResponseEntity<ApiResponse<?>> getMonthlyOrders(

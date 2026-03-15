@@ -1,6 +1,7 @@
 package com.chaing.api.facade.hq;
 
 import com.chaing.api.dto.hq.businessunit.request.BusinessUnitCreateRequest;
+import com.chaing.api.dto.hq.businessunit.request.BusinessUnitSearchRequest;
 import com.chaing.api.dto.hq.businessunit.request.BusinessUnitStatusUpdateRequest;
 import com.chaing.api.dto.hq.businessunit.request.BusinessUnitUpdateRequest;
 import com.chaing.api.dto.hq.businessunit.response.BusinessUnitDetailResponse;
@@ -51,10 +52,11 @@ public class BusinessUnitManagementFacade {
     }
 
     // 사업장 목록 조회
-    public Page<BusinessUnitSummaryResponse> getList(BusinessUnitType type, Pageable pageable) {
+    public Page<BusinessUnitSummaryResponse> getList(BusinessUnitType type, BusinessUnitSearchRequest request, Pageable pageable) {
+        var condition = request.toCondition();
         Page<BusinessUnitInternal> internals = switch (type) {
-            case FRANCHISE -> franchiseServiceImpl.getBusinessUnitList(pageable);
-            case FACTORY -> factoryServiceImpl.getBusinessUnitList(pageable);
+            case FRANCHISE -> franchiseServiceImpl.getBusinessUnitList(condition,pageable);
+            case FACTORY -> factoryServiceImpl.getBusinessUnitList(condition,pageable);
             default -> throw new BusinessUnitException(BusinessUnitErrorCode.INVALID_BUSINESS_UNIT_TYPE);
         };
         return internals.map(BusinessUnitSummaryResponse::from);

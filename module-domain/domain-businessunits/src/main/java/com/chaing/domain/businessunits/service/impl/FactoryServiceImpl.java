@@ -4,6 +4,7 @@ import com.chaing.core.enums.UsableStatus;
 import com.chaing.domain.businessunits.component.BusinessUnitCodeGenerator;
 import com.chaing.domain.businessunits.dto.command.BusinessUnitCreateCommand;
 import com.chaing.domain.businessunits.dto.command.BusinessUnitUpdateCommand;
+import com.chaing.domain.businessunits.dto.condition.BusinessUnitSearchCondition;
 import com.chaing.domain.businessunits.dto.internal.BusinessUnitInternal;
 import com.chaing.domain.businessunits.entity.Factory;
 import com.chaing.domain.businessunits.exception.BusinessUnitErrorCode;
@@ -55,8 +56,8 @@ public class FactoryServiceImpl implements BusinessUnitManagementService {
 
     // 공장 목록 조회
     @Override
-    public Page<BusinessUnitInternal> getBusinessUnitList(Pageable pageable) {
-        return factoryRepository.findAll(pageable).map(BusinessUnitInternal::from);
+    public Page<BusinessUnitInternal> getBusinessUnitList(BusinessUnitSearchCondition condition, Pageable pageable) {
+        return factoryRepository.search(condition, pageable).map(BusinessUnitInternal::from);
     }
 
     // 아이디로 이름 조회

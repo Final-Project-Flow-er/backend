@@ -5,6 +5,10 @@ import com.chaing.api.dto.hq.businessunit.request.BusinessUnitStatusUpdateReques
 import com.chaing.api.dto.hq.businessunit.request.BusinessUnitUpdateRequest;
 import com.chaing.api.dto.hq.businessunit.response.BusinessUnitDetailResponse;
 import com.chaing.api.dto.hq.businessunit.response.BusinessUnitSummaryResponse;
+import com.chaing.core.dto.TargetType;
+import com.chaing.core.enums.BucketName;
+import com.chaing.core.service.ImageService;
+import com.chaing.core.service.MinioService;
 import com.chaing.domain.businessunits.dto.command.BusinessUnitCreateCommand;
 import com.chaing.domain.businessunits.dto.command.BusinessUnitUpdateCommand;
 import com.chaing.domain.businessunits.dto.internal.BusinessUnitInternal;
@@ -19,6 +23,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +35,8 @@ public class BusinessUnitManagementFacade {
     private final BusinessUnitService headquarterServiceImpl;
     private final FranchiseServiceImpl franchiseServiceImpl;
     private final BusinessUnitManagementService factoryServiceImpl;
+    private final MinioService minioService;
+    private final ImageService imageService;
 
     // 사업장 등록
     @Transactional
@@ -38,7 +47,7 @@ public class BusinessUnitManagementFacade {
             case FACTORY -> factoryServiceImpl.create(command);
             default -> throw new BusinessUnitException(BusinessUnitErrorCode.INVALID_BUSINESS_UNIT_TYPE);
         };
-        return BusinessUnitDetailResponse.from(internal);
+        return getDetail(type, internal.id());
     }
 
     // 사업장 목록 조회
@@ -58,40 +67,72 @@ public class BusinessUnitManagementFacade {
             case FRANCHISE -> franchiseServiceImpl.getById(id);
             case FACTORY -> factoryServiceImpl.getById(id);
         };
-        return BusinessUnitDetailResponse.from(internal);
+
+        List<BusinessUnitDetailResponse.FileInfo> imageUrls = List.of();
+        if (type == BusinessUnitType.FRANCHISE) {
+            imageUrls = imageService.getImagesByTarget(TargetType.FRANCHISE, id).stream()
+                    .map(file -> new BusinessUnitDetailResponse.FileInfo(
+                            file.getOriginName(),
+                            file.getStoredName(),
+                            minioService.getFileUrl(file.getStoredName(), BucketName.FRANCHISES),
+                            file.getFileSize()
+                    )).toList();
+        }
+
+        return BusinessUnitDetailResponse.from(internal, imageUrls);
     }
 
     // 사업장 정보 수정
     @Transactional
     public BusinessUnitDetailResponse updateInfo(BusinessUnitType type, Long id, BusinessUnitUpdateRequest request) {
         BusinessUnitUpdateCommand command = request.toCommand();
-        BusinessUnitInternal internal = switch (type) {
+        switch (type) {
             case HQ -> headquarterServiceImpl.updateInfo(id, command);
             case FRANCHISE -> franchiseServiceImpl.updateInfo(id, command);
             case FACTORY -> factoryServiceImpl.updateInfo(id, command);
         };
-        return BusinessUnitDetailResponse.from(internal);
+        return getDetail(type, id);
     }
 
     // 사업장 상태 변경
     @Transactional
     public BusinessUnitDetailResponse updateStatus(BusinessUnitType type, Long id, BusinessUnitStatusUpdateRequest request) {
-        BusinessUnitInternal internal = switch (type) {
+        switch (type) {
             case FRANCHISE -> franchiseServiceImpl.updateStatus(id, request.status());
             case FACTORY -> factoryServiceImpl.updateStatus(id, request.status());
             default -> throw new BusinessUnitException(BusinessUnitErrorCode.INVALID_BUSINESS_UNIT_TYPE);
         };
-        return BusinessUnitDetailResponse.from(internal);
+        return getDetail(type, id);
     }
 
     // 사업장 삭제
     @Transactional
     public void deleteBusinessUnit(BusinessUnitType type, Long id) {
         switch (type) {
-            case FRANCHISE -> franchiseServiceImpl.delete(id);
+            case FRANCHISE -> {
+                franchiseServiceImpl.delete(id);
+                imageService.deleteAllByTarget(TargetType.FRANCHISE, id, BucketName.FRANCHISES);
+            }
             case FACTORY -> factoryServiceImpl.delete(id);
             default -> throw new BusinessUnitException(BusinessUnitErrorCode.INVALID_BUSINESS_UNIT_TYPE);
         }
+    }
+
+    // 가맹점 사진 관리
+    @Transactional(rollbackFor = Exception.class)
+    public BusinessUnitDetailResponse updateFranchiseImages(Long id, List<String> deleteStoredFileNames, List<MultipartFile> newImages) {
+        franchiseServiceImpl.getById(id);
+
+        if (deleteStoredFileNames != null && !deleteStoredFileNames.isEmpty()) {
+            for (String storedName : deleteStoredFileNames) {
+                imageService.deleteByStoredName(storedName, BucketName.FRANCHISES);
+            }
+        }
+        if (newImages != null && !newImages.isEmpty()) {
+            imageService.saveImages(newImages, TargetType.FRANCHISE, id, BucketName.FRANCHISES);
+        }
+
+        return getDetail(BusinessUnitType.FRANCHISE, id);
     }
 
     // 가맹점 경고 부여
@@ -101,6 +142,6 @@ public class BusinessUnitManagementFacade {
             throw new BusinessUnitException(BusinessUnitErrorCode.WARNING_ONLY_FOR_FRANCHISE);
         }
         BusinessUnitInternal updated = franchiseServiceImpl.addWarning(id);
-        return BusinessUnitDetailResponse.from(updated);
+        return getDetail(BusinessUnitType.FRANCHISE, id);
     }
 }

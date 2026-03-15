@@ -236,7 +236,9 @@ public class FranchiseInventoryRepositoryImpl implements FranchiseInventoryRepos
                                                 idFilter)
                                 .groupBy(inventoryPolicy.productId, inventoryPolicy.safetyStock,
                                                 inventoryPolicy.defaultSafetyStock)
-                                .having(quantity.loe(effectiveSafetyStock))
+                                .having(
+                                                effectiveSafetyStock.gt(0)
+                                                                .and(quantity.loe(effectiveSafetyStock)))
                                 .fetch();
         }
 

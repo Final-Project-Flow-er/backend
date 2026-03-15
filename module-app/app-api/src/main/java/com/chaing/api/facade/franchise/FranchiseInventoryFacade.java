@@ -441,7 +441,7 @@ public class FranchiseInventoryFacade {
 
     public ScannedForSaleResponse getFranchiseItemsForSale(@NotEmpty(message = "선택된 제품이 존재하지 않습니다.") List<String> serialCodes, Long franchiseId) {
 
-        List<InventoryRequest> scannedItems = inventoryService.getItemBySerialCode(serialCodes);
+        List<InventoryRequest> scannedItems = inventoryService.getItemBySerialCode(serialCodes, franchiseId);
 
         Map<Long, ProductInfo> productInfos = productService.getProductInfos(
                 scannedItems.stream().map(InventoryRequest::productId).distinct().toList());

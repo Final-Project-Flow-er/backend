@@ -561,9 +561,9 @@ public class InventoryService {
         });
     }
 
-    public List<InventoryRequest> getItemBySerialCode(@NotEmpty(message = "선택된 제품이 존재하지 않습니다.") List<String> serialCodes) {
+    public List<InventoryRequest> getItemBySerialCode(@NotEmpty(message = "선택된 제품이 존재하지 않습니다.") List<String> serialCodes, Long franchiseId) {
 
-        List<FranchiseInventory> scannedItems = franchiseInventoryRepository.getAllByStatusAndSerialCode(serialCodes);
+        List<FranchiseInventory> scannedItems = franchiseInventoryRepository.getAllByStatusAndSerialCodeAndFranchiseId(serialCodes, franchiseId);
 
         if(scannedItems == null || scannedItems.isEmpty()) {
             throw new InventoriesException(InventoriesErrorCode.INVENTORIES_IS_NULL);

@@ -3,8 +3,11 @@ package com.chaing.core.service;
 import com.chaing.core.dto.TargetType;
 import com.chaing.core.entity.Image;
 import com.chaing.core.enums.BucketName;
+import com.chaing.core.exception.CommonErrorCode;
+import com.chaing.core.exception.GlobalException;
 import com.chaing.core.repository.ImageRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -12,6 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ImageService {
@@ -63,8 +67,14 @@ public class ImageService {
         });
     }
 
-    // 이름으로 이미지 삭제
-    public void deleteByStoredName(String storedName, BucketName bucket) {
+    // 저장된 이름으로 이미지 삭제
+    public void deleteByStoredName(String storedName, TargetType targetType, Long targetId, BucketName bucket) {
+        boolean isOwner = imageRepository.existsByStoredNameAndTargetTypeAndTargetId(storedName, targetType, targetId);
+
+        if (!isOwner) {
+            throw new GlobalException(CommonErrorCode.IMAGE_DELETE_FORBIDDEN);
+        }
+
         imageRepository.deleteByStoredName(storedName);
 
         if (TransactionSynchronizationManager.isActualTransactionActive()) {
@@ -72,7 +82,11 @@ public class ImageService {
                 @Override
                 public void afterCompletion(int status) {
                     if (status == STATUS_COMMITTED) {
-                        minioService.deleteFile(storedName, bucket);
+                        try {
+                            minioService.deleteFile(storedName, bucket);
+                        } catch (Exception e) {
+                            log.error("MinIO 파일 삭제 실패: {}", storedName, e);
+                        }
                     }
                 }
             });

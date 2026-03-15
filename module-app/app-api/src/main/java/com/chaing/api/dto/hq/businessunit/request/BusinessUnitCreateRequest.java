@@ -60,12 +60,10 @@ public record BusinessUnitCreateRequest(
             LocalTime openTime,
 
             @NotNull(message = "운영 종료 시간은 필수입니다.")
-            LocalTime closeTime,
-
-            String imageUrl
+            LocalTime closeTime
     ) {
         public FranchiseCreate toCommand() {
-            return new FranchiseCreate(operatingDays, openTime, closeTime, imageUrl);
+            return new FranchiseCreate(operatingDays, openTime, closeTime);
         }
     }
 

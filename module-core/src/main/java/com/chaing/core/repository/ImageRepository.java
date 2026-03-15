@@ -11,4 +11,5 @@ public interface ImageRepository extends JpaRepository<Image, Long> {
     List<Image> findAllByTargetTypeAndTargetId(TargetType targetType, Long targetId);
     void deleteAllByTargetTypeAndTargetId(TargetType targetType, Long targetId);
     void deleteByStoredName(String storedName);
+    boolean existsByStoredNameAndTargetTypeAndTargetId(String storedName, TargetType targetType, Long targetId);
 }

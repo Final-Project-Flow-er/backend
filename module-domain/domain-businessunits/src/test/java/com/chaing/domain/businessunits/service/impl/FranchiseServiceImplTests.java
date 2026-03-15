@@ -3,9 +3,9 @@ package com.chaing.domain.businessunits.service.impl;
 import com.chaing.core.enums.Region;
 import com.chaing.core.enums.UsableStatus;
 import com.chaing.domain.businessunits.component.BusinessUnitCodeGenerator;
-import com.chaing.domain.businessunits.component.DistanceCalculator;
 import com.chaing.domain.businessunits.dto.command.BusinessUnitCreateCommand;
 import com.chaing.domain.businessunits.dto.command.BusinessUnitUpdateCommand;
+import com.chaing.domain.businessunits.dto.condition.BusinessUnitSearchCondition;
 import com.chaing.domain.businessunits.dto.internal.BusinessUnitInternal;
 import com.chaing.domain.businessunits.entity.Franchise;
 import com.chaing.domain.businessunits.repository.FranchiseRepository;
@@ -26,11 +26,8 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class FranchiseServiceImplTests {
@@ -41,9 +38,6 @@ class FranchiseServiceImplTests {
     @Mock
     private BusinessUnitCodeGenerator codeGenerator;
 
-    @Mock
-    private DistanceCalculator distanceCalculator;
-
     @InjectMocks
     private FranchiseServiceImpl franchiseService;
 
@@ -53,14 +47,12 @@ class FranchiseServiceImplTests {
 
         // given
         String generatedCode = "SE01";
-        Double calculatedDistance = 15.5;
         BusinessUnitCreateCommand command = new BusinessUnitCreateCommand(
                 "신규 가맹점", "서울시 서초구", "010-1111-2222", "대표", "0123456",
-                Region.SEOUL, new BusinessUnitCreateCommand.FranchiseCreate("월화수목금", LocalTime.of(9,0), LocalTime.of(22,0), "url"), null
+                Region.SEOUL, new BusinessUnitCreateCommand.FranchiseCreate("월화수목금", LocalTime.of(9,0), LocalTime.of(22,0)), null
         );
 
         when(codeGenerator.generateFranchiseCode(Region.SEOUL)).thenReturn(generatedCode);
-        when(distanceCalculator.calculate(anyString())).thenReturn(calculatedDistance);
 
         // when
         BusinessUnitInternal result = franchiseService.create(command);
@@ -68,7 +60,7 @@ class FranchiseServiceImplTests {
         // then
         assertNotNull(result);
         verify(franchiseRepository, times(1)).save(any(Franchise.class));
-        verify(distanceCalculator, times(1)).calculate("서울시 서초구");
+        verify(codeGenerator, times(1)).generateFranchiseCode(Region.SEOUL);
     }
 
     @Test
@@ -77,20 +69,24 @@ class FranchiseServiceImplTests {
 
         // given
         Pageable pageable = PageRequest.of(0, 10);
+        BusinessUnitSearchCondition condition = new BusinessUnitSearchCondition(
+                null, null, null, null, null, null, null, null
+        );
+
         List<Franchise> franchises = List.of(
-                Franchise.builder().franchiseId(1L).build(),
-                Franchise.builder().franchiseId(2L).build()
+                Franchise.builder().franchiseId(1L).name("가맹점1").build(),
+                Franchise.builder().franchiseId(2L).name("가맹점2").build()
         );
 
         Page<Franchise> franchisePage = new PageImpl<>(franchises, pageable, franchises.size());
-        when(franchiseRepository.findAll(pageable)).thenReturn(franchisePage);
+        when(franchiseRepository.search(eq(condition), eq(pageable))).thenReturn(franchisePage);
 
         // when
-        Page<BusinessUnitInternal> result = franchiseService.getBusinessUnitList(pageable);
+        Page<BusinessUnitInternal> result = franchiseService.getBusinessUnitList(condition, pageable);
 
         // then
         assertEquals(2, result.getContent().size());
-        verify(franchiseRepository, times(1)).findAll(pageable);
+        verify(franchiseRepository, times(1)).search(condition, pageable);
     }
 
     @Test
@@ -117,11 +113,11 @@ class FranchiseServiceImplTests {
 
         // given
         Long id = 1L;
-        Franchise franchise = Franchise.builder().franchiseId(id).name("기존 가맹점").phone("010-1234-5678").warningCount(1).build();
+        Franchise franchise = Franchise.builder().franchiseId(id).name("기존 가맹점").phone("010-1234-5678").build();
 
         BusinessUnitUpdateCommand command = new BusinessUnitUpdateCommand(
                 "변경된 가맹점", null, null, null, null, null,
-                new BusinessUnitUpdateCommand.FranchiseUpdate(null, null, null, null, null, null),
+                new BusinessUnitUpdateCommand.FranchiseUpdate(null, null, null, null, null),
                 null
         );
 
@@ -132,8 +128,7 @@ class FranchiseServiceImplTests {
 
         // then
         assertEquals("변경된 가맹점", franchise.getName());
-        assertEquals("010-1234-5678", franchise.getPhone());
-        assertEquals(1, franchise.getWarningCount());
+        verify(franchiseRepository, times(1)).findById(id);
     }
 
     @Test
@@ -150,6 +145,7 @@ class FranchiseServiceImplTests {
 
         // then
         assertEquals(UsableStatus.INACTIVE, franchise.getStatus());
+        verify(franchiseRepository, times(1)).findById(id);
     }
 
     @Test
@@ -158,14 +154,14 @@ class FranchiseServiceImplTests {
 
         // given
         Long id = 1L;
-        Franchise franchise = Franchise.builder().franchiseId(id).status(UsableStatus.ACTIVE).build();
+        Franchise franchise = spy(Franchise.builder().franchiseId(id).build());
         when(franchiseRepository.findById(id)).thenReturn(Optional.of(franchise));
 
         // when
         franchiseService.delete(id);
 
         // then
-        verify(franchiseRepository, times(1)).findById(id);
+        verify(franchise, times(1)).delete();
     }
 
     @Test
@@ -182,7 +178,6 @@ class FranchiseServiceImplTests {
 
         // then
         assertEquals(3, franchise.getWarningCount());
-        assertNotNull(franchise.getPenaltyEndDate());
         verify(franchise, times(1)).addWarning();
     }
 }

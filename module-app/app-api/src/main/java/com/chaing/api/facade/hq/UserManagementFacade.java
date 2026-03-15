@@ -68,7 +68,7 @@ public class UserManagementFacade {
         if (profileImage != null && !profileImage.isEmpty()) {
             savedFileName = minioService.generateFileName(profileImage);
             minioService.uploadFile(profileImage, savedFileName, BucketName.PROFILES);
-            registerFileRollback(savedFileName, BucketName.PROFILES);
+            registerFileRollback(savedFileName);
         }
 
         String loginId = userManagementService.generateLoginId(request.role());
@@ -130,7 +130,6 @@ public class UserManagementFacade {
             unitNameMap.putAll(factoryServiceImpl.getNamesByIds(roleUnitIdsMap.get(UserRole.FACTORY)));
         }
 
-        // 3. 이제 루프 돌 때는 DB 조회 없이 Map에서 꺼내기 (N+1 해결!)
         return userPage.map(user -> {
             String unitName = unitNameMap.getOrDefault(user.getBusinessUnitId(), "-");
             return UserSummaryResponse.from(user, unitName);
@@ -154,7 +153,7 @@ public class UserManagementFacade {
         if (profileImage != null && !profileImage.isEmpty()) {
             savedFileName = minioService.generateFileName(profileImage);
             minioService.uploadFile(profileImage, savedFileName, BucketName.PROFILES);
-            registerFileRollback(savedFileName, BucketName.PROFILES);
+            registerFileRollback(savedFileName);
         }
 
         userManagementService.updateUser(userId, request.toCommand(savedFileName));
@@ -207,6 +206,7 @@ public class UserManagementFacade {
         }
     }
 
+    // 사업장 이름 조회
     private String getBusinessUnitName(User user) {
         Long unitId = user.getBusinessUnitId();
 
@@ -227,13 +227,13 @@ public class UserManagementFacade {
     }
 
     // 트랜잭션 롤백 시 minio 파일 삭제
-    private void registerFileRollback(String fileName, BucketName bucket) {
+    private void registerFileRollback(String fileName) {
         if (TransactionSynchronizationManager.isActualTransactionActive()) {
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                 @Override
                 public void afterCompletion(int status) {
                     if (status == TransactionSynchronization.STATUS_ROLLED_BACK) {
-                        minioService.deleteFile(fileName, bucket);
+                        minioService.deleteFile(fileName, BucketName.PROFILES);
                     }
                 }
             });

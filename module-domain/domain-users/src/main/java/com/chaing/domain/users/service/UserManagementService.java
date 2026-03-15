@@ -83,11 +83,6 @@ public class UserManagementService {
                 .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
     }
 
-    // 활성화 상태인 유저 아이디 전체 조회
-    public List<Long> getAllActiveUserIds() {
-        return userRepository.getAllActiveUserIds();
-    }
-
     // 로그인 아이디로 회원 조회
     public User getUserByLoginId(String loginId) {
         return userRepository.findByLoginId(loginId)

@@ -35,7 +35,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -132,7 +131,7 @@ public class HQReturnFacade {
             // Map<serialCode, productId>
             productIdBySerialCode = inventoryService.getProductIdBySerialCodeFromFranchise(serialCodes);
             // Map<boxCode, returnItemInspection>
-            itemInspectionByBoxCode = inventoryService.getReturnItemInspectionFronFranchise(orderItemIds);
+            itemInspectionByBoxCode = inventoryService.getReturnItemInspectionFromFranchise(orderItemIds);
         } else {
             // HQInventory에 제품 존재
             // 재고 정보 조회

@@ -633,7 +633,7 @@ public class InventoryService {
     }
 
     // return: Map<boxCode, ReturnItemInspection>
-    public Map<String, ReturnItemInspection> getReturnItemInspectionFronFranchise(List<Long> orderItemIds) {
+    public Map<String, ReturnItemInspection> getReturnItemInspectionFromFranchise(List<Long> orderItemIds) {
         List<FranchiseInventory> inventories = franchiseInventoryRepository.findAllByOrderItemIdInAndDeletedAtIsNull(orderItemIds);
 
         if (inventories == null || inventories.isEmpty()) {

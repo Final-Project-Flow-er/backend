@@ -13,4 +13,8 @@ public interface HQInventoryRepository extends JpaRepository<HQInventory, Long>,
     void deleteByInventoryIdIn(List<Long> longs);
     List<HQInventory> findByInventoryIdIn(List<Long> ids);
     List<HQInventory> findByBoxCodeIn(List<String> boxCodes);
+
+    List<HQInventory> findAllByOrderItemIdInAndDeletedAtIsNull(List<Long> orderItemIds);
+
+    List<HQInventory> findAllBySerialCodeInAndDeletedAtIsNull(List<String> serialCodes);
 }

@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -44,7 +45,7 @@ public class HQOrderService {
         List<HeadOfficeOrder> orders = orderRepository.findAllByDeletedAtIsNull();
 
         if (orders == null || orders.isEmpty()) {
-            throw new HQOrderException(HQOrderErrorCode.ORDER_NOT_FOUND);
+            return Collections.emptyMap();
         }
 
         return orders.stream()

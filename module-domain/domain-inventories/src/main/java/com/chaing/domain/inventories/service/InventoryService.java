@@ -563,7 +563,7 @@ public class InventoryService {
 
     public List<InventoryRequest> getItemBySerialCode(@NotEmpty(message = "선택된 제품이 존재하지 않습니다.") List<String> serialCodes, Long franchiseId) {
 
-        List<FranchiseInventory> scannedItems = franchiseInventoryRepository.getAllByStatusAndSerialCodeAndFranchiseId(serialCodes, franchiseId);
+        List<FranchiseInventory> scannedItems = franchiseInventoryRepository.getAllByStatusAndSerialCodeAndFranchiseId(serialCodes, franchiseId, LogType.AVAILABLE);
 
         if(scannedItems == null || scannedItems.isEmpty()) {
             throw new InventoriesException(InventoriesErrorCode.INVENTORIES_IS_NULL);

@@ -38,6 +38,9 @@ public interface FranchiseInventoryRepository extends JpaRepository<FranchiseInv
     List<FranchiseInventory> findByInventoryIdInAndFranchiseId(List<Long> ids, Long franchiseId);
     List<FranchiseInventory> findByBoxCodeInAndFranchiseId(List<String> boxCodes, Long franchiseId);
 
-    @Query("select fi from FranchiseInventory fi where fi.status = 'AVAILABLE' and fi.serialCode in (:serialCodes) and fi.franchiseId = :franchiseId")
-    List<FranchiseInventory> getAllByStatusAndSerialCodeAndFranchiseId(@Param("serialCodes") @NotEmpty(message = "선택된 제품이 존재하지 않습니다.") List<String> serialCodes, @Param("franchiseId") Long franchiseId);
+    @Query("select fi from FranchiseInventory fi where fi.status = :status and fi.serialCode in (:serialCodes) and fi.franchiseId = :franchiseId")
+    List<FranchiseInventory> getAllByStatusAndSerialCodeAndFranchiseId(
+            @Param("serialCodes") @NotEmpty(message = "선택된 제품이 존재하지 않습니다.") List<String> serialCodes,
+            @Param("franchiseId") Long franchiseId,
+            @Param("status") LogType status);
 }

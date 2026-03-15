@@ -44,12 +44,11 @@ public record BusinessUnitUpdateRequest(
             String operatingDays,
             LocalTime openTime,
             LocalTime closeTime,
-            String imageUrl,
             LocalDateTime penaltyEndDate,
             Double distanceToFactory
     ) {
         public FranchiseUpdate toCommand() {
-            return new FranchiseUpdate(operatingDays, openTime, closeTime, imageUrl, penaltyEndDate, distanceToFactory);
+            return new FranchiseUpdate(operatingDays, openTime, closeTime, penaltyEndDate, distanceToFactory);
         }
     }
 

@@ -32,7 +32,6 @@ public record UpdateMyBusinessUnitInfoRequest(
                         this.operatingDays,
                         this.openTime,
                         this.closeTime,
-                        this.imageUrl,
                         null,
                         null
                 ),

@@ -20,6 +20,7 @@ import com.chaing.domain.businessunits.service.BusinessUnitManagementService;
 import com.chaing.domain.businessunits.service.BusinessUnitService;
 import com.chaing.domain.businessunits.service.impl.FranchiseServiceImpl;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -30,6 +31,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -136,7 +138,13 @@ public class BusinessUnitManagementFacade {
                 @Override
                 public void afterCompletion(int status) {
                     if (status == TransactionSynchronization.STATUS_COMMITTED) {
-                        deleteStoredFileNames.forEach(name -> minioService.deleteFile(name, BucketName.FRANCHISES));
+                        deleteStoredFileNames.forEach(name -> {
+                            try {
+                                minioService.deleteFile(name, BucketName.FRANCHISES);
+                            } catch (Exception e) {
+                                log.error("MinIO 파일 삭제 실패: {} - 사유: {}", name, e.getMessage());
+                            }
+                        });
                     }
                 }
             });

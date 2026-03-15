@@ -6,15 +6,17 @@ import com.chaing.api.dto.outbound.response.OutboundItemResponse;
 import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.core.enums.LogType;
 import com.chaing.domain.businessunits.service.BusinessUnitService;
-import com.chaing.domain.businessunits.service.impl.FranchiseServiceImpl;
 import com.chaing.domain.inventories.dto.info.OutboundGetBoxInfo;
 import com.chaing.domain.inventories.dto.info.OutboundGetItemsInfo;
 import com.chaing.domain.inventories.exception.InventoriesErrorCode;
 import com.chaing.domain.inventories.exception.InventoriesException;
+import com.chaing.domain.inventories.service.InventoryService;
 import com.chaing.domain.inventories.service.OutboundService;
 import com.chaing.domain.orders.dto.response.FranchiseOrderForTransitResponse;
 import com.chaing.domain.orders.service.FranchiseOrderService;
 import com.chaing.domain.products.service.ProductService;
+import com.chaing.domain.transports.service.InternalTransportService;
+import com.chaing.external.transport.ExternalTransportService;
 import jakarta.validation.Valid;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -39,12 +41,33 @@ public class OutboundFacade {
     private final ProductService productService;
     private final FranchiseOrderService orderService;
     private final BusinessUnitService franchiseServiceImpl;
+    private final InventoryService inventoryServiceImpl;
+    private final InternalTransportService transportServiceImpl;
+    // private final ExternalTransportService externalTransportModule;
 
     // 재고 상태 변경
     @Transactional
     public void updateOutboundStatus(@Valid OutboundUpdateRequest request, LogType currentStatus) {
         List<String> selectedList = request.serialCodes();
         outboundService.updateStatus(selectedList, currentStatus);
+
+        /*
+         * System.out.println(currentStatus);
+         * 
+         * if(currentStatus == LogType.PICKING) {
+         * // 출고 상태로 변경된 재고들의 orderCode 리스트 추출
+         * List<Long> orderIds = inventoryServiceImpl.getOrderInfo(selectedList);
+         * Map<Long, String> orderInfos =
+         * orderService.getAllOrderCodeByOrderIds(orderIds);
+         * List<String> orderCodes = orderInfos.values().stream().toList();
+         * 
+         * // Transit 내 배송중으로 상태 변경
+         * transportServiceImpl.updateDeliveryStatus(orderCodes);
+         * 
+         * // 외부 운송 모듈 호출
+         * externalTransportModule.scheduleDeliveryCompletion(orderCodes);
+         * }
+         */
     }
 
     // 박스 할당
@@ -79,7 +102,8 @@ public class OutboundFacade {
 
         for (OutboundGetBoxInfo box : getBoxInfos) {
             // 이미 담은 박스면 패스
-            if (distinctBoxes.containsKey(box.boxCode())) continue;
+            if (distinctBoxes.containsKey(box.boxCode()))
+                continue;
 
             ProductInfo product = productMap.get(box.productId());
             FranchiseOrderForTransitResponse order = orderMap.get(box.orderId());
@@ -92,7 +116,8 @@ public class OutboundFacade {
                 franchiseName = franchiseServiceImpl.getById(order.franchiseId()).name();
             }
 
-            if (product == null) throw new InventoriesException(InventoriesErrorCode.INVENTORIES_IS_NULL);
+            if (product == null)
+                throw new InventoriesException(InventoriesErrorCode.INVENTORIES_IS_NULL);
 
             distinctBoxes.put(box.boxCode(), OutboundBoxSummaryResponse.of(
                     box.boxCode(),

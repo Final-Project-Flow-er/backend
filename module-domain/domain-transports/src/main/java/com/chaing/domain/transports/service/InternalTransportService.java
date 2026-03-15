@@ -3,11 +3,15 @@ package com.chaing.domain.transports.service;
 import com.chaing.domain.transports.dto.DeliveryFeeInfo;
 import com.chaing.domain.transports.dto.OrderInfo;
 import com.chaing.domain.transports.dto.response.AvailableVehicleInfo;
+import com.chaing.domain.transports.entity.Transit;
 import com.chaing.domain.transports.entity.Vehicle;
 import com.chaing.domain.transports.enums.DeliverStatus;
+import com.chaing.domain.transports.exception.TransportErrorCode;
+import com.chaing.domain.transports.exception.TransportException;
 import com.chaing.domain.transports.usecase.executor.TransportExecutor;
 import com.chaing.domain.transports.usecase.reader.TransportReader;
 import com.chaing.domain.transports.usecase.validator.TransportValidator;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -59,7 +63,7 @@ public class InternalTransportService {
             Map<String, String> trackingMap,
             Long newWeight) {
 
-        List<String> orderCase = List.of();
+        List<String> returnCodes = List.of();
 
         // 최대 적재량 조회
         Long maxLoad = reader.getVehicleMaxLoad(vehicleId);
@@ -74,7 +78,7 @@ public class InternalTransportService {
         validator.checkTrackingNumber(orders, trackingMap);
 
         // 차량 배정
-        executor.createTransits(vehicleId, orders, trackingMap, orderCase);
+        executor.createTransits(vehicleId, orders, trackingMap, returnCodes);
 
         // 차량 상태 확인 및 변경
         if(maxLoad < currentWeight + newWeight + 100) {
@@ -129,5 +133,35 @@ public class InternalTransportService {
 
         // 차량 배정
         executor.createTransits(vehicleId, orderInfos, trackingMap, returnCodes);
+    }
+
+    @Transactional
+    public void updateDeliveryStatus(List<String> orderCodes) {
+
+        if(orderCodes == null || orderCodes.isEmpty()) {
+            throw new TransportException(TransportErrorCode.TRANSPORT_NOT_FOUND);
+        }
+
+        List<Transit> transitInfo = reader.getTransitInfo(orderCodes);
+
+        transitInfo.forEach(transit -> {
+            DeliverStatus currentStatus = transit.getStatus();
+            String orderCode = transit.getOrderCode();
+
+            DeliverStatus targetStatus = switch (currentStatus) {
+                case PENDING -> DeliverStatus.IN_TRANSIT;
+                case IN_TRANSIT -> DeliverStatus.DELIVERED;
+                default -> throw new TransportException(TransportErrorCode.TRANSPORT_CAN_NOT_CANCEL);
+            };
+
+            executor.updateDeliverStatus(orderCode, targetStatus);
+        });
+
+    }
+
+    public boolean filterPendingOrders(@NotEmpty List<String> orderCodes) {
+        return reader.getTransitInfo(orderCodes)
+                .stream()
+                .allMatch(transit -> transit.getStatus() == DeliverStatus.PENDING);
     }
 }

@@ -2,6 +2,7 @@ package com.chaing.domain.transports.usecase.executor;
 
 import com.chaing.domain.transports.dto.OrderInfo;
 import com.chaing.domain.transports.entity.Transit;
+import com.chaing.domain.transports.enums.DeliverStatus;
 import com.chaing.domain.transports.exception.TransportErrorCode;
 import com.chaing.domain.transports.exception.TransportException;
 import com.chaing.domain.transports.repository.TransitRepository;
@@ -60,5 +61,10 @@ public class TransportExecutorImpl implements TransportExecutor {
     @Override
     public void updateDispatchableStatus(Long vehicleId) {
         vehicleRepository.updateDispatchable(vehicleId);
+    }
+
+    @Override
+    public void updateDeliverStatus(String orderCode, DeliverStatus targetStatus) {
+        transitRepository.updateDeliverStatus(orderCode, targetStatus);
     }
 }

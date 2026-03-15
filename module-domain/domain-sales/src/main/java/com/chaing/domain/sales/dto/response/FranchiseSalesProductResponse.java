@@ -45,19 +45,14 @@ public record FranchiseSalesProductResponse(
                 .build();
     }
 
-    public static @NotNull List<FranchiseSalesProductResponse> from(List<SalesItem> salesItems) {
+    public static @NotNull List<FranchiseSalesProductResponse> from(List<SalesItem> salesItems, Integer salesQuantity) {
 
         if(salesItems == null || salesItems.isEmpty()) {
             throw new FranchiseSalesException(FranchiseSalesErrorCode.SALES_NOT_FOUND);
         }
 
-        long countQuantity = salesItems.stream().distinct().count();
-        Integer quantity = Math.toIntExact(countQuantity);
-
         return salesItems.stream()
-                .map(salesItem -> {
-                    return FranchiseSalesProductResponse.from(salesItem, quantity);
-                })
+                .map(salesItem -> FranchiseSalesProductResponse.from(salesItem, salesQuantity))
                 .toList();
     }
 }

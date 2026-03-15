@@ -57,7 +57,7 @@ public class FranchiseSalesService {
                 .salesCode(sales.getSalesCode())
                 .salesDate(sales.getCreatedAt())
                 .products(
-                        FranchiseSalesProductResponse.from(salesItems)
+                        FranchiseSalesProductResponse.from(salesItems, sales.getQuantity())
                 )
                 .build();
     }

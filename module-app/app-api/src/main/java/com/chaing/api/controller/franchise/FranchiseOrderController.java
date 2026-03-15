@@ -48,7 +48,7 @@ public class FranchiseOrderController {
 
     @Operation(summary = "특정 발주 조회", description = "가맹점 id와 발주 번호로 특정 발주 조회")
     @GetMapping("/{order-code}")
-    @PreAuthorize("hasRole('FRANCHISE')")
+    @PreAuthorize("hasAnyRole('FRANCHISE', 'HQ')")
     public ResponseEntity<ApiResponse<FranchiseOrderDetailResponse>> getOrder(
             @PathVariable("order-code") String orderCode,
             @AuthenticationPrincipal UserPrincipal userPrincipal

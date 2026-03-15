@@ -1,5 +1,8 @@
 package com.chaing.api.controller.franchise;
 
+import com.chaing.api.dto.franchise.sales.request.SaleScanItemRequest;
+import com.chaing.api.dto.franchise.sales.response.ScannedForSaleResponse;
+import com.chaing.api.dto.franchise.sales.response.ScannedItemForSaleResponse;
 import com.chaing.api.facade.franchise.FranchiseInventoryFacade;
 import com.chaing.api.security.principal.UserPrincipal;
 import com.chaing.core.dto.ApiResponse;
@@ -15,11 +18,14 @@ import com.chaing.domain.inventories.dto.request.DisposalRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -29,6 +35,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.security.Principal;
 import java.util.List;
 import java.util.Map;
 
@@ -137,5 +144,16 @@ public class FranchiseInventoryController {
                 return ResponseEntity.ok(ApiResponse.success(
                                 franchiseInventoryFacade.verifyAdminPassword(principal.getId(),
                                                 request.get("password"))));
+        }
+
+        @Operation(summary = "판매 제품 목록 조회", description = "스캔된 판매 목록이 화면에 출력된다.")
+        @GetMapping("/scanned-sales-list")
+        public ResponseEntity<ApiResponse<ScannedForSaleResponse>> getScannedSalesList(
+                @RequestParam
+                @NotEmpty(message = "선택된 제품이 존재하지 않습니다.")
+                List<@NotBlank String> serialCodes,
+                @AuthenticationPrincipal UserPrincipal Principal
+        ) {
+            return ResponseEntity.ok(ApiResponse.success(franchiseInventoryFacade.getFranchiseItemsForSale(serialCodes, Principal.getBusinessUnitId())));
         }
 }

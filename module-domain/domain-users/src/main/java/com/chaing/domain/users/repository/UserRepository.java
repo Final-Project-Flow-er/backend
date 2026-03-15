@@ -46,4 +46,13 @@
 
         @Query("SELECT DISTINCT u.businessUnitId FROM User u WHERE u.role = :role AND u.businessUnitId IS NOT NULL")
         List<Long> findDistinctBusinessUnitIdsByRole(@Param("role") UserRole role);
+
+        @Query("SELECT u.userId FROM User u WHERE u.role = :role AND u.businessUnitId = :businessUnitId " +
+                "AND u.status = com.chaing.domain.users.enums.UserStatus.ACTIVE")
+        List<Long> findActiveUserIdsByRoleAndBusinessUnitId(@Param("role") UserRole role,
+                @Param("businessUnitId") Long businessUnitId);
+
+        @Query("SELECT u.userId FROM User u WHERE u.role = :role " +
+                "AND u.status = com.chaing.domain.users.enums.UserStatus.ACTIVE")
+        List<Long> findActiveUserIdsByRole(@Param("role") UserRole role);
 }

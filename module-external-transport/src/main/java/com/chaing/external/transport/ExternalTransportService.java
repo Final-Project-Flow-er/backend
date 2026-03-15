@@ -7,7 +7,9 @@ import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.core5.util.Timeout;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Service;
@@ -156,8 +158,15 @@ public class ExternalTransportService {
             headers.setContentType(MediaType.APPLICATION_JSON);
             HttpEntity<UpdateDeliverStatusRequest> requestEntity = new HttpEntity<>(requestBody, headers);
 
-            System.out.println("[외부 운송 시스템] 송장 번호: " + trackingNumber + " (발주 번호: " + orderCode + ") - 메인 서버 API로 배송 완료 요청 완료");
-        } catch (Exception e) {
+            ResponseEntity<Void> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.PATCH,
+                    requestEntity,
+                    Void.class
+            );
+
+            System.out.println("[외부 운송 시스템] 송장 번호: " + trackingNumber
+                    + " (발주 번호: " + orderCode + ") - 메인 서버 API 호출 완료, status=" + response.getStatusCode());        } catch (Exception e) {
             System.err.println("[외부 운송 시스템] 메인 서버 API 호출 실패: " + e.getMessage());
         }
     }

@@ -284,12 +284,20 @@ public class FranchiseSettlementFacade {
         @Transactional(readOnly = true)
         public List<FranchiseDailyGraphResponse> getMonthlyDailyGraph(
                         Long franchiseId, LocalDate start, LocalDate end) {
-                List<DailySettlementReceipt> receipts = dailyService.getAllByFranchiseAndDateRange(franchiseId, start,
-                                end);
-                return receipts.stream()
-                                .map(r -> new FranchiseDailyGraphResponse(
-                                                r.getSettlementDate(),
-                                                r.getTotalSaleAmount()))
+                List<FranchiseDailyGraphResponse> responses = new ArrayList<>();
+
+                for (LocalDate date = start; !date.isAfter(end); date = date.plusDays(1)) {
+                        try {
+                                DailySettlementReceipt receipt = getInternalDailyAggregation(franchiseId, date)
+                                                .receipt();
+                                responses.add(new FranchiseDailyGraphResponse(date, receipt.getTotalSaleAmount()));
+                        } catch (Exception ex) {
+                                log.warn("[DEBUG] Skip graph data for date {} due to: {}", date, ex.getMessage());
+                                responses.add(new FranchiseDailyGraphResponse(date, BigDecimal.ZERO));
+                        }
+                }
+
+                return responses.stream()
                                 .sorted(Comparator.comparing(FranchiseDailyGraphResponse::date))
                                 .toList();
         }

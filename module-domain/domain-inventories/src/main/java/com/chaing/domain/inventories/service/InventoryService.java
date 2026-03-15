@@ -236,7 +236,7 @@ public class InventoryService {
         return franchiseInventoryRepository.findAllByOrderId(orderId);
     }
 
-    // return: Map<boxCode, serialCode>
+    // return: Map<serialCode, boxCode>
     public Map<String, String> getBoxCodeFromFranchise(List<String> serialCodes) {
         List<FranchiseInventory> inventories = franchiseInventoryRepository.findAllBySerialCodeInAndDeletedAtIsNull(serialCodes);
 
@@ -584,7 +584,7 @@ public class InventoryService {
                         HQInventory::getOrderItemId));
     }
 
-    // return: Map<boxCode, serialCode>
+    // return: Map<serialCode, boxCode>
     public Map<String, String> getBoxCodeFromHQ(List<String> serialCodes) {
         List<HQInventory> inventories = hqInventoryRepository.findAllBySerialCodeInAndDeletedAtIsNull(serialCodes);
 

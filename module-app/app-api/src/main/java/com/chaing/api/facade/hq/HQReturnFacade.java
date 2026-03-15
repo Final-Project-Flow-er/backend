@@ -126,7 +126,7 @@ public class HQReturnFacade {
             orderItemIdBySerialCode = inventoryService.getSerialCodesByOrderItemIdsFromFranchise(orderItemIds);
             // List<serialCode>
             serialCodes = orderItemIdBySerialCode.keySet().stream().toList();
-            // Map<boxCode, serialCode>
+            // Map<serialCode, boxCode>
             boxCodeBySerialCode = inventoryService.getBoxCodeFromFranchise(serialCodes);
             // Map<serialCode, productId>
             productIdBySerialCode = inventoryService.getProductIdBySerialCodeFromFranchise(serialCodes);
@@ -139,7 +139,7 @@ public class HQReturnFacade {
             orderItemIdBySerialCode = inventoryService.getSerialCodesByOrderItemIdsFromHQ(orderItemIds);
             // List<serialCode>
             serialCodes = orderItemIdBySerialCode.keySet().stream().toList();
-            // Map<boxCode, serialCode>
+            // Map<serialCode, boxCode>
             boxCodeBySerialCode = inventoryService.getBoxCodeFromHQ(serialCodes);
             // Map<serialCode, productId>
             productIdBySerialCode = inventoryService.getProductIdBySerialCodeFromHQ(serialCodes);

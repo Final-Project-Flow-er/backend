@@ -172,7 +172,7 @@ public class HQInventoryLogController {
                 inventoryLogFacade.recordOrderLogs(
                                 request.orderId(),
                                 request.orderType(), // "FRANCHISE" | "HQ"
-                                request.fromId(),
+                                request.toId(),
                                 request.logType(),
                                 request.actorType(), // "FACTORY" | "HQ" | "FRANCHISE"
                                 request.actorId());

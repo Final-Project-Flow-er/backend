@@ -172,6 +172,14 @@ public class UserManagementService {
         return userRepository.findDistinctBusinessUnitIdsByRole(role);
     }
 
+    public List<Long> getActiveUserIdsByRoleAndBusinessUnitId(UserRole role, Long businessUnitId) {
+        return userRepository.findActiveUserIdsByRoleAndBusinessUnitId(role, businessUnitId);
+    }
+
+    public List<Long> getActiveUserIdsByRole(UserRole role) {
+        return userRepository.findActiveUserIdsByRole(role);
+    }
+
     public boolean verifyPassword(Long userId, String rawPassword) {
         User user = getUserById(userId);
         return passwordEncoder.matches(rawPassword, user.getPassword());

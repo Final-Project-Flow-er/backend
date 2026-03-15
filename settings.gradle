@@ -20,6 +20,9 @@ include 'domain-products'
 // 애플리케이션 모듈
 include 'app-api'
 
+// 외부 연동 모듈
+include 'module-external-transport'
+
 // 실제 경로
 project(':app-api').projectDir = file('module-app/app-api')
 project(':domain-orders').projectDir = file('module-domain/domain-orders')

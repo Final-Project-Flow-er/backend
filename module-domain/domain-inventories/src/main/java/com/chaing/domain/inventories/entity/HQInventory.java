@@ -32,12 +32,12 @@ public class HQInventory extends BaseEntity {
     private Long inventoryId;
 
     // orderId
-    @NotBlank
+    @NotNull
     @Column(nullable = false)
     private Long orderId;
 
     // orderItemId
-    @NotBlank
+    @NotNull
     @Column(nullable = false)
     private Long orderItemId;
 

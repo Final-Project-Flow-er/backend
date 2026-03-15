@@ -18,22 +18,14 @@ public record FranchiseSellItemResponse(
         String productName,
 
         @NotNull
-        @Min(1)
-        Integer quantity,
+        BigDecimal unitPrice
 
-        @NotNull
-        BigDecimal unitPrice,
-
-        @NotNull
-        BigDecimal totalPrice
 ) {
     public static FranchiseSellItemResponse from(SalesItem salesItem) {
         return FranchiseSellItemResponse.builder()
                 .productCode(salesItem.getProductCode())
                 .productName(salesItem.getProductName())
-                .quantity(salesItem.getQuantity())
                 .unitPrice(salesItem.getUnitPrice())
-                .totalPrice(salesItem.getUnitPrice().multiply(BigDecimal.valueOf(salesItem.getQuantity())))
                 .build();
     }
 

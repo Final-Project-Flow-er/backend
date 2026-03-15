@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -108,8 +109,8 @@ public class BusinessUnitManagementController {
     @PostMapping(value = "/franchise/{id}/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<BusinessUnitDetailResponse>> manageFranchiseImages(
             @PathVariable Long id,
-            @RequestPart(value = "deleteStoredFileNames", required = false) List<String> deleteStoredFileNames,
-            @RequestPart(value = "images", required = false) List<MultipartFile> images
+            @RequestParam(value = "deleteStoredFileNames", required = false) List<String> deleteStoredFileNames,
+            @RequestParam(value = "images", required = false) List<MultipartFile> images
     ) {
         return ResponseEntity.ok(ApiResponse.success(
                 businessUnitManagementFacade.updateFranchiseImages(id, deleteStoredFileNames, images)

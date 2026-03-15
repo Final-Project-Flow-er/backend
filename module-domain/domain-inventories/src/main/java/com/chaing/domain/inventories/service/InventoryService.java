@@ -630,7 +630,8 @@ public class InventoryService {
                         inventory -> ReturnItemInspection.builder()
                                 .status(inventory.getReturnItemStatus())
                                 .boxCode(inventory.getBoxCode())
-                                .build()
+                                .build(),
+                        (a, b) -> a
                 ));
     }
 

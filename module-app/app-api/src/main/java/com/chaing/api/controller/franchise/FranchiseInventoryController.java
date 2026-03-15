@@ -19,6 +19,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -148,7 +149,9 @@ public class FranchiseInventoryController {
         @Operation(summary = "판매 제품 목록 조회", description = "스캔된 판매 목록이 화면에 출력된다.")
         @GetMapping("/scanned-sales-list")
         public ResponseEntity<ApiResponse<ScannedForSaleResponse>> getScannedSalesList(
-                @RequestParam List<@NotBlank String> serialCodes,
+                @RequestParam
+                @NotEmpty(message = "선택된 제품이 존재하지 않습니다.")
+                List<@NotBlank String> serialCodes,
                 @AuthenticationPrincipal UserPrincipal Principal
         ) {
             return ResponseEntity.ok(ApiResponse.success(franchiseInventoryFacade.getFranchiseItemsForSale(serialCodes, Principal.getBusinessUnitId())));

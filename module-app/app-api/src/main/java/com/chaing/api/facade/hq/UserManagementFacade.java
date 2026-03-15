@@ -130,7 +130,6 @@ public class UserManagementFacade {
             unitNameMap.putAll(factoryServiceImpl.getNamesByIds(roleUnitIdsMap.get(UserRole.FACTORY)));
         }
 
-        // 3. 이제 루프 돌 때는 DB 조회 없이 Map에서 꺼내기 (N+1 해결!)
         return userPage.map(user -> {
             String unitName = unitNameMap.getOrDefault(user.getBusinessUnitId(), "-");
             return UserSummaryResponse.from(user, unitName);
@@ -207,6 +206,7 @@ public class UserManagementFacade {
         }
     }
 
+    // 사업장 이름 조회
     private String getBusinessUnitName(User user) {
         Long unitId = user.getBusinessUnitId();
 

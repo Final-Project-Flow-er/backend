@@ -105,12 +105,10 @@ public class FranchiseServiceImpl implements BusinessUnitManagementService {
     }
 
     // 가맹점 경고 부여
-    public BusinessUnitInternal addWarning(Long id) {
+    public void addWarning(Long id) {
         Franchise franchise = franchiseRepository.findById(id)
                 .orElseThrow(() -> new BusinessUnitException(BusinessUnitErrorCode.BUSINESS_UNIT_NOT_FOUND));
         franchise.addWarning();
-
-        return BusinessUnitInternal.from(franchise);
     }
 
     public void validateWarningCount(Long franchiseId) {

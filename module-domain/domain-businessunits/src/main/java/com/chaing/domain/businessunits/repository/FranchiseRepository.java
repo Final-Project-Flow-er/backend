@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface FranchiseRepository extends JpaRepository<Franchise, Long> {
@@ -21,4 +22,6 @@ public interface FranchiseRepository extends JpaRepository<Franchise, Long> {
 
     @Query("SELECT f.franchiseId, f.name FROM Franchise f WHERE f.franchiseId IN :ids")
     List<Object[]> findNamesByIds(@Param("ids") List<Long> ids);
+
+    Optional<Franchise> findByFranchiseIdAndDeletedAtIsNull(Long franchiseId);
 }

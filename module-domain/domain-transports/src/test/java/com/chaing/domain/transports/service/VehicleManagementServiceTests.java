@@ -3,6 +3,7 @@ package com.chaing.domain.transports.service;
 import com.chaing.core.enums.UsableStatus;
 import com.chaing.domain.transports.dto.command.VehicleCreateCommand;
 import com.chaing.domain.transports.dto.command.VehicleUpdateCommand;
+import com.chaing.domain.transports.dto.condition.VehicleSearchCondition;
 import com.chaing.domain.transports.entity.Vehicle;
 import com.chaing.domain.transports.enums.VehicleType;
 import com.chaing.domain.transports.exception.TransportErrorCode;
@@ -73,16 +74,18 @@ class VehicleManagementServiceTests {
     void getVehicleList() {
 
         // given
+        VehicleSearchCondition condition = new VehicleSearchCondition(null, null, null, null, null, null, null);
         Pageable pageable = PageRequest.of(0, 10);
         Page<Vehicle> vehiclePage = new PageImpl<>(List.of(vehicle));
-        given(vehicleRepository.findAll(pageable)).willReturn(vehiclePage);
+        given(vehicleRepository.searchVehicles(condition, pageable)).willReturn(vehiclePage);
 
         // when
-        Page<Vehicle> result = vehicleManagementService.getVehicleList(pageable);
+        Page<Vehicle> result = vehicleManagementService.getVehicleList(condition, pageable);
 
         // then
         assertThat(result.getContent().size()).isEqualTo(1);
         assertThat(result.getContent().get(0).getVehicleNumber()).isEqualTo("12가 3456");
+        verify(vehicleRepository, times(1)).searchVehicles(condition, pageable);
     }
 
     @Test
@@ -118,7 +121,6 @@ class VehicleManagementServiceTests {
 
         // given
         given(vehicleRepository.findById(1L)).willReturn(Optional.of(vehicle));
-
         VehicleUpdateCommand updateCommand = mock(VehicleUpdateCommand.class);
         given(updateCommand.vehicleNumber()).willReturn("00나 0000");
 
@@ -168,8 +170,7 @@ class VehicleManagementServiceTests {
         vehicleManagementService.deactivateVehiclesByTransportId(transportId);
 
         // then
-        verify(vehicleRepository, times(1))
-                .deactivateVehiclesByTransportId(transportId);
+        verify(vehicleRepository, times(1)).deactivateVehiclesByTransportId(transportId);
     }
 
     @Test
@@ -183,7 +184,6 @@ class VehicleManagementServiceTests {
         vehicleManagementService.deleteVehiclesByTransportId(transportId);
 
         // then
-        verify(vehicleRepository, times(1))
-                .deleteVehiclesByTransportId(transportId);
+        verify(vehicleRepository, times(1)).deleteVehiclesByTransportId(transportId);
     }
 }

@@ -91,6 +91,13 @@ public class FranchiseServiceImpl implements BusinessUnitManagementService {
         franchise.delete();
     }
 
+    // 가맹점 경고 조회
+    public int getWarningCount(Long franchiseId) {
+        Franchise franchise = franchiseRepository.findByFranchiseIdAndDeletedAtIsNull(franchiseId)
+                .orElseThrow(() -> new BusinessUnitException(BusinessUnitErrorCode.BUSINESS_UNIT_NOT_FOUND));
+        return franchise.getWarningCount();
+    }
+
     // 가맹점 경고 부여
     public BusinessUnitInternal addWarning(Long id) {
         Franchise franchise = franchiseRepository.findById(id)
@@ -98,5 +105,17 @@ public class FranchiseServiceImpl implements BusinessUnitManagementService {
         franchise.addWarning();
 
         return BusinessUnitInternal.from(franchise);
+    }
+
+    public void validateWarningCount(Long franchiseId) {
+        // 경고 횟수
+        int warningCount = getWarningCount(franchiseId);
+
+        if (warningCount > 2) {
+            throw new BusinessUnitException(BusinessUnitErrorCode.INVALID_WARNING_COUNT);
+        }
+
+        // 가맹점 경고 횟수 증가
+        addWarning(franchiseId);
     }
 }

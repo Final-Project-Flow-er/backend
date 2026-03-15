@@ -1,7 +1,9 @@
 package com.chaing.api.facade.factory;
 
+import com.chaing.core.dto.command.FranchiseOrderCodeAndQuantityCommand;
 import com.chaing.domain.businessunits.service.impl.FranchiseServiceImpl;
 import com.chaing.domain.businessunits.service.impl.HeadquarterServiceImpl;
+import com.chaing.domain.inventories.service.InventoryService;
 import com.chaing.domain.orders.dto.command.FranchiseOrderCommand;
 import com.chaing.domain.orders.dto.command.HQOrderCancelCommand;
 import com.chaing.domain.orders.dto.command.FranchiseOrderDetailCommand;
@@ -27,6 +29,8 @@ import com.chaing.domain.orders.dto.response.HQRequestedOrderResponse;
 import com.chaing.domain.orders.enums.FranchiseOrderStatus;
 import com.chaing.domain.orders.exception.HQOrderErrorCode;
 import com.chaing.domain.orders.exception.HQOrderException;
+import com.chaing.domain.orders.exception.OrderErrorCode;
+import com.chaing.domain.orders.exception.OrderException;
 import com.chaing.domain.orders.service.FranchiseOrderService;
 import com.chaing.domain.orders.service.HQOrderService;
 import com.chaing.domain.products.service.ProductService;
@@ -56,6 +60,7 @@ public class HQOrderFacade {
     private final UserManagementService userManagementService;
     private final FranchiseServiceImpl franchiseService;
     private final HeadquarterServiceImpl headquarterService;
+    private final InventoryService inventoryService;
 
     // 발주 조회
     public List<HQOrderResponse> getAllOrders() {
@@ -287,6 +292,49 @@ public class HQOrderFacade {
     // 가맹점 발주 상태 변경(접수/반려)
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public List<HQOrderStatusUpdateResponse> updateStatus(HQOrderUpdateStatusRequest request) {
+        // 접수 시에만 재고 확인
+        if (request.isAccepted()) {
+            // Map<orderId, FranchiseOrderDetailCommand>
+            Map<Long, FranchiseOrderDetailCommand> orderByOrderId = franchiseOrderService.getOrdersByOrderCode(request.orderCodes());
+
+            // List<orderId>
+            List<Long> orderIds = orderByOrderId.values().stream().map(FranchiseOrderDetailCommand::orderId).collect(Collectors.toList());
+
+            // Map<orderId, List<FranchiseOrderItemCommand>>
+            Map<Long, List<FranchiseOrderItemCommand>> orderItemByOrderItemId = franchiseOrderService.getOrderItemsByOrderIds(orderIds);
+
+            // Map<productId, ProductInfo>
+            Map<Long, ProductInfo> productInfoByProductId = productService.getAllProductInfo();
+
+            // List<FranchiseOrderCodeAndQuantityCommand> requestItemCommands
+            List<FranchiseOrderCodeAndQuantityCommand> requestItemCommands = orderItemByOrderItemId.values().stream()
+                    .flatMap(List::stream)
+                    .map(item -> {
+                        Long productId = item.productId();
+                        ProductInfo productInfo = productInfoByProductId.get(productId);
+
+                        if (productInfo == null) {
+                            throw new OrderException(OrderErrorCode.PRODUCT_NOT_FOUND);
+                        }
+
+                        return FranchiseOrderCodeAndQuantityCommand.builder()
+                                .productCode(productInfo.productCode())
+                                .quantity(item.quantity())
+                                .build();
+                    })
+                    .toList();
+
+            // Map<orderCode, ProductInfo> productInfoByProductCode
+            Map<String, ProductInfo> productInfoByProductCode = productInfoByProductId.values().stream()
+                    .collect(Collectors.toMap(
+                            ProductInfo::productCode,
+                            Function.identity()
+                    ));
+
+            // 발주 가능한지 재고 확인
+            inventoryService.checkStock(requestItemCommands, productInfoByProductCode);
+        }
+
         // 상태 변경 및 반환
         return franchiseOrderService.updateStatus(request);
     }

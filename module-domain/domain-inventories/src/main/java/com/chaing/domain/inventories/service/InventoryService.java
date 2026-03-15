@@ -1,9 +1,8 @@
 package com.chaing.domain.inventories.service;
 
 import com.chaing.core.dto.command.FranchiseInventoryCommand;
-import com.chaing.core.dto.info.ReturnItemInfo;
-import com.chaing.core.dto.request.FranchiseReturnUpdateRequest;
-import com.chaing.core.dto.returns.request.ReturnToInventoryRequest;
+import com.chaing.core.dto.command.FranchiseOrderCodeAndQuantityCommand;
+import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.core.enums.LogType;
 import com.chaing.core.enums.ReturnItemStatus;
 import com.chaing.domain.inventories.dto.request.DisposalRequest;
@@ -29,7 +28,6 @@ import com.chaing.domain.inventories.repository.FactoryInventoryRepository;
 import com.chaing.domain.inventories.repository.FranchiseInventoryRepository;
 import com.chaing.domain.inventories.repository.HQInventoryRepository;
 import com.chaing.domain.inventories.repository.InventoryPolicyRepository;
-import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -42,6 +40,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -236,36 +235,6 @@ public class InventoryService {
         return franchiseInventoryRepository.findAllByOrderId(orderId);
     }
 
-    // 수정 예정
-    public List<ReturnToInventoryRequest> getProducts(List<String> serialCodes) {
-        return List.of(
-                new ReturnToInventoryRequest(
-                        "SerialCode",
-                        1L,
-                        "BoxCode"));
-    }
-
-    public List<Long> getProductsBySerialCodeAndBoxCode(List<FranchiseReturnUpdateRequest> requests) {
-        return List.of(1L, 2L);
-    }
-
-    // 수정 예정
-    public List<String> getSerialCodes(Long franchiseId, @NotBlank String boxCode) {
-        return List.of("SerialCode");
-    }
-
-    // boxCode, productId 조회
-    // return: Map<serialCode, returnItemCommand>
-    public Map<String, ReturnItemInfo> getAllReturnItemInfoBySerialCode(List<String> serialCodes) {
-        return franchiseInventoryRepository.findAllBySerialCodeIn(serialCodes).stream()
-                .collect(Collectors.toMap(
-                        FranchiseInventory::getSerialCode,
-                        item -> ReturnItemInfo.builder()
-                                .boxCode(item.getBoxCode())
-                                .productId(item.getProductId())
-                                .build()));
-    }
-
     // return: Map<boxCode, serialCode>
     public Map<String, String> getBoxCode(List<String> serialCodes) {
         List<FranchiseInventory> inventories = franchiseInventoryRepository.findAllBySerialCodeIn(serialCodes);
@@ -307,27 +276,6 @@ public class InventoryService {
                 .collect(Collectors.toMap(
                         FranchiseInventory::getSerialCode,
                         FranchiseInventory::getOrderItemId));
-    }
-
-    // return: Map<serialCode, FranchiseInventoryCommand>
-    public Map<String, FranchiseInventoryCommand> getInventoriesBySerialCodes(List<String> serialCodes) {
-        List<FranchiseInventory> inventories = franchiseInventoryRepository.findAllBySerialCodeIn(serialCodes);
-
-        if (inventories == null || inventories.isEmpty()) {
-            throw new InventoriesException(InventoriesErrorCode.PRODUCT_NOT_FOUND);
-        }
-
-        return inventories.stream()
-                .collect(Collectors.toMap(
-                        FranchiseInventory::getSerialCode,
-                        inventory -> FranchiseInventoryCommand.builder()
-                                .inventoryId(inventory.getInventoryId())
-                                .orderItemId(inventory.getOrderItemId())
-                                .orderId(inventory.getOrderId())
-                                .productId(inventory.getProductId())
-                                .serialCode(inventory.getSerialCode())
-                                .boxCode(inventory.getBoxCode())
-                                .build()));
     }
 
     // return: Map<boxCode, FranchiseInventoryCommand>
@@ -554,5 +502,60 @@ public class InventoryService {
         }
 
         throw new IllegalArgumentException("Unsupported actorType: " + actorTypeRaw);
+    }
+
+    public void checkStock(List<FranchiseOrderCodeAndQuantityCommand> items, Map<String, ProductInfo> productInfoByProductCode) {
+        // Set<productId>
+        Set<Long> productIds = items.stream()
+                .map(item -> {
+                    String productCode = item.productCode();
+                    ProductInfo productInfo = productInfoByProductCode.get(productCode);
+
+                    if (productInfo == null) {
+                        throw new InventoriesException(InventoriesErrorCode.PRODUCT_NOT_FOUND);
+                    }
+
+                    return productInfo.productId();
+                })
+                .collect(Collectors.toSet());
+
+        // List<FactoryInventory>
+        List<FactoryInventory> inventories = factoryInventoryRepository.findAllByProductIdInAndStatusAndDeletedAtIsNull(productIds, LogType.AVAILABLE);
+
+        // Set<productId>
+        Set<Long> existingProductIds = inventories.stream().map(FactoryInventory::getProductId).collect(Collectors.toSet());
+
+        if (inventories.isEmpty()) {
+            throw new InventoriesException(InventoriesErrorCode.PRODUCT_NOT_FOUND);
+        }
+
+        if (!existingProductIds.containsAll(productIds)) {
+            throw new InventoriesException(InventoriesErrorCode.DATA_OMISSION);
+        }
+
+        // Map<productId, List<FactoryInventory>>
+        Map<Long, List<FactoryInventory>> stockByProductId = inventories.stream()
+                .collect(Collectors.groupingBy(
+                        FactoryInventory::getProductId,
+                        Collectors.mapping(Function.identity(), Collectors.toList())
+                ));
+
+        // Map<productId, totalQuantity>
+        Map<Long, Integer> requestedQuantityByProductId = items.stream()
+                .collect(Collectors.toMap(
+                        item -> productInfoByProductCode.get(item.productCode()).productId(),
+                        FranchiseOrderCodeAndQuantityCommand::quantity,
+                        Integer::sum
+                ));
+
+        // 수량 점검
+        stockByProductId.forEach((productId, factoryInventories) -> {
+            Integer requestedQuantity = requestedQuantityByProductId.get(productId);
+            int existingQuantity = stockByProductId.get(productId).size();
+
+            if (requestedQuantity == null || requestedQuantity > existingQuantity) {
+                throw new InventoriesException(InventoriesErrorCode.INVALID_STOCK);
+            }
+        });
     }
 }

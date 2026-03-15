@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Set;
 
 @Repository
 public interface FactoryInventoryRepository extends JpaRepository<FactoryInventory,Long>, FactoryInventoryRepositoryCustom {
@@ -60,4 +61,6 @@ public interface FactoryInventoryRepository extends JpaRepository<FactoryInvento
 
     List<FactoryInventory> findByInventoryIdIn(List<Long> ids);
     List<FactoryInventory> findByBoxCodeIn(List<String> boxCodes);
+
+    List<FactoryInventory> findAllByProductIdInAndStatusAndDeletedAtIsNull(Set<Long> productIds, LogType logType);
 }

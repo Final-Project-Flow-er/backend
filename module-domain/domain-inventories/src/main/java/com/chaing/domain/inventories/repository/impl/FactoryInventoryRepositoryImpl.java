@@ -263,7 +263,9 @@ public class FactoryInventoryRepositoryImpl implements FactoryInventoryRepositor
                                                 idFilter)
                                 .groupBy(inventoryPolicy.productId, inventoryPolicy.safetyStock,
                                                 inventoryPolicy.defaultSafetyStock)
-                                .having(quantity.loe(effectiveSafetyStock))
+                                .having(
+                                                effectiveSafetyStock.gt(0)
+                                                                .and(quantity.loe(effectiveSafetyStock)))
                                 .fetch();
         }
 

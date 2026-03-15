@@ -2,6 +2,8 @@ package com.chaing.api.dto.franchise.sales.response;
 
 import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.domain.inventories.dto.request.InventoryRequest;
+import com.chaing.domain.inventories.exception.InventoriesErrorCode;
+import com.chaing.domain.inventories.exception.InventoriesException;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 
@@ -26,6 +28,9 @@ public record ScannedForSaleResponse(
         List<ScannedItemForSaleResponse> requestList = scannedItems.stream()
                 .map(item -> {
                     ProductInfo info = productInfos.get(item.productId());
+                    if(info == null) {
+                        throw new InventoriesException(InventoriesErrorCode.PRODUCT_NOT_FOUND);
+                    }
                     return ScannedItemForSaleResponse.create(
                             item.productId(),
                             info.productCode(),

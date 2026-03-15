@@ -87,7 +87,6 @@ public class FranchiseSalesService {
                 salesItem = SalesItem.builder()
                         .sales(sales)
                         .productId(itemRequest.productId())
-                        .quantity(1)
                         .productCode(itemRequest.productCode())
                         .productName(itemRequest.productName())
                         .lot(itemRequest.serialCode())

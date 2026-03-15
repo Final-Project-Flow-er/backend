@@ -72,7 +72,6 @@ public class MinioService {
                 minioClient.makeBucket(
                         io.minio.MakeBucketArgs.builder().bucket(bucketName).build());
             } catch (io.minio.errors.ErrorResponseException e) {
-                // 병렬 요청으로 인해 이미 버킷이 생성된 경우 무시
                 if (!"BucketAlreadyOwnedByYou".equals(e.errorResponse().code()) &&
                         !"BucketAlreadyExists".equals(e.errorResponse().code())) {
                     throw e;
@@ -88,14 +87,13 @@ public class MinioService {
         }
 
         try {
-            String internalPresignedUrl = minioClient.getPresignedObjectUrl(
-                    GetPresignedObjectUrlArgs.builder()
-                            .method(Method.GET)
-                            .bucket(bucket.getBucketName())
-                            .object(fileName)
-                            .expiry(2, TimeUnit.HOURS)
-                            .build());
-            return internalPresignedUrl.replace(minioConfig.getEndpoint(), minioConfig.getExternalUrl());
+            String externalUrl = minioConfig.getExternalUrl();
+
+            if (!externalUrl.endsWith("/")) {
+                externalUrl += "/";
+            }
+
+            return externalUrl + bucket.getBucketName() + "/" + fileName;
         } catch (Exception e) {
             log.error("MinIO get URL error: ", e);
             return null;

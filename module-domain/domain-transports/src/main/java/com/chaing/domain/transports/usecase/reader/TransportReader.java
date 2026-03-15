@@ -1,5 +1,6 @@
 package com.chaing.domain.transports.usecase.reader;
 
+import com.chaing.domain.transports.entity.Transit;
 import com.chaing.domain.transports.entity.Vehicle;
 import com.chaing.domain.transports.enums.DeliverStatus;
 import jakarta.validation.constraints.NotNull;
@@ -21,4 +22,6 @@ public interface TransportReader {
     String getTransportName(Long transportId);
 
     List<Vehicle> getAllAvailableVehicles();
+
+    List<Transit> getTransitInfo(List<String> orderCodes);
 }

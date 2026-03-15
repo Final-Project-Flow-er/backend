@@ -1,5 +1,6 @@
 package com.chaing.core.service;
 
+import com.chaing.core.config.MinioConfig;
 import com.chaing.core.enums.BucketName;
 import io.minio.GetPresignedObjectUrlArgs;
 import io.minio.MinioClient;
@@ -20,6 +21,7 @@ import java.util.concurrent.TimeUnit;
 public class MinioService {
 
     private final MinioClient minioClient;
+    private final MinioConfig minioConfig;
 
     // 파일명 생성
     public String generateFileName(MultipartFile file) {
@@ -86,13 +88,14 @@ public class MinioService {
         }
 
         try {
-            return minioClient.getPresignedObjectUrl(
+            String internalPresignedUrl = minioClient.getPresignedObjectUrl(
                     GetPresignedObjectUrlArgs.builder()
                             .method(Method.GET)
                             .bucket(bucket.getBucketName())
                             .object(fileName)
                             .expiry(2, TimeUnit.HOURS)
                             .build());
+            return internalPresignedUrl.replace(minioConfig.getEndpoint(), minioConfig.getExternalUrl());
         } catch (Exception e) {
             log.error("MinIO get URL error: ", e);
             return null;

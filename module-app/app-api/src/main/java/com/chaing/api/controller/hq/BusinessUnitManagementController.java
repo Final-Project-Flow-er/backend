@@ -1,6 +1,7 @@
 package com.chaing.api.controller.hq;
 
 import com.chaing.api.dto.hq.businessunit.request.BusinessUnitCreateRequest;
+import com.chaing.api.dto.hq.businessunit.request.BusinessUnitSearchRequest;
 import com.chaing.api.dto.hq.businessunit.request.BusinessUnitStatusUpdateRequest;
 import com.chaing.api.dto.hq.businessunit.request.BusinessUnitUpdateRequest;
 import com.chaing.api.dto.hq.businessunit.response.BusinessUnitDetailResponse;
@@ -16,16 +17,22 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -51,9 +58,10 @@ public class BusinessUnitManagementController {
     public ResponseEntity<ApiResponse<Page<BusinessUnitSummaryResponse>>> getBusinessUnits(
             @Schema(allowableValues = {"franchise", "factory"})
             @PathVariable BusinessUnitType type,
+            @ModelAttribute BusinessUnitSearchRequest searchRequest,
             @PageableDefault(size = 20) Pageable pageable
     ) {
-        return ResponseEntity.ok(ApiResponse.success(businessUnitManagementFacade.getList(type, pageable)));
+        return ResponseEntity.ok(ApiResponse.success(businessUnitManagementFacade.getList(type, searchRequest, pageable)));
     }
 
     @Operation(summary = "사업장 상세 조회", description = "특정 사업장의 상세 정보 조회")
@@ -97,6 +105,18 @@ public class BusinessUnitManagementController {
     ) {
         businessUnitManagementFacade.deleteBusinessUnit(type, id);
         return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @Operation(summary = "가맹점 사진 관리", description = "사진 등록, 일부 삭제, 신규 추가를 통합 처리")
+    @PostMapping(value = "/franchise/{id}/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<BusinessUnitDetailResponse>> manageFranchiseImages(
+            @PathVariable Long id,
+            @RequestParam(value = "deleteStoredFileNames", required = false) List<String> deleteStoredFileNames,
+            @RequestParam(value = "images", required = false) List<MultipartFile> images
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(
+                businessUnitManagementFacade.updateFranchiseImages(id, deleteStoredFileNames, images)
+        ));
     }
 
     @Operation(summary = "가맹점 경고 부여", description = "가맹점에 경고 부여 (경고 3회 시 한 달간 반품 정지)")

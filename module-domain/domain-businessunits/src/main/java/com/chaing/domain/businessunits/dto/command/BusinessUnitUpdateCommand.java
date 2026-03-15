@@ -23,7 +23,6 @@ public record BusinessUnitUpdateCommand(
             String operatingDays,
             LocalTime openTime,
             LocalTime closeTime,
-            String imageUrl,
             LocalDateTime penaltyEndDate,
             Double distanceToFactory
     ) {}

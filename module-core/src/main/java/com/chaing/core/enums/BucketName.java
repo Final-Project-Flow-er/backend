@@ -10,7 +10,8 @@ public enum BucketName {
     PROFILES("chaing-profiles"),
     SETTLEMENTS("chaing-settlements"),
     NOTICES("chaing-notices"),
-    PRODUCTS("chaing-products");
+    PRODUCTS("chaing-products"),
+    FRANCHISES("chaing-franchises");
 
     private final String bucketName;
 }

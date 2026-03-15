@@ -24,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -92,10 +93,20 @@ public class MyPageFacade {
 
     // 내 사업장 정보 수정
     @Transactional(rollbackFor = Exception.class)
-    public BusinessUnitDetailResponse updateMyBusinessUnitInfo(Long userId, UpdateMyBusinessUnitInfoRequest request) {
+    public BusinessUnitDetailResponse updateMyBusinessUnitInfo(Long userId, UpdateMyBusinessUnitInfoRequest request, List<String> deleteStoredFileNames, List<MultipartFile> newImages) {
         User user = myPageService.getMyInfo(userId);
         BusinessUnitType unitType = validateAndGetUnitType(user.getRole(), user.getBusinessUnitId());
-        return businessUnitManagementFacade.updateInfo(unitType, user.getBusinessUnitId(), request.toManagementRequest());
+        businessUnitManagementFacade.updateInfo(unitType, user.getBusinessUnitId(), request.toManagementRequest());
+
+        if (unitType == BusinessUnitType.FRANCHISE) {
+            businessUnitManagementFacade.updateFranchiseImages(
+                    user.getBusinessUnitId(),
+                    deleteStoredFileNames,
+                    newImages
+            );
+        }
+
+        return businessUnitManagementFacade.getDetail(unitType, user.getBusinessUnitId());
     }
 
     // Role과 BusinessUnitType 매핑

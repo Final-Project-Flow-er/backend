@@ -20,8 +20,7 @@ public record BusinessUnitCreateCommand(
     public record FranchiseCreate(
             String operatingDays,
             LocalTime openTime,
-            LocalTime closeTime,
-            String imageUrl
+            LocalTime closeTime
     ) {
     }
 

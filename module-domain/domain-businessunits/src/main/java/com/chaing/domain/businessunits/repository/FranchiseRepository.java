@@ -1,6 +1,7 @@
 package com.chaing.domain.businessunits.repository;
 
 import com.chaing.domain.businessunits.entity.Franchise;
+import com.chaing.domain.businessunits.repository.interfaces.FranchiseRepositoryCustom;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -11,7 +12,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface FranchiseRepository extends JpaRepository<Franchise, Long> {
+public interface FranchiseRepository extends JpaRepository<Franchise, Long>, FranchiseRepositoryCustom {
 
     @Query(value = "SELECT * FROM franchise f " +
             "WHERE f.franchise_code LIKE CONCAT(:prefix, '%') " +

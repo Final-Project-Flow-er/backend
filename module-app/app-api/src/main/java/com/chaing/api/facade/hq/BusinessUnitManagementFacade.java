@@ -25,8 +25,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -59,9 +57,9 @@ public class BusinessUnitManagementFacade {
     public Page<BusinessUnitSummaryResponse> getList(BusinessUnitType type, BusinessUnitSearchRequest request, Pageable pageable) {
         var condition = request.toCondition();
         Page<BusinessUnitInternal> internals = switch (type) {
-            case FRANCHISE -> franchiseServiceImpl.getBusinessUnitList(condition,pageable);
-            case FACTORY -> factoryServiceImpl.getBusinessUnitList(condition,pageable);
-            default -> throw new BusinessUnitException(BusinessUnitErrorCode.INVALID_BUSINESS_UNIT_TYPE);
+            case HQ -> headquarterServiceImpl.getBusinessUnitList(condition, pageable);
+            case FRANCHISE -> franchiseServiceImpl.getBusinessUnitList(condition, pageable);
+            case FACTORY -> factoryServiceImpl.getBusinessUnitList(condition, pageable);
         };
         return internals.map(BusinessUnitSummaryResponse::from);
     }

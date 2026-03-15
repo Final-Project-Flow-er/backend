@@ -3,6 +3,8 @@ package com.chaing.core.service;
 import com.chaing.core.dto.TargetType;
 import com.chaing.core.entity.Image;
 import com.chaing.core.enums.BucketName;
+import com.chaing.core.exception.CommonErrorCode;
+import com.chaing.core.exception.GlobalException;
 import com.chaing.core.repository.ImageRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -70,7 +72,7 @@ public class ImageService {
         boolean isOwner = imageRepository.existsByStoredNameAndTargetTypeAndTargetId(storedName, targetType, targetId);
 
         if (!isOwner) {
-            throw new RuntimeException("해당 이미지에 대한 삭제 권한이 없습니다.");
+            throw new GlobalException(CommonErrorCode.IMAGE_DELETE_FORBIDDEN);
         }
 
         imageRepository.deleteByStoredName(storedName);
@@ -83,7 +85,7 @@ public class ImageService {
                         try {
                             minioService.deleteFile(storedName, bucket);
                         } catch (Exception e) {
-                            log.error("MinIO 파일 삭제 실패: {}", storedName);
+                            log.error("MinIO 파일 삭제 실패: {}", storedName, e);
                         }
                     }
                 }

@@ -39,7 +39,7 @@ public class BusinessUnitManagementFacade {
     private final ImageService imageService;
 
     // 사업장 등록
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public BusinessUnitDetailResponse createBusinessUnit(BusinessUnitType type, BusinessUnitCreateRequest request) {
         BusinessUnitCreateCommand command = request.toCommand();
         BusinessUnitInternal internal = switch (type) {
@@ -83,7 +83,7 @@ public class BusinessUnitManagementFacade {
     }
 
     // 사업장 정보 수정
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public BusinessUnitDetailResponse updateInfo(BusinessUnitType type, Long id, BusinessUnitUpdateRequest request) {
         BusinessUnitUpdateCommand command = request.toCommand();
         switch (type) {
@@ -95,7 +95,7 @@ public class BusinessUnitManagementFacade {
     }
 
     // 사업장 상태 변경
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public BusinessUnitDetailResponse updateStatus(BusinessUnitType type, Long id, BusinessUnitStatusUpdateRequest request) {
         switch (type) {
             case FRANCHISE -> franchiseServiceImpl.updateStatus(id, request.status());
@@ -106,7 +106,7 @@ public class BusinessUnitManagementFacade {
     }
 
     // 사업장 삭제
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void deleteBusinessUnit(BusinessUnitType type, Long id) {
         switch (type) {
             case FRANCHISE -> {
@@ -136,7 +136,7 @@ public class BusinessUnitManagementFacade {
     }
 
     // 가맹점 경고 부여
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public BusinessUnitDetailResponse addWarning(BusinessUnitType type, Long id) {
         if (type != BusinessUnitType.FRANCHISE) {
             throw new BusinessUnitException(BusinessUnitErrorCode.WARNING_ONLY_FOR_FRANCHISE);

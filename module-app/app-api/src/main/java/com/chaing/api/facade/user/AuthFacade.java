@@ -1,5 +1,7 @@
 package com.chaing.api.facade.user;
 
+import com.chaing.domain.notifications.enums.NotificationType;
+import com.chaing.domain.notifications.event.NotificationEvent;
 import com.chaing.domain.users.event.PasswordResetEvent;
 import com.chaing.api.dto.user.request.LoginRequest;
 import com.chaing.api.dto.user.request.ResetPasswordRequest;
@@ -67,6 +69,11 @@ public class AuthFacade {
         authService.resetPassword(user, tempPassword);
         userLogService.saveLog(user, user.getUserId(), UserAction.PASSWORD_UPDATE);
         eventPublisher.publishEvent(new PasswordResetEvent(request.email(), tempPassword));
+        eventPublisher.publishEvent(NotificationEvent.ofUser(
+                user.getUserId(),
+                NotificationType.SYSTEM,
+                "[계정 보안] 소중한 정보를 보호하기 위해 임시 비밀번호를 새로운 비밀번호로 교체해 주시기 바랍니다.",
+                null));
     }
 
     // 토큰 재발급

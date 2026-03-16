@@ -4,6 +4,7 @@ import com.chaing.api.dto.transport.internal.request.UpdateDeliverStatusRequest;
 import com.chaing.api.dto.transport.internal.request.VehicleAssignmentRequest;
 import com.chaing.api.dto.transport.internal.response.AvailableVehicleResponse;
 import com.chaing.api.dto.transport.internal.response.TransportCancelResponse;
+import com.chaing.api.dto.transport.internal.response.TransportLogResponse;
 import com.chaing.api.dto.transport.internal.response.UnassignedOrderResponse;
 import com.chaing.api.dto.transport.internal.response.UnassignedReturnResponse;
 import com.chaing.api.facade.transport.InternalTransportFacade;
@@ -30,7 +31,7 @@ import java.util.List;
 @Tag(name = "Inner Transport API", description = "내부 운송 관련 API")
 @RequestMapping("/api/v1/transport/internal")
 @RequiredArgsConstructor
-public class    InternalTransportController {
+public class InternalTransportController {
 
     private final InternalTransportFacade transportFacade;
 
@@ -99,5 +100,11 @@ public class    InternalTransportController {
     ) {
         transportFacade.updateDeliverStatus(request.orderCodes());
         return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @Operation(summary = "운송 로그 조회", description = "운송 로그의 목록을 출력한다.")
+    @GetMapping("/transport-logs")
+    public ResponseEntity<ApiResponse<List<TransportLogResponse>>> getTransportLogList() {
+        return ResponseEntity.ok(ApiResponse.success(transportFacade.getTransportLog()));
     }
 }

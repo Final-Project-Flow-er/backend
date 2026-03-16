@@ -3,12 +3,14 @@ package com.chaing.domain.transports.usecase.reader;
 import com.chaing.core.enums.UsableStatus;
 import com.chaing.domain.transports.dto.OrderInfo;
 import com.chaing.domain.transports.entity.Transit;
+import com.chaing.domain.transports.entity.TransportLog;
 import com.chaing.domain.transports.entity.Vehicle;
 import com.chaing.domain.transports.enums.DeliverStatus;
 import com.chaing.domain.transports.enums.Dispatchable;
 import com.chaing.domain.transports.exception.TransportErrorCode;
 import com.chaing.domain.transports.exception.TransportException;
 import com.chaing.domain.transports.repository.TransitRepository;
+import com.chaing.domain.transports.repository.TransportLogRepository;
 import com.chaing.domain.transports.repository.TransportRepository;
 import com.chaing.domain.transports.repository.VehicleRepository;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +24,7 @@ public class TransportReaderImpl implements TransportReader {
     private final VehicleRepository vehicleRepository;
     private final TransitRepository transitRepository;
     private final TransportRepository transportRepository;
+    private final TransportLogRepository transportLogRepository;
 
     @Override
     public List<Vehicle> findCandidateVehicles() {
@@ -100,5 +103,24 @@ public class TransportReaderImpl implements TransportReader {
         }
 
         return deliveryOrders;
+    }
+
+    @Override
+    public List<TransportLog> getTransportLogs() {
+        return transportLogRepository.getAll();
+    }
+
+    @Override
+    public List<Vehicle> getVehicles(List<Long> vehicleIds) {
+        if (vehicleIds == null || vehicleIds.isEmpty()) {
+            return List.of();
+        }
+
+        List<Long> uniqueVehicleIds = vehicleIds.stream().distinct().toList();
+        List<Vehicle> vehicles = vehicleRepository.findAllById(uniqueVehicleIds);
+        if (vehicles == null || vehicles.size() != uniqueVehicleIds.size()) {
+            throw new TransportException(TransportErrorCode.TRANSPORT_VEHICLE_NOT_FOUND);
+        }
+        return vehicles;
     }
 }

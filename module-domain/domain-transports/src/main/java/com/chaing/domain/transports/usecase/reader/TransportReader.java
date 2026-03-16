@@ -1,6 +1,7 @@
 package com.chaing.domain.transports.usecase.reader;
 
 import com.chaing.domain.transports.entity.Transit;
+import com.chaing.domain.transports.entity.TransportLog;
 import com.chaing.domain.transports.entity.Vehicle;
 import com.chaing.domain.transports.enums.DeliverStatus;
 import jakarta.validation.constraints.NotNull;
@@ -24,4 +25,8 @@ public interface TransportReader {
     List<Vehicle> getAllAvailableVehicles();
 
     List<Transit> getTransitInfo(List<String> orderCodes);
+
+    List<TransportLog> getTransportLogs();
+
+    List<Vehicle> getVehicles(List<Long> vehicleIds);
 }

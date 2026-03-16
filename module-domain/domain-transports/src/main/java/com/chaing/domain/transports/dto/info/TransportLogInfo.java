@@ -5,7 +5,7 @@ import com.chaing.domain.transports.entity.Vehicle;
 import com.chaing.domain.transports.enums.DeliverStatus;
 import com.chaing.domain.transports.enums.VehicleType;
 
-import java.util.List;
+import java.time.LocalDateTime;
 
 public record TransportLogInfo(
         Long transportLogId,
@@ -17,7 +17,8 @@ public record TransportLogInfo(
         String driverName,
         String vehicleNumber,
         String trackingNumber,
-        Long weight
+        Long weight,
+        LocalDateTime createdAt
 ) {
     public static TransportLogInfo create(TransportLog logInfo, Vehicle vehicle) {
         return new TransportLogInfo(
@@ -30,7 +31,8 @@ public record TransportLogInfo(
                 vehicle.getDriverName(),
                 vehicle.getVehicleNumber(),
                 logInfo.getTrackingNumber(),
-                logInfo.getWeight()
+                logInfo.getWeight(),
+                logInfo.getCreatedAt()
         );
     }
 }

@@ -257,6 +257,15 @@ public class InternalTransportFacade {
 
     public List<TransportLogResponse> getTransportLog() {
         List<TransportLogInfo> logInfos = transportService.getTransportLog();
-        return logInfos.stream().map(TransportLogResponse::from).collect(Collectors.toList());
+        List<Long> franchiseIds = logInfos.stream().map(TransportLogInfo::franchiseId).toList();
+        Map<Long, String> franchiseNameMap = franchiseServiceImpl.getNamesByIds(franchiseIds);
+
+        return logInfos.stream()
+                .map(log -> {
+                    String franchiseName = franchiseNameMap.get(log.franchiseId());
+
+                    return TransportLogResponse.from(log, franchiseName);
+                })
+                .toList();
     }
 }

@@ -15,6 +15,8 @@ import com.chaing.domain.inventorylogs.dto.response.InventoryLogListResponse;
 import com.chaing.domain.inventorylogs.dto.response.InventoryLogResponse;
 import com.chaing.domain.inventorylogs.entity.InventoryLog;
 import com.chaing.domain.inventorylogs.enums.ActorType;
+import com.chaing.domain.inventorylogs.exception.InventoryLogException;
+import com.chaing.domain.inventorylogs.exception.InventoryLogtErrorCode;
 import com.chaing.domain.inventorylogs.repository.InventoryLogArchiveRepository;
 import com.chaing.domain.inventorylogs.repository.InventoryLogRepository;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +34,7 @@ import java.util.stream.Stream;
 @Service
 @RequiredArgsConstructor
 public class InventoryLogService {
+    private static final int MAX_MERGE_WINDOW_SIZE = 2_000;
 
     private final InventoryLogRepository inventoryLogRepository;
     private final InventoryLogArchiveRepository inventoryLogArchiveRepository;
@@ -323,7 +326,11 @@ public class InventoryLogService {
     private Pageable mergePageable(Pageable pageable) {
         int pageSize = Math.max(1, pageable.getPageSize());
         int page = Math.max(0, pageable.getPageNumber());
-        int mergeSize = Math.max(pageSize, (page + 1) * pageSize);
+        long requestedWindow = (long) (page + 1) * pageSize;
+        if (requestedWindow > MAX_MERGE_WINDOW_SIZE) {
+            throw new InventoryLogException(InventoryLogtErrorCode.PAGE_WINDOW_TOO_LARGE);
+        }
+        int mergeSize = (int) Math.max(pageSize, requestedWindow);
         return PageRequest.of(0, mergeSize);
     }
 

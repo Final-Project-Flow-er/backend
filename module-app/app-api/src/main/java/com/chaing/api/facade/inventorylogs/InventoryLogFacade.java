@@ -25,6 +25,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -46,8 +47,8 @@ public class InventoryLogFacade {
 
     // orderType: FRANCHISE | HQ
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
-    public void recordOrderLogs(Long orderId, String orderType, Long fromId, LogType logType, String actorType, Long actorId) {
-        if (orderId == null || fromId == null || logType == null || actorId == null) {
+    public void recordOrderLogs(Long orderId, String orderType, Long toId, LogType logType, String actorType, Long actorId) {
+        if (orderId == null || toId == null || logType == null || actorId == null) {
             throw new InventoryLogException(InventoryLogtErrorCode.INVALID_INPUT);
         }
 
@@ -58,7 +59,7 @@ public class InventoryLogFacade {
                     .orElseThrow(() -> new InventoryLogException(
                             InventoryLogtErrorCode.INVALID_INPUT));
             List<FactoryInventory> inventories = inventoryService.getFactoryInventoriesByOrderId(orderId);
-            recordFranchiseOrderLogs(order, inventories, logType, fromId, parsedActorType, actorId);
+            recordFranchiseOrderLogs(order, inventories, logType, toId, parsedActorType, actorId);
             return;
         }
 
@@ -69,7 +70,7 @@ public class InventoryLogFacade {
                             InventoryLogtErrorCode.INVALID_INPUT));
             List<FranchiseInventory> inventories = inventoryService
                     .getFranchiseInventoriesByOrderId(orderId);
-            recordHqOrderLogs(order, inventories, logType, fromId, parsedActorType, actorId);
+            recordHqOrderLogs(order, inventories, logType, toId, parsedActorType, actorId);
             return;
         }
 
@@ -78,7 +79,7 @@ public class InventoryLogFacade {
 
     // FRANCHISE 주문: Factory -> Franchise
     // boxCode 기준 1박스 1로그, quantity는 박스 내 개수
-    public void recordFranchiseOrderLogs(FranchiseOrder order, List<FactoryInventory> inventories, LogType logType, Long fromId, ActorType actorType, Long actorId) {
+    public void recordFranchiseOrderLogs(FranchiseOrder order, List<FactoryInventory> inventories, LogType logType, Long toId, ActorType actorType, Long actorId) {
         Map<String, List<FactoryInventory>> inventoriesByBox = inventories.stream()
                 .filter(inv -> inv.getBoxCode() != null && !inv.getBoxCode().isBlank())
                 .collect(Collectors.groupingBy(
@@ -108,7 +109,7 @@ public class InventoryLogFacade {
                     logType,
                     quantity,
                     LocationType.FACTORY,
-                    fromId,
+                    toId,
                     LocationType.FRANCHISE,
                     order.getFranchiseId(),
                     actorType,
@@ -121,7 +122,7 @@ public class InventoryLogFacade {
 
     // HQ 주문: Factory -> HQ
     // boxCode 기준 1박스 1로그, quantity는 박스 내 개수
-    public void recordHqOrderLogs(HeadOfficeOrder order, List<FranchiseInventory> inventories, LogType logType, Long fromId, ActorType actorType, Long actorId) {
+    public void recordHqOrderLogs(HeadOfficeOrder order, List<FranchiseInventory> inventories, LogType logType, Long toId, ActorType actorType, Long actorId) {
         Map<String, List<FranchiseInventory>> inventoriesByBox = inventories.stream()
                 .filter(inv -> inv.getBoxCode() != null && !inv.getBoxCode().isBlank())
                 .collect(Collectors.groupingBy(
@@ -151,7 +152,7 @@ public class InventoryLogFacade {
                     logType,
                     quantity,
                     LocationType.FACTORY,
-                    fromId,
+                    toId,
                     LocationType.HQ,
                     HQ_ID,
                     actorType,
@@ -219,8 +220,8 @@ public class InventoryLogFacade {
         }
     }
 
-    public List<BoxCodeResponse> getBoxCodes(String transactionCode) {
-        return inventoryLogService.findBoxCodesByTransactionCode(transactionCode);
+    public List<BoxCodeResponse> getBoxCodes(String transactionCode, LocalDate date) {
+        return inventoryLogService.findBoxCodesByTransactionCode(transactionCode, date);
     }
 
     private ActorType parseActorType(String actorType) {

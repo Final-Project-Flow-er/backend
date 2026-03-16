@@ -23,8 +23,12 @@ import com.chaing.domain.orders.exception.OrderErrorCode;
 import com.chaing.domain.orders.exception.OrderException;
 import com.chaing.domain.orders.repository.FranchiseOrderItemRepository;
 import com.chaing.domain.orders.repository.FranchiseOrderRepository;
+import com.chaing.domain.orders.dto.response.FranchiseOrderItemProjection;
+import com.chaing.domain.orders.dto.response.HQRequestedOrderItemProjection;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -57,6 +61,17 @@ public class FranchiseOrderService {
                 .collect(Collectors.toMap(
                         FranchiseOrder::getFranchiseOrderId, FranchiseOrderCommand::from
                 ));
+    }
+
+    // 가맹점 발주 목록 페이지네이션 조회 (아이템 행 단위)
+    public Page<FranchiseOrderItemProjection> getOrderItemPage(
+            Long franchiseId, Long userId, Pageable pageable) {
+        return franchiseOrderRepository.findOrderItemPage(franchiseId, userId, pageable);
+    }
+
+    // 본사용 가맹점 발주 요청 페이지네이션 조회 (아이템 행 단위)
+    public Page<HQRequestedOrderItemProjection> getRequestedOrderItemPage(boolean isPending, Pageable pageable) {
+        return franchiseOrderRepository.findRequestedOrderItemPage(isPending, pageable);
     }
 
     // 발주 번호에 따른 가맹점 특정 발주 조회

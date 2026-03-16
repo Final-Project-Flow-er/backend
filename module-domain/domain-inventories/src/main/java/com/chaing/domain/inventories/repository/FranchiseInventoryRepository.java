@@ -14,11 +14,11 @@ import java.util.List;
 
 @Repository
 public interface FranchiseInventoryRepository extends JpaRepository<FranchiseInventory, Long>, FranchiseInventoryRepositoryCustom {
-    List<FranchiseInventory> findAllBySerialCodeIn(List<String> serialCodes);
+    List<FranchiseInventory> findAllBySerialCodeInAndDeletedAtIsNull(List<String> serialCodes);
 
     List<FranchiseInventory> findAllByOrderId(Long orderId);
 
-    List<FranchiseInventory> findAllByOrderItemIdIn(List<Long> orderItemIds);
+    List<FranchiseInventory> findAllByOrderItemIdInAndDeletedAtIsNull(List<Long> orderItemIds);
 
     List<FranchiseInventory> findAllByBoxCodeIn(List<String> boxCodes);
 

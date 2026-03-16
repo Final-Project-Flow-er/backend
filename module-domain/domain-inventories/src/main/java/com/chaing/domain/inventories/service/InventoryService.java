@@ -3,6 +3,7 @@ package com.chaing.domain.inventories.service;
 import com.chaing.core.dto.command.FranchiseInventoryCommand;
 import com.chaing.core.dto.command.FranchiseOrderCodeAndQuantityCommand;
 import com.chaing.core.dto.info.ProductInfo;
+import com.chaing.core.dto.info.ReturnItemInspection;
 import com.chaing.core.enums.LogType;
 import com.chaing.core.enums.ReturnItemStatus;
 import com.chaing.domain.inventories.dto.request.DisposalRequest;
@@ -206,6 +207,8 @@ public class InventoryService {
         List<HQInventory> inventories = request.boxes().stream()
                 .flatMap(box -> box.productList().stream()
                         .map(product -> HQInventory.builder()
+                                .orderId(request.orderId())
+                                .orderItemId(product.orderItemId())
                                 .serialCode(product.serialCode())
                                 .productId(product.productId())
                                 .manufactureDate(product.manufactureDate())
@@ -237,9 +240,9 @@ public class InventoryService {
         return franchiseInventoryRepository.findAllByOrderId(orderId);
     }
 
-    // return: Map<boxCode, serialCode>
-    public Map<String, String> getBoxCode(List<String> serialCodes) {
-        List<FranchiseInventory> inventories = franchiseInventoryRepository.findAllBySerialCodeIn(serialCodes);
+    // return: Map<serialCode, boxCode>
+    public Map<String, String> getBoxCodeFromFranchise(List<String> serialCodes) {
+        List<FranchiseInventory> inventories = franchiseInventoryRepository.findAllBySerialCodeInAndDeletedAtIsNull(serialCodes);
 
         if (inventories == null || inventories.isEmpty()) {
             throw new InventoriesException(InventoriesErrorCode.PRODUCT_NOT_FOUND);
@@ -253,8 +256,8 @@ public class InventoryService {
 
     // serialCode로 productId 조회
     // Map<serialCode, productId>
-    public Map<String, Long> getProductIdBySerialCode(List<String> serialCodes) {
-        List<FranchiseInventory> inventories = franchiseInventoryRepository.findAllBySerialCodeIn(serialCodes);
+    public Map<String, Long> getProductIdBySerialCodeFromFranchise(List<String> serialCodes) {
+        List<FranchiseInventory> inventories = franchiseInventoryRepository.findAllBySerialCodeInAndDeletedAtIsNull(serialCodes);
 
         if (inventories == null || inventories.isEmpty()) {
             throw new InventoriesException(InventoriesErrorCode.PRODUCT_NOT_FOUND);
@@ -267,8 +270,8 @@ public class InventoryService {
     }
 
     // return: Map<serialCode, orderItemId>
-    public Map<String, Long> getSerialCodesByOrderItemIds(List<Long> orderItemIds) {
-        List<FranchiseInventory> inventories = franchiseInventoryRepository.findAllByOrderItemIdIn(orderItemIds);
+    public Map<String, Long> getSerialCodesByOrderItemIdsFromFranchise(List<Long> orderItemIds) {
+        List<FranchiseInventory> inventories = franchiseInventoryRepository.findAllByOrderItemIdInAndDeletedAtIsNull(orderItemIds);
 
         if (inventories == null || inventories.isEmpty()) {
             throw new InventoriesException(InventoriesErrorCode.PRODUCT_NOT_FOUND);
@@ -303,7 +306,7 @@ public class InventoryService {
 
     // return: Map<orderItemId, FranchiseInventoryCommand>
     public Map<Long, FranchiseInventoryCommand> getInventoriesByOrderItemIds(List<Long> orderItemIds) {
-        List<FranchiseInventory> inventories = franchiseInventoryRepository.findAllByOrderItemIdIn(orderItemIds);
+        List<FranchiseInventory> inventories = franchiseInventoryRepository.findAllByOrderItemIdInAndDeletedAtIsNull(orderItemIds);
 
         if (inventories == null || inventories.isEmpty()) {
             throw new InventoriesException(InventoriesErrorCode.PRODUCT_NOT_FOUND);
@@ -528,7 +531,7 @@ public class InventoryService {
         Set<Long> existingProductIds = inventories.stream().map(FactoryInventory::getProductId).collect(Collectors.toSet());
 
         if (inventories.isEmpty()) {
-            throw new InventoriesException(InventoriesErrorCode.PRODUCT_NOT_FOUND);
+            throw new InventoriesException(InventoriesErrorCode.INVALID_STOCK);
         }
 
         if (!existingProductIds.containsAll(productIds)) {
@@ -594,5 +597,87 @@ public class InventoryService {
             throw new InventoriesException(InventoriesErrorCode.INVENTORIES_IS_NULL);
         }
         return orderIds;
+    }
+
+    // return: Map<serialCode, orderItemId>
+    public Map<String, Long> getSerialCodesByOrderItemIdsFromHQ(List<Long> orderItemIds) {
+        log.info("orderItemIds = {}", orderItemIds.toString());
+        List<HQInventory> inventories = hqInventoryRepository.findAllByOrderItemIdInAndDeletedAtIsNull(orderItemIds);
+        log.info("inventories: " + inventories);
+        if (inventories == null || inventories.isEmpty()) {
+            throw new InventoriesException(InventoriesErrorCode.PRODUCT_NOT_FOUND);
+        }
+
+        return inventories.stream()
+                .collect(Collectors.toMap(
+                        HQInventory::getSerialCode,
+                        HQInventory::getOrderItemId));
+    }
+
+    // return: Map<serialCode, boxCode>
+    public Map<String, String> getBoxCodeFromHQ(List<String> serialCodes) {
+        List<HQInventory> inventories = hqInventoryRepository.findAllBySerialCodeInAndDeletedAtIsNull(serialCodes);
+
+        if (inventories == null || inventories.isEmpty()) {
+            throw new InventoriesException(InventoriesErrorCode.PRODUCT_NOT_FOUND);
+        }
+
+        return inventories.stream()
+                .collect(Collectors.toMap(
+                        HQInventory::getSerialCode,
+                        HQInventory::getBoxCode));
+    }
+
+    // return: Map<serialCode, productId>
+    public Map<String, Long> getProductIdBySerialCodeFromHQ(List<String> serialCodes) {
+        List<HQInventory> inventories = hqInventoryRepository.findAllBySerialCodeInAndDeletedAtIsNull(serialCodes);
+
+        if (inventories == null || inventories.isEmpty()) {
+            throw new InventoriesException(InventoriesErrorCode.PRODUCT_NOT_FOUND);
+        }
+
+        return inventories.stream()
+                .collect(Collectors.toMap(
+                        HQInventory::getSerialCode,
+                        HQInventory::getProductId));
+    }
+
+    // return: Map<boxCode, returnItemInspection>
+    public Map<String, ReturnItemInspection> getReturnItemInspection(Map<Long, Long> orderItemIdByReturnItemId) {
+        List<Long> orderItemIds = orderItemIdByReturnItemId.values().stream().toList();
+
+        List<HQInventory> inventories = hqInventoryRepository.findAllByOrderItemIdInAndDeletedAtIsNull(orderItemIds);
+
+        if (inventories == null || inventories.isEmpty()) {
+            throw new InventoriesException(InventoriesErrorCode.PRODUCT_NOT_FOUND);
+        }
+
+        return inventories.stream()
+                .collect(Collectors.toMap(
+                        HQInventory::getBoxCode,
+                        inventory -> ReturnItemInspection.builder()
+                                .status(inventory.getReturnItemStatus())
+                                .boxCode(inventory.getBoxCode())
+                                .build(),
+                        (a, b) -> a
+                ));
+    }
+
+    // return: Map<boxCode, ReturnItemInspection>
+    public Map<String, ReturnItemInspection> getReturnItemInspectionFromFranchise(List<Long> orderItemIds) {
+        List<FranchiseInventory> inventories = franchiseInventoryRepository.findAllByOrderItemIdInAndDeletedAtIsNull(orderItemIds);
+
+        if (inventories == null || inventories.isEmpty()) {
+            throw new InventoriesException(InventoriesErrorCode.PRODUCT_NOT_FOUND);
+        }
+
+        return inventories.stream()
+                .collect(Collectors.toMap(
+                        FranchiseInventory::getBoxCode,
+                        inventory -> ReturnItemInspection.builder()
+                                .status(ReturnItemStatus.BEFORE_INSPECTION)
+                                .boxCode(inventory.getBoxCode())
+                                .build()
+                ));
     }
 }

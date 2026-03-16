@@ -16,6 +16,8 @@ public interface TransitRepository extends JpaRepository<Transit, Long> {
 
     List<Transit> findByVehicleId(Long vehicleId);
 
+    List<Transit> findByFranchiseId(Long franchiseId);
+
     @Query("select t from Transit t where t.orderCode in(:orderCodes)")
     List<Transit> findByOrderCodeIn(@Param("orderCodes") List<String> orderCodes);
 

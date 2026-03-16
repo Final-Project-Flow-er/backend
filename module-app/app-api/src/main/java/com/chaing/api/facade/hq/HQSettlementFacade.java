@@ -795,7 +795,9 @@ public class HQSettlementFacade {
                 }
 
                 // 4. 배송비 집계
-                List<DeliverStatus> validDeliverStatuses = List.of(DeliverStatus.IN_TRANSIT, DeliverStatus.DELIVERED);
+
+             BigDecimal deliveryFee = BigDecimal.ZERO;
+                /*List<DeliverStatus> validDeliverStatuses = List.of(DeliverStatus.IN_TRANSIT, DeliverStatus.DELIVERED);
                 List<Transit> transits = transitRepository.findByFranchiseId(franchiseId).stream()
                                 .filter(t -> t.getCreatedAt() != null && t.getCreatedAt().toLocalDate().equals(date))
                                 .filter(t -> validDeliverStatuses.contains(t.getStatus()))
@@ -818,7 +820,7 @@ public class HQSettlementFacade {
                                         }
                                 }
                         }
-                }
+                }*/
 
                 // 5. 수수료 (3.3%)
                 BigDecimal commissionFee = totalSale.multiply(new BigDecimal("0.033"))

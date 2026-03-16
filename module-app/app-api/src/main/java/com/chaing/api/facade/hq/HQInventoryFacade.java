@@ -124,7 +124,8 @@ public class HQInventoryFacade {
                     return new HQInventoryProductResponse(
                             p.productId(), p.productCode(), p.name(),
                             info.totalQuantity(), p.productCode().substring(4, 6),
-                            info.safetyStock(), info.status());
+                            info.safetyStock() != null ? info.safetyStock() : 0,
+                            info.status());
                 })
                 .toList();
 

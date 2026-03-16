@@ -113,7 +113,7 @@ public class TransportReaderImpl implements TransportReader {
     @Override
     public List<Vehicle> getVehicles(List<Long> vehicleIds) {
         List<Vehicle> vehicles = vehicleRepository.findAllById(vehicleIds);
-        if(vehicles == null || vehicles.isEmpty()) {
+        if(vehicles == null || vehicles.isEmpty() || vehicles.size() != vehicleIds.size()) {
             throw new  TransportException(TransportErrorCode.TRANSPORT_VEHICLE_NOT_FOUND);
         }
         return vehicles;

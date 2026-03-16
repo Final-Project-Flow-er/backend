@@ -41,6 +41,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -51,6 +52,8 @@ import java.util.stream.Collectors;
 public class FranchiseOrderFacade {
 
     private static final Duration CACHE_TTL = Duration.ofSeconds(30);
+    private static final String STOCK_LOCK_KEY = "lock:stock:check";
+    private static final Duration STOCK_LOCK_TTL = Duration.ofSeconds(2);
 
     private final FranchiseOrderService franchiseOrderService;
     private final UserManagementService userManagementService;
@@ -282,54 +285,69 @@ public class FranchiseOrderFacade {
     // 가맹점의 발주 수정
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public FranchiseOrderUpdateResponse updateOrder(Long userId, String orderCode, List<FranchiseOrderUpdateRequest> requests) {
-        // List<FranchiseOrderCodeAndQuantityCommand>
-        List<FranchiseOrderCodeAndQuantityCommand> requestItemCommands = requests.stream().map(FranchiseOrderCodeAndQuantityCommand::from).toList();
+        String lockValue = UUID.randomUUID().toString();
+        Boolean locked = redisTemplate.opsForValue()
+                .setIfAbsent(STOCK_LOCK_KEY, lockValue, STOCK_LOCK_TTL);
 
-        // Set<productCode>
-        Set<String> productCodes = requests.stream().map(FranchiseOrderUpdateRequest::productCode).collect(Collectors.toSet());
+        if (!Boolean.TRUE.equals(locked)) {
+            throw new OrderException(OrderErrorCode.ORDER_CONFLICT);
+        }
 
-        // Map<productCode, ProductInfo>
-        Map<String, ProductInfo> productInfoByProductCode = productService.getProductInfosByProductCode(productCodes);
+        try {
+            // List<FranchiseOrderCodeAndQuantityCommand>
+            List<FranchiseOrderCodeAndQuantityCommand> requestItemCommands = requests.stream().map(FranchiseOrderCodeAndQuantityCommand::from).toList();
 
-        // 재고 체크
-        inventoryService.checkStock(requestItemCommands, productInfoByProductCode);
+            // Set<productCode>
+            Set<String> productCodes = requests.stream().map(FranchiseOrderUpdateRequest::productCode).collect(Collectors.toSet());
 
-        // franchiseId
-        Long franchiseId = userManagementService.getFranchiseIdByUserId(userId);
+            // Map<productCode, ProductInfo>
+            Map<String, ProductInfo> productInfoByProductCode = productService.getProductInfosByProductCode(productCodes);
 
-        // FranchiseOrderDetailCommand
-        FranchiseOrderDetailCommand order = franchiseOrderService.getOrderByOrderCode(franchiseId, userId, orderCode);
+            // 재고 체크
+            inventoryService.checkStock(requestItemCommands, productInfoByProductCode);
 
-        // Map<orderId, List<FranchiseOrderItemCommand>>
-        Map<Long, List<FranchiseOrderItemCommand>> orderItemsByOrderId = franchiseOrderService.getOrderItemsByOrderId(order.orderId());
+            // franchiseId
+            Long franchiseId = userManagementService.getFranchiseIdByUserId(userId);
 
-        // List<productId>
-        List<Long> productIds = orderItemsByOrderId.values().stream()
-                .flatMap(List::stream)
-                .map(FranchiseOrderItemCommand::productId)
-                .toList();
+            // FranchiseOrderDetailCommand
+            FranchiseOrderDetailCommand order = franchiseOrderService.getOrderByOrderCode(franchiseId, userId, orderCode);
 
-        // Map<productId, ProductInfo>
-        Map<Long, ProductInfo> productInfoByProductId = productService.getProductInfos(productIds);
+            // Map<orderId, List<FranchiseOrderItemCommand>>
+            Map<Long, List<FranchiseOrderItemCommand>> orderItemsByOrderId = franchiseOrderService.getOrderItemsByOrderId(order.orderId());
 
-        // Map<productId, FranchiseOrderUpdateRequest>
-        Map<Long, FranchiseOrderUpdateRequest> requestByProductId = requests.stream()
-                .collect(Collectors.toMap(
-                        request -> productInfoByProductCode.get(request.productCode()).productId(),
-                        Function.identity()
-                ));
+            // List<productId>
+            List<Long> productIds = orderItemsByOrderId.values().stream()
+                    .flatMap(List::stream)
+                    .map(FranchiseOrderItemCommand::productId)
+                    .toList();
 
-        // 발주 수정
-        List<FranchiseOrderItemDetailResponse> itemResponses = franchiseOrderService.updateOrder(order.orderId(), requestByProductId, productInfoByProductId);
+            // Map<productId, ProductInfo>
+            Map<Long, ProductInfo> productInfoByProductId = productService.getProductInfos(productIds);
 
-        FranchiseOrderUpdateResponse result = FranchiseOrderUpdateResponse.builder()
-                .orderCode(orderCode)
-                .cancelReason(order.canceledReason())
-                .items(itemResponses)
-                .build();
-        evictByPattern("ord:fr:*");
-        evictByPattern("ord:hq:*");
-        return result;
+            // Map<productId, FranchiseOrderUpdateRequest>
+            Map<Long, FranchiseOrderUpdateRequest> requestByProductId = requests.stream()
+                    .collect(Collectors.toMap(
+                            request -> productInfoByProductCode.get(request.productCode()).productId(),
+                            Function.identity()
+                    ));
+
+            // 발주 수정
+            List<FranchiseOrderItemDetailResponse> itemResponses = franchiseOrderService.updateOrder(order.orderId(), requestByProductId, productInfoByProductId);
+
+            FranchiseOrderUpdateResponse result = FranchiseOrderUpdateResponse.builder()
+                    .orderCode(orderCode)
+                    .cancelReason(order.canceledReason())
+                    .items(itemResponses)
+                    .build();
+            evictByPattern("ord:fr:*");
+            evictByPattern("ord:hq:*");
+            return result;
+        } finally {
+            String current = redisTemplate.opsForValue().get(STOCK_LOCK_KEY);
+            if (lockValue.equals(current)) {
+                redisTemplate.delete(STOCK_LOCK_KEY);
+            }
+        }
     }
 
     // 가맹점 발주 취소
@@ -348,56 +366,74 @@ public class FranchiseOrderFacade {
     // 가맹점 발주 생성
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public FranchiseOrderCreateResponse createOrder(Long userId, FranchiseOrderCreateRequest request) {
-        // Set<productCode>
-        Set<String> productCodes = request.items().stream().map(FranchiseOrderCreateRequestItem::productCode).collect(Collectors.toSet());
+        long startTime = System.currentTimeMillis();
 
-        // Map<productCode, ProductInfo>
-        Map<String, ProductInfo> productInfoByProductCode = productService.getProductInfosByProductCode(productCodes);
+        String lockValue = UUID.randomUUID().toString();
+        Boolean locked = redisTemplate.opsForValue()
+                .setIfAbsent(STOCK_LOCK_KEY, lockValue, STOCK_LOCK_TTL);
 
-        // List<FranchiseOrderCodeAndQuantityCommand>
-        List<FranchiseOrderCodeAndQuantityCommand> requestItemCommands = request.items().stream().map(FranchiseOrderCodeAndQuantityCommand::from).toList();
+        if (!Boolean.TRUE.equals(locked)) {
+            throw new OrderException(OrderErrorCode.ORDER_CONFLICT);
+        }
 
-        // 발주 가능한지 재고 확인
-        inventoryService.checkStock(requestItemCommands, productInfoByProductCode);
+        try {
+            // Set<productCode>
+            Set<String> productCodes = request.items().stream().map(FranchiseOrderCreateRequestItem::productCode).collect(Collectors.toSet());
 
-        // franchiseId
-        Long franchiseId = userManagementService.getFranchiseIdByUserId(userId);
+            // Map<productCode, ProductInfo>
+            Map<String, ProductInfo> productInfoByProductCode = productService.getProductInfosByProductCode(productCodes);
 
-        // franchiseCode
-        String franchiseCode = franchiseService.getById(franchiseId).businessNumber();
-        log.info("franchiseId: {}", franchiseId);
-        log.info("userId: {}", userId);
+            // List<FranchiseOrderCodeAndQuantityCommand>
+            List<FranchiseOrderCodeAndQuantityCommand> requestItemCommands = request.items().stream().map(FranchiseOrderCodeAndQuantityCommand::from).toList();
 
-        // username
-        String username = userManagementService.getUsernameByUserId(userId);
+            // 발주 가능한지 재고 확인
+            inventoryService.checkStock(requestItemCommands, productInfoByProductCode);
 
-        // orderCode
-        String orderCode = generator.generate(franchiseCode);
+            // franchiseId
+            Long franchiseId = userManagementService.getFranchiseIdByUserId(userId);
 
-        // FranchiseOrderCommand
-        FranchiseOrderCommand order = franchiseOrderService.createOrder(request, orderCode, franchiseId, userId, productInfoByProductCode);
+            // franchiseCode
+            String franchiseCode = franchiseService.getById(franchiseId).businessNumber();
+            log.info("franchiseId: {}", franchiseId);
+            log.info("userId: {}", userId);
 
-        // List<FranchiseOrderItemCommand>
-        List<FranchiseOrderItemDetailResponse> orderItems = franchiseOrderService.createOrderItems(request, productInfoByProductCode, orderCode);
+            // username
+            String username = userManagementService.getUsernameByUserId(userId);
 
-        // 필요 값
-        BigDecimal totalPrice = orderItems.stream()
-                .map(FranchiseOrderItemDetailResponse::totalPrice)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+            // orderCode
+            String orderCode = generator.generate(franchiseCode);
 
-        // 반환
-        FranchiseOrderCreateResponse result = FranchiseOrderCreateResponse.builder()
-                .orderCode(orderCode)
-                .orderStatus(order.orderStatus())
-                .totalPrice(totalPrice)
-                .requestedDate(order.requestedDate())
-                .receiver(username)
-                .deliveryDate(order.deliveryDate())
-                .items(orderItems)
-                .build();
-        evictByPattern("ord:fr:*");
-        evictByPattern("ord:hq:*");
-        return result;
+            // FranchiseOrderCommand
+            FranchiseOrderCommand order = franchiseOrderService.createOrder(request, orderCode, franchiseId, userId, productInfoByProductCode);
+
+            // List<FranchiseOrderItemCommand>
+            List<FranchiseOrderItemDetailResponse> orderItems = franchiseOrderService.createOrderItems(request, productInfoByProductCode, orderCode);
+
+            // 필요 값
+            BigDecimal totalPrice = orderItems.stream()
+                    .map(FranchiseOrderItemDetailResponse::totalPrice)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            // 반환
+            FranchiseOrderCreateResponse result = FranchiseOrderCreateResponse.builder()
+                    .orderCode(orderCode)
+                    .orderStatus(order.orderStatus())
+                    .totalPrice(totalPrice)
+                    .requestedDate(order.requestedDate())
+                    .receiver(username)
+                    .deliveryDate(order.deliveryDate())
+                    .items(orderItems)
+                    .build();
+            evictByPattern("ord:fr:*");
+            evictByPattern("ord:hq:*");
+            return result;
+        } finally {
+            String current = redisTemplate.opsForValue().get(STOCK_LOCK_KEY);
+            if (lockValue.equals(current)) {
+                redisTemplate.delete(STOCK_LOCK_KEY);
+            }
+            log.info("[발주 생성] userId={}, 처리 시간={}ms", userId, System.currentTimeMillis() - startTime);
+        }
     }
 
     private <T> List<T> readListCache(String key, TypeReference<List<T>> typeRef) {

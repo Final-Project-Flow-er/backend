@@ -17,7 +17,7 @@ public record TransportLogResponse(
         String vehicleNumber,
         String trackingNumber,
         Long weight,
-        LocalDateTime createAt
+        LocalDateTime createdAt
 ) {
     public static TransportLogResponse from(TransportLogInfo logInfo, String franchiseName) {
         return new TransportLogResponse(

@@ -1,6 +1,7 @@
 package com.chaing.domain.transports.usecase.executor;
 
 import com.chaing.domain.transports.dto.OrderInfo;
+import com.chaing.domain.transports.entity.Transit;
 import com.chaing.domain.transports.enums.DeliverStatus;
 import jakarta.validation.constraints.NotNull;
 
@@ -15,4 +16,6 @@ public interface TransportExecutor {
     void updateDispatchableStatus(Long vehicleId);
 
     void updateDeliverStatus(String orderCode, DeliverStatus targetStatus);
+
+    void createTransportLog(List<Transit> transits);
 }

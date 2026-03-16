@@ -14,7 +14,6 @@ public record UpdateMyBusinessUnitInfoRequest(
         String operatingDays,
         LocalTime openTime,
         LocalTime closeTime,
-        String imageUrl,
 
         // 공장 전용
         Integer productionLineCount
@@ -32,7 +31,6 @@ public record UpdateMyBusinessUnitInfoRequest(
                         this.operatingDays,
                         this.openTime,
                         this.closeTime,
-                        this.imageUrl,
                         null,
                         null
                 ),

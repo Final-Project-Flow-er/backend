@@ -1,6 +1,7 @@
 package com.chaing.domain.businessunits.repository;
 
 import com.chaing.domain.businessunits.entity.Factory;
+import com.chaing.domain.businessunits.repository.interfaces.FactoryRepositoryCustom;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -10,7 +11,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface FactoryRepository extends JpaRepository<Factory, Long> {
+public interface FactoryRepository extends JpaRepository<Factory, Long>, FactoryRepositoryCustom {
 
     @Query(value = "SELECT * FROM factory f " +
             "WHERE f.factory_code LIKE CONCAT(:prefix, '%') " +

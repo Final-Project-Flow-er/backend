@@ -32,9 +32,6 @@ public enum UserErrorCode implements ErrorCode {
     USER_NOT_FOUND(404, "U006", "해당 회원을 찾을 수 없습니다."),
     BUSINESS_UNIT_NOT_FOUND(404, "U007", "사업장이 존재하지 않습니다."),
 
-    // 409 CONFLICT
-    DUPLICATE_EMAIL(409, "U008", "중복된 이메일입니다."),
-
     // 500 INTERNAL SERVER ERROR
     HASH_ALGORITHM_NOT_FOUND(500, "S001", "해싱 알고리즘을 찾을 수 없습니다."),
     MAIL_SEND_FAILED(500, "S002", "메일 발송을 실패했습니다.");

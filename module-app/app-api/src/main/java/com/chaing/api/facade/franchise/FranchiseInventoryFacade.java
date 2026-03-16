@@ -1,5 +1,7 @@
 package com.chaing.api.facade.franchise;
 
+import com.chaing.api.dto.franchise.sales.response.ScannedForSaleResponse;
+import com.chaing.api.dto.franchise.sales.response.ScannedItemForSaleResponse;
 import com.chaing.api.facade.notification.NotificationFacade;
 import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.core.enums.LogType;
@@ -34,6 +36,8 @@ import com.chaing.domain.users.service.UserManagementService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -433,5 +437,15 @@ public class FranchiseInventoryFacade {
             redisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(payload), CACHE_TTL);
         } catch (Exception ignored) {
         }
+    }
+
+    public ScannedForSaleResponse getFranchiseItemsForSale(@NotEmpty(message = "선택된 제품이 존재하지 않습니다.") List<String> serialCodes, Long franchiseId) {
+
+        List<InventoryRequest> scannedItems = inventoryService.getItemBySerialCode(serialCodes, franchiseId);
+
+        Map<Long, ProductInfo> productInfos = productService.getProductInfos(
+                scannedItems.stream().map(InventoryRequest::productId).distinct().toList());
+
+        return ScannedForSaleResponse.create(scannedItems, productInfos);
     }
 }

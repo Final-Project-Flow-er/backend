@@ -11,6 +11,9 @@ import com.chaing.domain.sales.dto.response.FranchiseSellResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -32,15 +35,16 @@ public class FranchiseSalesController {
 
     private final FranchiseSalesFacade franchiseSalesFacade;
 
-    @Operation(summary = "미취소 판매 조회", description = "가맹점 id로 해당 가맹점의 판매 전체 조회")
+    @Operation(summary = "미취소 판매 조회", description = "가맹점 id로 해당 가맹점의 판매 전체 조회 (페이지네이션)")
     @GetMapping
     @PreAuthorize("hasRole('FRANCHISE')")
-    public ResponseEntity<ApiResponse<List<FranchiseSalesResponse>>> getAllSales(
-            @AuthenticationPrincipal UserPrincipal userPrincipal
-            ) {
+    public ResponseEntity<ApiResponse<Page<FranchiseSalesResponse>>> getAllSales(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @PageableDefault(size = 20) Pageable pageable
+    ) {
         Long userId = userPrincipal.getId();
 
-        return ResponseEntity.ok(ApiResponse.success(franchiseSalesFacade.getAllSales(userId)));
+        return ResponseEntity.ok(ApiResponse.success(franchiseSalesFacade.getAllSalesPaged(userId, pageable)));
     }
 
     @Operation(summary = "취소 판매 조회", description = "가맹점 id로 해당 가맹점의 취소된 판매 전체 조회")

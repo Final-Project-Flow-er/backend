@@ -14,6 +14,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -35,15 +38,16 @@ public class FranchiseOrderController {
 
     private final FranchiseOrderFacade franchiseOrderFacade;
 
-    @Operation(summary = "발주 조회", description = "가맹점 id로 해당 가맹점의 발주 전체 조회")
+    @Operation(summary = "발주 조회", description = "가맹점 id로 해당 가맹점의 발주 전체 조회 (페이지네이션)")
     @GetMapping
     @PreAuthorize("hasRole('FRANCHISE')")
-    public ResponseEntity<ApiResponse<List<FranchiseOrderResponse>>> getAllOrders(
-            @AuthenticationPrincipal UserPrincipal userPrincipal
-            ) {
+    public ResponseEntity<ApiResponse<Page<FranchiseOrderResponse>>> getAllOrders(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @PageableDefault(size = 20) Pageable pageable
+    ) {
         Long userId = userPrincipal.getId();
 
-        return ResponseEntity.ok(ApiResponse.success(franchiseOrderFacade.getAllOrders(userId)));
+        return ResponseEntity.ok(ApiResponse.success(franchiseOrderFacade.getAllOrdersPaged(userId, pageable)));
     }
 
     @Operation(summary = "특정 발주 조회", description = "가맹점 id와 발주 번호로 특정 발주 조회")

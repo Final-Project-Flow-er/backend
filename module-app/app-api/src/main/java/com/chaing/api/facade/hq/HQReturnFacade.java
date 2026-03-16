@@ -116,6 +116,12 @@ public class HQReturnFacade {
 
         Page<HQReturnItemProjection> page = franchiseReturnService.getHQReturnPage(isAll, pageable);
 
+        if (page.isEmpty()) {
+            Page<HQReturnResponse> empty = new PageImpl<>(List.of(), pageable, 0);
+            writePageCache(cacheKey, empty);
+            return empty;
+        }
+
         // userId → username, phoneNumber
         List<Long> userIds = page.getContent().stream()
                 .map(HQReturnItemProjection::userId).distinct().toList();

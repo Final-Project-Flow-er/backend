@@ -51,7 +51,7 @@ public class FactoryFacade {
 
     // 발주 전체/대기 조회 (페이지네이션)
     public Page<FactoryOrderResponse> getAllOrdersPaged(boolean isAll, Pageable pageable) {
-        String cacheKey = "ret:hq:page:%s:%s".formatted(isAll, pageableKey(pageable));
+        String cacheKey = "odr:fc:page:%s:%s".formatted(isAll, pageableKey(pageable));
         Page<FactoryOrderResponse> cached = readPageCache(cacheKey, FactoryOrderResponse.class, pageable);
         if (cached != null) return cached;
 
@@ -228,12 +228,14 @@ public class FactoryFacade {
         Map<String, HQOrderStatus> orderStatusByOrderCode = hqOrderService.updateOrders(request.orderCodes(), isAccept);
 
         // 반환
-        return orderStatusByOrderCode.entrySet().stream()
+        List<FactoryOrderUpdateResponse> result = orderStatusByOrderCode.entrySet().stream()
                 .map(entry -> FactoryOrderUpdateResponse.builder()
                         .orderCode(entry.getKey())
                         .status(entry.getValue())
                         .build())
                 .toList();
+        evictByPattern("ord:fc:*");
+        return result;
     }
 
     private <T> List<T> readListCache(String key, TypeReference<List<T>> typeRef) {

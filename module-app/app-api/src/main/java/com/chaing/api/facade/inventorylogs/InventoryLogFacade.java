@@ -25,6 +25,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -219,8 +220,8 @@ public class InventoryLogFacade {
         }
     }
 
-    public List<BoxCodeResponse> getBoxCodes(String transactionCode) {
-        return inventoryLogService.findBoxCodesByTransactionCode(transactionCode);
+    public List<BoxCodeResponse> getBoxCodes(String transactionCode, LocalDate date) {
+        return inventoryLogService.findBoxCodesByTransactionCode(transactionCode, date);
     }
 
     private ActorType parseActorType(String actorType) {

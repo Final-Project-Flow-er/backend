@@ -278,6 +278,21 @@ public class InventoryLogArchiveRepositoryImpl implements InventoryLogArchiveRep
         }
 
         @Override
+        public List<BoxCodeResponse> findBoxCodesByTransactionCodeAndDate(String transactionCode, LocalDate date) {
+                return queryFactory
+                                .select(Projections.constructor(
+                                                BoxCodeResponse.class,
+                                                log.boxCode))
+                                .from(log)
+                                .where(
+                                                log.transactionCode.eq(transactionCode)
+                                                                .or(log.boxCode.eq(transactionCode)),
+                                                betweenDate(date, date))
+                                .distinct()
+                                .fetch();
+        }
+
+        @Override
         public FranchiseInventoryLogListResponse findFranchiseSalesRefundLogs(Long franchiseId,
                         FranchiseLogRequest request, Pageable pageable) {
                 List<FranchiseInventoryLogResponse> franchiseInventoryLogResponseList = queryFactory

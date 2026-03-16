@@ -9,6 +9,7 @@ import com.chaing.domain.inventorylogs.dto.response.FranchiseInventoryLogListRes
 import com.chaing.domain.inventorylogs.dto.response.InventoryLogListResponse;
 import org.springframework.data.domain.Pageable;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public interface InventoryLogArchiveRepositoryCustom {
@@ -28,4 +29,5 @@ public interface InventoryLogArchiveRepositoryCustom {
             Pageable pageable);
 
     List<BoxCodeResponse> findBoxCodesByTransactionCode(String transactionCode);
+    List<BoxCodeResponse> findBoxCodesByTransactionCodeAndDate(String transactionCode, LocalDate date);
 }

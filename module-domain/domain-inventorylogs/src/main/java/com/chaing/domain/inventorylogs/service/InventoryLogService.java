@@ -223,8 +223,16 @@ public class InventoryLogService {
     }
 
     public List<BoxCodeResponse> findBoxCodesByTransactionCode(String transactionCode) {
-        List<BoxCodeResponse> active = inventoryLogRepository.findBoxCodesByTransactionCode(transactionCode);
-        List<BoxCodeResponse> archive = inventoryLogArchiveRepository.findBoxCodesByTransactionCode(transactionCode);
+        return findBoxCodesByTransactionCode(transactionCode, null);
+    }
+
+    public List<BoxCodeResponse> findBoxCodesByTransactionCode(String transactionCode, LocalDate date) {
+        List<BoxCodeResponse> active = date == null
+                ? inventoryLogRepository.findBoxCodesByTransactionCode(transactionCode)
+                : inventoryLogRepository.findBoxCodesByTransactionCodeAndDate(transactionCode, date);
+        List<BoxCodeResponse> archive = date == null
+                ? inventoryLogArchiveRepository.findBoxCodesByTransactionCode(transactionCode)
+                : inventoryLogArchiveRepository.findBoxCodesByTransactionCodeAndDate(transactionCode, date);
 
         return Stream.concat(active.stream(), archive.stream())
                 .distinct()

@@ -3,6 +3,7 @@ package com.chaing.domain.transports.service;
 import com.chaing.core.enums.UsableStatus;
 import com.chaing.domain.transports.dto.command.VehicleCreateCommand;
 import com.chaing.domain.transports.dto.command.VehicleUpdateCommand;
+import com.chaing.domain.transports.dto.condition.VehicleSearchCondition;
 import com.chaing.domain.transports.entity.Vehicle;
 import com.chaing.domain.transports.exception.TransportErrorCode;
 import com.chaing.domain.transports.exception.TransportException;
@@ -25,8 +26,8 @@ public class VehicleManagementService {
     }
 
     // 운송 차량 목록 조회
-    public Page<Vehicle> getVehicleList(Pageable pageable) {
-        return vehicleRepository.findAll(pageable);
+    public Page<Vehicle> getVehicleList(VehicleSearchCondition condition, Pageable pageable) {
+        return vehicleRepository.searchVehicles(condition, pageable);
     }
 
     // 운송 차량 상세 조회

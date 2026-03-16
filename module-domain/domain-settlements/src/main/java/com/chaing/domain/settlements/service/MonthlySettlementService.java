@@ -5,6 +5,7 @@ import com.chaing.domain.settlements.entity.MonthlySettlement;
 import java.time.YearMonth;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public interface MonthlySettlementService {
 
@@ -14,7 +15,8 @@ public interface MonthlySettlementService {
     // 특정 가맹점 + 월
     MonthlySettlement getByFranchiseAndMonth(Long franchiseId, YearMonth month);
 
-    java.util.Optional<MonthlySettlement> findByFranchiseAndMonth(Long franchiseId, YearMonth month);
+    // 특정 가맹점 + 월 (Optional 반환, 트랜잭션 rollback-only 방지용)
+    Optional<MonthlySettlement> findByFranchiseAndMonth(Long franchiseId, YearMonth month);
 
     // 정산 확정 - 상단 숫자 카드
     Map<String, Long> getStatusCounts(YearMonth month);

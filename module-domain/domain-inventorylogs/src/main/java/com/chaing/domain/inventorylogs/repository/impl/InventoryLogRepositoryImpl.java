@@ -15,6 +15,7 @@ import com.chaing.domain.inventorylogs.dto.response.ActorProductSalesResponse;
 import com.chaing.domain.inventorylogs.dto.response.InventoryLogListResponse;
 import com.chaing.domain.inventorylogs.dto.response.InventoryLogResponse;
 import com.chaing.domain.inventorylogs.dto.response.ProductSalesResponse;
+import com.chaing.domain.inventorylogs.entity.InventoryLog;
 import com.chaing.domain.inventorylogs.entity.QInventoryLog;
 import com.chaing.domain.inventorylogs.enums.ActorType;
 import com.chaing.domain.inventorylogs.enums.LocationType;
@@ -29,6 +30,8 @@ import com.querydsl.core.types.dsl.DateExpression;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
@@ -47,6 +50,7 @@ import java.util.Objects;
 public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom {
 
         private final JPAQueryFactory queryFactory;
+        private final EntityManager entityManager;
         private final QInventoryLog log = QInventoryLog.inventoryLog;
 
         @Override
@@ -80,21 +84,16 @@ public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom 
                                 .limit(pageable.getPageSize())
                                 .fetch();
 
-                long total = queryFactory
-                                .select(log.transactionCode, log.productName, log.logType)
-                                .from(log)
-                                .where(
-                                                log.logType.eq(LogType.RETURN_INBOUND),
-                                                log.toLocationType.eq(LocationType.HQ),
-                                                log.toLocationId.eq(hqId),
-                                                locationContains("HQ", hqId), // 본사Id
-                                                betweenDate(request.startDate(), request.endDate()),
-                                                containsTransactionCode(request.transactionCode()))
-                                .groupBy(
-                                                log.transactionCode,
-                                                log.productName,
-                                                log.logType)
-                                .fetch().size();
+                long total = countDistinctGroups(
+                                log.transactionCode,
+                                log.productName,
+                                log.logType,
+                                log.logType.eq(LogType.RETURN_INBOUND),
+                                log.toLocationType.eq(LocationType.HQ),
+                                log.toLocationId.eq(hqId),
+                                locationContains("HQ", hqId), // 본사Id
+                                betweenDate(request.startDate(), request.endDate()),
+                                containsTransactionCode(request.transactionCode()));
 
                 return InventoryLogListResponse.builder()
                                 .inventoryLogResponses(inventoryLogResponses)
@@ -133,21 +132,16 @@ public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom 
                                 .limit(pageable.getPageSize())
                                 .fetch();
 
-                long total = queryFactory
-                                .select(log.transactionCode, log.productName, log.logType)
-                                .from(log)
-                                .where(
-                                                log.logType.eq(LogType.RETURN_OUTBOUND),
-                                                log.fromLocationType.eq(LocationType.HQ),
-                                                log.fromLocationId.eq(hqId),
-                                                locationContains("HQ", hqId), // 본사Id
-                                                betweenDate(request.startDate(), request.endDate()),
-                                                containsTransactionCode(request.transactionCode()))
-                                .groupBy(
-                                                log.transactionCode,
-                                                log.productName,
-                                                log.logType)
-                                .fetch().size();
+                long total = countDistinctGroups(
+                                log.transactionCode,
+                                log.productName,
+                                log.logType,
+                                log.logType.eq(LogType.RETURN_OUTBOUND),
+                                log.fromLocationType.eq(LocationType.HQ),
+                                log.fromLocationId.eq(hqId),
+                                locationContains("HQ", hqId), // 본사Id
+                                betweenDate(request.startDate(), request.endDate()),
+                                containsTransactionCode(request.transactionCode()));
 
                 return InventoryLogListResponse.builder()
                                 .inventoryLogResponses(inventoryLogResponses)
@@ -184,19 +178,14 @@ public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom 
                                 .limit(pageable.getPageSize())
                                 .fetch();
 
-                long total = queryFactory
-                                .select(log.transactionCode, log.productName, log.logType)
-                                .from(log)
-                                .where(
-                                                log.logType.eq(LogType.DISPOSAL),
-                                                locationContains("HQ", hqId), // 본사Id
-                                                betweenDate(request.startDate(), request.endDate()),
-                                                containsTransactionCode(request.transactionCode()))
-                                .groupBy(
-                                                log.transactionCode,
-                                                log.productName,
-                                                log.logType)
-                                .fetch().size();
+                long total = countDistinctGroups(
+                                log.transactionCode,
+                                log.productName,
+                                log.logType,
+                                log.logType.eq(LogType.DISPOSAL),
+                                locationContains("HQ", hqId), // 본사Id
+                                betweenDate(request.startDate(), request.endDate()),
+                                containsTransactionCode(request.transactionCode()));
 
                 return InventoryLogListResponse.builder()
                                 .inventoryLogResponses(inventoryLogResponses)
@@ -241,21 +230,16 @@ public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom 
                                 .limit(pageable.getPageSize())
                                 .fetch();
 
-                long total = queryFactory
-                                .select(displayTransactionCode, log.productName, log.logType)
-                                .from(log)
-                                .where(
-                                                request.logType() != null ? log.logType.eq(request.logType()) : log.logType.in(LogType.INBOUND, LogType.OUTBOUND, LogType.RETURN_INBOUND, LogType.RETURN_OUTBOUND),
-                                                log.actorType.eq(ActorType.FRANCHISE),
-                                                betweenDate(request.startDate(), request.endDate()),
-                                                containsTransactionCode(request.transactionCode()),
-                                                locationContains("FRANCHISE", franchiseId),
-                                                containsProductName(request.productName()))
-                                .groupBy(
-                                                displayTransactionCode,
-                                                log.productName,
-                                                log.logType)
-                                .fetch().size();
+                long total = countDistinctGroups(
+                                displayTransactionCode,
+                                log.productName,
+                                log.logType,
+                                request.logType() != null ? log.logType.eq(request.logType()) : log.logType.in(LogType.INBOUND, LogType.OUTBOUND, LogType.RETURN_INBOUND, LogType.RETURN_OUTBOUND),
+                                log.actorType.eq(ActorType.FRANCHISE),
+                                betweenDate(request.startDate(), request.endDate()),
+                                containsTransactionCode(request.transactionCode()),
+                                locationContains("FRANCHISE", franchiseId),
+                                containsProductName(request.productName()));
 
                 return FranchiseInventoryLogListResponse.builder()
                                 .franchiseInventoryLogResponseList(franchiseInventoryLogResponseList)
@@ -273,6 +257,21 @@ public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom 
                                 .from(log)
                                 .where(log.transactionCode.eq(transactionCode)
                                                 .or(log.boxCode.eq(transactionCode)))
+                                .distinct()
+                                .fetch();
+        }
+
+        @Override
+        public List<BoxCodeResponse> findBoxCodesByTransactionCodeAndDate(String transactionCode, LocalDate date) {
+                return queryFactory
+                                .select(Projections.constructor(
+                                                BoxCodeResponse.class,
+                                                log.boxCode))
+                                .from(log)
+                                .where(
+                                                log.transactionCode.eq(transactionCode)
+                                                                .or(log.boxCode.eq(transactionCode)),
+                                                betweenDate(date, date))
                                 .distinct()
                                 .fetch();
         }
@@ -373,21 +372,16 @@ public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom 
                                 .limit(pageable.getPageSize())
                                 .fetch();
 
-                long total = queryFactory
-                                .select(displayTransactionCode, log.productName, log.logType)
-                                .from(log)
-                                .where(
-                                                locationContains("FACTORY", factoryId),
-                                                log.actorType.eq(ActorType.FACTORY),
-                                                containsProductName(request.productName()),
-                                                betweenDate(request.startDate(), request.endDate()),
-                                                containsTransactionCode(request.transactionCode()),
-                                                containsLogType(request.logType()))
-                                .groupBy(
-                                                displayTransactionCode,
-                                                log.productName,
-                                                log.logType)
-                                .fetch().size();
+                long total = countDistinctGroups(
+                                displayTransactionCode,
+                                log.productName,
+                                log.logType,
+                                locationContains("FACTORY", factoryId),
+                                log.actorType.eq(ActorType.FACTORY),
+                                containsProductName(request.productName()),
+                                betweenDate(request.startDate(), request.endDate()),
+                                containsTransactionCode(request.transactionCode()),
+                                containsLogType(request.logType()));
 
                 return FactoryInventoryLogListResponse.builder()
                                 .factoryInventoryLogResponseList(inventoryLogResponses)
@@ -477,6 +471,21 @@ public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom 
                 } catch (IllegalArgumentException e) {
                         throw new InventoryLogException(InventoryLogtErrorCode.INVALID_LOG_TYPE);
                 }
+        }
+
+        private long countDistinctGroups(Expression<?> groupKey1, Expression<?> groupKey2, Expression<?> groupKey3,
+                        BooleanExpression... conditions) {
+                Long count = queryFactory
+                                .select(Expressions.numberTemplate(
+                                                Long.class,
+                                                "count(distinct concat_ws('|', coalesce(cast({0} as char), ''), coalesce(cast({1} as char), ''), coalesce(cast({2} as char), '')))",
+                                                groupKey1,
+                                                groupKey2,
+                                                groupKey3))
+                                .from(log)
+                                .where(conditions)
+                                .fetchOne();
+                return count == null ? 0L : count;
         }
 
         // constructor 따로 빼기
@@ -592,5 +601,19 @@ public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom 
                 }
 
                 return responses;
+        }
+
+        @Override
+        public List<InventoryLog> findArchivableLogs(LocalDateTime cutoff, int limit) {
+                if (limit <= 0) {
+                        return List.of();
+                }
+                return entityManager.createQuery(
+                                "select l from InventoryLog l where l.deletedAt is null and l.createdAt < :cutoff order by l.createdAt asc",
+                                InventoryLog.class)
+                                .setParameter("cutoff", cutoff)
+                                .setMaxResults(limit)
+                                .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+                                .getResultList();
         }
 }

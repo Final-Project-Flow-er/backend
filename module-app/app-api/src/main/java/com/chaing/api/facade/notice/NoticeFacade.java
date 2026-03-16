@@ -94,8 +94,7 @@ public class NoticeFacade {
                 notice.getNoticeId()
         ));
 
-        String authorName = getName(authorId);
-        return NoticeDetailResponse.from(notice, authorName, null, null, null, null, null);
+        return getNoticeDetail(notice.getNoticeId());
     }
 
     // 공지사항 수정
@@ -105,7 +104,7 @@ public class NoticeFacade {
 
         if (request.deleteStoredFileNames() != null && !request.deleteStoredFileNames().isEmpty()) {
             for (String storedName : request.deleteStoredFileNames()) {
-                imageService.deleteByStoredName(storedName, BucketName.NOTICES);
+                imageService.deleteByStoredName(storedName, TargetType.NOTICE, id, BucketName.NOTICES);
             }
         }
 
@@ -119,7 +118,7 @@ public class NoticeFacade {
                 notice.getNoticeId()
         ));
 
-        return NoticeDetailResponse.from(notice, getName(notice.getAuthorId()), getName(updaterId), null, null, null, null);
+        return getNoticeDetail(id);
     }
 
     // 사용자 이름 조회

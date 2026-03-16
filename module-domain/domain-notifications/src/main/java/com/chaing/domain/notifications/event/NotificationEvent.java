@@ -20,4 +20,9 @@ public record NotificationEvent(
     public static NotificationEvent ofUpdate(NotificationType type, String message, Long targetId) {
         return new NotificationEvent(null, type, message, targetId, true, true);
     }
+
+    // 개인 알림
+    public static NotificationEvent ofUser(Long userId, NotificationType type, String message, Long targetId) {
+        return new NotificationEvent(userId, type, message, targetId, false, false);
+    }
 }

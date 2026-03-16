@@ -5,6 +5,7 @@ import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.domain.orders.dto.command.HQOrderItemCommand;
 import com.chaing.domain.orders.dto.info.HQOrderCommand;
 import com.chaing.domain.orders.dto.request.FactoryOrderRequest;
+import com.chaing.domain.orders.dto.response.FactoryOrderItemProjection;
 import com.chaing.domain.orders.dto.response.FactoryOrderResponse;
 import com.chaing.domain.orders.dto.response.FactoryOrderUpdateResponse;
 import com.chaing.domain.orders.enums.HQOrderStatus;
@@ -13,15 +14,24 @@ import com.chaing.domain.orders.exception.OrderException;
 import com.chaing.domain.orders.service.HQOrderService;
 import com.chaing.domain.products.service.ProductService;
 import com.chaing.domain.users.service.UserManagementService;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -31,11 +41,63 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class FactoryFacade {
 
+    private static final Duration CACHE_TTL = Duration.ofSeconds(30);
+
     private final HQOrderService hqOrderService;
     private final ProductService productService;
     private final UserManagementService userManagementService;
+    private final StringRedisTemplate redisTemplate;
+    private final ObjectMapper objectMapper;
 
-    // 발주 전체/대기 조회
+    // 발주 전체/대기 조회 (페이지네이션)
+    public Page<FactoryOrderResponse> getAllOrdersPaged(boolean isAll, Pageable pageable) {
+        String cacheKey = "odr:fc:page:%s:%s".formatted(isAll, pageableKey(pageable));
+        Page<FactoryOrderResponse> cached = readPageCache(cacheKey, FactoryOrderResponse.class, pageable);
+        if (cached != null) return cached;
+
+        Page<FactoryOrderItemProjection> page = hqOrderService.getFactoryOrderItemPage(isAll, pageable);
+
+        if (page.isEmpty()) {
+            Page<FactoryOrderResponse> empty = new PageImpl<>(List.of(), pageable, 0);
+            writePageCache(cacheKey, empty);
+            return empty;
+        }
+
+        // userId → username, phoneNumber
+        List<Long> userIds = page.getContent().stream()
+                .map(FactoryOrderItemProjection::userId).distinct().toList();
+        Map<Long, UserContactCommand> userByUserId = userManagementService.getUserContactInfosByUserIds(userIds);
+
+        // productId → ProductInfo
+        List<Long> productIds = page.getContent().stream()
+                .map(FactoryOrderItemProjection::productId).distinct().toList();
+        Map<Long, ProductInfo> productInfoMap = productService.getProductInfos(productIds);
+
+        List<FactoryOrderResponse> content = page.getContent().stream()
+                .map(p -> {
+                    UserContactCommand user = userByUserId.get(p.userId());
+                    ProductInfo productInfo = productInfoMap.get(p.productId());
+                    return FactoryOrderResponse.builder()
+                            .orderCode(p.orderCode())
+                            .status(p.status())
+                            .isRegular(p.isRegular())
+                            .productCode(productInfo != null ? productInfo.productCode() : null)
+                            .productName(productInfo != null ? productInfo.productName() : null)
+                            .quantity(p.quantity())
+                            .username(user != null ? user.username() : null)
+                            .phoneNumber(user != null ? user.phoneNumber() : null)
+                            .requestedDate(p.requestedDate())
+                            .storedDate(p.storedDate())
+                            .build();
+                })
+                .toList();
+
+        Page<FactoryOrderResponse> result = new PageImpl<>(content, pageable, page.getTotalElements());
+        writePageCache(cacheKey, result);
+        return new PageImpl<>(content, pageable, page.getTotalElements());
+    }
+
+    // 발주 전체/대기 조회 (기존)
     public List<FactoryOrderResponse> getAllOrders(boolean isAll) {
         // Map<orderId, HQOrderCommand>
         Map<Long, HQOrderCommand> ordersByOrderId;
@@ -172,11 +234,82 @@ public class FactoryFacade {
         Map<String, HQOrderStatus> orderStatusByOrderCode = hqOrderService.updateOrders(request.orderCodes(), isAccept);
 
         // 반환
-        return orderStatusByOrderCode.entrySet().stream()
+        List<FactoryOrderUpdateResponse> result = orderStatusByOrderCode.entrySet().stream()
                 .map(entry -> FactoryOrderUpdateResponse.builder()
                         .orderCode(entry.getKey())
                         .status(entry.getValue())
                         .build())
                 .toList();
+        evictByPattern("ord:fc:*");
+        return result;
+    }
+
+    private <T> List<T> readListCache(String key, TypeReference<List<T>> typeRef) {
+        try {
+            String cached = redisTemplate.opsForValue().get(key);
+            if (cached == null) return null;
+            return objectMapper.readValue(cached, typeRef);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private <T> T readObjectCache(String key, Class<T> clazz) {
+        try {
+            String cached = redisTemplate.opsForValue().get(key);
+            if (cached == null) return null;
+            return objectMapper.readValue(cached, clazz);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private void writeCache(String key, Object value) {
+        try {
+            redisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(value), CACHE_TTL);
+        } catch (Exception ignored) {
+        }
+    }
+
+    private void evictByPattern(String pattern) {
+        try {
+            Set<String> keys = redisTemplate.keys(pattern);
+            if (keys != null && !keys.isEmpty()) {
+                redisTemplate.delete(keys);
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
+    private String pageableKey(Pageable pageable) {
+        return "%d:%d:%s".formatted(
+                pageable.getPageNumber(),
+                pageable.getPageSize(),
+                pageable.getSort().isSorted() ? pageable.getSort().toString().replace(" ", "") : "-");
+    }
+
+    private <T> Page<T> readPageCache(String key, Class<T> itemClass, Pageable pageable) {
+        try {
+            String cached = redisTemplate.opsForValue().get(key);
+            if (cached == null) return null;
+
+            JsonNode root = objectMapper.readTree(cached);
+            List<T> content = objectMapper.readerForListOf(itemClass).readValue(root.path("content"));
+            long totalElements = root.path("totalElements").asLong(content.size());
+
+            return new PageImpl<>(content, pageable, totalElements);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private void writePageCache(String key, Page<?> page) {
+        try {
+            Map<String, Object> payload = Map.of(
+                    "content", page.getContent(),
+                    "totalElements", page.getTotalElements());
+            redisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(payload), CACHE_TTL);
+        } catch (Exception ignored) {
+        }
     }
 }

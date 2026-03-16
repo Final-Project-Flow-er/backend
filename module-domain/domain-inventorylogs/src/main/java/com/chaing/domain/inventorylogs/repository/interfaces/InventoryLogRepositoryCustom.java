@@ -9,8 +9,11 @@ import com.chaing.domain.inventorylogs.dto.response.FactoryInventoryLogListRespo
 import com.chaing.domain.inventorylogs.dto.response.FranchiseInventoryLogListResponse;
 import com.chaing.domain.inventorylogs.dto.response.ActorProductSalesResponse;
 import com.chaing.domain.inventorylogs.dto.response.InventoryLogListResponse;
+import com.chaing.domain.inventorylogs.entity.InventoryLog;
 import com.chaing.domain.inventorylogs.enums.ActorType;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.data.domain.Pageable;
@@ -35,4 +38,7 @@ public interface InventoryLogRepositoryCustom {
             LogType logType);
 
     List<BoxCodeResponse> findBoxCodesByTransactionCode(String transactionCode);
+    List<BoxCodeResponse> findBoxCodesByTransactionCodeAndDate(String transactionCode, LocalDate date);
+
+    List<InventoryLog> findArchivableLogs(LocalDateTime cutoff, int limit);
 }

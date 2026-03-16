@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.YearMonth;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -31,12 +32,12 @@ public class MonthlySettlementServiceImpl implements MonthlySettlementService {
 
     @Override
     public MonthlySettlement getByFranchiseAndMonth(Long franchiseId, YearMonth month) {
-        return findByFranchiseAndMonth(franchiseId, month)
+        return repository.findByFranchiseIdAndSettlementMonth(franchiseId, month)
                 .orElseThrow(() -> new SettlementException(SettlementErrorCode.MONTHLY_SETTLEMENT_NOT_FOUND));
     } // 가맹점이 해당 '월'의 정산을 조회할 때
 
     @Override
-    public java.util.Optional<MonthlySettlement> findByFranchiseAndMonth(Long franchiseId, YearMonth month) {
+    public Optional<MonthlySettlement> findByFranchiseAndMonth(Long franchiseId, YearMonth month) {
         return repository.findByFranchiseIdAndSettlementMonth(franchiseId, month);
     }
 

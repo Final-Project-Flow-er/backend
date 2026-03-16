@@ -5,6 +5,7 @@ import com.chaing.core.enums.UsableStatus;
 import com.chaing.domain.businessunits.component.BusinessUnitCodeGenerator;
 import com.chaing.domain.businessunits.dto.command.BusinessUnitCreateCommand;
 import com.chaing.domain.businessunits.dto.command.BusinessUnitUpdateCommand;
+import com.chaing.domain.businessunits.dto.condition.BusinessUnitSearchCondition;
 import com.chaing.domain.businessunits.dto.internal.BusinessUnitInternal;
 import com.chaing.domain.businessunits.entity.Factory;
 import com.chaing.domain.businessunits.repository.FactoryRepository;
@@ -25,6 +26,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -69,20 +71,25 @@ class FactoryServiceImplTests {
 
         // given
         Pageable pageable = PageRequest.of(0, 10);
+        BusinessUnitSearchCondition condition = new BusinessUnitSearchCondition(
+                null, null, null, null, null, null, null, null
+        );
+
         List<Factory> factories = List.of(
-                Factory.builder().factoryId(1L).build(),
-                Factory.builder().factoryId(2L).build()
+                Factory.builder().factoryId(1L).factoryCode("FA01").name("공장1").build(),
+                Factory.builder().factoryId(2L).factoryCode("FA02").name("공장2").build()
         );
 
         Page<Factory> factoryPage = new PageImpl<>(factories, pageable, factories.size());
-        when(factoryRepository.findAll(pageable)).thenReturn(factoryPage);
+        when(factoryRepository.search(eq(condition), eq(pageable))).thenReturn(factoryPage);
 
         // when
-        Page<BusinessUnitInternal> result = factoryService.getBusinessUnitList(pageable);
+        Page<BusinessUnitInternal> result = factoryService.getBusinessUnitList(condition, pageable);
 
         // then
         assertEquals(2, result.getContent().size());
-        verify(factoryRepository, times(1)).findAll(pageable);
+        assertEquals("공장1", result.getContent().get(0).name());
+        verify(factoryRepository, times(1)).search(condition, pageable);
     }
 
     @Test
@@ -124,6 +131,9 @@ class FactoryServiceImplTests {
         // then
         assertEquals("변경 이름", factory.getName());
         assertEquals(10, factory.getProductionLineCount());
+        assertNotNull(result);
+        assertEquals("변경 이름", result.name());
+        assertEquals(id, result.id());
         verify(factoryRepository, times(1)).findById(id);
     }
 
@@ -133,7 +143,7 @@ class FactoryServiceImplTests {
 
         // given
         Long id = 1L;
-        Factory factory = spy(Factory.builder().factoryId(id).status(UsableStatus.ACTIVE).build());
+        Factory factory = Factory.builder().factoryId(id).status(UsableStatus.ACTIVE).build();
         when(factoryRepository.findById(id)).thenReturn(Optional.of(factory));
 
         // when
@@ -141,7 +151,7 @@ class FactoryServiceImplTests {
 
         // then
         assertEquals(UsableStatus.INACTIVE, factory.getStatus());
-        verify(factory, times(1)).updateStatus(UsableStatus.INACTIVE);
+        verify(factoryRepository, times(1)).findById(id);
     }
 
     @Test
@@ -158,5 +168,6 @@ class FactoryServiceImplTests {
 
         // then
         verify(factory, times(1)).delete();
+        verify(factoryRepository, times(1)).findById(id);
     }
 }

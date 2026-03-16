@@ -6,6 +6,8 @@ import com.chaing.domain.businessunits.service.impl.HeadquarterServiceImpl;
 import com.chaing.domain.inventories.service.InventoryService;
 import com.chaing.domain.orders.dto.command.FranchiseOrderCommand;
 import com.chaing.domain.orders.dto.command.HQOrderCancelCommand;
+import com.chaing.domain.orders.dto.response.HQOrderItemProjection;
+import com.chaing.domain.orders.dto.response.HQRequestedOrderItemProjection;
 import com.chaing.domain.orders.dto.command.FranchiseOrderDetailCommand;
 import com.chaing.domain.orders.dto.command.FranchiseOrderItemCommand;
 import com.chaing.domain.orders.dto.request.FranchiseOrderStatusUpdateRequest;
@@ -35,14 +37,23 @@ import com.chaing.domain.orders.service.FranchiseOrderService;
 import com.chaing.domain.orders.service.HQOrderService;
 import com.chaing.domain.products.service.ProductService;
 import com.chaing.domain.users.service.UserManagementService;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Duration;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -54,6 +65,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class HQOrderFacade {
 
+    private static final Duration CACHE_TTL = Duration.ofSeconds(30);
+
     private final HQOrderService hqOrderService;
     private final FranchiseOrderService franchiseOrderService;
     private final ProductService productService;
@@ -61,12 +74,22 @@ public class HQOrderFacade {
     private final FranchiseServiceImpl franchiseService;
     private final HeadquarterServiceImpl headquarterService;
     private final InventoryService inventoryService;
+    private final StringRedisTemplate redisTemplate;
+    private final ObjectMapper objectMapper;
 
     // 발주 조회
     public List<HQOrderResponse> getAllOrders() {
+        String cacheKey = "ord:hq:all";
+        List<HQOrderResponse> cached = readListCache(cacheKey, new TypeReference<>() {});
+        if (cached != null) return cached;
+
         // 발주 정보 조회
         // Map<orderId, HQOrderCommand>
         Map<Long, HQOrderCommand> orders = hqOrderService.getAllOrders();
+
+        if (orders.isEmpty()) {
+            return Collections.emptyList();
+        }
 
         // Map<userId, username>
         Map<Long, String> usernameByUserId = orders.values().stream()
@@ -126,7 +149,7 @@ public class HQOrderFacade {
                 ));
 
         // 반환
-        return productIdOrderItemIdByOrderId.entrySet().stream()
+        List<HQOrderResponse> result = productIdOrderItemIdByOrderId.entrySet().stream()
                 .flatMap(entry -> {
                     Long orderId = entry.getKey();
                     HQOrderCommand order = orders.get(orderId);
@@ -165,10 +188,65 @@ public class HQOrderFacade {
                             });
                 })
                 .toList();
+        writeCache(cacheKey, result);
+        return result;
+    }
+
+    // 발주 페이지네이션 조회 (아이템 행 단위)
+    public Page<HQOrderResponse> getAllOrdersPaged(Pageable pageable) {
+        String cacheKey = "ord:hq:page:%s".formatted(pageableKey(pageable));
+        Page<HQOrderResponse> cached = readPageCache(cacheKey, HQOrderResponse.class, pageable);
+        if (cached != null) return cached;
+
+        Page<HQOrderItemProjection> page = hqOrderService.getOrderItemPage(pageable);
+
+        if (page.isEmpty()) {
+            Page<HQOrderResponse> empty = new PageImpl<>(List.of(), pageable, 0);
+            writePageCache(cacheKey, empty);
+            return empty;
+        }
+
+        // userId → username, phoneNumber 매핑
+        List<Long> userIds = page.getContent().stream()
+                .map(HQOrderItemProjection::userId).distinct().toList();
+        Map<Long, String> usernameByUserId = userIds.stream()
+                .collect(Collectors.toMap(Function.identity(),
+                        userManagementService::getUsernameByUserId));
+        Map<Long, String> phoneNumberByUserId = userIds.stream()
+                .collect(Collectors.toMap(Function.identity(),
+                        userManagementService::getPhoneNumberByUserId));
+
+        // productId → productCode 매핑
+        List<Long> productIds = page.getContent().stream()
+                .map(HQOrderItemProjection::productId).distinct().toList();
+        Map<Long, ProductInfo> productInfoMap = productService.getProductInfos(productIds);
+
+        List<HQOrderResponse> content = page.getContent().stream()
+                .map(p -> HQOrderResponse.builder()
+                        .orderCode(p.orderCode())
+                        .status(p.status())
+                        .quantity(p.quantity())
+                        .username(usernameByUserId.get(p.userId()))
+                        .phoneNumber(phoneNumberByUserId.get(p.userId()))
+                        .requestedDate(p.requestedDate())
+                        .manufacturedDate(p.manufacturedDate())
+                        .storedDate(p.storedDate())
+                        .productCode(productInfoMap.containsKey(p.productId())
+                                ? productInfoMap.get(p.productId()).productCode() : null)
+                        .build())
+                .toList();
+
+        Page<HQOrderResponse> result = new PageImpl<>(content, pageable, page.getTotalElements());
+        writePageCache(cacheKey, result);
+        return result;
     }
 
     // 특정 발주 조회
     public HQOrderDetailResponse getOrderDetail(String orderCode) {
+        String cacheKey = "ord:hq:detail:%s".formatted(orderCode);
+        HQOrderDetailResponse cached = readObjectCache(cacheKey, HQOrderDetailResponse.class);
+        if (cached != null) return cached;
+
         // 발주 정보 조회
         HQOrderCommand order = hqOrderService.getOrder(orderCode);
 
@@ -227,7 +305,7 @@ public class HQOrderFacade {
                 .toList();
 
         // 반환
-        return HQOrderDetailResponse.builder()
+        HQOrderDetailResponse result = HQOrderDetailResponse.builder()
                 .orderCode(order.orderCode())
                 .status(order.status())
                 .username(username)
@@ -239,6 +317,8 @@ public class HQOrderFacade {
                 .isRegular(order.isRegular())
                 .items(items)
                 .build();
+        writeCache(cacheKey, result);
+        return result;
     }
 
     // 발주 수정
@@ -265,7 +345,7 @@ public class HQOrderFacade {
         List<HQOrderItemCommand> items = hqOrderService.updateOrderItems(userId, orderCode, request, productInfoByProductCode);
 
         // 반환
-        return HQOrderUpdateResponse.builder()
+        HQOrderUpdateResponse result = HQOrderUpdateResponse.builder()
                 .orderCode(order.orderCode())
                 .status(order.status())
                 .username(username)
@@ -277,6 +357,9 @@ public class HQOrderFacade {
                 .isRegular(order.isRegular())
                 .items(items)
                 .build();
+        evictByPattern("ord:hq:*");
+        evictByPattern("ord:fr:*");
+        return result;
     }
 
     // 발주 취소
@@ -286,7 +369,10 @@ public class HQOrderFacade {
         HQOrderCancelCommand cancelOrder = hqOrderService.cancel(userId, orderCode);
 
         // 반환
-        return HQOrderCancelResponse.from(cancelOrder);
+        HQOrderCancelResponse result = HQOrderCancelResponse.from(cancelOrder);
+        evictByPattern("ord:hq:*");
+        evictByPattern("ord:fr:*");
+        return result;
     }
 
     // 가맹점 발주 상태 변경(접수/반려)
@@ -336,7 +422,10 @@ public class HQOrderFacade {
         }
 
         // 상태 변경 및 반환
-        return franchiseOrderService.updateStatus(request);
+        List<HQOrderStatusUpdateResponse> result = franchiseOrderService.updateStatus(request);
+        evictByPattern("ord:hq:*");
+        evictByPattern("ord:fr:*");
+        return result;
     }
 
     // 발주 생성
@@ -364,7 +453,7 @@ public class HQOrderFacade {
         List<HQOrderItemCommand> items = hqOrderService.createOrderItems(order.orderId(), productInfoByProductId, request.items());
 
         // 반환
-        return HQOrderCreateResponse.builder()
+        HQOrderCreateResponse result = HQOrderCreateResponse.builder()
                 .orderCode(order.orderCode())
                 .status(order.status())
                 .username(username)
@@ -375,10 +464,66 @@ public class HQOrderFacade {
                 .isRegular(order.isRegular())
                 .items(items)
                 .build();
+        evictByPattern("ord:hq:*");
+        evictByPattern("ord:fr:*");
+        return result;
     }
 
-    // 가맹점 발주 요청 조회
+    // 가맹점 발주 요청 페이지네이션 조회
+    public Page<HQRequestedOrderResponse> getRequestedOrdersPaged(boolean isPending, Pageable pageable) {
+        String cacheKey = "ord:hq:requested:page:%s:%s".formatted(isPending, pageableKey(pageable));
+        Page<HQRequestedOrderResponse> cached = readPageCache(cacheKey, HQRequestedOrderResponse.class, pageable);
+        if (cached != null) return cached;
+
+        Page<HQRequestedOrderItemProjection> page = franchiseOrderService.getRequestedOrderItemPage(isPending, pageable);
+
+        if (page.isEmpty()) {
+            Page<HQRequestedOrderResponse> empty = new PageImpl<>(List.of(), pageable, 0);
+            writePageCache(cacheKey, empty);
+            return empty;
+        }
+
+        // userId → username 매핑
+        List<Long> userIds = page.getContent().stream()
+                .map(HQRequestedOrderItemProjection::userId).distinct().toList();
+        Map<Long, String> usernameByUserId = userIds.stream()
+                .collect(Collectors.toMap(Function.identity(),
+                        userManagementService::getUsernameByUserId));
+
+        // userId → franchiseCode 매핑
+        Map<Long, String> franchiseCodeByUserId = userIds.stream()
+                .collect(Collectors.toMap(Function.identity(),
+                        uid -> franchiseService.getById(userManagementService.getFranchiseIdByUserId(uid)).code()));
+
+        // productId → productCode 매핑
+        List<Long> productIds = page.getContent().stream()
+                .map(HQRequestedOrderItemProjection::productId).distinct().toList();
+        Map<Long, ProductInfo> productInfoMap = productService.getProductInfos(productIds);
+
+        List<HQRequestedOrderResponse> content = page.getContent().stream()
+                .map(p -> HQRequestedOrderResponse.builder()
+                        .orderCode(p.orderCode())
+                        .franchiseCode(franchiseCodeByUserId.get(p.userId()))
+                        .receiver(usernameByUserId.get(p.userId()))
+                        .productCode(productInfoMap.containsKey(p.productId())
+                                ? productInfoMap.get(p.productId()).productCode() : null)
+                        .status(p.orderStatus())
+                        .quantity(p.quantity())
+                        .deliveryDate(p.deliveryDate())
+                        .build())
+                .toList();
+
+        Page<HQRequestedOrderResponse> result = new PageImpl<>(content, pageable, page.getTotalElements());
+        writePageCache(cacheKey, result);
+        return result;
+    }
+
+    // 가맹점 발주 요청 조회 (기존)
     public List<HQRequestedOrderResponse> getRequestedOrders(boolean isPending) {
+        String cacheKey = "ord:hq:requested:%s".formatted(isPending);
+        List<HQRequestedOrderResponse> cached = readListCache(cacheKey, new TypeReference<>() {});
+        if (cached != null) return cached;
+
         // Map<orderId, FranchiseOrderDetail>
         Map<Long, FranchiseOrderDetailCommand> orders;
         if (isPending) {
@@ -387,6 +532,10 @@ public class HQOrderFacade {
         } else {
             // 전체 요청 조회
             orders = franchiseOrderService.getAllOrders();
+        }
+
+        if (orders.isEmpty()) {
+            return Collections.emptyList();
         }
 
         // List<orderId>
@@ -467,7 +616,7 @@ public class HQOrderFacade {
         Map<Long, ProductInfo> productInfoByProductId = productService.getProductInfos(productIds);
 
         // 반환
-        return productIdOrderItemIdByOrderId.entrySet().stream()
+        List<HQRequestedOrderResponse> result = productIdOrderItemIdByOrderId.entrySet().stream()
                 .flatMap(entry -> {
                     Long orderId = entry.getKey();
                     FranchiseOrderDetailCommand order = orders.get(orderId);
@@ -485,6 +634,9 @@ public class HQOrderFacade {
                                         .map(orderItemByOrderItemId::get)
                                         .toList();
                                 ProductInfo productInfo = productInfoByProductId.get(productId);
+                                if (productInfo == null) {
+                                    throw new HQOrderException(HQOrderErrorCode.PRODUCT_NOT_FOUND);
+                                }
 
                                 Integer quantity = orderItems.stream()
                                         .map(FranchiseOrderItemCommand::quantity)
@@ -502,6 +654,8 @@ public class HQOrderFacade {
                             });
                 })
                 .toList();
+        writeCache(cacheKey, result);
+        return result;
     }
 
     // 발주 상태 SHIPPING_PENDING으로 수정
@@ -515,9 +669,12 @@ public class HQOrderFacade {
         Map<Long, FranchiseOrderCommand> orders = franchiseOrderService.updateShippingPending(orderCodes);
 
         // 반환
-        return orders.values().stream()
+        List<FranchiseOrderStatusShippingPendingResponse> result = orders.values().stream()
                 .map(FranchiseOrderStatusShippingPendingResponse::from)
                 .toList();
+        evictByPattern("ord:hq:*");
+        evictByPattern("ord:fr:*");
+        return result;
     }
 
     // 가맹점의 발주 요청 취소
@@ -528,8 +685,80 @@ public class HQOrderFacade {
         Map<String, FranchiseOrderStatus> statusByOrderCode = franchiseOrderService.cancelFranchiseOrder(request);
 
         // 반환
-        return statusByOrderCode.entrySet().stream()
+        List<HQFranchiseOrderCancelResponse> result = statusByOrderCode.entrySet().stream()
                 .map(HQFranchiseOrderCancelResponse::of)
                 .toList();
+        evictByPattern("ord:hq:*");
+        evictByPattern("ord:fr:*");
+        return result;
+    }
+
+    private <T> List<T> readListCache(String key, TypeReference<List<T>> typeRef) {
+        try {
+            String cached = redisTemplate.opsForValue().get(key);
+            if (cached == null) return null;
+            return objectMapper.readValue(cached, typeRef);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private <T> T readObjectCache(String key, Class<T> clazz) {
+        try {
+            String cached = redisTemplate.opsForValue().get(key);
+            if (cached == null) return null;
+            return objectMapper.readValue(cached, clazz);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private void writeCache(String key, Object value) {
+        try {
+            redisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(value), CACHE_TTL);
+        } catch (Exception ignored) {
+        }
+    }
+
+    private void evictByPattern(String pattern) {
+        try {
+            Set<String> keys = redisTemplate.keys(pattern);
+            if (keys != null && !keys.isEmpty()) {
+                redisTemplate.delete(keys);
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
+    private String pageableKey(Pageable pageable) {
+        return "%d:%d:%s".formatted(
+                pageable.getPageNumber(),
+                pageable.getPageSize(),
+                pageable.getSort().isSorted() ? pageable.getSort().toString().replace(" ", "") : "-");
+    }
+
+    private <T> Page<T> readPageCache(String key, Class<T> itemClass, Pageable pageable) {
+        try {
+            String cached = redisTemplate.opsForValue().get(key);
+            if (cached == null) return null;
+
+            JsonNode root = objectMapper.readTree(cached);
+            List<T> content = objectMapper.readerForListOf(itemClass).readValue(root.path("content"));
+            long totalElements = root.path("totalElements").asLong(content.size());
+
+            return new PageImpl<>(content, pageable, totalElements);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private void writePageCache(String key, Page<?> page) {
+        try {
+            Map<String, Object> payload = Map.of(
+                    "content", page.getContent(),
+                    "totalElements", page.getTotalElements());
+            redisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(payload), CACHE_TTL);
+        } catch (Exception ignored) {
+        }
     }
 }

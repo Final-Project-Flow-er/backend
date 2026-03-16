@@ -31,9 +31,6 @@ public class UserManagementService {
 
     // 회원 등록
     public void registerUser(User user, String rawPassword) {
-        if (userRepository.existsByEmail(user.getEmail())) {
-            throw new UserException(UserErrorCode.DUPLICATE_EMAIL);
-        }
         user.changePassword(passwordEncoder.encode(rawPassword));
         userRepository.save(user);
     }
@@ -86,11 +83,6 @@ public class UserManagementService {
                 .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
     }
 
-    // 활성화 상태인 유저 아이디 전체 조회
-    public List<Long> getAllActiveUserIds() {
-        return userRepository.getAllActiveUserIds();
-    }
-
     // 로그인 아이디로 회원 조회
     public User getUserByLoginId(String loginId) {
         return userRepository.findByLoginId(loginId)
@@ -100,12 +92,6 @@ public class UserManagementService {
     // 회원 정보 수정
     public User updateUser(Long userId, UserUpdateCommand command) {
         User user = getUserById(userId);
-
-        if (command.email() != null && !user.getEmail().equals(command.email())) {
-            if (userRepository.existsByEmail(command.email())) {
-                throw new UserException(UserErrorCode.DUPLICATE_EMAIL);
-            }
-        }
 
         UserPosition positionToValidate = (command.position() != null) ? command.position() : user.getPosition();
         UserRole roleToValidate = (command.role() != null) ? command.role() : user.getRole();
@@ -170,6 +156,14 @@ public class UserManagementService {
 
     public List<Long> getBusinessUnitIdsByRole(UserRole role) {
         return userRepository.findDistinctBusinessUnitIdsByRole(role);
+    }
+
+    public List<Long> getActiveUserIdsByRoleAndBusinessUnitId(UserRole role, Long businessUnitId) {
+        return userRepository.findActiveUserIdsByRoleAndBusinessUnitId(role, businessUnitId);
+    }
+
+    public List<Long> getActiveUserIdsByRole(UserRole role) {
+        return userRepository.findActiveUserIdsByRole(role);
     }
 
     public boolean verifyPassword(Long userId, String rawPassword) {

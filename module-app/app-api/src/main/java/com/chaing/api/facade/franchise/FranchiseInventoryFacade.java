@@ -1,5 +1,8 @@
 package com.chaing.api.facade.franchise;
 
+import com.chaing.api.dto.franchise.sales.response.ScannedForSaleResponse;
+import com.chaing.api.dto.franchise.sales.response.ScannedItemForSaleResponse;
+import com.chaing.api.facade.notification.NotificationFacade;
 import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.core.enums.LogType;
 import com.chaing.domain.inventories.dto.request.DisposalRequest;
@@ -24,13 +27,19 @@ import com.chaing.domain.inventorylogs.dto.request.InventoryLogCreateRequest;
 import com.chaing.domain.inventorylogs.enums.ActorType;
 import com.chaing.domain.inventorylogs.enums.LocationType;
 import com.chaing.domain.inventorylogs.service.InventoryLogService;
+import com.chaing.domain.notifications.enums.NotificationType;
+import com.chaing.domain.notifications.event.NotificationEvent;
 import com.chaing.domain.products.dto.response.ProductInfoResponse;
 import com.chaing.domain.products.service.ProductService;
+import com.chaing.domain.users.enums.UserRole;
 import com.chaing.domain.users.service.UserManagementService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -52,6 +61,8 @@ import java.util.Set;
 public class FranchiseInventoryFacade {
 
     private static final Duration CACHE_TTL = Duration.ofSeconds(30);
+    private static final long FRANCHISE_STOCK_ALERT_TARGET_BASE = 3_000_000_000L;
+    private static final long TARGET_LOCATION_MULTIPLIER = 1_000_000L;
 
     private final InventoryService inventoryService;
     private final ProductService productService;
@@ -59,6 +70,8 @@ public class FranchiseInventoryFacade {
     private final UserManagementService userManagementService;
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper;
+    private final NotificationFacade notificationFacade;
+    private final ApplicationEventPublisher eventPublisher;
 
     public List<FranchiseInventoryProductResponse> getFranchiseStock(Long franchiseId, StockSearchRequest request) {
         String key = "inv:fr:stock:%d:%s:%s:%s".formatted(
@@ -303,12 +316,14 @@ public class FranchiseInventoryFacade {
     public void setSafetyStock(SafetyStockRequest request) {
         inventoryService.setSafetyStock(request);
         evictInventoryCache();
+        publishFranchiseStockAlert(request.locationId());
     }
 
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public void resetSafetyStock(Long franchiseId, Long productId) {
         inventoryService.resetSafetyStockToDefault("FRANCHISE", franchiseId, productId);
         evictInventoryCache();
+        publishFranchiseStockAlert(franchiseId);
     }
 
     public boolean verifyAdminPassword(Long userId, String password) {
@@ -317,6 +332,37 @@ public class FranchiseInventoryFacade {
 
     private String nullToDash(String value) {
         return value == null ? "-" : value;
+    }
+
+    private void publishFranchiseStockAlert(Long franchiseId) {
+        if (franchiseId == null) return;
+
+        List<SafetyStockResponse> safetyAlerts = inventoryService.getLowStockAlerts("FRANCHISE", franchiseId);
+        List<ExpirationBatchResultResponse> expirationAlerts = inventoryService.getExpirationAlerts("FRANCHISE", franchiseId);
+        List<Long> recipientUserIds = userManagementService
+                .getActiveUserIdsByRoleAndBusinessUnitId(UserRole.FRANCHISE, franchiseId);
+        if (recipientUserIds.isEmpty()) return;
+
+        int lowStockCount = safetyAlerts.size();
+        int expirationCount = expirationAlerts.size();
+        String message = "[재고 알림] 가맹점(" + franchiseId + ") - 안전재고 부족 "
+                + lowStockCount + "건, 유통기한 임박 " + expirationCount + "건";
+
+        for (Long userId : recipientUserIds) {
+            long targetId = FRANCHISE_STOCK_ALERT_TARGET_BASE + (franchiseId * TARGET_LOCATION_MULTIPLIER) + userId;
+            notificationFacade.deleteNotificationsByTarget(NotificationType.STOCK, targetId);
+
+            if (lowStockCount == 0 && expirationCount == 0) {
+                continue;
+            }
+
+            eventPublisher.publishEvent(NotificationEvent.ofUser(
+                    userId,
+                    NotificationType.STOCK,
+                    message,
+                    targetId
+            ));
+        }
     }
 
     private <T> List<T> readListCache(String key, TypeReference<List<T>> typeRef) {
@@ -391,5 +437,15 @@ public class FranchiseInventoryFacade {
             redisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(payload), CACHE_TTL);
         } catch (Exception ignored) {
         }
+    }
+
+    public ScannedForSaleResponse getFranchiseItemsForSale(@NotEmpty(message = "선택된 제품이 존재하지 않습니다.") List<String> serialCodes, Long franchiseId) {
+
+        List<InventoryRequest> scannedItems = inventoryService.getItemBySerialCode(serialCodes, franchiseId);
+
+        Map<Long, ProductInfo> productInfos = productService.getProductInfos(
+                scannedItems.stream().map(InventoryRequest::productId).distinct().toList());
+
+        return ScannedForSaleResponse.create(scannedItems, productInfos);
     }
 }

@@ -10,11 +10,13 @@ import com.chaing.domain.notifications.repository.NotificationRepository;
 import com.chaing.domain.notifications.repository.NotificationStatusRepository;
 import com.chaing.domain.notifications.service.NotificationService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -25,6 +27,7 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class NotificationServiceImpl implements NotificationService {
@@ -49,6 +52,20 @@ public class NotificationServiceImpl implements NotificationService {
         sendToClient(userId);
 
         return emitter;
+    }
+
+    @Scheduled(fixedDelay = 30000)
+    public void sendHeartbeat() {
+        emitters.forEach((userId, emitter) -> {
+            try {
+                emitter.send(SseEmitter.event()
+                        .name("heartbeat")
+                        .data("ping"));
+                log.info("Sent heartbeat to userId: {}", userId);
+            } catch (IOException e) {
+                emitters.remove(userId, emitter);
+            }
+        });
     }
 
     // 전체 공지사항 처리

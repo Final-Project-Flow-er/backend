@@ -17,6 +17,8 @@ import com.chaing.domain.sales.repository.FranchiseSalesRepository;
 import com.chaing.domain.sales.repository.interfaces.FranchiseSalesItemRepositoryCustom;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -39,6 +41,11 @@ public class FranchiseSalesService {
         return franchiseSalesItemRepositoryCustom.searchAllSalesItems(franchiseId);
     }
 
+    // 미취소 판매 목록 페이지네이션 조회
+    public Page<FranchiseSalesInfoResponse> getAllSalesPage(Long franchiseId, Pageable pageable) {
+        return franchiseSalesItemRepositoryCustom.searchAllSalesItemsPage(franchiseId, pageable);
+    }
+
     public List<FranchiseSalesInfoResponse> getAllCanceledSales(Long franchiseId) {
         // 취소 판매 기록 조회
         return franchiseSalesItemRepositoryCustom.searchAllCanceledSalesItems(franchiseId);
@@ -51,14 +58,14 @@ public class FranchiseSalesService {
                 .orElseThrow(() -> new FranchiseSalesException(FranchiseSalesErrorCode.SALES_NOT_FOUND));
 
         // 제품 정보 가져옴
-        List<SalesItem> salesItems = franchiseSalesItemRepositoryCustom.searchAllSalesItemsBySalesCode(franchiseId,
-                salesCode);
+        List<SalesItem> salesItems = franchiseSalesItemRepositoryCustom.searchAllSalesItemsBySalesCode(franchiseId, salesCode);
 
         return FranchiseSalesDetailResponse.builder()
                 .salesCode(sales.getSalesCode())
                 .salesDate(sales.getCreatedAt())
                 .products(
-                        FranchiseSalesProductResponse.from(salesItems))
+                        FranchiseSalesProductResponse.from(salesItems, sales.getQuantity())
+                )
                 .build();
     }
 
@@ -118,7 +125,8 @@ public class FranchiseSalesService {
             List<Long> franchiseIds,
             List<Long> productIds,
             LocalDate startDate,
-            LocalDate endDate) {
+            LocalDate endDate
+    ) {
         return franchiseSalesItemRepositoryCustom.searchDailyProductSalesForSafetyStock(
                 franchiseIds, productIds, startDate, endDate);
     }

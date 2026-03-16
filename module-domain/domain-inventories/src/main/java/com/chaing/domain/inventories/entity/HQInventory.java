@@ -10,6 +10,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Version;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AccessLevel;
@@ -30,6 +31,19 @@ public class HQInventory extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long inventoryId;
+
+    @Version
+    private Long version;
+
+    // orderId
+    @NotNull
+    @Column(nullable = false)
+    private Long orderId;
+
+    // orderItemId
+    @NotNull
+    @Column(nullable = false)
+    private Long orderItemId;
 
     // 제품식별코드
     @NotBlank
@@ -62,7 +76,8 @@ public class HQInventory extends BaseEntity {
     LocalDateTime receivedAt;       // 입고 완료 일자
 
     @Column
-    Boolean isInspected;
+    @Builder.Default
+    Boolean isInspected = false;
 
     @Column
     @Enumerated(EnumType.STRING)

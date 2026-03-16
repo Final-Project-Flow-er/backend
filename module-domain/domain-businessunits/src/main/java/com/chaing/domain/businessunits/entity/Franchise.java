@@ -65,8 +65,6 @@ public class Franchise extends BaseEntity {
     @Column(nullable = false)
     private LocalTime closeTime;
 
-    private String imageUrl;
-
     @Builder.Default
     @Column(nullable = false, columnDefinition = "INT DEFAULT 0")
     private int warningCount = 0;
@@ -95,7 +93,6 @@ public class Franchise extends BaseEntity {
                 .operatingDays(detail.operatingDays())
                 .openTime(detail.openTime())
                 .closeTime(detail.closeTime())
-                .imageUrl(detail.imageUrl())
                 .distanceToFactory(distance)
                 .status(UsableStatus.ACTIVE)
                 .build();
@@ -114,7 +111,6 @@ public class Franchise extends BaseEntity {
             if (detail.operatingDays() != null) this.operatingDays = detail.operatingDays();
             if (detail.openTime() != null) this.openTime = detail.openTime();
             if (detail.closeTime() != null) this.closeTime = detail.closeTime();
-            if (detail.imageUrl() != null) this.imageUrl = detail.imageUrl();
             if (detail.distanceToFactory() != null) this.distanceToFactory = detail.distanceToFactory();
             if (detail.penaltyEndDate() != null) this.penaltyEndDate = detail.penaltyEndDate();
         }

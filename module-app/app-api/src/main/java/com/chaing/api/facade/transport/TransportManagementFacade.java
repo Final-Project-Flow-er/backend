@@ -1,6 +1,7 @@
 package com.chaing.api.facade.transport;
 
 import com.chaing.api.dto.transport.management.request.CreateTransportRequest;
+import com.chaing.api.dto.transport.management.request.TransportSearchRequest;
 import com.chaing.api.dto.transport.management.request.UpdateTransportRequest;
 import com.chaing.api.dto.transport.management.request.UpdateTransportStatusRequest;
 import com.chaing.api.dto.transport.management.response.TransportDetailResponse;
@@ -15,6 +16,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -24,15 +27,15 @@ public class TransportManagementFacade {
     private final VehicleManagementService vehicleManagementService;
 
     // 운송 업체 등록
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public TransportDetailResponse createTransport(CreateTransportRequest request) {
         Transport transport = transportManagementService.createTransport(request.toCommand());
         return TransportDetailResponse.from(transport);
     }
 
     // 운송 업체 목록 조회
-    public Page<TransportSummaryResponse> getTransportList(Pageable pageable) {
-        Page<Transport> transports = transportManagementService.getTransportList(pageable);
+    public Page<TransportSummaryResponse> getTransportList(TransportSearchRequest request, Pageable pageable) {
+        Page<Transport> transports = transportManagementService.getTransportList(request.toCondition(), pageable);
         return transports.map(TransportSummaryResponse::from);
     }
 
@@ -43,7 +46,7 @@ public class TransportManagementFacade {
     }
 
     // 운송 업체 수정
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public TransportDetailResponse updateTransport(Long id, UpdateTransportRequest request) {
         Transport transport = transportManagementService.updateTransport(id, request.toCommand());
 
@@ -55,7 +58,7 @@ public class TransportManagementFacade {
     }
 
     // 운송 업체 상태 변경
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public TransportDetailResponse updateTransportStatus(Long id, UpdateTransportStatusRequest request) {
         Transport transport = transportManagementService.updateStatus(id, request.status());
 
@@ -67,9 +70,18 @@ public class TransportManagementFacade {
     }
 
     // 운송 업체 삭제
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void deleteTransport(Long id) {
         transportManagementService.deleteTransport(id);
         vehicleManagementService.deleteVehiclesByTransportId(id);
+    }
+
+    // 만료 업체 및 차량 일괄 처리
+    @Transactional(rollbackFor = Exception.class)
+    public void processExpiredContracts() {
+        List<Long> expiredIds = transportManagementService.deactivateExpiredContractsAndGetIds();
+        for (Long transportId : expiredIds) {
+            vehicleManagementService.deactivateVehiclesByTransportId(transportId);
+        }
     }
 }

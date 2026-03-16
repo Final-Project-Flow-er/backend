@@ -3,6 +3,8 @@ package com.chaing.domain.sales.repository.interfaces;
 import com.chaing.domain.sales.dto.response.FranchiseSalesDailyQuantityResponse;
 import com.chaing.domain.sales.dto.response.FranchiseSalesInfoResponse;
 import com.chaing.domain.sales.entity.SalesItem;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -10,6 +12,9 @@ import java.util.List;
 public interface FranchiseSalesItemRepositoryCustom {
     // 판매 목록 조회
     List<FranchiseSalesInfoResponse> searchAllSalesItems(Long franchiseId);
+
+    // 판매 목록 페이지네이션 조회
+    Page<FranchiseSalesInfoResponse> searchAllSalesItemsPage(Long franchiseId, Pageable pageable);
 
     List<FranchiseSalesInfoResponse> searchAllCanceledSalesItems(Long franchiseId);
 

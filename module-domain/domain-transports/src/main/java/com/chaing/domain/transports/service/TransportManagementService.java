@@ -3,6 +3,7 @@ package com.chaing.domain.transports.service;
 import com.chaing.core.enums.UsableStatus;
 import com.chaing.domain.transports.dto.command.TransportCreateCommand;
 import com.chaing.domain.transports.dto.command.TransportUpdateCommand;
+import com.chaing.domain.transports.dto.condition.TransportSearchCondition;
 import com.chaing.domain.transports.entity.Transport;
 import com.chaing.domain.transports.exception.TransportErrorCode;
 import com.chaing.domain.transports.exception.TransportException;
@@ -11,6 +12,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDate;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -25,8 +29,8 @@ public class TransportManagementService {
     }
 
     // 운송 업체 목록 조회
-    public Page<Transport> getTransportList(Pageable pageable) {
-        return transportRepository.findAll(pageable);
+    public Page<Transport> getTransportList(TransportSearchCondition condition, Pageable pageable) {
+        return transportRepository.searchTransports(condition, pageable);
     }
 
     // 운송 업체 상세 조회
@@ -50,7 +54,19 @@ public class TransportManagementService {
 
     // 운송 업체 삭제
     public void deleteTransport(Long id) {
-        Transport transport = getById(id);
-        transport.delete();
+        getById(id);
+        transportRepository.softDeleteById(id);
+    }
+
+    // 계약 기간 만료 시 자동 비활성화
+    public List<Long> deactivateExpiredContractsAndGetIds() {
+        LocalDate today = LocalDate.now();
+        List<Transport> expiredTransports = transportRepository.findAllByContractEndDateBeforeAndStatus(today, UsableStatus.ACTIVE);
+        List<Long> expiredIds = expiredTransports.stream().map(Transport::getTransportId).toList();
+
+        if (!expiredIds.isEmpty()) {
+            transportRepository.deactivateTransportsByIds(expiredIds);
+        }
+        return expiredIds;
     }
 }

@@ -20,10 +20,14 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -43,7 +47,7 @@ public class MyPageController {
     }
 
     @Operation(summary = "내 정보 수정", description = "로그인된 사용자의 정보 수정")
-    @PatchMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<MyInfoResponse>> updateMyInfo(
             @AuthenticationPrincipal UserPrincipal principal,
             @Parameter(content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE))
@@ -74,12 +78,14 @@ public class MyPageController {
     }
 
     @Operation(summary = "내 사업장 정보 수정", description = "로그인된 사용자가 소속된 사업장 정보 수정")
-    @PatchMapping("/workplace")
+    @PostMapping(value = "/workplace", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<BusinessUnitDetailResponse>> updateMyWorkplaceInfo(
             @AuthenticationPrincipal UserPrincipal principal,
-            @Valid @RequestBody UpdateMyBusinessUnitInfoRequest request
+            @RequestPart(value = "request") @Valid UpdateMyBusinessUnitInfoRequest request,
+            @RequestParam(value = "deleteFiles", required = false) List<String> deleteStoredFileNames,
+            @RequestParam(value = "newImages", required = false) List<MultipartFile> newImages
     ) {
-        BusinessUnitDetailResponse response = myPageFacade.updateMyBusinessUnitInfo(principal.getId(), request);
+        BusinessUnitDetailResponse response = myPageFacade.updateMyBusinessUnitInfo(principal.getId(), request, deleteStoredFileNames, newImages);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 }

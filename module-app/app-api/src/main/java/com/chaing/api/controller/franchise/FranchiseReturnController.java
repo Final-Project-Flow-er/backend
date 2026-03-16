@@ -17,6 +17,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -38,15 +41,16 @@ public class FranchiseReturnController {
 
     private final FranchiseReturnFacade franchiseReturnFacade;
 
-    @Operation(summary = "반품 조회", description = "가맹점 id로 해당 가맹점의 반품 요청 전체 조회")
+    @Operation(summary = "반품 조회", description = "가맹점 id로 해당 가맹점의 반품 요청 전체 조회 (페이지네이션)")
     @GetMapping
     @PreAuthorize("hasRole('FRANCHISE')")
-    public ResponseEntity<ApiResponse<List<FranchiseReturnResponse>>> getAllReturns(
-            @AuthenticationPrincipal UserPrincipal userPrincipal
-            ) {
+    public ResponseEntity<ApiResponse<Page<FranchiseReturnResponse>>> getAllReturns(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @PageableDefault(size = 20) Pageable pageable
+    ) {
         Long userId = userPrincipal.getId();
 
-        return ResponseEntity.ok(ApiResponse.success(franchiseReturnFacade.getAllReturns(userId)));
+        return ResponseEntity.ok(ApiResponse.success(franchiseReturnFacade.getAllReturnsPaged(userId, pageable)));
     }
 
     @Operation(summary = "특정 반품 조회", description = "가맹점 id와 반품 번호로 특정 반품 조회")

@@ -15,13 +15,18 @@ import com.chaing.domain.orders.exception.HQOrderErrorCode;
 import com.chaing.domain.orders.exception.HQOrderException;
 import com.chaing.domain.orders.repository.HeadOfficeOrderItemRepository;
 import com.chaing.domain.orders.repository.HeadOfficeOrderRepository;
+import com.chaing.domain.orders.dto.response.FactoryOrderItemProjection;
+import com.chaing.domain.orders.dto.response.HQOrderItemProjection;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -44,7 +49,7 @@ public class HQOrderService {
         List<HeadOfficeOrder> orders = orderRepository.findAllByDeletedAtIsNull();
 
         if (orders == null || orders.isEmpty()) {
-            throw new HQOrderException(HQOrderErrorCode.ORDER_NOT_FOUND);
+            return Collections.emptyMap();
         }
 
         return orders.stream()
@@ -52,6 +57,16 @@ public class HQOrderService {
                         HeadOfficeOrder::getHeadOfficeOrderId,
                         HQOrderCommand::from
                 ));
+    }
+
+    // 발주 목록 페이지네이션 조회 (아이템 행 단위)
+    public Page<HQOrderItemProjection> getOrderItemPage(Pageable pageable) {
+        return orderRepository.findOrderItemPage(pageable);
+    }
+
+    // 공장 발주 목록 페이지네이션 조회 (아이템 행 단위)
+    public Page<FactoryOrderItemProjection> getFactoryOrderItemPage(boolean isAll, Pageable pageable) {
+        return orderRepository.findFactoryOrderItemPage(isAll, pageable);
     }
 
     // 특정 발주 정보 조회

@@ -1,6 +1,6 @@
 package com.chaing.api.facade.franchise;
 
-import com.chaing.api.dto.franchise.settlement.response.FranchiseDailyGraphResponse;
+
 import com.chaing.api.dto.franchise.settlement.response.FranchiseOrderItemResponse;
 import com.chaing.api.dto.franchise.settlement.response.FranchiseSalesItemResponse;
 import com.chaing.api.dto.franchise.settlement.response.FranchiseSettlementSummaryResponse;

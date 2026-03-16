@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -52,6 +53,11 @@ public class DailySettlementServiceImpl implements DailySettlementService {
     @Override
     public java.util.Optional<DailySettlementReceipt> findByFranchiseAndDate(Long franchiseId, LocalDate date) {
         log.info("[DEBUG] findByFranchiseAndDate called for franchiseId: {}, date: {}", franchiseId, date);
+        return receiptRepository.findByFranchiseIdAndSettlementDate(franchiseId, date);
+    }
+
+    @Override
+    public Optional<DailySettlementReceipt> findByFranchiseAndDate(Long franchiseId, LocalDate date) {
         return receiptRepository.findByFranchiseIdAndSettlementDate(franchiseId, date);
     }
 

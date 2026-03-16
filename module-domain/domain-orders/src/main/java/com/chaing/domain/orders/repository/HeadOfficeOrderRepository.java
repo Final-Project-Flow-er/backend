@@ -2,6 +2,7 @@ package com.chaing.domain.orders.repository;
 
 import com.chaing.domain.orders.entity.HeadOfficeOrder;
 import com.chaing.domain.orders.enums.HQOrderStatus;
+import com.chaing.domain.orders.repository.interfaces.HeadOfficeOrderRepositoryCustom;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -11,7 +12,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface HeadOfficeOrderRepository extends JpaRepository<HeadOfficeOrder, Long> {
+public interface HeadOfficeOrderRepository extends JpaRepository<HeadOfficeOrder, Long>, HeadOfficeOrderRepositoryCustom {
     List<HeadOfficeOrder> findAllByDeletedAtIsNull();
 
     Optional<HeadOfficeOrder> findByOrderCodeAndDeletedAtIsNull(String orderCode);

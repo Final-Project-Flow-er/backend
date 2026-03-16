@@ -4,6 +4,7 @@ import com.chaing.domain.transports.dto.DeliveryFeeInfo;
 import com.chaing.domain.transports.dto.OrderInfo;
 import com.chaing.domain.transports.dto.response.AvailableVehicleInfo;
 import com.chaing.domain.transports.entity.Transit;
+import com.chaing.domain.transports.entity.TransportLog;
 import com.chaing.domain.transports.entity.Vehicle;
 import com.chaing.domain.transports.enums.DeliverStatus;
 import com.chaing.domain.transports.exception.TransportErrorCode;
@@ -155,6 +156,12 @@ public class InternalTransportService {
             };
 
             executor.updateDeliverStatus(orderCode, targetStatus);
+
+            List<Transit> updatedTransitInfo = reader.getTransitInfo(orderCodes);
+
+            // 운송 로그
+            executor.createTransportLog(updatedTransitInfo);
+
         });
 
     }

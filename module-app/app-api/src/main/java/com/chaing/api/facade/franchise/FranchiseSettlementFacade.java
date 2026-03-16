@@ -47,6 +47,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -70,16 +71,9 @@ public class FranchiseSettlementFacade {
         // 일별 정산 요약
         @Transactional(readOnly = true)
         public FranchiseSettlementSummaryResponse getDailySummary(Long franchiseId, LocalDate date) {
-                try {
-                        DailySettlementReceipt r = dailyService.getByFranchiseAndDate(franchiseId, date);
-                        return toSummary(r);
-                } catch (SettlementException e) {
-                        if (e.getErrorCode() == SettlementErrorCode.DAILY_SETTLEMENT_NOT_FOUND) {
-                                // 데이터가 없으면 실시간 가집계 시도
-                                return toSummary(aggregateDailySettlement(franchiseId, date));
-                        }
-                        throw e;
-                }
+                Optional<DailySettlementReceipt> receipt = dailyService.findByFranchiseAndDate(franchiseId, date);
+                // 데이터가 없으면 실시간 가집계 시도
+                return toSummary(receipt.orElseGet(() -> aggregateDailySettlement(franchiseId, date)));
         }
 
         // 일별 매출 top5, 전체
@@ -95,6 +89,9 @@ public class FranchiseSettlementFacade {
                 // SalesItem 가져오기
                 List<Long> salesIds = salesList.stream()
                                 .map(Sales::getSalesId).toList();
+                if (salesIds.isEmpty()) {
+                        return List.of();
+                }
                 List<SalesItem> items = salesItemRepository.findAllBySalesSalesIdIn(salesIds);
 
                 // 상품별 집계 (상품명 기준 그룹핑)
@@ -115,6 +112,9 @@ public class FranchiseSettlementFacade {
                 // OrderItem 가져오기
                 List<Long> orderIds = orders.stream()
                                 .map(FranchiseOrder::getFranchiseOrderId).toList();
+                if (orderIds.isEmpty()) {
+                        return List.of();
+                }
                 List<FranchiseOrderItem> items = orderItemRepository
                                 .findAllByFranchiseOrderFranchiseOrderIdIn(orderIds);
                 // 상품별 집계
@@ -124,7 +124,13 @@ public class FranchiseSettlementFacade {
         // 월별 정산 요약
         @Transactional(readOnly = true)
         public FranchiseSettlementSummaryResponse getMonthlySummary(Long franchiseId, YearMonth month) {
-                MonthlySettlement s = monthlyService.getByFranchiseAndMonth(franchiseId, month);
+                Optional<MonthlySettlement> settlementOpt = monthlyService.findByFranchiseAndMonth(franchiseId, month);
+                MonthlySettlement s = settlementOpt.orElseGet(() -> {
+                        // 데이터가 없으면 일별 정산 기반 가집계
+                        List<DailySettlementReceipt> dailyReceipts = dailyService.getAllByFranchiseAndDateRange(
+                                        franchiseId, month.atDay(1), month.atEndOfMonth());
+                        return aggregateMonthlySettlement(franchiseId, month, dailyReceipts);
+                });
                 return new FranchiseSettlementSummaryResponse(
                                 s.getFinalSettlementAmount(),
                                 s.getTotalSaleAmount(),
@@ -149,6 +155,9 @@ public class FranchiseSettlementFacade {
                                                 end.atTime(23, 59, 59));
                 List<Long> salesIds = salesList.stream()
                                 .map(Sales::getSalesId).toList();
+                if (salesIds.isEmpty()) {
+                        return List.of();
+                }
                 List<SalesItem> items = salesItemRepository.findAllBySalesSalesIdIn(salesIds);
                 return aggregateSalesItems(items, limit);
         }
@@ -167,6 +176,9 @@ public class FranchiseSettlementFacade {
                                                 end.atTime(23, 59, 59));
                 List<Long> orderIds = orders.stream()
                                 .map(FranchiseOrder::getFranchiseOrderId).toList();
+                if (orderIds.isEmpty()) {
+                        return List.of();
+                }
                 List<FranchiseOrderItem> items = orderItemRepository
                                 .findAllByFranchiseOrderFranchiseOrderIdIn(orderIds);
                 return aggregateOrderItems(items, limit);
@@ -252,17 +264,17 @@ public class FranchiseSettlementFacade {
         private List<FranchiseSalesItemResponse> aggregateSalesItems(
                         List<SalesItem> items, Integer limit) {
                 // 상품명별 그룹핑
+                // Map<productName, List<SalesItem>>
                 Map<String, List<SalesItem>> grouped = items.stream()
                                 .collect(Collectors.groupingBy(SalesItem::getProductName));
+
                 List<FranchiseSalesItemResponse> result = grouped.entrySet().stream()
                                 .map(entry -> {
                                         String name = entry.getKey();
                                         List<SalesItem> group = entry.getValue();
-                                    int totalQty = group.stream().mapToInt(item ->
-                                            item.getSales().getQuantity()).sum();
-                                    BigDecimal total = group.stream().map(item ->
-                                            item.getUnitPrice().multiply(BigDecimal.valueOf(
-                                                    item.getSales().getQuantity())))
+                                    int totalQty = group.size();
+                                    BigDecimal total = group.stream()
+                                            .map(SalesItem::getUnitPrice)
                                             .reduce(BigDecimal.ZERO, BigDecimal::add);
                                         BigDecimal displayPrice = group.get(0).getUnitPrice();
                                         return new FranchiseSalesItemResponse(0, name, totalQty, displayPrice, total);
@@ -322,8 +334,12 @@ public class FranchiseSettlementFacade {
         @Transactional
         public String getDailyReceiptPdf(Long franchiseId, LocalDate date) {
                 try {
-                        // 1. 해당 가맹점의 일별 정산 데이터 조회
-                        DailySettlementReceipt receipt = dailyService.getByFranchiseAndDate(franchiseId, date);
+                        // 1. 해당 가맹점의 일별 정산 데이터 조회 (Optional로 조회하여 트랜잭션 rollback-only 방지)
+                        Optional<DailySettlementReceipt> receiptOpt = dailyService.findByFranchiseAndDate(franchiseId, date);
+                        if (receiptOpt.isEmpty()) {
+                                return generateProvisionalDailyPdf(franchiseId, date);
+                        }
+                        DailySettlementReceipt receipt = receiptOpt.get();
 
                         // 2. 해당 정산 ID로 이미 생성된 문서가 있는지 확인
                         java.util.Optional<SettlementDocument> existingDoc = documentService
@@ -361,12 +377,6 @@ public class FranchiseSettlementFacade {
                         documentService.save(newDoc);
 
                         return fileUrl;
-                } catch (SettlementException e) {
-                        if (e.getErrorCode() == SettlementErrorCode.DAILY_SETTLEMENT_NOT_FOUND) {
-                                // 데이터가 없으면 실시간 집계 시도
-                                return generateProvisionalDailyPdf(franchiseId, date);
-                        }
-                        throw e;
                 } catch (Exception e) {
                         log.error("Failed to generate Daily Franchise Receipt PDF: ", e);
                         throw new SettlementException(SettlementErrorCode.DOCUMENT_GENERATION_FAILED);
@@ -376,21 +386,14 @@ public class FranchiseSettlementFacade {
         @Transactional
         public String getMonthlyReceiptPdf(Long franchiseId, YearMonth month) {
                 try {
-                        // 1. 해당 가맹점의 월별 정산 데이터 조회 (없으면 SettlementException 발생)
-                        MonthlySettlement settlement;
-                        List<SettlementVoucher> vouchers;
-
-                        try {
-                                settlement = monthlyService.getByFranchiseAndMonth(franchiseId, month);
-                                vouchers = voucherRepository
-                                                .findAllByMonthlySettlementId(settlement.getMonthlySettlementId());
-                        } catch (SettlementException e) {
-                                if (e.getErrorCode() == SettlementErrorCode.MONTHLY_SETTLEMENT_NOT_FOUND) {
-                                        // 데이터가 없으면 실시간 집계 시도
-                                        return generateProvisionalMonthlyPdf(franchiseId, month);
-                                }
-                                throw e;
+                        // 1. 해당 가맹점의 월별 정산 데이터 조회 (Optional로 조회하여 트랜잭션 rollback-only 방지)
+                        Optional<MonthlySettlement> settlementOpt = monthlyService.findByFranchiseAndMonth(franchiseId, month);
+                        if (settlementOpt.isEmpty()) {
+                                return generateProvisionalMonthlyPdf(franchiseId, month);
                         }
+                        MonthlySettlement settlement = settlementOpt.get();
+                        List<SettlementVoucher> vouchers = voucherRepository
+                                        .findAllByMonthlySettlementId(settlement.getMonthlySettlementId());
 
                         // 2. 이미 생성된 문서(RECEIPT_PDF)가 있는지 확인
                         try {
@@ -462,16 +465,12 @@ public class FranchiseSettlementFacade {
         @Transactional
         public String getMonthlyVouchersExcel(Long franchiseId, YearMonth month) {
                 try {
-                        // 1. 해당 가맹점의 월별 정산 데이터 조회
-                        MonthlySettlement settlement;
-                        try {
-                                settlement = monthlyService.getByFranchiseAndMonth(franchiseId, month);
-                        } catch (SettlementException e) {
-                                if (e.getErrorCode() == SettlementErrorCode.MONTHLY_SETTLEMENT_NOT_FOUND) {
-                                        return generateProvisionalMonthlyExcel(franchiseId, month);
-                                }
-                                throw e;
+                        // 1. 해당 가맹점의 월별 정산 데이터 조회 (Optional로 조회하여 트랜잭션 rollback-only 방지)
+                        Optional<MonthlySettlement> settlementOpt = monthlyService.findByFranchiseAndMonth(franchiseId, month);
+                        if (settlementOpt.isEmpty()) {
+                                return generateProvisionalMonthlyExcel(franchiseId, month);
                         }
+                        MonthlySettlement settlement = settlementOpt.get();
 
                         // 2. 이미 생성된 엑셀 문서가 있는지 확인
                         List<SettlementDocument> documents = documentService

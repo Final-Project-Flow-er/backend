@@ -20,6 +20,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -46,6 +47,9 @@ public class FranchiseOrder extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long franchiseOrderId;  // pk 가맹점 발주 코드
+
+    @Version
+    private Long version;
 
     @Column(nullable = false)
     private Long franchiseId;  // fk 가맹점 번호

@@ -8,6 +8,7 @@ import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 public interface DailySettlementService {
     // 특정 날짜 전체 가맹점 일별 정산 목록 (keyword -> 가맹점)
@@ -15,6 +16,9 @@ public interface DailySettlementService {
 
     // 특정 가맹점 + 날짜
     DailySettlementReceipt getByFranchiseAndDate(Long franchiseId, LocalDate date);
+
+    // 특정 가맹점 + 날짜 (Optional 반환, 트랜잭션 rollback-only 방지용)
+    Optional<DailySettlementReceipt> findByFranchiseAndDate(Long franchiseId, LocalDate date);
 
     // 기간별 조회 (그래프용)
     List<DailySettlementReceipt> getAllByDateRange(LocalDate start, LocalDate end);

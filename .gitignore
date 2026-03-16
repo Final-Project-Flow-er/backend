@@ -46,8 +46,8 @@ yarn-error.log*
 ### GEMINI.md ###
 GEMINI.md
 
-### SQL ###
-src/main/resources/dml
+### Mock Data ###
+src/main/resources/**
 
 ### API Document ###
 docs

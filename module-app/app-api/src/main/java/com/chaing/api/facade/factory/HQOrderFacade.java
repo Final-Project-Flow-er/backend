@@ -494,6 +494,9 @@ public class HQOrderFacade {
                                         .map(orderItemByOrderItemId::get)
                                         .toList();
                                 ProductInfo productInfo = productInfoByProductId.get(productId);
+                                if (productInfo == null) {
+                                    throw new HQOrderException(HQOrderErrorCode.PRODUCT_NOT_FOUND);
+                                }
 
                                 Integer quantity = orderItems.stream()
                                         .map(FranchiseOrderItemCommand::quantity)

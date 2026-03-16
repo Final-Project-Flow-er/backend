@@ -167,6 +167,10 @@ public class HQReturnFacade {
 
                     ReturnItemInspection inspection = itemInspectionByBoxCode.get(entry.getValue());
 
+                    if (inspection == null) {
+                        throw new FranchiseReturnException(FranchiseReturnErrorCode.RETURN_ITEM_NOT_FOUND);
+                    }
+
                     if (productInfo == null) {
                         throw new FranchiseReturnException(FranchiseReturnErrorCode.PRODUCT_NOT_FOUND);
                     }

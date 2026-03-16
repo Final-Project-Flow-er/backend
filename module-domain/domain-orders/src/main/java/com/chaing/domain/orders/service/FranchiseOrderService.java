@@ -50,7 +50,7 @@ public class FranchiseOrderService {
         List<FranchiseOrder> orders = franchiseOrderRepository.findAllByFranchiseIdAndUserId(franchiseId, userId);
 
         if (orders == null || orders.isEmpty()) {
-            throw new OrderException(OrderErrorCode.ORDER_NOT_FOUND);
+            return Collections.emptyMap();
         }
 
         return orders.stream()

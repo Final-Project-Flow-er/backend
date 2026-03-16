@@ -11,6 +11,7 @@ import com.chaing.domain.products.service.ProductService;
 import com.chaing.domain.returns.dto.command.HQReturnCommand;
 import com.chaing.domain.returns.dto.command.HQReturnDetailCommand;
 import com.chaing.domain.returns.dto.command.ReturnCommand;
+import com.chaing.domain.returns.dto.response.HQReturnItemProjection;
 import com.chaing.core.dto.info.ReturnItemInspection;
 import com.chaing.domain.returns.dto.request.HQOrderStatusUpdateRequest;
 import com.chaing.domain.returns.dto.request.HQReturnItemUpdateRequest;
@@ -24,17 +25,26 @@ import com.chaing.domain.returns.exception.FranchiseReturnErrorCode;
 import com.chaing.domain.returns.exception.FranchiseReturnException;
 import com.chaing.domain.returns.service.FranchiseReturnService;
 import com.chaing.domain.users.service.UserManagementService;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -43,15 +53,23 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class HQReturnFacade {
 
+    private static final Duration CACHE_TTL = Duration.ofSeconds(30);
+
     private final InventoryService inventoryService;
     private final ProductService productService;
     private final FranchiseReturnService franchiseReturnService;
     private final FranchiseOrderService franchiseOrderService;
     private final FranchiseServiceImpl franchiseService;
     private final UserManagementService userManagementService;
+    private final StringRedisTemplate redisTemplate;
+    private final ObjectMapper objectMapper;
 
     // 반품 요청 조회
     public List<HQReturnResponse> getAllReturns(boolean isAll) {
+        String cacheKey = "ret:hq:all:%s".formatted(isAll);
+        List<HQReturnResponse> cached = readListCache(cacheKey, new TypeReference<>() {});
+        if (cached != null) return cached;
+
         Map<Long, HQReturnCommand> returnByReturnCode;
         if (!isAll) {
             // 대기 상태 반품 요청 조회
@@ -64,7 +82,7 @@ public class HQReturnFacade {
         }
 
         // 반환
-        return returnByReturnCode.values().stream()
+        List<HQReturnResponse> result = returnByReturnCode.values().stream()
                 .map(returnCommand -> {
                     Long returnId = returnCommand.returnId();
                     Long userId = returnCommand.userId();
@@ -86,10 +104,60 @@ public class HQReturnFacade {
                             .build();
                 })
                 .toList();
+        writeCache(cacheKey, result);
+        return result;
+    }
+
+    // 반품 요청 페이지네이션 조회
+    public Page<HQReturnResponse> getAllReturnsPaged(boolean isAll, Pageable pageable) {
+        String cacheKey = "ret:hq:page:%s:%s".formatted(isAll, pageableKey(pageable));
+        Page<HQReturnResponse> cached = readPageCache(cacheKey, HQReturnResponse.class, pageable);
+        if (cached != null) return cached;
+
+        Page<HQReturnItemProjection> page = franchiseReturnService.getHQReturnPage(isAll, pageable);
+
+        // userId → username, phoneNumber
+        List<Long> userIds = page.getContent().stream()
+                .map(HQReturnItemProjection::userId).distinct().toList();
+        Map<Long, String> usernameByUserId = userIds.stream()
+                .collect(Collectors.toMap(Function.identity(),
+                        userManagementService::getUsernameByUserId));
+        Map<Long, String> phoneNumberByUserId = userIds.stream()
+                .collect(Collectors.toMap(Function.identity(),
+                        userManagementService::getPhoneNumberByUserId));
+
+        // franchiseId → franchiseCode
+        List<Long> franchiseIds = page.getContent().stream()
+                .map(HQReturnItemProjection::franchiseId).distinct().toList();
+        Map<Long, String> franchiseCodeByFranchiseId = franchiseIds.stream()
+                .collect(Collectors.toMap(Function.identity(),
+                        id -> franchiseService.getById(id).businessNumber()));
+
+        List<HQReturnResponse> content = page.getContent().stream()
+                .map(p -> HQReturnResponse.builder()
+                        .franchiseCode(franchiseCodeByFranchiseId.get(p.franchiseId()))
+                        .requestedDate(p.requestedDate())
+                        .returnCode(p.returnCode())
+                        .status(p.status())
+                        .type(p.type())
+                        .quantity(p.quantity())
+                        .totalPrice(p.totalPrice())
+                        .receiver(usernameByUserId.get(p.userId()))
+                        .phoneNumber(phoneNumberByUserId.get(p.userId()))
+                        .build())
+                .toList();
+
+        Page<HQReturnResponse> result = new PageImpl<>(content, pageable, page.getTotalElements());
+        writePageCache(cacheKey, result);
+        return result;
     }
 
     // 특정 반품 조회
     public HQReturnDetailResponse getReturn(String returnCode) {
+        String cacheKey = "ret:hq:detail:%s".formatted(returnCode);
+        HQReturnDetailResponse cached = readObjectCache(cacheKey, HQReturnDetailResponse.class);
+        if (cached != null) return cached;
+
         // 반품 정보 조회
         HQReturnDetailCommand returnInfo = franchiseReturnService.getHQReturnInfo(returnCode);
 
@@ -184,7 +252,7 @@ public class HQReturnFacade {
                 .toList();
 
         // 반환
-        return HQReturnDetailResponse.builder()
+        HQReturnDetailResponse result = HQReturnDetailResponse.builder()
                 .returnCode(returnCode)
                 .orderCode(orderCode)
                 .franchiseCode(franchiseCode)
@@ -196,6 +264,8 @@ public class HQReturnFacade {
                 .totalAmount(returnInfo.totalPrice())
                 .items(items)
                 .build();
+        writeCache(cacheKey, result);
+        return result;
     }
 
     // 반품 요청 제품 검수
@@ -258,11 +328,14 @@ public class HQReturnFacade {
         List<ReturnItemInspection> itemInspections = returnItems.values().stream().toList();
 
         // 반환
-        return HQReturnUpdateResponse.builder()
+        HQReturnUpdateResponse result = HQReturnUpdateResponse.builder()
                 .returnCode(returns.returnCode())
                 .status(updatedStatus)
                 .returnItemInspection(itemInspections)
                 .build();
+        evictByPattern("ret:hq:*");
+        evictByPattern("ret:fr:*");
+        return result;
     }
 
     // 반품 요청 접수
@@ -272,9 +345,12 @@ public class HQReturnFacade {
         List<ReturnCommand> acceptedReturns = franchiseReturnService.acceptReturn(returnCodes);
 
         // 반환
-        return acceptedReturns.stream()
+        List<HQReturnProductResponse> result = acceptedReturns.stream()
                 .map(HQReturnProductResponse::from)
                 .toList();
+        evictByPattern("ret:hq:*");
+        evictByPattern("ret:fr:*");
+        return result;
     }
 
     // 반품 상태 SHIPPING_PENDING으로 수정
@@ -288,8 +364,80 @@ public class HQReturnFacade {
         Map<Long, ReturnCommand> returns = franchiseReturnService.updateShippingPending(returnCodes);
 
         // 반환
-        return returns.values().stream()
+        List<HQOrderStatusShippingPendingResponse> result = returns.values().stream()
                 .map(HQOrderStatusShippingPendingResponse::from)
                 .toList();
+        evictByPattern("ret:hq:*");
+        evictByPattern("ret:fr:*");
+        return result;
+    }
+
+    private <T> List<T> readListCache(String key, TypeReference<List<T>> typeRef) {
+        try {
+            String cached = redisTemplate.opsForValue().get(key);
+            if (cached == null) return null;
+            return objectMapper.readValue(cached, typeRef);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private <T> T readObjectCache(String key, Class<T> clazz) {
+        try {
+            String cached = redisTemplate.opsForValue().get(key);
+            if (cached == null) return null;
+            return objectMapper.readValue(cached, clazz);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private void writeCache(String key, Object value) {
+        try {
+            redisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(value), CACHE_TTL);
+        } catch (Exception ignored) {
+        }
+    }
+
+    private void evictByPattern(String pattern) {
+        try {
+            Set<String> keys = redisTemplate.keys(pattern);
+            if (keys != null && !keys.isEmpty()) {
+                redisTemplate.delete(keys);
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
+    private String pageableKey(Pageable pageable) {
+        return "%d:%d:%s".formatted(
+                pageable.getPageNumber(),
+                pageable.getPageSize(),
+                pageable.getSort().isSorted() ? pageable.getSort().toString().replace(" ", "") : "-");
+    }
+
+    private <T> Page<T> readPageCache(String key, Class<T> itemClass, Pageable pageable) {
+        try {
+            String cached = redisTemplate.opsForValue().get(key);
+            if (cached == null) return null;
+
+            JsonNode root = objectMapper.readTree(cached);
+            List<T> content = objectMapper.readerForListOf(itemClass).readValue(root.path("content"));
+            long totalElements = root.path("totalElements").asLong(content.size());
+
+            return new PageImpl<>(content, pageable, totalElements);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private void writePageCache(String key, Page<?> page) {
+        try {
+            Map<String, Object> payload = Map.of(
+                    "content", page.getContent(),
+                    "totalElements", page.getTotalElements());
+            redisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(payload), CACHE_TTL);
+        } catch (Exception ignored) {
+        }
     }
 }

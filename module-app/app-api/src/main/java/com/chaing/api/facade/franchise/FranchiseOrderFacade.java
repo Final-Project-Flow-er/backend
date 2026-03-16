@@ -22,14 +22,22 @@ import com.chaing.domain.orders.service.FranchiseOrderCodeGenerator;
 import com.chaing.domain.orders.service.FranchiseOrderService;
 import com.chaing.domain.products.service.ProductService;
 import com.chaing.domain.users.service.UserManagementService;
+import com.chaing.domain.orders.dto.response.FranchiseOrderItemProjection;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.util.Collections;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -42,15 +50,23 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class FranchiseOrderFacade {
 
+    private static final Duration CACHE_TTL = Duration.ofSeconds(30);
+
     private final FranchiseOrderService franchiseOrderService;
     private final UserManagementService userManagementService;
     private final ProductService productService;
     private final FranchiseOrderCodeGenerator generator;
     private final FranchiseServiceImpl franchiseService;
     private final InventoryService inventoryService;
+    private final StringRedisTemplate redisTemplate;
+    private final ObjectMapper objectMapper;
 
     // 가맹점 발주 조회
     public List<FranchiseOrderResponse> getAllOrders(Long userId) {
+        String cacheKey = "ord:fr:all:%d".formatted(userId);
+        List<FranchiseOrderResponse> cached = readListCache(cacheKey, new TypeReference<>() {});
+        if (cached != null) return cached;
+
         // franchiseId
         Long franchiseId = userManagementService.getFranchiseIdByUserId(userId);
         log.info("franchise id: {}", franchiseId);
@@ -62,10 +78,6 @@ public class FranchiseOrderFacade {
         // Map<orderId, FranchiseOrderCommand>
         Map<Long, FranchiseOrderCommand> orders = franchiseOrderService.getAllOrdersByFranchiseIdAndUserId(franchiseId, userId);
         log.info("orders: {}", orders);
-
-        if (orders.isEmpty()) {
-            return Collections.emptyList();
-        }
 
         // List<orderId>
         List<Long> orderIds = orders.keySet().stream().toList();
@@ -84,7 +96,7 @@ public class FranchiseOrderFacade {
         // Map<productId, ProductInfo>
         Map<Long, ProductInfo> productInfoByProductId = productService.getProductInfos(productIds);
 
-        return orders.entrySet().stream()
+        List<FranchiseOrderResponse> result = orders.entrySet().stream()
                 .flatMap(entry -> {
                     Long orderId = entry.getKey();
                     FranchiseOrderCommand orderCommand = entry.getValue();
@@ -115,10 +127,52 @@ public class FranchiseOrderFacade {
                     });
                 })
                 .toList();
+        writeCache(cacheKey, result);
+        return result;
+    }
+
+    // 가맹점 발주 페이지네이션 조회 (아이템 행 단위)
+    public Page<FranchiseOrderResponse> getAllOrdersPaged(Long userId, Pageable pageable) {
+        String cacheKey = "ord:fr:page:%d:%s".formatted(userId, pageableKey(pageable));
+        Page<FranchiseOrderResponse> cached = readPageCache(cacheKey, FranchiseOrderResponse.class, pageable);
+        if (cached != null) return cached;
+
+        Long franchiseId = userManagementService.getFranchiseIdByUserId(userId);
+        String username = userManagementService.getUsernameByUserId(userId);
+
+        Page<FranchiseOrderItemProjection> page =
+                franchiseOrderService.getOrderItemPage(franchiseId, userId, pageable);
+
+        List<Long> productIds = page.getContent().stream()
+                .map(FranchiseOrderItemProjection::productId).distinct().toList();
+        Map<Long, ProductInfo> productInfoMap = productService.getProductInfos(productIds);
+
+        List<FranchiseOrderResponse> content = page.getContent().stream()
+                .map(p -> FranchiseOrderResponse.builder()
+                        .orderCode(p.orderCode())
+                        .orderStatus(p.orderStatus())
+                        .productCode(productInfoMap.containsKey(p.productId())
+                                ? productInfoMap.get(p.productId()).productCode() : null)
+                        .quantity(p.quantity())
+                        .unitPrice(p.unitPrice())
+                        .totalPrice(p.totalPrice())
+                        .requestedDate(p.requestedDate())
+                        .receiver(username)
+                        .deliveryDate(p.deliveryDate())
+                        .build())
+                .toList();
+
+        Page<FranchiseOrderResponse> result = new PageImpl<>(content, pageable, page.getTotalElements());
+        writePageCache(cacheKey, result);
+        return result;
     }
 
     // 가맹점의 발주 번호에 따른 특정 발주 조회
     public FranchiseOrderDetailResponse getOrder(Long userId, String orderCode) {
+        String cacheKey = "ord:fr:detail:%d:%s".formatted(userId, orderCode);
+        FranchiseOrderDetailResponse cached = readObjectCache(cacheKey, FranchiseOrderDetailResponse.class);
+        if (cached != null) return cached;
+
         // userRole 확인
         String userRole = userManagementService.getUserById(userId).getRole().toString();
 
@@ -204,7 +258,7 @@ public class FranchiseOrderFacade {
                 .toList();
 
         // 반환
-        return FranchiseOrderDetailResponse.builder()
+        FranchiseOrderDetailResponse result = FranchiseOrderDetailResponse.builder()
                 .orderCode(order.orderCode())
                 .status(order.orderStatus())
                 .requestedDate(order.requestedDate())
@@ -215,6 +269,8 @@ public class FranchiseOrderFacade {
                 .deliveryTime(order.deliveryTime())
                 .items(itemResponses)
                 .build();
+        writeCache(cacheKey, result);
+        return result;
     }
 
     // 가맹점의 발주 수정
@@ -260,11 +316,14 @@ public class FranchiseOrderFacade {
         // 발주 수정
         List<FranchiseOrderItemDetailResponse> itemResponses = franchiseOrderService.updateOrder(order.orderId(), requestByProductId, productInfoByProductId);
 
-        return FranchiseOrderUpdateResponse.builder()
+        FranchiseOrderUpdateResponse result = FranchiseOrderUpdateResponse.builder()
                 .orderCode(orderCode)
                 .cancelReason(order.canceledReason())
                 .items(itemResponses)
                 .build();
+        evictByPattern("ord:fr:*");
+        evictByPattern("ord:hq:*");
+        return result;
     }
 
     // 가맹점 발주 취소
@@ -274,7 +333,10 @@ public class FranchiseOrderFacade {
         Long franchiseId = userManagementService.getFranchiseIdByUserId(userId);
 
         // 취소
-        return franchiseOrderService.cancelOrder(userId, franchiseId, orderCode);
+        FranchiseOrderCancelResponse result = franchiseOrderService.cancelOrder(userId, franchiseId, orderCode);
+        evictByPattern("ord:fr:*");
+        evictByPattern("ord:hq:*");
+        return result;
     }
 
     // 가맹점 발주 생성
@@ -320,7 +382,7 @@ public class FranchiseOrderFacade {
         // TODO: 정산 생성
 
         // 반환
-        return FranchiseOrderCreateResponse.builder()
+        FranchiseOrderCreateResponse result = FranchiseOrderCreateResponse.builder()
                 .orderCode(orderCode)
                 .orderStatus(order.orderStatus())
                 .totalPrice(totalPrice)
@@ -329,5 +391,77 @@ public class FranchiseOrderFacade {
                 .deliveryDate(order.deliveryDate())
                 .items(orderItems)
                 .build();
+        evictByPattern("ord:fr:*");
+        evictByPattern("ord:hq:*");
+        return result;
+    }
+
+    private <T> List<T> readListCache(String key, TypeReference<List<T>> typeRef) {
+        try {
+            String cached = redisTemplate.opsForValue().get(key);
+            if (cached == null) return null;
+            return objectMapper.readValue(cached, typeRef);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private <T> T readObjectCache(String key, Class<T> clazz) {
+        try {
+            String cached = redisTemplate.opsForValue().get(key);
+            if (cached == null) return null;
+            return objectMapper.readValue(cached, clazz);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private void writeCache(String key, Object value) {
+        try {
+            redisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(value), CACHE_TTL);
+        } catch (Exception ignored) {
+        }
+    }
+
+    private void evictByPattern(String pattern) {
+        try {
+            Set<String> keys = redisTemplate.keys(pattern);
+            if (keys != null && !keys.isEmpty()) {
+                redisTemplate.delete(keys);
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
+    private String pageableKey(Pageable pageable) {
+        return "%d:%d:%s".formatted(
+                pageable.getPageNumber(),
+                pageable.getPageSize(),
+                pageable.getSort().isSorted() ? pageable.getSort().toString().replace(" ", "") : "-");
+    }
+
+    private <T> Page<T> readPageCache(String key, Class<T> itemClass, Pageable pageable) {
+        try {
+            String cached = redisTemplate.opsForValue().get(key);
+            if (cached == null) return null;
+
+            JsonNode root = objectMapper.readTree(cached);
+            List<T> content = objectMapper.readerForListOf(itemClass).readValue(root.path("content"));
+            long totalElements = root.path("totalElements").asLong(content.size());
+
+            return new PageImpl<>(content, pageable, totalElements);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private void writePageCache(String key, Page<?> page) {
+        try {
+            Map<String, Object> payload = Map.of(
+                    "content", page.getContent(),
+                    "totalElements", page.getTotalElements());
+            redisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(payload), CACHE_TTL);
+        } catch (Exception ignored) {
+        }
     }
 }

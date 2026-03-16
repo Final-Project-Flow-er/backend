@@ -30,15 +30,23 @@ import com.chaing.domain.returns.exception.FranchiseReturnException;
 import com.chaing.domain.returns.service.FranchiseReturnService;
 import com.chaing.domain.returns.service.ReturnCodeGenerator;
 import com.chaing.domain.users.service.UserManagementService;
+import com.chaing.domain.returns.dto.response.FranchiseReturnItemProjection;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.util.Collections;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -50,6 +58,8 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class FranchiseReturnFacade {
 
+    private static final Duration CACHE_TTL = Duration.ofSeconds(30);
+
     private final FranchiseReturnService franchiseReturnService;
     private final FranchiseOrderService franchiseOrderService;
     private final UserManagementService userManagementService;
@@ -57,19 +67,21 @@ public class FranchiseReturnFacade {
     private final ReturnCodeGenerator generator;
     private final InventoryService inventoryService;
     private final FranchiseServiceImpl franchiseService;
+    private final StringRedisTemplate redisTemplate;
+    private final ObjectMapper objectMapper;
 
     // 반품 전체 조회
     public List<FranchiseReturnResponse> getAllReturns(Long userId) {
+        String cacheKey = "ret:fr:all:%d".formatted(userId);
+        List<FranchiseReturnResponse> cached = readListCache(cacheKey, new TypeReference<>() {});
+        if (cached != null) return cached;
+
         // franchiseId
         Long franchiseId = userManagementService.getFranchiseIdByUserId(userId);
 
         // Map<returnId, ReturnCommand>
         Map<Long, ReturnCommand> returns = franchiseReturnService.getAllReturns(franchiseId);
         log.info("returns: {}", returns);
-
-        if (returns.isEmpty()) {
-            return Collections.emptyList();
-        }
 
         // List<returnId>
         List<Long> returnIds = returns.keySet().stream().toList();
@@ -113,7 +125,7 @@ public class FranchiseReturnFacade {
         // Map<productId, ProductInfo>
         Map<Long, ProductInfo> productInfoByProductId = productService.getProductInfos(productIds);
 
-        return returnItemByReturnId.entrySet().stream()
+        List<FranchiseReturnResponse> result = returnItemByReturnId.entrySet().stream()
                 .flatMap(entry -> {
                     Long returnId = entry.getKey();
                     List<ReturnItemCommand> items = entry.getValue();
@@ -148,10 +160,66 @@ public class FranchiseReturnFacade {
                             });
                 })
                 .toList();
+        writeCache(cacheKey, result);
+        return result;
+    }
+
+    // 반품 페이지네이션 조회 (아이템 행 단위)
+    public Page<FranchiseReturnResponse> getAllReturnsPaged(Long userId, Pageable pageable) {
+        String cacheKey = "ret:fr:page:%d:%s".formatted(userId, pageableKey(pageable));
+        Page<FranchiseReturnResponse> cached = readPageCache(cacheKey, FranchiseReturnResponse.class, pageable);
+        if (cached != null) return cached;
+
+        Long franchiseId = userManagementService.getFranchiseIdByUserId(userId);
+
+        Page<FranchiseReturnItemProjection> page =
+                franchiseReturnService.getReturnItemPage(franchiseId, pageable);
+
+        // franchiseOrderItemId → productId
+        List<Long> orderItemIds = page.getContent().stream()
+                .map(FranchiseReturnItemProjection::franchiseOrderItemId).distinct().toList();
+        Map<Long, Long> productIdByOrderItemId = franchiseOrderService.getProductIdByOrderItemId(orderItemIds);
+
+        // productId → ProductInfo
+        List<Long> productIds = productIdByOrderItemId.values().stream().distinct().toList();
+        Map<Long, ProductInfo> productInfoMap = productService.getProductInfos(productIds);
+
+        // franchiseOrderId → orderCode
+        List<Long> orderIds = page.getContent().stream()
+                .map(FranchiseReturnItemProjection::franchiseOrderId).distinct().toList();
+        Map<Long, String> orderCodeByOrderId = franchiseOrderService.getAllOrderCodeByOrderIds(orderIds);
+
+        List<FranchiseReturnResponse> content = page.getContent().stream()
+                .map(p -> {
+                    Long productId = productIdByOrderItemId.get(p.franchiseOrderItemId());
+                    ProductInfo productInfo = productInfoMap.get(productId);
+
+                    return FranchiseReturnResponse.builder()
+                            .returnCode(p.returnCode())
+                            .status(p.status())
+                            .orderCode(orderCodeByOrderId.get(p.franchiseOrderId()))
+                            .productCode(productInfo != null ? productInfo.productCode() : null)
+                            .productName(productInfo != null ? productInfo.productName() : null)
+                            .unitPrice(productInfo != null ? productInfo.tradePrice() : null)
+                            .quantity(1)
+                            .totalPrice(productInfo != null ? productInfo.tradePrice() : null)
+                            .type(p.type())
+                            .requestedDate(p.requestedDate())
+                            .build();
+                })
+                .toList();
+
+        Page<FranchiseReturnResponse> result = new PageImpl<>(content, pageable, page.getTotalElements());
+        writePageCache(cacheKey, result);
+        return result;
     }
 
     // 반품 상세조회
     public FranchiseReturnDetailResponse getReturn(Long userId, String returnCode) {
+        String cacheKey = "ret:fr:detail:%d:%s".formatted(userId, returnCode);
+        FranchiseReturnDetailResponse cached = readObjectCache(cacheKey, FranchiseReturnDetailResponse.class);
+        if (cached != null) return cached;
+
         // franchiseId
         Long franchiseId = userManagementService.getFranchiseIdByUserId(userId);
 
@@ -221,7 +289,7 @@ public class FranchiseReturnFacade {
                 .toList();
 
         // 반환
-        return FranchiseReturnDetailResponse.builder()
+        FranchiseReturnDetailResponse result = FranchiseReturnDetailResponse.builder()
                 .returnCode(returnCommand.returnCode())
                 .orderCode(orderCommand.orderCode())
                 .franchiseCode(franchiseCode)
@@ -233,6 +301,8 @@ public class FranchiseReturnFacade {
                 .description(returnCommand.description())
                 .items(itemResponses)
                 .build();
+        writeCache(cacheKey, result);
+        return result;
     }
 
     // 반품 수정
@@ -306,11 +376,14 @@ public class FranchiseReturnFacade {
                 .toList();
 
         // 반환
-        return FranchiseReturnUpdateResponse.builder()
+        FranchiseReturnUpdateResponse result = FranchiseReturnUpdateResponse.builder()
                 .returnCode(returnCode)
                 .orderCode(orderCommand.orderCode())
                 .items(itemResponses)
                 .build();
+        evictByPattern("ret:fr:*");
+        evictByPattern("ret:hq:*");
+        return result;
     }
 
     // 반품 취소
@@ -319,7 +392,10 @@ public class FranchiseReturnFacade {
         // franchiseId
         Long franchiseId = userManagementService.getFranchiseIdByUserId(userId);
 
-        return franchiseReturnService.cancel(franchiseId, userId, returnCode);
+        String result = franchiseReturnService.cancel(franchiseId, userId, returnCode);
+        evictByPattern("ret:fr:*");
+        evictByPattern("ret:hq:*");
+        return result;
     }
 
     // 반품 생성
@@ -395,14 +471,21 @@ public class FranchiseReturnFacade {
                 .toList();
 
         // 반환
-        return ReturnCreateResponse.builder()
+        ReturnCreateResponse result = ReturnCreateResponse.builder()
                 .returnCode(returnCommand.returnCode())
                 .items(itemResponses)
                 .build();
+        evictByPattern("ret:fr:*");
+        evictByPattern("ret:hq:*");
+        return result;
     }
 
     // 반품 가능 대상 발주 조회
     public List<FranchiseReturnTargetResponse> getAllTargets(Long userId) {
+        String cacheKey = "ret:fr:targets:%d".formatted(userId);
+        List<FranchiseReturnTargetResponse> cached = readListCache(cacheKey, new TypeReference<>() {});
+        if (cached != null) return cached;
+
         // franchiseId
         Long franchiseId = userManagementService.getFranchiseIdByUserId(userId);
 
@@ -410,11 +493,17 @@ public class FranchiseReturnFacade {
         String username = userManagementService.getUsernameByUserId(userId);
 
         // 발주 조회 및 반환
-        return franchiseOrderService.getAllTargetOrders(franchiseId, userId, username);
+        List<FranchiseReturnTargetResponse> result = franchiseOrderService.getAllTargetOrders(franchiseId, userId, username);
+        writeCache(cacheKey, result);
+        return result;
     }
 
     // 발주 정보 조회
     public FranchiseReturnCreateResponse getReturnCreateInfo(Long userId, String orderCode) {
+        String cacheKey = "ret:fr:createinfo:%d:%s".formatted(userId, orderCode);
+        FranchiseReturnCreateResponse cached = readObjectCache(cacheKey, FranchiseReturnCreateResponse.class);
+        if (cached != null) return cached;
+
         // franchiseId
         Long franchiseId = userManagementService.getFranchiseIdByUserId(userId);
 
@@ -489,10 +578,12 @@ public class FranchiseReturnFacade {
                 })
                 .toList();
 
-        return FranchiseReturnCreateResponse.builder()
+        FranchiseReturnCreateResponse result = FranchiseReturnCreateResponse.builder()
                 .orderInfo(orderInfo)
                 .items(items)
                 .build();
+        writeCache(cacheKey, result);
+        return result;
     }
 
     // 외부 모듈용 반품 제품 출고
@@ -508,11 +599,83 @@ public class FranchiseReturnFacade {
         Map<String, List<String>> boxCodesByReturnCode = franchiseReturnService.delivery(requestedBoxCodes);
 
         // 반환
-        return boxCodesByReturnCode.entrySet().stream()
+        List<FranchiseReturnDeliveryResponse> result = boxCodesByReturnCode.entrySet().stream()
                 .map(entry -> FranchiseReturnDeliveryResponse.of(
                         entry.getKey(),
                         entry.getValue()
                 ))
                 .toList();
+        evictByPattern("ret:fr:*");
+        evictByPattern("ret:hq:*");
+        return result;
+    }
+
+    private <T> List<T> readListCache(String key, TypeReference<List<T>> typeRef) {
+        try {
+            String cached = redisTemplate.opsForValue().get(key);
+            if (cached == null) return null;
+            return objectMapper.readValue(cached, typeRef);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private <T> T readObjectCache(String key, Class<T> clazz) {
+        try {
+            String cached = redisTemplate.opsForValue().get(key);
+            if (cached == null) return null;
+            return objectMapper.readValue(cached, clazz);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private void writeCache(String key, Object value) {
+        try {
+            redisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(value), CACHE_TTL);
+        } catch (Exception ignored) {
+        }
+    }
+
+    private void evictByPattern(String pattern) {
+        try {
+            Set<String> keys = redisTemplate.keys(pattern);
+            if (keys != null && !keys.isEmpty()) {
+                redisTemplate.delete(keys);
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
+    private String pageableKey(Pageable pageable) {
+        return "%d:%d:%s".formatted(
+                pageable.getPageNumber(),
+                pageable.getPageSize(),
+                pageable.getSort().isSorted() ? pageable.getSort().toString().replace(" ", "") : "-");
+    }
+
+    private <T> Page<T> readPageCache(String key, Class<T> itemClass, Pageable pageable) {
+        try {
+            String cached = redisTemplate.opsForValue().get(key);
+            if (cached == null) return null;
+
+            JsonNode root = objectMapper.readTree(cached);
+            List<T> content = objectMapper.readerForListOf(itemClass).readValue(root.path("content"));
+            long totalElements = root.path("totalElements").asLong(content.size());
+
+            return new PageImpl<>(content, pageable, totalElements);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private void writePageCache(String key, Page<?> page) {
+        try {
+            Map<String, Object> payload = Map.of(
+                    "content", page.getContent(),
+                    "totalElements", page.getTotalElements());
+            redisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(payload), CACHE_TTL);
+        } catch (Exception ignored) {
+        }
     }
 }

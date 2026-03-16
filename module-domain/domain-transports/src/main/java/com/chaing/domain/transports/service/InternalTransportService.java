@@ -2,6 +2,7 @@ package com.chaing.domain.transports.service;
 
 import com.chaing.domain.transports.dto.DeliveryFeeInfo;
 import com.chaing.domain.transports.dto.OrderInfo;
+import com.chaing.domain.transports.dto.info.TransportLogInfo;
 import com.chaing.domain.transports.dto.response.AvailableVehicleInfo;
 import com.chaing.domain.transports.entity.Transit;
 import com.chaing.domain.transports.entity.TransportLog;
@@ -23,6 +24,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -170,5 +172,25 @@ public class InternalTransportService {
         return reader.getTransitInfo(orderCodes)
                 .stream()
                 .allMatch(transit -> transit.getStatus() == DeliverStatus.PENDING);
+    }
+
+    public List<TransportLogInfo> getTransportLog() {
+
+        List<TransportLog> logInfos = reader.getTransportLogs();
+
+        List<Long> vehicleIds = logInfos.stream().map(TransportLog::getVehicleId).toList();
+
+        List<Vehicle> vehicleInfos = reader.getVehicles(vehicleIds);
+
+        Map<Long, Vehicle> vehicleMap = vehicleInfos.stream()
+                .collect(Collectors.toMap(Vehicle::getVehicleId, vehicle -> vehicle));
+
+        return logInfos.stream()
+                .map(log -> {
+                    Vehicle vehicle = vehicleMap.get(log.getVehicleId());
+
+                    return TransportLogInfo.create(log, vehicle);
+                })
+                .toList();
     }
 }

@@ -3,6 +3,7 @@ package com.chaing.api.facade.transport;
 import com.chaing.api.dto.transport.internal.request.VehicleAssignmentRequest;
 import com.chaing.api.dto.transport.internal.response.AvailableVehicleResponse;
 import com.chaing.api.dto.transport.internal.response.TransportCancelResponse;
+import com.chaing.api.dto.transport.internal.response.TransportLogResponse;
 import com.chaing.api.dto.transport.internal.response.UnassignedOrderResponse;
 import com.chaing.api.dto.transport.internal.response.UnassignedReturnResponse;
 import com.chaing.domain.businessunits.dto.internal.BusinessUnitInternal;
@@ -17,6 +18,7 @@ import com.chaing.domain.returns.service.FranchiseReturnService;
 import com.chaing.domain.transports.dto.DeliveryFeeInfo;
 import com.chaing.domain.transports.dto.OrderInfo;
 import com.chaing.domain.returns.dto.command.FranchiseReturnCommandForTransit;
+import com.chaing.domain.transports.dto.info.TransportLogInfo;
 import com.chaing.domain.transports.dto.response.AvailableVehicleInfo;
 import com.chaing.domain.transports.exception.TransportErrorCode;
 import com.chaing.domain.transports.exception.TransportException;
@@ -251,5 +253,10 @@ public class InternalTransportFacade {
         if (isPendingOrders) {
             externalTrackingModule.scheduleDeliveryCompletion(orderCodes);
         }
+    }
+
+    public List<TransportLogResponse> getTransportLog() {
+        List<TransportLogInfo> logInfos = transportService.getTransportLog();
+        return logInfos.stream().map(TransportLogResponse::from).collect(Collectors.toList());
     }
 }

@@ -6,8 +6,11 @@ import com.chaing.domain.businessunits.entity.Headquarter;
 import com.chaing.domain.businessunits.exception.BusinessUnitErrorCode;
 import com.chaing.domain.businessunits.exception.BusinessUnitException;
 import com.chaing.domain.businessunits.repository.HeadquarterRepository;
+import com.chaing.domain.businessunits.dto.condition.BusinessUnitSearchCondition;
 import com.chaing.domain.businessunits.service.BusinessUnitService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
@@ -41,6 +44,12 @@ public class HeadquarterServiceImpl implements BusinessUnitService {
         ));
     }
 
+    // 본사 목록 조회
+    @Override
+    public Page<BusinessUnitInternal> getBusinessUnitList(BusinessUnitSearchCondition condition, Pageable pageable) {
+        return headquarterRepository.findAll(pageable).map(BusinessUnitInternal::from);
+    }
+
     // 본사 정보 수정
     @Override
     public BusinessUnitInternal updateInfo(Long id, BusinessUnitUpdateCommand command) {
@@ -57,5 +66,4 @@ public class HeadquarterServiceImpl implements BusinessUnitService {
 
         return hq.getHqCode();
     }
-
 }

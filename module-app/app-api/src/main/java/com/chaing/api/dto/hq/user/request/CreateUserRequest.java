@@ -29,8 +29,9 @@ public record CreateUserRequest(
         @NotNull(message = "역할 선택은 필수입니다.")
         UserPosition position,
 
-        String profileImageUrl,
+        @NotNull(message = "소속 사업장 선택은 필수입니다.")
+        Long businessUnitId,
 
-        Long businessUnitId
+        String profileImageUrl
 ) {
 }

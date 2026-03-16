@@ -40,8 +40,7 @@ class MyPageServiceTests {
 
         // given
         Long userId = 1L;
-        String email = "test@example.com";
-        User user = User.builder().userId(userId).email(email).build();
+        User user = User.builder().userId(userId).email("test@example.com").build();
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
 
         // when
@@ -49,7 +48,7 @@ class MyPageServiceTests {
 
         // then
         assertEquals(userId, result.getUserId());
-        assertEquals(email, result.getEmail());
+        assertEquals("test@example.com", result.getEmail());
     }
 
     @Test
@@ -58,38 +57,17 @@ class MyPageServiceTests {
 
         // given
         Long userId = 1L;
-        User user = spy(User.builder().userId(userId).email("old@example.com").phone("010-0000-0000").build());
-
+        User user = User.builder().userId(userId).email("old@example.com").phone("010-0000-0000").build();
         MyInfoUpdateCommand command = new MyInfoUpdateCommand("new@example.com", "010-1234-5678", "new-image.png");
-
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(userRepository.existsByEmail("new@example.com")).thenReturn(false);
 
         // when
-        myPageService.updateMyProfile(userId, command);
+        User result = myPageService.updateMyProfile(userId, command);
 
         // then
-        verify(user, times(1)).updateMyProfile(command);
-
-        assertEquals("new@example.com", user.getEmail());
-        assertEquals("010-1234-5678", user.getPhone());
-    }
-
-    @Test
-    @DisplayName("내 정보 수정 (이메일 중복 시 예외 발생)")
-    void updateMyProfile_DuplicateEmail_ThrowsException() {
-
-        // given
-        Long userId = 1L;
-        String newEmail = "new@example.com";
-        User user = User.builder().userId(userId).email("old@example.com").build();
-        MyInfoUpdateCommand command = new MyInfoUpdateCommand(newEmail, "010-1234-5678", "imageUrl");
-
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(userRepository.existsByEmail(newEmail)).thenReturn(true);
-
-        // when & then
-        assertThrows(UserException.class, () -> myPageService.updateMyProfile(userId, command));
+        assertEquals("new@example.com", result.getEmail());
+        assertEquals("010-1234-5678", result.getPhone());
+        assertEquals("new-image.png", result.getProfileImageUrl());
     }
 
     @Test

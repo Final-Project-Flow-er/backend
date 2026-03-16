@@ -45,7 +45,7 @@ public class User extends BaseEntity {
     @Column(nullable = false)
     private String username;
 
-    @Column(unique = true, nullable = false)
+    @Column(nullable = false)
     private String email;
 
     @Column(nullable = false)
@@ -66,12 +66,13 @@ public class User extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private UserPosition position;
 
+    @Column(nullable = false)
+    private Long businessUnitId;
+
     @Builder.Default
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private UserStatus status = UserStatus.ACTIVE;
-
-    private Long businessUnitId;
 
     public Long getHqId() {
         return role == UserRole.HQ ? businessUnitId : null;

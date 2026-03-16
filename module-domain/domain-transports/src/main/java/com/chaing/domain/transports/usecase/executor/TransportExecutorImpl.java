@@ -2,10 +2,12 @@ package com.chaing.domain.transports.usecase.executor;
 
 import com.chaing.domain.transports.dto.OrderInfo;
 import com.chaing.domain.transports.entity.Transit;
+import com.chaing.domain.transports.entity.TransportLog;
 import com.chaing.domain.transports.enums.DeliverStatus;
 import com.chaing.domain.transports.exception.TransportErrorCode;
 import com.chaing.domain.transports.exception.TransportException;
 import com.chaing.domain.transports.repository.TransitRepository;
+import com.chaing.domain.transports.repository.TransportLogRepository;
 import com.chaing.domain.transports.repository.VehicleRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -20,6 +22,7 @@ public class TransportExecutorImpl implements TransportExecutor {
 
     private final TransitRepository transitRepository;
     private final VehicleRepository vehicleRepository;
+    private final TransportLogRepository transportLogRepository;
 
     @Override
     public void createTransits(Long vehicleId, List<OrderInfo> orders, Map<String, String> trackingMap, List<String> returnCodes) {
@@ -44,6 +47,9 @@ public class TransportExecutorImpl implements TransportExecutor {
                 .toList();
 
         transitRepository.saveAll(transits);
+
+        // 로그 생성
+        createTransportLog(transits);
     }
 
     @Override
@@ -66,5 +72,12 @@ public class TransportExecutorImpl implements TransportExecutor {
     @Override
     public void updateDeliverStatus(String orderCode, DeliverStatus targetStatus) {
         transitRepository.updateDeliverStatus(orderCode, targetStatus);
+    }
+
+    @Override
+    public void createTransportLog(List<Transit> transits) {
+        // 운송 로그 생성
+        List<TransportLog> logs = TransportLog.create(transits);
+        transportLogRepository.saveAll(logs);
     }
 }

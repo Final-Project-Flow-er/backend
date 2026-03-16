@@ -183,7 +183,7 @@ public class InternalTransportService {
         List<Vehicle> vehicleInfos = reader.getVehicles(vehicleIds);
 
         Map<Long, Vehicle> vehicleMap = vehicleInfos.stream()
-                .collect(Collectors.toMap(Vehicle::getVehicleId, vehicle -> vehicle));
+                .collect(Collectors.toMap(Vehicle::getVehicleId, vehicle -> vehicle, (v1, v2) -> v1));
 
         return logInfos.stream()
                 .map(log -> {

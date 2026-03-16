@@ -159,12 +159,12 @@ public class InternalTransportService {
 
             executor.updateDeliverStatus(orderCode, targetStatus);
 
-            List<Transit> updatedTransitInfo = reader.getTransitInfo(orderCodes);
-
-            // 운송 로그
-            executor.createTransportLog(updatedTransitInfo);
 
         });
+        List<Transit> updatedTransitInfo = reader.getTransitInfo(orderCodes);
+
+        // 운송 로그
+        executor.createTransportLog(updatedTransitInfo);
 
     }
 

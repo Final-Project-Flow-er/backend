@@ -6,7 +6,6 @@ import com.chaing.domain.users.entity.User;
 import com.chaing.domain.users.enums.UserPosition;
 import com.chaing.domain.users.enums.UserRole;
 import com.chaing.domain.users.enums.UserStatus;
-import com.chaing.domain.users.exception.UserException;
 import com.chaing.domain.users.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -51,7 +50,6 @@ class UserManagementServiceTests {
 
         // given
         User user = User.builder().email("test@example.com").build();
-        when(userRepository.existsByEmail(anyString())).thenReturn(false);
         when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
 
         // when
@@ -60,18 +58,6 @@ class UserManagementServiceTests {
         // then
         verify(userRepository, times(1)).save(user);
         assertEquals("encodedPassword", user.getPassword());
-    }
-
-    @Test
-    @DisplayName("회원 등록 (이메일 중복 시 예외 발생)")
-    void registerUser_DuplicateEmail_ThrowsException() {
-
-        // given
-        User user = User.builder().email("test@example.com").build();
-        when(userRepository.existsByEmail(anyString())).thenReturn(true);
-
-        // when & then
-        assertThrows(UserException.class, () -> userManagementService.registerUser(user, "password123"));
     }
 
     @Test
@@ -166,26 +152,20 @@ class UserManagementServiceTests {
 
         // given
         Long userId = 1L;
-        User user = User.builder().userId(userId).email("old@test.com").build();
+        User user = User.builder().userId(userId).role(UserRole.HQ).position(UserPosition.SYSTEM_MANAGER).build();
         UserUpdateCommand command = new UserUpdateCommand(
-                "유저",
-                "new@test.com",
-                "010-1234-5678",
-                LocalDate.of(1995, 5, 1),
-                "image",
-                UserRole.HQ,
-                UserPosition.SYSTEM_MANAGER,
-                1L
+                "수정유저", "new@test.com", "010-1234-5678",
+                LocalDate.of(1995, 5, 1), "image",
+                UserRole.HQ, UserPosition.SYSTEM_MANAGER, 1L
         );
-
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(userRepository.existsByEmail("new@test.com")).thenReturn(false);
 
         // when
         User result = userManagementService.updateUser(userId, command);
 
         // then
         assertNotNull(result);
+        assertEquals("수정유저", result.getUsername());
     }
 
     @Test

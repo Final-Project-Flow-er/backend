@@ -1,14 +1,23 @@
 package com.chaing.domain.sales.service;
 
 import com.chaing.core.util.CodeGenerator;
+import com.chaing.core.util.RedisSequenceGenerator;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 @Component
+@RequiredArgsConstructor
 public class SalesCodeGenerator implements CodeGenerator {
+
+    private final RedisSequenceGenerator redisSequenceGenerator;
+
     @Override
     public String generate(String businessUnitId) {
-        return LocalDateTime.now() + String.valueOf(Math.random()*100 + 1);
+        String today = LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE);
+        String seq = redisSequenceGenerator.nextSequence("sales");
+        return businessUnitId + today + seq;
     }
 }

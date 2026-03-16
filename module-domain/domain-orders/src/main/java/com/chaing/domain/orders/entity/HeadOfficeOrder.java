@@ -11,6 +11,8 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import lombok.AccessLevel;
@@ -23,6 +25,11 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
+@Table(name = "head_office_order", indexes = {
+        @Index(name = "idx_ho_status_deleted", columnList = "order_status, deleted_at"),
+        @Index(name = "idx_ho_order_code_deleted", columnList = "order_code, deleted_at"),
+        @Index(name = "idx_ho_user_code_deleted", columnList = "user_id, order_code, deleted_at")
+})
 @Getter
 @Builder
 @AllArgsConstructor(access = AccessLevel.PROTECTED)

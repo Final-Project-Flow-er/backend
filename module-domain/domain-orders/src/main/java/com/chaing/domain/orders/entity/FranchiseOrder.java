@@ -17,7 +17,9 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -30,6 +32,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
+@Table(name = "franchise_order", indexes = {
+        @Index(name = "idx_fo_status_deleted", columnList = "order_status, deleted_at"),
+        @Index(name = "idx_fo_franchise_status", columnList = "franchise_id, order_status, deleted_at"),
+        @Index(name = "idx_fo_order_code_deleted", columnList = "order_code, deleted_at")
+})
 @Getter
 @Builder
 @AllArgsConstructor(access = AccessLevel.PROTECTED)

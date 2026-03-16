@@ -121,8 +121,10 @@ public class HQInventoryLogController {
 
         @Operation(summary = "발주 코드로 조회", description = "해당 발주코드로 박스코드 조회")
         @GetMapping("/boxes")
-        public ResponseEntity<ApiResponse<List<BoxCodeResponse>>> getBoxes(@RequestParam String transactionCode) {
-                return ResponseEntity.ok(ApiResponse.success(inventoryLogFacade.getBoxCodes(transactionCode)));
+        public ResponseEntity<ApiResponse<List<BoxCodeResponse>>> getBoxes(
+                        @RequestParam String transactionCode,
+                        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+                return ResponseEntity.ok(ApiResponse.success(inventoryLogFacade.getBoxCodes(transactionCode, date)));
         }
 
         @Operation(summary = "가맹점 판매 환불 이력 조회", description = "본사에서 가맹점 판매 환불 이력을 확인합니다.")
@@ -172,7 +174,7 @@ public class HQInventoryLogController {
                 inventoryLogFacade.recordOrderLogs(
                                 request.orderId(),
                                 request.orderType(), // "FRANCHISE" | "HQ"
-                                request.fromId(),
+                                request.toId(),
                                 request.logType(),
                                 request.actorType(), // "FACTORY" | "HQ" | "FRANCHISE"
                                 request.actorId());

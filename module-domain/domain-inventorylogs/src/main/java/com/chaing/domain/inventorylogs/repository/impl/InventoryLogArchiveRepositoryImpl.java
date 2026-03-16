@@ -15,13 +15,12 @@ import com.chaing.domain.inventorylogs.dto.response.ActorProductSalesResponse;
 import com.chaing.domain.inventorylogs.dto.response.InventoryLogListResponse;
 import com.chaing.domain.inventorylogs.dto.response.InventoryLogResponse;
 import com.chaing.domain.inventorylogs.dto.response.ProductSalesResponse;
-import com.chaing.domain.inventorylogs.entity.InventoryLog;
-import com.chaing.domain.inventorylogs.entity.QInventoryLog;
+import com.chaing.domain.inventorylogs.entity.QInventoryLogArchive;
 import com.chaing.domain.inventorylogs.enums.ActorType;
 import com.chaing.domain.inventorylogs.enums.LocationType;
 import com.chaing.domain.inventorylogs.exception.InventoryLogException;
 import com.chaing.domain.inventorylogs.exception.InventoryLogtErrorCode;
-import com.chaing.domain.inventorylogs.repository.interfaces.InventoryLogRepositoryCustom;
+import com.chaing.domain.inventorylogs.repository.interfaces.InventoryLogArchiveRepositoryCustom;
 import com.querydsl.core.Tuple;
 import com.querydsl.core.types.Expression;
 import com.querydsl.core.types.Projections;
@@ -30,8 +29,6 @@ import com.querydsl.core.types.dsl.DateExpression;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.LockModeType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
@@ -47,11 +44,10 @@ import java.util.Objects;
 
 @Repository
 @RequiredArgsConstructor
-public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom {
+public class InventoryLogArchiveRepositoryImpl implements InventoryLogArchiveRepositoryCustom {
 
         private final JPAQueryFactory queryFactory;
-        private final EntityManager entityManager;
-        private final QInventoryLog log = QInventoryLog.inventoryLog;
+        private final QInventoryLogArchive log = QInventoryLogArchive.inventoryLogArchive;
 
         @Override
         public InventoryLogListResponse findReturnInboundLogs(Long hqId, LogRequest request, Pageable pageable) {
@@ -414,12 +410,12 @@ public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom 
 
         // 제품식별코드 조건문
         private BooleanExpression containsTransactionCode(String serialCode) {
-                return serialCode != null ? QInventoryLog.inventoryLog.transactionCode.contains(serialCode) : null;
+                return serialCode != null ? QInventoryLogArchive.inventoryLogArchive.transactionCode.contains(serialCode) : null;
         }
 
         // 상품 이름 조건문
         private BooleanExpression containsProductName(String productName) {
-                return productName != null ? QInventoryLog.inventoryLog.productName.contains(productName) : null;
+                return productName != null ? QInventoryLogArchive.inventoryLogArchive.productName.contains(productName) : null;
         }
 
         // 해당 위치 로그 조회 조건문
@@ -601,19 +597,5 @@ public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom 
                 }
 
                 return responses;
-        }
-
-        @Override
-        public List<InventoryLog> findArchivableLogs(LocalDateTime cutoff, int limit) {
-                if (limit <= 0) {
-                        return List.of();
-                }
-                return entityManager.createQuery(
-                                "select l from InventoryLog l where l.deletedAt is null and l.createdAt < :cutoff order by l.createdAt asc",
-                                InventoryLog.class)
-                                .setParameter("cutoff", cutoff)
-                                .setMaxResults(limit)
-                                .setLockMode(LockModeType.PESSIMISTIC_WRITE)
-                                .getResultList();
         }
 }

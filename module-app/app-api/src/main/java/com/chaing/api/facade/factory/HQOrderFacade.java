@@ -200,6 +200,12 @@ public class HQOrderFacade {
 
         Page<HQOrderItemProjection> page = hqOrderService.getOrderItemPage(pageable);
 
+        if (page.isEmpty()) {
+            Page<HQOrderResponse> empty = new PageImpl<>(List.of(), pageable, 0);
+            writePageCache(cacheKey, empty);
+            return empty;
+        }
+
         // userId → username, phoneNumber 매핑
         List<Long> userIds = page.getContent().stream()
                 .map(HQOrderItemProjection::userId).distinct().toList();
@@ -470,6 +476,12 @@ public class HQOrderFacade {
         if (cached != null) return cached;
 
         Page<HQRequestedOrderItemProjection> page = franchiseOrderService.getRequestedOrderItemPage(isPending, pageable);
+
+        if (page.isEmpty()) {
+            Page<HQRequestedOrderResponse> empty = new PageImpl<>(List.of(), pageable, 0);
+            writePageCache(cacheKey, empty);
+            return empty;
+        }
 
         // userId → username 매핑
         List<Long> userIds = page.getContent().stream()

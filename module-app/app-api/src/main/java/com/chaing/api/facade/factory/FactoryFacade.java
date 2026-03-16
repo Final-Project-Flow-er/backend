@@ -57,6 +57,12 @@ public class FactoryFacade {
 
         Page<FactoryOrderItemProjection> page = hqOrderService.getFactoryOrderItemPage(isAll, pageable);
 
+        if (page.isEmpty()) {
+            Page<FactoryOrderResponse> empty = new PageImpl<>(List.of(), pageable, 0);
+            writePageCache(cacheKey, empty);
+            return empty;
+        }
+
         // userId → username, phoneNumber
         List<Long> userIds = page.getContent().stream()
                 .map(FactoryOrderItemProjection::userId).distinct().toList();

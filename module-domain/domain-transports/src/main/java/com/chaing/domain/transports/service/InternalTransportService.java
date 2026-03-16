@@ -189,6 +189,10 @@ public class InternalTransportService {
                 .map(log -> {
                     Vehicle vehicle = vehicleMap.get(log.getVehicleId());
 
+                    if(vehicle == null) {
+                        throw new  TransportException(TransportErrorCode.TRANSPORT_VEHICLE_NOT_FOUND);
+                    }
+
                     return TransportLogInfo.create(log, vehicle);
                 })
                 .toList();

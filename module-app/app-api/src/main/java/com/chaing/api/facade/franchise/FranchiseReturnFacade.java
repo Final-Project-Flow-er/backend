@@ -175,6 +175,12 @@ public class FranchiseReturnFacade {
         Page<FranchiseReturnItemProjection> page =
                 franchiseReturnService.getReturnItemPage(franchiseId, pageable);
 
+        if (page.isEmpty()) {
+            Page<FranchiseReturnResponse> empty = new PageImpl<>(List.of(), pageable, 0);
+            writePageCache(cacheKey, empty);
+            return empty;
+        }
+
         // franchiseOrderItemId → productId
         List<Long> orderItemIds = page.getContent().stream()
                 .map(FranchiseReturnItemProjection::franchiseOrderItemId).distinct().toList();

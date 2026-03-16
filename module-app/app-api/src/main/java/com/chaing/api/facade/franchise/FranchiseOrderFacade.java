@@ -143,6 +143,12 @@ public class FranchiseOrderFacade {
         Page<FranchiseOrderItemProjection> page =
                 franchiseOrderService.getOrderItemPage(franchiseId, userId, pageable);
 
+        if (page.isEmpty()) {
+            Page<FranchiseOrderResponse> empty = new PageImpl<>(List.of(), pageable, 0);
+            writePageCache(cacheKey, empty);
+            return empty;
+        }
+
         List<Long> productIds = page.getContent().stream()
                 .map(FranchiseOrderItemProjection::productId).distinct().toList();
         Map<Long, ProductInfo> productInfoMap = productService.getProductInfos(productIds);
@@ -378,8 +384,6 @@ public class FranchiseOrderFacade {
         BigDecimal totalPrice = orderItems.stream()
                 .map(FranchiseOrderItemDetailResponse::totalPrice)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        // TODO: 정산 생성
 
         // 반환
         FranchiseOrderCreateResponse result = FranchiseOrderCreateResponse.builder()

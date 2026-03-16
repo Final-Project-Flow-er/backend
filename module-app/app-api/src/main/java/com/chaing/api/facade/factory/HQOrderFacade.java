@@ -43,6 +43,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -67,6 +68,10 @@ public class HQOrderFacade {
         // 발주 정보 조회
         // Map<orderId, HQOrderCommand>
         Map<Long, HQOrderCommand> orders = hqOrderService.getAllOrders();
+
+        if (orders.isEmpty()) {
+            return Collections.emptyList();
+        }
 
         // Map<userId, username>
         Map<Long, String> usernameByUserId = orders.values().stream()
@@ -389,6 +394,10 @@ public class HQOrderFacade {
             orders = franchiseOrderService.getAllOrders();
         }
 
+        if (orders.isEmpty()) {
+            return Collections.emptyList();
+        }
+
         // List<orderId>
         List<Long> orderIds = orders.keySet().stream().toList();
 
@@ -485,6 +494,9 @@ public class HQOrderFacade {
                                         .map(orderItemByOrderItemId::get)
                                         .toList();
                                 ProductInfo productInfo = productInfoByProductId.get(productId);
+                                if (productInfo == null) {
+                                    throw new HQOrderException(HQOrderErrorCode.PRODUCT_NOT_FOUND);
+                                }
 
                                 Integer quantity = orderItems.stream()
                                         .map(FranchiseOrderItemCommand::quantity)

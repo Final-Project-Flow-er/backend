@@ -1,18 +1,16 @@
 package com.chaing.core.service;
 
+import com.chaing.core.config.MinioConfig;
 import com.chaing.core.enums.BucketName;
-import io.minio.GetPresignedObjectUrlArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
 import io.minio.RemoveObjectArgs;
-import io.minio.http.Method;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
@@ -20,6 +18,7 @@ import java.util.concurrent.TimeUnit;
 public class MinioService {
 
     private final MinioClient minioClient;
+    private final MinioConfig minioConfig;
 
     // 파일명 생성
     public String generateFileName(MultipartFile file) {
@@ -70,7 +69,6 @@ public class MinioService {
                 minioClient.makeBucket(
                         io.minio.MakeBucketArgs.builder().bucket(bucketName).build());
             } catch (io.minio.errors.ErrorResponseException e) {
-                // 병렬 요청으로 인해 이미 버킷이 생성된 경우 무시
                 if (!"BucketAlreadyOwnedByYou".equals(e.errorResponse().code()) &&
                         !"BucketAlreadyExists".equals(e.errorResponse().code())) {
                     throw e;
@@ -86,13 +84,13 @@ public class MinioService {
         }
 
         try {
-            return minioClient.getPresignedObjectUrl(
-                    GetPresignedObjectUrlArgs.builder()
-                            .method(Method.GET)
-                            .bucket(bucket.getBucketName())
-                            .object(fileName)
-                            .expiry(2, TimeUnit.HOURS)
-                            .build());
+            String externalUrl = minioConfig.getExternalUrl();
+
+            if (!externalUrl.endsWith("/")) {
+                externalUrl += "/";
+            }
+
+            return externalUrl + bucket.getBucketName() + "/" + fileName;
         } catch (Exception e) {
             log.error("MinIO get URL error: ", e);
             return null;

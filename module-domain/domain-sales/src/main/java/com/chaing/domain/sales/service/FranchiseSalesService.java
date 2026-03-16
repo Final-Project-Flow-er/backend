@@ -57,7 +57,7 @@ public class FranchiseSalesService {
                 .salesCode(sales.getSalesCode())
                 .salesDate(sales.getCreatedAt())
                 .products(
-                        FranchiseSalesProductResponse.from(salesItems)
+                        FranchiseSalesProductResponse.from(salesItems, sales.getQuantity())
                 )
                 .build();
     }
@@ -87,7 +87,6 @@ public class FranchiseSalesService {
                 salesItem = SalesItem.builder()
                         .sales(sales)
                         .productId(itemRequest.productId())
-                        .quantity(itemRequest.quantity())
                         .productCode(itemRequest.productCode())
                         .productName(itemRequest.productName())
                         .lot(itemRequest.serialCode())

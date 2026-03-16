@@ -43,7 +43,7 @@ public class FranchiseInboundReaderImpl implements InboundReader<FranchiseInvent
 
     @Override
     public List<FranchiseInventoryRawData> findAllBySerialCode(List<String> selectedList) {
-        List<FranchiseInventory> entities = repository.findAllBySerialCodeIn(selectedList);
+        List<FranchiseInventory> entities = repository.findAllBySerialCodeInAndDeletedAtIsNull(selectedList);
 
         return entities.stream()
                 .map(entity -> new FranchiseInventoryRawData(

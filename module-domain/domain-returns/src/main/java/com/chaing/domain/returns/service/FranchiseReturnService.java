@@ -7,7 +7,7 @@ import com.chaing.domain.returns.dto.command.HQReturnCommand;
 import com.chaing.domain.returns.dto.command.HQReturnDetailCommand;
 import com.chaing.domain.returns.dto.command.ReturnCommand;
 import com.chaing.domain.returns.dto.command.ReturnItemCommand;
-import com.chaing.domain.returns.dto.command.ReturnItemInspection;
+import com.chaing.core.dto.info.ReturnItemInspection;
 import com.chaing.domain.returns.dto.request.FranchiseReturnCreateRequest;
 import com.chaing.domain.returns.dto.request.HQReturnItemUpdateRequest;
 import com.chaing.domain.returns.dto.request.HQReturnUpdateRequest;
@@ -25,7 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -49,7 +49,7 @@ public class FranchiseReturnService {
         List<Returns> returns = franchiseReturnRepository.findAllByFranchiseIdAndDeletedAtIsNull(franchiseId);
 
         if (returns == null || returns.isEmpty()) {
-            throw new FranchiseReturnException(FranchiseReturnErrorCode.RETURN_NOT_FOUND);
+            return Collections.emptyMap();
         }
 
         return returns.stream()
@@ -241,7 +241,10 @@ public class FranchiseReturnService {
         return items.stream()
                 .collect(Collectors.toMap(
                         ReturnItem::getReturnItemId,
-                        ReturnItemInspection::from
+                        item -> ReturnItemInspection.builder()
+                                .status(ReturnItemStatus.BEFORE_INSPECTION)
+                                .boxCode(item.getBoxCode())
+                                .build()
                 ));
     }
 
@@ -363,7 +366,10 @@ public class FranchiseReturnService {
         return items.stream()
                 .collect(Collectors.toMap(
                         ReturnItem::getReturnItemId,
-                        ReturnItemInspection::from
+                        item -> ReturnItemInspection.builder()
+                                .status(item.getReturnItemStatus())
+                                .boxCode(item.getBoxCode())
+                                .build()
                 ));
     }
 

@@ -29,6 +29,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -61,6 +62,10 @@ public class FranchiseOrderFacade {
         // Map<orderId, FranchiseOrderCommand>
         Map<Long, FranchiseOrderCommand> orders = franchiseOrderService.getAllOrdersByFranchiseIdAndUserId(franchiseId, userId);
         log.info("orders: {}", orders);
+
+        if (orders.isEmpty()) {
+            return Collections.emptyList();
+        }
 
         // List<orderId>
         List<Long> orderIds = orders.keySet().stream().toList();

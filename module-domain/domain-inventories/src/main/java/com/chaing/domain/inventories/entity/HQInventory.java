@@ -31,6 +31,16 @@ public class HQInventory extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long inventoryId;
 
+    // orderId
+    @NotNull
+    @Column(nullable = false)
+    private Long orderId;
+
+    // orderItemId
+    @NotNull
+    @Column(nullable = false)
+    private Long orderItemId;
+
     // 제품식별코드
     @NotBlank
     @Column(nullable = false)
@@ -62,7 +72,8 @@ public class HQInventory extends BaseEntity {
     LocalDateTime receivedAt;       // 입고 완료 일자
 
     @Column
-    Boolean isInspected;
+    @Builder.Default
+    Boolean isInspected = false;
 
     @Column
     @Enumerated(EnumType.STRING)

@@ -38,6 +38,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -65,6 +66,10 @@ public class FranchiseReturnFacade {
         // Map<returnId, ReturnCommand>
         Map<Long, ReturnCommand> returns = franchiseReturnService.getAllReturns(franchiseId);
         log.info("returns: {}", returns);
+
+        if (returns.isEmpty()) {
+            return Collections.emptyList();
+        }
 
         // List<returnId>
         List<Long> returnIds = returns.keySet().stream().toList();

@@ -26,13 +26,6 @@ public class MyPageService {
     // 내 정보 수정
     public User updateMyProfile(Long userId, MyInfoUpdateCommand command) {
         User user = getMyInfo(userId);
-
-        if (!user.getEmail().equals(command.email())) {
-            if (userRepository.existsByEmail(command.email())) {
-                throw new UserException(UserErrorCode.DUPLICATE_EMAIL);
-            }
-        }
-
         user.updateMyProfile(command);
         return user;
     }

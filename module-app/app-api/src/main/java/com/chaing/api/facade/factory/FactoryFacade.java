@@ -51,7 +51,7 @@ public class FactoryFacade {
 
     // 발주 전체/대기 조회 (페이지네이션)
     public Page<FactoryOrderResponse> getAllOrdersPaged(boolean isAll, Pageable pageable) {
-        String cacheKey = "odr:fc:page:%s:%s".formatted(isAll, pageableKey(pageable));
+        String cacheKey = "ord:fc:page:%s:%s".formatted(isAll, pageableKey(pageable));
         Page<FactoryOrderResponse> cached = readPageCache(cacheKey, FactoryOrderResponse.class, pageable);
         if (cached != null) return cached;
 

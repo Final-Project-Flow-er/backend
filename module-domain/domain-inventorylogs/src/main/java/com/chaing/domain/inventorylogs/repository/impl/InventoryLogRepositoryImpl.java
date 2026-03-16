@@ -15,6 +15,7 @@ import com.chaing.domain.inventorylogs.dto.response.ActorProductSalesResponse;
 import com.chaing.domain.inventorylogs.dto.response.InventoryLogListResponse;
 import com.chaing.domain.inventorylogs.dto.response.InventoryLogResponse;
 import com.chaing.domain.inventorylogs.dto.response.ProductSalesResponse;
+import com.chaing.domain.inventorylogs.entity.InventoryLog;
 import com.chaing.domain.inventorylogs.entity.QInventoryLog;
 import com.chaing.domain.inventorylogs.enums.ActorType;
 import com.chaing.domain.inventorylogs.enums.LocationType;
@@ -592,5 +593,17 @@ public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom 
                 }
 
                 return responses;
+        }
+
+        @Override
+        public List<InventoryLog> findArchivableLogs(LocalDateTime cutoff, int limit) {
+                return queryFactory
+                                .selectFrom(log)
+                                .where(
+                                                log.deletedAt.isNull(),
+                                                log.createdAt.lt(cutoff))
+                                .orderBy(log.createdAt.asc())
+                                .limit(limit)
+                                .fetch();
         }
 }

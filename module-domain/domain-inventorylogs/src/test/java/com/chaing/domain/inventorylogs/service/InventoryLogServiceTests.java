@@ -6,6 +6,7 @@ import com.chaing.domain.inventorylogs.dto.request.LogRequest;
 import com.chaing.domain.inventorylogs.dto.response.FactoryInventoryLogListResponse;
 import com.chaing.domain.inventorylogs.dto.response.FranchiseInventoryLogListResponse;
 import com.chaing.domain.inventorylogs.dto.response.InventoryLogListResponse;
+import com.chaing.domain.inventorylogs.repository.InventoryLogArchiveRepository;
 import com.chaing.domain.inventorylogs.repository.InventoryLogRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -26,6 +27,8 @@ class InventoryLogServiceTests {
 
         @Mock
         private InventoryLogRepository inventoryLogRepository;
+        @Mock
+        private InventoryLogArchiveRepository inventoryLogArchiveRepository;
 
         @InjectMocks
         private InventoryLogService inventoryLogService;

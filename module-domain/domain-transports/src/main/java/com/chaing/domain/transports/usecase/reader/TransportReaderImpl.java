@@ -107,11 +107,7 @@ public class TransportReaderImpl implements TransportReader {
 
     @Override
     public List<TransportLog> getTransportLogs() {
-        List<TransportLog> transportLogs = transportLogRepository.getAll();
-        if(transportLogs == null || transportLogs.isEmpty()) {
-            throw new  TransportException(TransportErrorCode.TRANSPORT_NOT_FOUND);
-        }
-        return transportLogs;
+        return transportLogRepository.getAll();
     }
 
     @Override

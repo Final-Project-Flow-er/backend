@@ -9,6 +9,9 @@ import com.querydsl.core.types.dsl.DateExpression;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import java.sql.Date;
@@ -44,6 +47,43 @@ public class FranchiseSalesItemRepositoryImpl implements FranchiseSalesItemRepos
                         sales.isCanceled.eq(false)
                 )
                 .fetch();
+    }
+
+    @Override
+    public Page<FranchiseSalesInfoResponse> searchAllSalesItemsPage(Long franchiseId, Pageable pageable) {
+        List<FranchiseSalesInfoResponse> content = queryFactory
+                .select(new QFranchiseSalesInfoResponse(
+                        sales.salesCode,
+                        salesItem.createdAt,
+                        salesItem.productCode,
+                        salesItem.productName,
+                        sales.quantity,
+                        salesItem.unitPrice,
+                        salesItem.unitPrice.multiply(sales.quantity),
+                        sales.isCanceled
+                ))
+                .from(salesItem)
+                .join(salesItem.sales, sales)
+                .where(
+                        sales.franchiseId.eq(franchiseId),
+                        sales.isCanceled.eq(false)
+                )
+                .orderBy(salesItem.createdAt.desc(), salesItem.salesItemId.asc())
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
+
+        Long total = queryFactory
+                .select(salesItem.count())
+                .from(salesItem)
+                .join(salesItem.sales, sales)
+                .where(
+                        sales.franchiseId.eq(franchiseId),
+                        sales.isCanceled.eq(false)
+                )
+                .fetchOne();
+
+        return new PageImpl<>(content, pageable, total == null ? 0L : total);
     }
 
     @Override

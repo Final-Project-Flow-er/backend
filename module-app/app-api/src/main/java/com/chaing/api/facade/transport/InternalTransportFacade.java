@@ -263,6 +263,9 @@ public class InternalTransportFacade {
         return logInfos.stream()
                 .map(log -> {
                     String franchiseName = franchiseNameMap.get(log.franchiseId());
+                    if(franchiseName == null) {
+                        throw new BusinessUnitException(BusinessUnitErrorCode.BUSINESS_UNIT_NOT_FOUND);
+                    }
 
                     return TransportLogResponse.from(log, franchiseName);
                 })

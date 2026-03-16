@@ -25,7 +25,7 @@ public class InventoryLogArchiveScheduler {
     @Value("${app.inventory-log.archive.max-batches:50}")
     private int maxBatches;
 
-    @Scheduled(cron = "${app.inventory-log.archive.cron:0 */3 * * * *}")
+    @Scheduled(cron = "${app.inventory-log.archive.cron:0 30 2 * * *}")
     public void archiveOldInventoryLogs() {
         LocalDateTime cutoff = LocalDateTime.now().minusMonths(retentionMonths);
 

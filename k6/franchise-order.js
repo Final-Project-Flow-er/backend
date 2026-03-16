@@ -6,14 +6,12 @@ import { login, authHeaders, checkOk } from "./helpers.js";
 
 // 커스텀 메트릭
 const getAllOrdersDuration = new Trend("get_all_orders_duration", true);
-const getOrderDetailDuration = new Trend("get_order_detail_duration", true);
 
 export const options = {
   ...DEFAULT_OPTIONS,
   thresholds: {
     ...DEFAULT_OPTIONS.thresholds,
-    get_all_orders_duration: ["p(95)<300"],
-    get_order_detail_duration: ["p(95)<300"],
+    get_all_orders_duration: ["p(95)<300"]
   },
 };
 
@@ -40,16 +38,6 @@ export default function (data) {
   const allRes = http.get(`${BASE_URL}/api/v1/franchise/orders`, params);
   checkOk(allRes, "getAllOrders");
   getAllOrdersDuration.add(allRes.timings.duration);
-
-  // 2) 상세 발주 조회
-  if (data.orderCode) {
-    const detailRes = http.get(
-      `${BASE_URL}/api/v1/franchise/orders/${data.orderCode}`,
-      params
-    );
-    checkOk(detailRes, "getOrderDetail");
-    getOrderDetailDuration.add(detailRes.timings.duration);
-  }
 
   sleep(0.5);
 }

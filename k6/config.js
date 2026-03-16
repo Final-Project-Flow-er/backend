@@ -1,5 +1,5 @@
 // k6 공통 설정
-export const BASE_URL = __ENV.BASE_URL || "http://beyond21.iptime.org:7001";
+export const BASE_URL = __ENV.BASE_URL || "http://k8s-default-backendi-ce0c9621d6-886419047.ap-northeast-2.elb.amazonaws.com";
 
 // 테스트 계정 — 환경변수 또는 기본값
 export const FRANCHISE_USER = {

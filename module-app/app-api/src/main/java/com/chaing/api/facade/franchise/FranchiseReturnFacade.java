@@ -38,6 +38,9 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -312,6 +315,7 @@ public class FranchiseReturnFacade {
     }
 
     // 반품 수정
+    @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100, multiplier = 2))
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public FranchiseReturnUpdateResponse updateReturn(Long userId, List<FranchiseReturnUpdateRequest> requests, String returnCode) {
         // franchiseId
@@ -393,6 +397,7 @@ public class FranchiseReturnFacade {
     }
 
     // 반품 취소
+    @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100, multiplier = 2))
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public String cancel(Long userId, String returnCode) {
         // franchiseId
@@ -405,6 +410,7 @@ public class FranchiseReturnFacade {
     }
 
     // 반품 생성
+    @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100, multiplier = 2))
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public ReturnCreateResponse create(Long userId, FranchiseReturnCreateRequest request) {
         // franchiseId
@@ -593,6 +599,7 @@ public class FranchiseReturnFacade {
     }
 
     // 외부 모듈용 반품 제품 출고
+    @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100, multiplier = 2))
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public List<FranchiseReturnDeliveryResponse> delivery(List<FranchiseReturnDeliveryRequest> requests) {
         // Set<boxCode>

@@ -49,6 +49,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -228,6 +231,7 @@ public class HQInventoryFacade {
     }
 
     @Scheduled(cron = "0 0 0 * * *")
+    @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100, multiplier = 2))
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public void calculateSafetyStock() {
         String lockKey = "lock:safety-stock:refresh";
@@ -375,6 +379,7 @@ public class HQInventoryFacade {
         return result;
     }
 
+    @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100, multiplier = 2))
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public Void increaseInventory(@Valid InventoryBatchRequest inventoryBatchRequest) {
         List<InventoryLogCreateRequest> logs = convert(inventoryBatchRequest);
@@ -412,6 +417,7 @@ public class HQInventoryFacade {
                 .toList();
     }
 
+    @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100, multiplier = 2))
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public Void decreaseInventory(@Valid InventoryBatchRequest inventoryBatchRequest) {
         List<String> serialCodes = convertsSerialCode(inventoryBatchRequest.boxes());
@@ -498,6 +504,7 @@ public class HQInventoryFacade {
         return result;
     }
 
+    @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100, multiplier = 2))
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public Void disposalInventory(DisposalRequest request, Long locationId) {
         String actorTypeRaw = request.actorType().toUpperCase();
@@ -602,6 +609,7 @@ public class HQInventoryFacade {
     }
 
 
+    @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100, multiplier = 2))
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public void setSafetyStock(SafetyStockRequest request) {
         inventoryService.setSafetyStock(request);
@@ -609,6 +617,7 @@ public class HQInventoryFacade {
         publishStockAlert(request.locationType(), request.locationId());
     }
 
+    @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100, multiplier = 2))
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public void resetSafetyStock(Long locationId, Long productId) {
         inventoryService.resetSafetyStockToDefault("FACTORY", locationId, productId);

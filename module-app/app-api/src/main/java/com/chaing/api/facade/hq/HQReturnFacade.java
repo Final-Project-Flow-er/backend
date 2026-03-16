@@ -32,6 +32,9 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -275,6 +278,7 @@ public class HQReturnFacade {
     }
 
     // 반품 요청 제품 검수
+    @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100, multiplier = 2))
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public HQReturnUpdateResponse updateReturn(String returnCode, HQReturnUpdateRequest request) {
         // 반품 조회
@@ -345,6 +349,7 @@ public class HQReturnFacade {
     }
 
     // 반품 요청 접수
+    @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100, multiplier = 2))
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public List<HQReturnProductResponse> acceptReturn(List<@NotBlank String> returnCodes) {
         // 반품 요청 접수
@@ -360,6 +365,7 @@ public class HQReturnFacade {
     }
 
     // 반품 상태 SHIPPING_PENDING으로 수정
+    @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100, multiplier = 2))
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public List<HQOrderStatusShippingPendingResponse> updateShippingPending(List<HQOrderStatusUpdateRequest> request) {
         // Set<returnCode>

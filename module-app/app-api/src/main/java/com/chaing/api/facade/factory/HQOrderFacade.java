@@ -44,6 +44,9 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -322,6 +325,7 @@ public class HQOrderFacade {
     }
 
     // 발주 수정
+    @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100, multiplier = 2))
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public HQOrderUpdateResponse updateOrder(Long userId, String orderCode, HQOrderUpdateRequest request) {
         // UserInfo
@@ -376,6 +380,7 @@ public class HQOrderFacade {
     }
 
     // 가맹점 발주 상태 변경(접수/반려)
+    @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100, multiplier = 2))
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public List<HQOrderStatusUpdateResponse> updateStatus(HQOrderUpdateStatusRequest request) {
         // 접수 시에만 재고 확인
@@ -429,6 +434,7 @@ public class HQOrderFacade {
     }
 
     // 발주 생성
+    @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100, multiplier = 2))
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public HQOrderCreateResponse create(Long userId, HQOrderCreateRequest request) {
         // HQCode
@@ -659,6 +665,7 @@ public class HQOrderFacade {
     }
 
     // 발주 상태 SHIPPING_PENDING으로 수정
+    @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100, multiplier = 2))
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public List<FranchiseOrderStatusShippingPendingResponse> updateShippingPending(List<FranchiseOrderStatusUpdateRequest> requests) {
         // List<orderCode>
@@ -678,6 +685,7 @@ public class HQOrderFacade {
     }
 
     // 가맹점의 발주 요청 취소
+    @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100, multiplier = 2))
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public List<HQFranchiseOrderCancelResponse> cancelFranchiseOrder(@Valid List<HQFranchiseOrderCancelRequest> request) {
         // 수정

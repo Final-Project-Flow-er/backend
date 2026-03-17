@@ -178,4 +178,8 @@ public class FranchiseOrder extends BaseEntity {
         this.orderStatus = FranchiseOrderStatus.CANCELED;
         this.cancelledReason = cancelledReason;
     }
+
+    public void updateStatus(FranchiseOrderStatus orderStatus) {
+        this.orderStatus = orderStatus;
+    }
 }

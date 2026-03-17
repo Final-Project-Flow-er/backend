@@ -1,5 +1,6 @@
 package com.chaing.api.facade.factory;
 
+import com.chaing.api.config.RedisCacheHelper;
 import com.chaing.core.dto.command.FranchiseOrderCodeAndQuantityCommand;
 import com.chaing.domain.businessunits.service.impl.FranchiseServiceImpl;
 import com.chaing.domain.businessunits.service.impl.HeadquarterServiceImpl;
@@ -44,6 +45,9 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -74,6 +78,7 @@ public class HQOrderFacade {
     private final FranchiseServiceImpl franchiseService;
     private final HeadquarterServiceImpl headquarterService;
     private final InventoryService inventoryService;
+    private final RedisCacheHelper redisCacheHelper;
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper;
 
@@ -322,6 +327,7 @@ public class HQOrderFacade {
     }
 
     // 발주 수정
+    @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100, multiplier = 2))
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public HQOrderUpdateResponse updateOrder(Long userId, String orderCode, HQOrderUpdateRequest request) {
         // UserInfo
@@ -357,8 +363,8 @@ public class HQOrderFacade {
                 .isRegular(order.isRegular())
                 .items(items)
                 .build();
-        evictByPattern("ord:hq:*");
-        evictByPattern("ord:fr:*");
+        redisCacheHelper.evictByPattern("ord:hq:*");
+        redisCacheHelper.evictByPattern("ord:fr:*");
         return result;
     }
 
@@ -370,12 +376,13 @@ public class HQOrderFacade {
 
         // 반환
         HQOrderCancelResponse result = HQOrderCancelResponse.from(cancelOrder);
-        evictByPattern("ord:hq:*");
-        evictByPattern("ord:fr:*");
+        redisCacheHelper.evictByPattern("ord:hq:*");
+        redisCacheHelper.evictByPattern("ord:fr:*");
         return result;
     }
 
     // 가맹점 발주 상태 변경(접수/반려)
+    @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100, multiplier = 2))
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public List<HQOrderStatusUpdateResponse> updateStatus(HQOrderUpdateStatusRequest request) {
         // 접수 시에만 재고 확인
@@ -423,12 +430,13 @@ public class HQOrderFacade {
 
         // 상태 변경 및 반환
         List<HQOrderStatusUpdateResponse> result = franchiseOrderService.updateStatus(request);
-        evictByPattern("ord:hq:*");
-        evictByPattern("ord:fr:*");
+        redisCacheHelper.evictByPattern("ord:hq:*");
+        redisCacheHelper.evictByPattern("ord:fr:*");
         return result;
     }
 
     // 발주 생성
+    @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100, multiplier = 2))
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public HQOrderCreateResponse create(Long userId, HQOrderCreateRequest request) {
         // HQCode
@@ -464,8 +472,8 @@ public class HQOrderFacade {
                 .isRegular(order.isRegular())
                 .items(items)
                 .build();
-        evictByPattern("ord:hq:*");
-        evictByPattern("ord:fr:*");
+        redisCacheHelper.evictByPattern("ord:hq:*");
+        redisCacheHelper.evictByPattern("ord:fr:*");
         return result;
     }
 
@@ -659,6 +667,7 @@ public class HQOrderFacade {
     }
 
     // 발주 상태 SHIPPING_PENDING으로 수정
+    @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100, multiplier = 2))
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public List<FranchiseOrderStatusShippingPendingResponse> updateShippingPending(List<FranchiseOrderStatusUpdateRequest> requests) {
         // List<orderCode>
@@ -672,12 +681,13 @@ public class HQOrderFacade {
         List<FranchiseOrderStatusShippingPendingResponse> result = orders.values().stream()
                 .map(FranchiseOrderStatusShippingPendingResponse::from)
                 .toList();
-        evictByPattern("ord:hq:*");
-        evictByPattern("ord:fr:*");
+        redisCacheHelper.evictByPattern("ord:hq:*");
+        redisCacheHelper.evictByPattern("ord:fr:*");
         return result;
     }
 
     // 가맹점의 발주 요청 취소
+    @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100, multiplier = 2))
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public List<HQFranchiseOrderCancelResponse> cancelFranchiseOrder(@Valid List<HQFranchiseOrderCancelRequest> request) {
         // 수정
@@ -688,8 +698,8 @@ public class HQOrderFacade {
         List<HQFranchiseOrderCancelResponse> result = statusByOrderCode.entrySet().stream()
                 .map(HQFranchiseOrderCancelResponse::of)
                 .toList();
-        evictByPattern("ord:hq:*");
-        evictByPattern("ord:fr:*");
+        redisCacheHelper.evictByPattern("ord:hq:*");
+        redisCacheHelper.evictByPattern("ord:fr:*");
         return result;
     }
 
@@ -716,16 +726,6 @@ public class HQOrderFacade {
     private void writeCache(String key, Object value) {
         try {
             redisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(value), CACHE_TTL);
-        } catch (Exception ignored) {
-        }
-    }
-
-    private void evictByPattern(String pattern) {
-        try {
-            Set<String> keys = redisTemplate.keys(pattern);
-            if (keys != null && !keys.isEmpty()) {
-                redisTemplate.delete(keys);
-            }
         } catch (Exception ignored) {
         }
     }

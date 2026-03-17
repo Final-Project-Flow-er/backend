@@ -1,5 +1,6 @@
 package com.chaing.api.facade.franchise;
 
+import com.chaing.api.config.RedisCacheHelper;
 import com.chaing.api.dto.franchise.orders.response.FranchiseOrderResponse;
 import com.chaing.core.dto.command.FranchiseOrderCodeAndQuantityCommand;
 import com.chaing.core.dto.info.ProductInfo;
@@ -29,9 +30,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -54,6 +59,10 @@ public class FranchiseOrderFacade {
     private static final Duration CACHE_TTL = Duration.ofSeconds(30);
     private static final String STOCK_LOCK_KEY = "lock:stock:check";
     private static final Duration STOCK_LOCK_TTL = Duration.ofSeconds(2);
+    private static final DefaultRedisScript<Long> UNLOCK_SCRIPT = new DefaultRedisScript<>(
+            "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end",
+            Long.class
+    );
 
     private final FranchiseOrderService franchiseOrderService;
     private final UserManagementService userManagementService;
@@ -61,6 +70,7 @@ public class FranchiseOrderFacade {
     private final FranchiseOrderCodeGenerator generator;
     private final FranchiseServiceImpl franchiseService;
     private final InventoryService inventoryService;
+    private final RedisCacheHelper redisCacheHelper;
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper;
 
@@ -147,7 +157,7 @@ public class FranchiseOrderFacade {
                 franchiseOrderService.getOrderItemPage(franchiseId, userId, pageable);
 
         if (page.isEmpty()) {
-            Page<FranchiseOrderResponse> empty = new PageImpl<>(List.of(), pageable, 0);
+            Page<FranchiseOrderResponse> empty = new PageImpl<>(List.of(), pageable, page.getTotalElements());
             writePageCache(cacheKey, empty);
             return empty;
         }
@@ -283,6 +293,7 @@ public class FranchiseOrderFacade {
     }
 
     // 가맹점의 발주 수정
+    @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100, multiplier = 2))
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public FranchiseOrderUpdateResponse updateOrder(Long userId, String orderCode, List<FranchiseOrderUpdateRequest> requests) {
         String lockValue = UUID.randomUUID().toString();
@@ -326,8 +337,15 @@ public class FranchiseOrderFacade {
 
             // Map<productId, FranchiseOrderUpdateRequest>
             Map<Long, FranchiseOrderUpdateRequest> requestByProductId = requests.stream()
-                    .collect(Collectors.toMap(
-                            request -> productInfoByProductCode.get(request.productCode()).productId(),
+                    .collect(Collectors.toMap(request -> {
+                                    ProductInfo productInfo = productInfoByProductCode.get(request.productCode());
+
+                                    if (productInfo == null) {
+                                        throw new OrderException(OrderErrorCode.PRODUCT_NOT_FOUND);
+                                    }
+
+                                    return productInfo.productId();
+                            },
                             Function.identity()
                     ));
 
@@ -339,18 +357,16 @@ public class FranchiseOrderFacade {
                     .cancelReason(order.canceledReason())
                     .items(itemResponses)
                     .build();
-            evictByPattern("ord:fr:*");
-            evictByPattern("ord:hq:*");
+            redisCacheHelper.evictByPattern("ord:fr:*");
+            redisCacheHelper.evictByPattern("ord:hq:*");
             return result;
         } finally {
-            String current = redisTemplate.opsForValue().get(STOCK_LOCK_KEY);
-            if (lockValue.equals(current)) {
-                redisTemplate.delete(STOCK_LOCK_KEY);
-            }
+            redisTemplate.execute(UNLOCK_SCRIPT, List.of(STOCK_LOCK_KEY), lockValue);
         }
     }
 
     // 가맹점 발주 취소
+    @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100, multiplier = 2))
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public FranchiseOrderCancelResponse cancelOrder(Long userId, String orderCode) {
         // franchiseId
@@ -358,12 +374,13 @@ public class FranchiseOrderFacade {
 
         // 취소
         FranchiseOrderCancelResponse result = franchiseOrderService.cancelOrder(userId, franchiseId, orderCode);
-        evictByPattern("ord:fr:*");
-        evictByPattern("ord:hq:*");
+        redisCacheHelper.evictByPattern("ord:fr:*");
+        redisCacheHelper.evictByPattern("ord:hq:*");
         return result;
     }
 
     // 가맹점 발주 생성
+    @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100, multiplier = 2))
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public FranchiseOrderCreateResponse createOrder(Long userId, FranchiseOrderCreateRequest request) {
         long startTime = System.currentTimeMillis();
@@ -424,14 +441,11 @@ public class FranchiseOrderFacade {
                     .deliveryDate(order.deliveryDate())
                     .items(orderItems)
                     .build();
-            evictByPattern("ord:fr:*");
-            evictByPattern("ord:hq:*");
+            redisCacheHelper.evictByPattern("ord:fr:*");
+            redisCacheHelper.evictByPattern("ord:hq:*");
             return result;
         } finally {
-            String current = redisTemplate.opsForValue().get(STOCK_LOCK_KEY);
-            if (lockValue.equals(current)) {
-                redisTemplate.delete(STOCK_LOCK_KEY);
-            }
+            redisTemplate.execute(UNLOCK_SCRIPT, List.of(STOCK_LOCK_KEY), lockValue);
             log.info("[발주 생성] userId={}, 처리 시간={}ms", userId, System.currentTimeMillis() - startTime);
         }
     }
@@ -459,16 +473,6 @@ public class FranchiseOrderFacade {
     private void writeCache(String key, Object value) {
         try {
             redisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(value), CACHE_TTL);
-        } catch (Exception ignored) {
-        }
-    }
-
-    private void evictByPattern(String pattern) {
-        try {
-            Set<String> keys = redisTemplate.keys(pattern);
-            if (keys != null && !keys.isEmpty()) {
-                redisTemplate.delete(keys);
-            }
         } catch (Exception ignored) {
         }
     }

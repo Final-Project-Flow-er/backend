@@ -2,6 +2,7 @@ package com.chaing.domain.orders.service;
 
 import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.core.dto.returns.response.FranchiseReturnTargetResponse;
+import com.chaing.core.enums.LogType;
 import com.chaing.domain.orders.dto.command.FranchiseOrderCommand;
 import com.chaing.domain.orders.dto.command.FranchiseOrderDetailCommand;
 import com.chaing.domain.orders.dto.command.FranchiseOrderItemCommand;
@@ -700,5 +701,22 @@ public class FranchiseOrderService {
                         FranchiseOrder::getFranchiseOrderId,
                         FranchiseOrderDetailCommand::from
                 ));
+    }
+
+    public void updateDeliveryStatus(List<String> orderCodes, FranchiseOrderStatus orderStatus) {
+        List<FranchiseOrder> orders = franchiseOrderRepository.findAllByOrderCodeInAndDeletedAtIsNull(orderCodes);
+
+        if (orders == null || orders.isEmpty()) {
+            throw new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_NOT_FOUND);
+        }
+
+        Set<String> existingOrderCodes = orders.stream().map(FranchiseOrder::getOrderCode).collect(Collectors.toSet());
+        Set<String> requestedOrderCodes = new HashSet<>(orderCodes);
+
+        if (!existingOrderCodes.containsAll(requestedOrderCodes)) {
+            throw new FranchiseOrderException(FranchiseOrderErrorCode.DATA_OMISSION);
+        }
+
+        orders.forEach(order -> order.updateStatus(orderStatus));
     }
 }

@@ -1,5 +1,6 @@
 package com.chaing.api.facade.hq;
 
+import com.chaing.api.config.RedisCacheHelper;
 import com.chaing.api.dto.hq.response.HQReturnProductResponse;
 import com.chaing.api.dto.hq.response.HQReturnResponse;
 import com.chaing.core.dto.info.ProductInfo;
@@ -32,6 +33,9 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -61,6 +65,7 @@ public class HQReturnFacade {
     private final FranchiseOrderService franchiseOrderService;
     private final FranchiseServiceImpl franchiseService;
     private final UserManagementService userManagementService;
+    private final RedisCacheHelper redisCacheHelper;
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper;
 
@@ -275,6 +280,7 @@ public class HQReturnFacade {
     }
 
     // 반품 요청 제품 검수
+    @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100, multiplier = 2))
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public HQReturnUpdateResponse updateReturn(String returnCode, HQReturnUpdateRequest request) {
         // 반품 조회
@@ -339,12 +345,13 @@ public class HQReturnFacade {
                 .status(updatedStatus)
                 .returnItemInspection(itemInspections)
                 .build();
-        evictByPattern("ret:hq:*");
-        evictByPattern("ret:fr:*");
+        redisCacheHelper.evictByPattern("ret:hq:*");
+        redisCacheHelper.evictByPattern("ret:fr:*");
         return result;
     }
 
     // 반품 요청 접수
+    @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100, multiplier = 2))
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public List<HQReturnProductResponse> acceptReturn(List<@NotBlank String> returnCodes) {
         // 반품 요청 접수
@@ -354,12 +361,13 @@ public class HQReturnFacade {
         List<HQReturnProductResponse> result = acceptedReturns.stream()
                 .map(HQReturnProductResponse::from)
                 .toList();
-        evictByPattern("ret:hq:*");
-        evictByPattern("ret:fr:*");
+        redisCacheHelper.evictByPattern("ret:hq:*");
+        redisCacheHelper.evictByPattern("ret:fr:*");
         return result;
     }
 
     // 반품 상태 SHIPPING_PENDING으로 수정
+    @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100, multiplier = 2))
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public List<HQOrderStatusShippingPendingResponse> updateShippingPending(List<HQOrderStatusUpdateRequest> request) {
         // Set<returnCode>
@@ -373,8 +381,8 @@ public class HQReturnFacade {
         List<HQOrderStatusShippingPendingResponse> result = returns.values().stream()
                 .map(HQOrderStatusShippingPendingResponse::from)
                 .toList();
-        evictByPattern("ret:hq:*");
-        evictByPattern("ret:fr:*");
+        redisCacheHelper.evictByPattern("ret:hq:*");
+        redisCacheHelper.evictByPattern("ret:fr:*");
         return result;
     }
 
@@ -401,16 +409,6 @@ public class HQReturnFacade {
     private void writeCache(String key, Object value) {
         try {
             redisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(value), CACHE_TTL);
-        } catch (Exception ignored) {
-        }
-    }
-
-    private void evictByPattern(String pattern) {
-        try {
-            Set<String> keys = redisTemplate.keys(pattern);
-            if (keys != null && !keys.isEmpty()) {
-                redisTemplate.delete(keys);
-            }
         } catch (Exception ignored) {
         }
     }

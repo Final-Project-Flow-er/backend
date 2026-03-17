@@ -20,7 +20,11 @@ import com.chaing.external.transport.ExternalTransportService;
 import jakarta.validation.Valid;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
@@ -46,7 +50,8 @@ public class OutboundFacade {
     // private final ExternalTransportService externalTransportModule;
 
     // 재고 상태 변경
-    @Transactional
+    @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100, multiplier = 2))
+    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public void updateOutboundStatus(@Valid OutboundUpdateRequest request, LogType currentStatus) {
         List<String> selectedList = request.serialCodes();
         outboundService.updateStatus(selectedList, currentStatus);
@@ -71,12 +76,14 @@ public class OutboundFacade {
     }
 
     // 박스 할당
-    @Transactional
+    @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100, multiplier = 2))
+    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public void assignBoxToInventories(String boxCode, List<String> serialCodes) {
         outboundService.assignBox(boxCode, serialCodes);
     }
 
-    @Transactional
+    @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100, multiplier = 2))
+    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public void cancelOutbound(String boxCode, List<String> serialCodes) {
         outboundService.cancelOutbound(boxCode, serialCodes);
     }

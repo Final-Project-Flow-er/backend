@@ -1,5 +1,6 @@
 package com.chaing.api.facade.franchise;
 
+import com.chaing.api.config.RedisCacheHelper;
 import com.chaing.api.dto.franchise.sales.response.FranchiseSalesResponse;
 import com.chaing.domain.businessunits.service.impl.FranchiseServiceImpl;
 import com.chaing.domain.inventories.service.InventoryService;
@@ -27,7 +28,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -40,6 +40,7 @@ public class FranchiseSalesFacade {
     private final UserManagementService userManagementService;
     private final FranchiseServiceImpl franchiseService;
     private final InventoryService inventoryService;
+    private final RedisCacheHelper redisCacheHelper;
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper;
 
@@ -115,8 +116,8 @@ public class FranchiseSalesFacade {
         Long franchiseId = userManagementService.getFranchiseIdByUserId(userId);
 
         FranchiseSalesCancellationResponse result = franchiseSalesService.cancel(franchiseId, salesCode);
-        evictByPattern("sales:fr:*");
-        evictByPattern("inv:fr:*");
+        redisCacheHelper.evictByPattern("sales:fr:*");
+        redisCacheHelper.evictByPattern("inv:fr:*");
         return result;
     }
 
@@ -137,8 +138,8 @@ public class FranchiseSalesFacade {
         //재고 차감
         inventoryService.deleteFranchiseInventory(franchiseId, serialCodes);
 
-        evictByPattern("sales:fr:*");
-        evictByPattern("inv:fr:*");
+        redisCacheHelper.evictByPattern("sales:fr:*");
+        redisCacheHelper.evictByPattern("inv:fr:*");
         return response;
     }
 
@@ -165,16 +166,6 @@ public class FranchiseSalesFacade {
     private void writeCache(String key, Object value) {
         try {
             redisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(value), CACHE_TTL);
-        } catch (Exception ignored) {
-        }
-    }
-
-    private void evictByPattern(String pattern) {
-        try {
-            Set<String> keys = redisTemplate.keys(pattern);
-            if (keys != null && !keys.isEmpty()) {
-                redisTemplate.delete(keys);
-            }
         } catch (Exception ignored) {
         }
     }

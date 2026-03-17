@@ -56,6 +56,11 @@ public class DailySettlementServiceImpl implements DailySettlementService {
     }
 
     @Override
+    public Optional<DailySettlementReceipt> findByFranchiseAndDate(Long franchiseId, LocalDate date) {
+        return receiptRepository.findByFranchiseIdAndSettlementDate(franchiseId, date);
+    }
+
+    @Override
     public List<DailySettlementReceipt> getAllByDateRange(LocalDate start, LocalDate end) {
         return receiptRepository.findAllBySettlementDateBetween(start, end);
     } // 본사 그래프

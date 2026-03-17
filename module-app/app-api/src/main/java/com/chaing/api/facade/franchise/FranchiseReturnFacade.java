@@ -1,5 +1,6 @@
 package com.chaing.api.facade.franchise;
 
+import com.chaing.api.config.RedisCacheHelper;
 import com.chaing.core.dto.command.FranchiseInventoryCommand;
 import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.core.dto.request.FranchiseReturnUpdateRequest;
@@ -38,6 +39,9 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -67,6 +71,7 @@ public class FranchiseReturnFacade {
     private final ReturnCodeGenerator generator;
     private final InventoryService inventoryService;
     private final FranchiseServiceImpl franchiseService;
+    private final RedisCacheHelper redisCacheHelper;
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper;
 
@@ -82,6 +87,10 @@ public class FranchiseReturnFacade {
         // Map<returnId, ReturnCommand>
         Map<Long, ReturnCommand> returns = franchiseReturnService.getAllReturns(franchiseId);
         log.info("returns: {}", returns);
+
+        if (returns.isEmpty()) {
+            return Collections.emptyList();
+        }
 
         // List<returnId>
         List<Long> returnIds = returns.keySet().stream().toList();
@@ -289,7 +298,7 @@ public class FranchiseReturnFacade {
                             .boxCode(returnItemcommand.boxCode())
                             .productCode(productInfo.productCode())
                             .productName(productInfo.productName())
-                            .unitPrice(productInfo.tradePrice())
+                            .unitPrice(productInfo.retailPrice())
                             .build();
                 })
                 .toList();
@@ -312,6 +321,7 @@ public class FranchiseReturnFacade {
     }
 
     // 반품 수정
+    @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100, multiplier = 2))
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public FranchiseReturnUpdateResponse updateReturn(Long userId, List<FranchiseReturnUpdateRequest> requests, String returnCode) {
         // franchiseId
@@ -375,7 +385,7 @@ public class FranchiseReturnFacade {
                                     .boxCode(item.boxCode())
                                     .productCode(productInfo.productCode())
                                     .productName(productInfo.productName())
-                                    .unitPrice(productInfo.tradePrice())
+                                    .unitPrice(productInfo.retailPrice())
                                     .build();
                         }
                 )
@@ -387,24 +397,26 @@ public class FranchiseReturnFacade {
                 .orderCode(orderCommand.orderCode())
                 .items(itemResponses)
                 .build();
-        evictByPattern("ret:fr:*");
-        evictByPattern("ret:hq:*");
+        redisCacheHelper.evictByPattern("ret:fr:*");
+        redisCacheHelper.evictByPattern("ret:hq:*");
         return result;
     }
 
     // 반품 취소
+    @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100, multiplier = 2))
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public String cancel(Long userId, String returnCode) {
         // franchiseId
         Long franchiseId = userManagementService.getFranchiseIdByUserId(userId);
 
         String result = franchiseReturnService.cancel(franchiseId, userId, returnCode);
-        evictByPattern("ret:fr:*");
-        evictByPattern("ret:hq:*");
+        redisCacheHelper.evictByPattern("ret:fr:*");
+        redisCacheHelper.evictByPattern("ret:hq:*");
         return result;
     }
 
     // 반품 생성
+    @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100, multiplier = 2))
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public ReturnCreateResponse create(Long userId, FranchiseReturnCreateRequest request) {
         // franchiseId
@@ -481,8 +493,8 @@ public class FranchiseReturnFacade {
                 .returnCode(returnCommand.returnCode())
                 .items(itemResponses)
                 .build();
-        evictByPattern("ret:fr:*");
-        evictByPattern("ret:hq:*");
+        redisCacheHelper.evictByPattern("ret:fr:*");
+        redisCacheHelper.evictByPattern("ret:hq:*");
         return result;
     }
 
@@ -579,7 +591,7 @@ public class FranchiseReturnFacade {
                             .boxCode(inventory.boxCode())
                             .productCode(productInfo.productCode())
                             .productName(productInfo.productName())
-                            .unitPrice(productInfo.tradePrice())
+                            .unitPrice(productInfo.retailPrice())
                             .build();
                 })
                 .toList();
@@ -593,6 +605,7 @@ public class FranchiseReturnFacade {
     }
 
     // 외부 모듈용 반품 제품 출고
+    @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100, multiplier = 2))
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public List<FranchiseReturnDeliveryResponse> delivery(List<FranchiseReturnDeliveryRequest> requests) {
         // Set<boxCode>
@@ -611,8 +624,8 @@ public class FranchiseReturnFacade {
                         entry.getValue()
                 ))
                 .toList();
-        evictByPattern("ret:fr:*");
-        evictByPattern("ret:hq:*");
+        redisCacheHelper.evictByPattern("ret:fr:*");
+        redisCacheHelper.evictByPattern("ret:hq:*");
         return result;
     }
 
@@ -639,16 +652,6 @@ public class FranchiseReturnFacade {
     private void writeCache(String key, Object value) {
         try {
             redisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(value), CACHE_TTL);
-        } catch (Exception ignored) {
-        }
-    }
-
-    private void evictByPattern(String pattern) {
-        try {
-            Set<String> keys = redisTemplate.keys(pattern);
-            if (keys != null && !keys.isEmpty()) {
-                redisTemplate.delete(keys);
-            }
         } catch (Exception ignored) {
         }
     }

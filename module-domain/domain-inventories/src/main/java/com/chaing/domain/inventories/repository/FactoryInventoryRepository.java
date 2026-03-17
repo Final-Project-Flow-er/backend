@@ -1,6 +1,7 @@
 package com.chaing.domain.inventories.repository;
 
 import com.chaing.core.enums.LogType;
+import com.chaing.domain.inventories.dto.info.InboundProductIdInfo;
 import com.chaing.domain.inventories.entity.FactoryInventory;
 import com.chaing.domain.inventories.repository.interfaces.FactoryInventoryRepositoryCustom;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -66,4 +67,15 @@ public interface FactoryInventoryRepository extends JpaRepository<FactoryInvento
 
     @Query("select i.orderId from FactoryInventory i where i.serialCode in(:selectedList)")
     List<Long> getOrderIdBySerialCodeIn(@Param("selectedList") List<String> selectedList);
+
+    @Query("""
+            select new com.chaing.domain.inventories.dto.info.InboundProductIdInfo(
+                i.productId,
+                count(i)
+            )
+            from FactoryInventory i
+            where i.serialCode in (:serialCodes)
+            group by i.productId
+            """)
+    List<InboundProductIdInfo> getInboundProductIdInfosBySerialCodes(@Param("serialCodes") List<String> serialCodes);
 }

@@ -15,6 +15,8 @@ import java.util.Map;
 public interface FranchiseInventoryRepositoryCustom {
     Map<Long, InventoryProductInfoResponse> getFranchiseStock(Long franchiseId, List<Long> ids, String status);
 
+    Map<String, Long> countByBoxCodes(Long franchiseId, List<String> boxCodes);
+
     Page<FranchiseInventoryBatchResponse> getFranchiseBatches(Long franchiseId, Long productId, Pageable pageable);
 
     Page<FranchiseInventoryItemResponse> getFranchiseItems(Long franchiseId, FranchiseInventoryItemsRequest request, Pageable pageable);

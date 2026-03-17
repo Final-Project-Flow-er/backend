@@ -25,7 +25,7 @@ public interface FranchiseInventoryRepository extends JpaRepository<FranchiseInv
     List<FranchiseInventory> findAllByStatus(LogType status);
 
     @Modifying
-    @Query("UPDATE FranchiseInventory i SET i.status = 'com.chaing.core.enums.LogType.AVAILABLE' WHERE i.serialCode IN :serials")
+    @Query("UPDATE FranchiseInventory i SET i.status = 'AVAILABLE' WHERE i.serialCode IN :serials")
     void updateAllStatusInboundBySerialCode(@Param("serials") List<String> serials);
 
     @Query("SELECT DISTINCT fi.franchiseId FROM FranchiseInventory fi")
@@ -43,4 +43,8 @@ public interface FranchiseInventoryRepository extends JpaRepository<FranchiseInv
             @Param("serialCodes") @NotEmpty(message = "선택된 제품이 존재하지 않습니다.") List<String> serialCodes,
             @Param("franchiseId") Long franchiseId,
             @Param("status") LogType status);
+
+    List<FranchiseInventory> getAllByFranchiseIdAndSerialCodeIn(
+            @Param("franchiseId") Long franchiseId,
+            @Param("serialCodes") List<String> serialCodes);
 }

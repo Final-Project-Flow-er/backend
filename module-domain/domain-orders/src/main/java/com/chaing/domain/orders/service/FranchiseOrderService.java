@@ -6,6 +6,7 @@ import com.chaing.core.enums.LogType;
 import com.chaing.domain.orders.dto.command.FranchiseOrderCommand;
 import com.chaing.domain.orders.dto.command.FranchiseOrderDetailCommand;
 import com.chaing.domain.orders.dto.command.FranchiseOrderItemCommand;
+import com.chaing.domain.orders.dto.info.OrderInfoForLog;
 import com.chaing.domain.orders.dto.request.FranchiseOrderCreateRequest;
 import com.chaing.core.dto.request.FranchiseOrderCreateRequestItem;
 import com.chaing.core.dto.request.FranchiseOrderUpdateRequest;
@@ -718,5 +719,31 @@ public class FranchiseOrderService {
         }
 
         orders.forEach(order -> order.updateStatus(orderStatus));
+    }
+
+    public Map<Long, OrderInfoForLog> getOrderInfoForLog(List<Long> orderIds) {
+
+        List<FranchiseOrder> orderInfos = franchiseOrderRepository.findByFranchiseOrderIdIn(orderIds);
+
+        if (orderInfos == null || orderInfos.isEmpty()) {
+            throw new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_NOT_FOUND);
+        }
+
+        Set<Long> foundOrderIds = orderInfos.stream()
+                .map(FranchiseOrder::getFranchiseOrderId)
+                .collect(Collectors.toSet());
+
+        if (!foundOrderIds.containsAll(new HashSet<>(orderIds))) {
+            throw new FranchiseOrderException(FranchiseOrderErrorCode.DATA_OMISSION);
+        }
+
+        return orderInfos.stream()
+                .collect(Collectors.toMap(
+                        FranchiseOrder::getFranchiseOrderId,
+                        order -> OrderInfoForLog.create(
+                                order.getOrderCode(),
+                                order.getFranchiseId()
+                        )
+                ));
     }
 }

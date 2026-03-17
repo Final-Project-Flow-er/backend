@@ -60,4 +60,7 @@ public interface FranchiseOrderRepository extends JpaRepository<FranchiseOrder, 
     List<FranchiseOrder> getFranchiseOrderByFranchiseOrderStatus(@Param("statuses") List<FranchiseOrderStatus> statuses);
 
     Optional<FranchiseOrder> findByOrderCodeAndDeletedAtIsNull(String orderCode);
+
+    @Query("select f from FranchiseOrder f where f.franchiseOrderId in :orderIds and f.deletedAt is null")
+    List<FranchiseOrder> findByFranchiseOrderIdIn(@Param("orderIds") List<Long> orderIds);
 }

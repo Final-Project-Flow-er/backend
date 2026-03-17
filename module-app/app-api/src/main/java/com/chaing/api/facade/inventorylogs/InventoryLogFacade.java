@@ -139,7 +139,7 @@ public class InventoryLogFacade {
                 case "FACTORY" -> new InventoryLogCreateRequest(
                         stock.productId(),
                         productName,
-                        stock.boxCode(),
+                        null,
                         orderInfo.orderCode(),
                         status,
                         quantity.intValue(),

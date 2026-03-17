@@ -6,8 +6,10 @@ import com.chaing.api.dto.inbound.request.InboundScanItemRequest;
 import com.chaing.api.dto.inbound.response.InboundBoxSummaryResponse;
 import com.chaing.api.dto.inbound.response.InboundDetailResponse;
 import com.chaing.api.facade.inbound.InboundFacade;
+import com.chaing.api.facade.inventorylogs.InventoryLogFacade;
 import com.chaing.api.security.principal.UserPrincipal;
 import com.chaing.core.dto.ApiResponse;
+import com.chaing.core.enums.LogType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -32,6 +34,7 @@ import java.util.List;
 public class InboundController {
 
     private final InboundFacade inboundFacade;
+    private final InventoryLogFacade logFacade;
 
     // 입고 스캔(공장)
     @PreAuthorize("hasRole('FACTORY')")
@@ -96,7 +99,9 @@ public class InboundController {
             @Valid @RequestBody InboundConfirmRequest request,
             @AuthenticationPrincipal UserPrincipal userPrincipal
     ){
+        LogType status = LogType.INBOUND;
         inboundFacade.confirmInbound(request, userPrincipal.getRole());
+        logFacade.recordOrderLogs(request.serialCodes(), userPrincipal, status);
 
         return ResponseEntity.ok(ApiResponse.success(null));
     }

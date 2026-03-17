@@ -6,7 +6,9 @@ import com.chaing.api.dto.outbound.request.OutboundItemRequest;
 import com.chaing.api.dto.outbound.request.OutboundUpdateRequest;
 import com.chaing.api.dto.outbound.response.OutboundBoxSummaryResponse;
 import com.chaing.api.dto.outbound.response.OutboundItemResponse;
+import com.chaing.api.facade.inventorylogs.InventoryLogFacade;
 import com.chaing.api.facade.outbound.OutboundFacade;
+import com.chaing.api.security.principal.UserPrincipal;
 import com.chaing.core.dto.ApiResponse;
 import com.chaing.core.enums.LogType;
 import io.swagger.v3.oas.annotations.Operation;
@@ -31,6 +33,7 @@ import java.util.List;
 public class OutboundController {
 
     private final OutboundFacade outboundFacade;
+    private final InventoryLogFacade logFacade;
 
     // 출고 제품 스캔 및 피킹 대기 상태 변경
     @PatchMapping("/scans")
@@ -68,10 +71,13 @@ public class OutboundController {
     @PatchMapping("/confirms")
     @Operation(summary = "출고 확정", description = "피킹 상태 제품의 출고를 확정합니다.")
     public ResponseEntity<ApiResponse<Void>> confirmOutbound(
-            @Valid @RequestBody OutboundUpdateRequest request
+            @Valid @RequestBody OutboundUpdateRequest request,
+            UserPrincipal userPrincipal
     ) {
         LogType currentStatus = LogType.PICKING;
+        LogType status = LogType.OUTBOUND;
         outboundFacade.updateOutboundStatus(request, currentStatus);
+        logFacade.recordOrderLogs(request.serialCodes(), userPrincipal, status);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

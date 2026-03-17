@@ -3,9 +3,21 @@ dependencies {
     implementation project(':domain-orders')
     implementation project(':domain-returns')
     implementation project(':domain-sales')
+    implementation project(':domain-inventories')
+    implementation project(':domain-users')
+    implementation project(':domain-settlements')
+    implementation project(':domain-businessunits')
+    implementation project(':domain-notices')
+    implementation project(':domain-notifications')
+    implementation project(':domain-inventorylogs')
+    implementation project(':domain-products')
+    implementation project(':domain-transports')
 
     // core에 implementation으로 갖고 있으니 여기는 따로 추가해 줘야함
     implementation project(':module-core')
+
+    // 외부 운송 모듈
+    implementation project(':module-external-transport')
 
     // 웹 서버 설정
     implementation 'org.springframework.boot:spring-boot-starter-web'
@@ -16,6 +28,36 @@ dependencies {
 
     // Swagger (SpringDoc)
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0'
+
+    // Security
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+
+    // JWT
+    implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
+
+    // Redis
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+
+    // Spring Retry
+    implementation 'org.springframework.retry:spring-retry'
+
+    // PDF (iText 7)
+    implementation 'com.itextpdf:itext7-core:7.2.5'
+
+    // Excel (Apache POI)
+    implementation 'org.apache.poi:poi:5.4.0'
+    implementation 'org.apache.poi:poi-ooxml:5.4.0'
+}
+
+test {
+    // 테스트 실행 시 환경변수 강제 주입
+    systemProperty 'spring.datasource.url', 'jdbc:h2:mem:testdb;MODE=MySQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE'
+    systemProperty 'spring.datasource.driver-class-name', 'org.h2.Driver'
+    systemProperty 'spring.datasource.username', 'sa'
+    systemProperty 'spring.datasource.password', ''
+    systemProperty 'spring.jpa.hibernate.ddl-auto', 'create-drop'
 }
 
 // 이 모듈만 실행 가능한 Jar로 만듦

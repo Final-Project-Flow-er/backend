@@ -1,0 +1,17 @@
+dependencies {
+    // Core 모듈
+    implementation project(':module-core')
+
+    // DB (필요하다면, core에 있으면 생략 가능하지만 명시하는 게 좋음)
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+
+    // PDF (iText 7)
+    implementation 'com.itextpdf:itext7-core:7.2.5'
+
+    // Excel (Apache POI)
+    implementation 'org.apache.poi:poi:5.4.0'
+    implementation 'org.apache.poi:poi-ooxml:5.4.0'
+}
+
+bootJar { enabled = false }
+jar { enabled = true }

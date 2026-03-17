@@ -8,19 +8,20 @@ out/
 ### Gradle ###
 .gradle/
 build/
-!gradle/wrapper/gradle-wrapper.jar  # 이 파일은 올라가야 함
+!gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
 
 ### Java ###
 *.class
 *.log
 *.ctxt
-*.jar
 *.war
 *.nar
 *.ear
 *.zip
 *.tar.gz
 *.rar
+**/build/**/*.jar
 
 ### Mac OS ###
 .DS_Store
@@ -38,3 +39,22 @@ logs/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+### Q Class ###
+**/src/main/generated/
+
+### GEMINI.md ###
+GEMINI.md
+
+### Mock Data ###
+src/main/resources/**
+
+### API Document ###
+docs
+
+### Generated / Build Outputs ###
+**/bin/
+**/generated/
+**/generated-sources/
+**/build/
+**/out/

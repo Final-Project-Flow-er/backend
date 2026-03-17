@@ -1,6 +1,9 @@
 package com.chaing.domain.returns.entity;
 
-import com.chaing.domain.returns.enums.ReturnItemStatus;
+import com.chaing.core.entity.BaseEntity;
+import com.chaing.core.enums.ReturnItemStatus;
+import com.chaing.domain.returns.exception.FranchiseReturnErrorCode;
+import com.chaing.domain.returns.exception.FranchiseReturnException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -17,38 +20,36 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
-
 @Entity
 @Getter
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
-public class ReturnItem {
+public class ReturnItem extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long returnItemId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "return_id", unique = true)
+    @JoinColumn(name = "return_id")
     private Returns returns;    // fk
 
     @Column(nullable = false)
     private Long franchiseOrderItemId;  // fk
 
-    @Column(nullable = false)
-    private Integer quantity;
-
-    @Column(nullable = false, precision = 19, scale = 2)
-    private BigDecimal totalReturnPrice;
-
-    @Column(nullable = false)
-    @Builder.Default
-    private Boolean isInspected = false;
+    @Column(nullable = false, unique = true)
+    private String boxCode;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     @Builder.Default
     private ReturnItemStatus returnItemStatus = ReturnItemStatus.BEFORE_INSPECTION;
+
+    public void updateStatus(ReturnItemStatus status) {
+        if (this.returnItemStatus != ReturnItemStatus.BEFORE_INSPECTION) {
+            throw new FranchiseReturnException(FranchiseReturnErrorCode.INVALID_RETURN_ITEM_STATUS);
+        }
+        this.returnItemStatus = status;
+    }
 }

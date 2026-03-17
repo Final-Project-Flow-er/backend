@@ -7,12 +7,33 @@ include 'module-core'
 include 'domain-orders'
 include 'domain-returns'
 include 'domain-sales'
+include 'domain-inventories'
+include 'domain-users'
+include 'domain-settlements'
+include 'domain-businessunits'
+include 'domain-notices'
+include 'domain-notifications'
+include 'domain-transports'
+include 'domain-inventorylogs'
+include 'domain-products'
 
 // 애플리케이션 모듈
 include 'app-api'
+
+// 외부 연동 모듈
+include 'module-external-transport'
 
 // 실제 경로
 project(':app-api').projectDir = file('module-app/app-api')
 project(':domain-orders').projectDir = file('module-domain/domain-orders')
 project(':domain-returns').projectDir = file('module-domain/domain-returns')
 project(':domain-sales').projectDir = file('module-domain/domain-sales')
+project(':domain-inventories').projectDir = file('module-domain/domain-inventories')
+project(':domain-users').projectDir = file('module-domain/domain-users')
+project(':domain-settlements').projectDir = file('module-domain/domain-settlements')
+project(':domain-businessunits').projectDir = file('module-domain/domain-businessunits')
+project(':domain-notifications').projectDir = file('module-domain/domain-notifications')
+project(':domain-transports').projectDir = file('module-domain/domain-transports')
+project(':domain-notices').projectDir = file('module-domain/domain-notices')
+project(':domain-inventorylogs').projectDir = file('module-domain/domain-inventorylogs')
+project(':domain-products').projectDir = file('module-domain/domain-products')

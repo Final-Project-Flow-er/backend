@@ -17,6 +17,8 @@ import java.util.Map;
 public interface FactoryInventoryRepositoryCustom {
     Map<Long, InventoryProductInfoResponse> getStock(List<Long> products, String status);
 
+    Map<String, Long> countByBoxCodes(List<String> boxCodes);
+
     Page<HQInventoryBatchResponse> getBatches(Long productId, Pageable pageable);
 
     Page<HQInventoryItemResponse> getItems(HQInventoryItemsRequest request, Pageable pageable);

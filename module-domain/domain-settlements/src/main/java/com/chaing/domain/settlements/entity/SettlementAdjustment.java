@@ -27,7 +27,8 @@ import java.time.LocalDateTime;
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "settlement_adjustment", indexes = {
                 @Index(name = "idx_adjustment_voucher", columnList = "settlement_voucher_id"),
-                @Index(name = "idx_adjustment_created_by", columnList = "created_by")
+                @Index(name = "idx_adjustment_created_by", columnList = "created_by"),
+                @Index(name = "idx_adjustment_month", columnList = "settlement_month")
 })
 public class SettlementAdjustment extends BaseEntity {
 
@@ -50,6 +51,9 @@ public class SettlementAdjustment extends BaseEntity {
 
         @Column(name = "occurred_at", nullable = false)
         private LocalDateTime occurredAt; // 발생일
+
+        @Column(name = "settlement_month", nullable = false, length = 7)
+        private String settlementMonth; // 정산 반영월 (예: "2026-04")
 
         @Builder.Default
         @Column(name = "is_minus", nullable = false)

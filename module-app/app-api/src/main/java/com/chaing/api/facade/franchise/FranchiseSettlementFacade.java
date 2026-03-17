@@ -28,6 +28,8 @@ import com.chaing.domain.returns.repository.FranchiseReturnItemRepository;
 import com.chaing.domain.returns.repository.FranchiseReturnRepository;
 import com.chaing.domain.settlements.service.DailySettlementService;
 import com.chaing.domain.settlements.service.MonthlySettlementService;
+import com.chaing.domain.businessunits.repository.FranchiseRepository;
+import com.chaing.domain.businessunits.entity.Franchise;
 import com.chaing.domain.settlements.service.SettlementDocumentService;
 import com.chaing.domain.settlements.exception.SettlementErrorCode;
 import com.chaing.domain.settlements.exception.SettlementException;
@@ -57,7 +59,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -87,11 +88,14 @@ public class FranchiseSettlementFacade {
         // 배송 정보 조회를 위한 Repository 및 Service 주입
         private final TransitRepository transitRepository;
         private final InternalTransportService transportService;
+        private final FranchiseRepository franchiseRepository;
 
         // 일별 정산 요약
         @Transactional(readOnly = true)
         public FranchiseSettlementSummaryResponse getDailySummary(Long franchiseId, LocalDate date) {
-                return toSummary(getInternalDailyAggregation(franchiseId, date).receipt());
+                DailySettlementReceipt receipt = getInternalDailyAggregation(franchiseId, date).receipt();
+                String name = franchiseRepository.findById(franchiseId).map(Franchise::getName).orElse("Unknown");
+                return toSummary(name, receipt);
         }
 
         // 내부 합산용 일별 정산 조회 (실시간 또는 DB)
@@ -182,7 +186,9 @@ public class FranchiseSettlementFacade {
 
                 if (settlementOpt.isPresent()) {
                         MonthlySettlement s = settlementOpt.get();
+                        String name = franchiseRepository.findById(franchiseId).map(Franchise::getName).orElse("Unknown");
                         return new FranchiseSettlementSummaryResponse(
+                                        name,
                                         s.getFinalSettlementAmount(),
                                         s.getTotalSaleAmount(),
                                         s.getRefundAmount(),
@@ -220,13 +226,16 @@ public class FranchiseSettlementFacade {
 
                 if (dailyReceipts.isEmpty()) {
                         // 데이터가 아예 없는 경우 기본 응답 (0원) 반환하거나 예외 처리
+                        String name = franchiseRepository.findById(franchiseId).map(Franchise::getName).orElse("Unknown");
                         return new FranchiseSettlementSummaryResponse(
+                                        name,
                                         BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
                                         BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
                                         BigDecimal.ZERO, BigDecimal.ZERO);
                 }
 
-                return toSummary(aggregateMonthlySettlement(franchiseId, month, dailyReceipts));
+                String name = franchiseRepository.findById(franchiseId).map(Franchise::getName).orElse("Unknown");
+                return toSummary(name, aggregateMonthlySettlement(franchiseId, month, dailyReceipts));
         }
 
         // 월별 매출 현황 top5, 전체
@@ -530,8 +539,9 @@ public class FranchiseSettlementFacade {
         // domain으로 보내지 않고 api모듈에서 계속 사용
 
         // 일별 정산 요약 데이터 받기
-        private FranchiseSettlementSummaryResponse toSummary(DailySettlementReceipt r) {
+        private FranchiseSettlementSummaryResponse toSummary(String franchiseName, DailySettlementReceipt r) {
                 return new FranchiseSettlementSummaryResponse(
+                                franchiseName,
                                 r.getFinalAmount(),
                                 r.getTotalSaleAmount(),
                                 r.getRefundAmount(),
@@ -542,8 +552,9 @@ public class FranchiseSettlementFacade {
                                 r.getAdjustmentAmount());
         }
 
-        private FranchiseSettlementSummaryResponse toSummary(MonthlySettlement s) {
+        private FranchiseSettlementSummaryResponse toSummary(String franchiseName, MonthlySettlement s) {
                 return new FranchiseSettlementSummaryResponse(
+                                franchiseName,
                                 s.getFinalSettlementAmount(),
                                 s.getTotalSaleAmount(),
                                 s.getRefundAmount(),

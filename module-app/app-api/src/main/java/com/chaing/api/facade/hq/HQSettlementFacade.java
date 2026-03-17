@@ -42,16 +42,12 @@ import com.chaing.domain.returns.enums.ReturnType;
 import com.chaing.domain.returns.entity.ReturnItem;
 import com.chaing.domain.returns.repository.FranchiseReturnItemRepository;
 import com.chaing.domain.returns.repository.FranchiseReturnRepository;
-import com.chaing.domain.transports.dto.DeliveryFeeInfo;
-import com.chaing.domain.transports.dto.OrderInfo;
-import com.chaing.domain.transports.entity.Transit;
-import com.chaing.domain.transports.enums.DeliverStatus;
-import com.chaing.domain.transports.repository.TransitRepository;
-import com.chaing.domain.transports.service.InternalTransportService;
 import com.chaing.domain.settlements.entity.SettlementVoucher;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
@@ -60,6 +56,11 @@ import java.util.stream.Collectors;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import com.chaing.api.dto.franchise.settlement.response.FranchiseSalesItemResponse;
+import com.chaing.api.dto.franchise.settlement.response.FranchiseOrderItemResponse;
+import com.chaing.api.dto.franchise.settlement.response.FranchiseDailyGraphResponse;
+import com.chaing.domain.products.entity.Product;
+import com.chaing.domain.products.repository.ProductRepository;
 
 @Slf4j
 @Component
@@ -79,8 +80,7 @@ public class HQSettlementFacade {
         private final FranchiseOrderItemRepository orderItemRepository;
         private final FranchiseReturnRepository returnRepository;
         private final FranchiseReturnItemRepository returnItemRepository;
-        private final TransitRepository transitRepository;
-        private final InternalTransportService transportService;
+        private final ProductRepository productRepository;
 
         // 1. 일별 조회
 
@@ -304,8 +304,13 @@ public class HQSettlementFacade {
                         HQSettlementFranchiseDailyDetailRequest request) {
                 com.chaing.domain.settlements.entity.DailySettlementReceipt receipt = dailyService
                                 .getByFranchiseAndDate(franchiseId, request.date());
+                
+                String franchiseName = franchiseRepository.findById(franchiseId)
+                                .map(Franchise::getName)
+                                .orElse("Unknown Store");
 
                 return new FranchiseSettlementSummaryResponse(
+                                franchiseName,
                                 receipt.getFinalAmount(),
                                 receipt.getTotalSaleAmount(),
                                 receipt.getRefundAmount(),
@@ -322,7 +327,12 @@ public class HQSettlementFacade {
                 com.chaing.domain.settlements.entity.MonthlySettlement settlement = monthlyService
                                 .getByFranchiseAndMonth(franchiseId, request.month());
 
+                String franchiseName = franchiseRepository.findById(franchiseId)
+                                .map(Franchise::getName)
+                                .orElse("Unknown Store");
+
                 return new FranchiseSettlementSummaryResponse(
+                                franchiseName,
                                 settlement.getFinalSettlementAmount(),
                                 settlement.getTotalSaleAmount(),
                                 settlement.getRefundAmount(),
@@ -457,7 +467,15 @@ public class HQSettlementFacade {
                                         .getAllByDate(request.date(), null);
 
                         if (receipts.isEmpty()) {
-                                // 상황 2: 정산 데이터 자체가 없음 (휴무일 등)
+                                // DB에 데이터가 없으면 전체 가맹점 실시간 집계 시도
+                                List<Franchise> franchises = franchiseRepository.findAll();
+                                receipts = franchises.stream()
+                                                .map(f -> getInternalDailyAggregation(f.getFranchiseId(), request.date())
+                                                                .receipt())
+                                                .collect(Collectors.toList());
+                        }
+
+                        if (receipts.isEmpty()) {
                                 log.warn("[WARN] No receipts found for HQ Daily PDF: {}", request.date());
                                 throw new com.chaing.domain.settlements.exception.SettlementException(
                                                 com.chaing.domain.settlements.exception.SettlementErrorCode.SETTLEMENT_DATA_EMPTY);
@@ -510,6 +528,34 @@ public class HQSettlementFacade {
                         // 2. 해당 월의 모든 가맹점 정산 데이터 조회
                         List<com.chaing.domain.settlements.entity.MonthlySettlement> settlements = monthlyService
                                         .getAllByMonth(request.month(), null);
+
+                        if (settlements.isEmpty()) {
+                                // DB에 데이터가 없으면 전체 가맹점 실시간 집계 시도
+                                List<Franchise> franchises = franchiseRepository.findAll();
+                                settlements = new ArrayList<>();
+                                for (Franchise f : franchises) {
+                                        LocalDate startDay = request.month().atDay(1);
+                                        LocalDate endDay = request.month().atEndOfMonth();
+                                        LocalDate todayLimit = LocalDate.now();
+                                        if (endDay.isAfter(todayLimit)) endDay = todayLimit;
+
+                                        List<com.chaing.domain.settlements.entity.DailySettlementReceipt> dailyReceipts = new ArrayList<>();
+                                        for (LocalDate d = startDay; !d.isAfter(endDay); d = d.plusDays(1)) {
+                                                com.chaing.domain.settlements.entity.DailySettlementReceipt dr = getInternalDailyAggregation(
+                                                                f.getFranchiseId(), d).receipt();
+                                                if (dr.getTotalSaleAmount().compareTo(BigDecimal.ZERO) > 0 ||
+                                                                dr.getOrderAmount().compareTo(BigDecimal.ZERO) > 0 ||
+                                                                dr.getDeliveryFee().compareTo(BigDecimal.ZERO) > 0) {
+                                                        dailyReceipts.add(dr);
+                                                }
+                                        }
+
+                                        if (!dailyReceipts.isEmpty()) {
+                                                settlements.add(aggregateMonthlySettlement(f.getFranchiseId(), request.month(),
+                                                                dailyReceipts));
+                                        }
+                                }
+                        }
 
                         if (settlements.isEmpty()) {
                                 throw new com.chaing.domain.settlements.exception.SettlementException(
@@ -955,6 +1001,135 @@ public class HQSettlementFacade {
                                 .finalSettlementAmount(finalAmount)
                                 .status(com.chaing.domain.settlements.enums.SettlementStatus.DRAFT) // 가집계용 상태
                                 .build();
+        }
+
+
+        // 상세 내역 (가맹점 페이지 연동용)
+
+        @Transactional(readOnly = true)
+        public List<FranchiseSalesItemResponse> getDailySalesItems(Long franchiseId, LocalDate date, Integer limit) {
+                LocalDateTime start = date.atStartOfDay();
+                LocalDateTime end = date.atTime(LocalTime.MAX);
+                List<SalesItem> items = salesItemRepository.findAllBySalesFranchiseIdAndCreatedAtBetween(franchiseId, start, end)
+                                .stream()
+                                .filter(item -> item.getSales().getIsCanceled() == null || !item.getSales().getIsCanceled())
+                                .collect(Collectors.toList());
+                return aggregateSalesItems(items, limit);
+        }
+
+        @Transactional(readOnly = true)
+        public List<FranchiseOrderItemResponse> getDailyOrderItems(Long franchiseId, LocalDate date, Integer limit) {
+                List<FranchiseOrderStatus> validStatuses = List.of(
+                                FranchiseOrderStatus.PENDING, FranchiseOrderStatus.ACCEPTED,
+                                FranchiseOrderStatus.PARTIAL, FranchiseOrderStatus.SHIPPING_PENDING,
+                                FranchiseOrderStatus.SHIPPING, FranchiseOrderStatus.COMPLETED);
+                List<FranchiseOrder> orders = orderRepository.findAllByFranchiseIdAndOrderStatusInAndCreatedAtBetween(
+                                franchiseId, validStatuses, date.atStartOfDay(), date.atTime(LocalTime.MAX));
+                List<Long> orderIds = orders.stream().map(FranchiseOrder::getFranchiseOrderId).collect(Collectors.toList());
+                List<FranchiseOrderItem> items = orderItemRepository.findAllByFranchiseOrderFranchiseOrderIdIn(orderIds);
+                return aggregateOrderItems(items, limit);
+        }
+
+        @Transactional(readOnly = true)
+        public List<FranchiseSalesItemResponse> getMonthlySalesItems(Long franchiseId, YearMonth month, Integer limit) {
+                LocalDateTime start = month.atDay(1).atStartOfDay();
+                LocalDateTime end = month.atEndOfMonth().atTime(LocalTime.MAX);
+                List<SalesItem> items = salesItemRepository.findAllBySalesFranchiseIdAndCreatedAtBetween(franchiseId, start, end)
+                                .stream()
+                                .filter(item -> item.getSales().getIsCanceled() == null || !item.getSales().getIsCanceled())
+                                .collect(Collectors.toList());
+                return aggregateSalesItems(items, limit);
+        }
+
+        @Transactional(readOnly = true)
+        public List<FranchiseOrderItemResponse> getMonthlyOrderItems(Long franchiseId, YearMonth month, Integer limit) {
+                List<FranchiseOrderStatus> validStatuses = List.of(
+                                FranchiseOrderStatus.PENDING, FranchiseOrderStatus.ACCEPTED,
+                                FranchiseOrderStatus.PARTIAL, FranchiseOrderStatus.SHIPPING_PENDING,
+                                FranchiseOrderStatus.SHIPPING, FranchiseOrderStatus.COMPLETED);
+                List<FranchiseOrder> orders = orderRepository.findAllByFranchiseIdAndOrderStatusInAndCreatedAtBetween(
+                                franchiseId, validStatuses, month.atDay(1).atStartOfDay(), month.atEndOfMonth().atTime(LocalTime.MAX));
+                List<Long> orderIds = orders.stream().map(FranchiseOrder::getFranchiseOrderId).collect(Collectors.toList());
+                List<FranchiseOrderItem> items = orderItemRepository.findAllByFranchiseOrderFranchiseOrderIdIn(orderIds);
+                return aggregateOrderItems(items, limit);
+        }
+
+        @Transactional(readOnly = true)
+        public List<FranchiseDailyGraphResponse> getMonthlySalesTrend(Long franchiseId, YearMonth month) {
+                LocalDate startDay = month.atDay(1);
+                LocalDate endDay = month.atEndOfMonth();
+                if (month.equals(YearMonth.now())) {
+                        endDay = LocalDate.now();
+                }
+
+                List<FranchiseDailyGraphResponse> trend = new ArrayList<>();
+                for (LocalDate date = startDay; !date.isAfter(endDay); date = date.plusDays(1)) {
+                        AggregationResult result = getInternalDailyAggregation(franchiseId, date);
+                        trend.add(new FranchiseDailyGraphResponse(date, result.receipt().getTotalSaleAmount()));
+                }
+                return trend;
+        }
+
+        private List<FranchiseSalesItemResponse> aggregateSalesItems(List<SalesItem> items, Integer limit) {
+                Map<String, List<SalesItem>> grouped = items.stream()
+                                .collect(Collectors.groupingBy(SalesItem::getProductName));
+                List<FranchiseSalesItemResponse> result = grouped.entrySet().stream()
+                                .map(entry -> {
+                                        String name = entry.getKey();
+                                        List<SalesItem> group = entry.getValue();
+                                        int totalQty = group.stream().mapToInt(SalesItem::getQuantity).sum();
+                                        BigDecimal total = group.stream()
+                                                        .map(item -> item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
+                                                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+                                        BigDecimal displayPrice = group.get(0).getUnitPrice();
+                                        return new FranchiseSalesItemResponse(0, name, totalQty, displayPrice, total);
+                                })
+                                .sorted((a, b) -> b.totalSales().compareTo(a.totalSales()))
+                                .collect(Collectors.toList());
+
+                List<FranchiseSalesItemResponse> ranked = new ArrayList<>();
+                for (int i = 0; i < result.size(); i++) {
+                        if (limit != null && i >= limit)
+                                break;
+                        var item = result.get(i);
+                        ranked.add(new FranchiseSalesItemResponse(
+                                        i + 1, item.productName(), item.totalQuantity(), item.unitPrice(), item.totalSales()));
+                }
+                return ranked;
+        }
+
+        private List<FranchiseOrderItemResponse> aggregateOrderItems(List<FranchiseOrderItem> items, Integer limit) {
+                Map<Long, List<FranchiseOrderItem>> grouped = items.stream()
+                                .collect(Collectors.groupingBy(FranchiseOrderItem::getProductId));
+
+                List<Long> productIds = new ArrayList<>(grouped.keySet());
+                Map<Long, String> productNames = productRepository.findAllByProductIdIn(productIds).stream()
+                                .collect(Collectors.toMap(Product::getProductId, Product::getName));
+
+                List<FranchiseOrderItemResponse> result = grouped.entrySet().stream()
+                                .map(entry -> {
+                                        Long productId = entry.getKey();
+                                        String productName = productNames.getOrDefault(productId, "알 수 없는 상품 (ID: " + productId + ")");
+                                        List<FranchiseOrderItem> group = entry.getValue();
+                                        int totalQty = group.stream().mapToInt(FranchiseOrderItem::getQuantity).sum();
+                                        BigDecimal total = group.stream()
+                                                        .map(item -> item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
+                                                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+                                        BigDecimal displayPrice = group.get(0).getUnitPrice();
+                                        return new FranchiseOrderItemResponse(0, productName, totalQty, displayPrice, total);
+                                })
+                                .sorted((a, b) -> b.totalAmount().compareTo(a.totalAmount()))
+                                .collect(Collectors.toList());
+
+                List<FranchiseOrderItemResponse> ranked = new ArrayList<>();
+                for (int i = 0; i < result.size(); i++) {
+                        if (limit != null && i >= limit)
+                                break;
+                        var item = result.get(i);
+                        ranked.add(new FranchiseOrderItemResponse(
+                                        i + 1, item.productName(), item.totalQuantity(), item.unitPrice(), item.totalAmount()));
+                }
+                return ranked;
         }
 
         private record AggregationResult(DailySettlementReceipt receipt, List<DailyReceiptLine> lines) {

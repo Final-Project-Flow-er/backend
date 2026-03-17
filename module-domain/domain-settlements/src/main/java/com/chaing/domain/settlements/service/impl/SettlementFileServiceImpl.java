@@ -233,22 +233,22 @@ public class SettlementFileServiceImpl implements SettlementFileService {
             document.add(new Paragraph("--------------------------------------------"));
 
             BigDecimal totalOrder = receipts.stream()
-                    .map(DailySettlementReceipt::getOrderAmount)
+                    .map(r -> r.getOrderAmount() != null ? r.getOrderAmount() : BigDecimal.ZERO)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
             BigDecimal totalSale = receipts.stream()
-                    .map(DailySettlementReceipt::getTotalSaleAmount)
+                    .map(r -> r.getTotalSaleAmount() != null ? r.getTotalSaleAmount() : BigDecimal.ZERO)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
             BigDecimal totalFee = receipts.stream()
-                    .map(DailySettlementReceipt::getCommissionFee)
+                    .map(r -> r.getCommissionFee() != null ? r.getCommissionFee() : BigDecimal.ZERO)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
             BigDecimal totalDelivery = receipts.stream()
-                    .map(DailySettlementReceipt::getDeliveryFee)
+                    .map(r -> r.getDeliveryFee() != null ? r.getDeliveryFee() : BigDecimal.ZERO)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
             BigDecimal totalRefund = receipts.stream()
-                    .map(DailySettlementReceipt::getRefundAmount)
+                    .map(r -> r.getRefundAmount() != null ? r.getRefundAmount() : BigDecimal.ZERO)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
             BigDecimal totalLoss = receipts.stream()
-                    .map(DailySettlementReceipt::getLossAmount)
+                    .map(r -> r.getLossAmount() != null ? r.getLossAmount() : BigDecimal.ZERO)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
             BigDecimal hqTotalFinal = totalOrder.add(totalFee).add(totalDelivery)
@@ -271,15 +271,18 @@ public class SettlementFileServiceImpl implements SettlementFileService {
             table.addCell("정산금액");
 
             for (DailySettlementReceipt r : receipts) {
-                BigDecimal hqAmount = r.getOrderAmount()
-                        .add(r.getCommissionFee())
-                        .add(r.getDeliveryFee())
-                        .subtract(r.getRefundAmount())
-                        .subtract(r.getLossAmount());
+                BigDecimal order = r.getOrderAmount() != null ? r.getOrderAmount() : BigDecimal.ZERO;
+                BigDecimal fee = r.getCommissionFee() != null ? r.getCommissionFee() : BigDecimal.ZERO;
+                BigDecimal delivery = r.getDeliveryFee() != null ? r.getDeliveryFee() : BigDecimal.ZERO;
+                BigDecimal refund = r.getRefundAmount() != null ? r.getRefundAmount() : BigDecimal.ZERO;
+                BigDecimal loss = r.getLossAmount() != null ? r.getLossAmount() : BigDecimal.ZERO;
+                BigDecimal totalSaleRow = r.getTotalSaleAmount() != null ? r.getTotalSaleAmount() : BigDecimal.ZERO;
+
+                BigDecimal hqAmount = order.add(fee).add(delivery).subtract(refund).subtract(loss);
 
                 table.addCell(r.getFranchiseId().toString());
-                table.addCell(r.getTotalSaleAmount().toString() + "원");
-                table.addCell(r.getCommissionFee().toString() + "원");
+                table.addCell(totalSaleRow.toString() + "원");
+                table.addCell(fee.toString() + "원");
                 table.addCell(hqAmount.toString() + "원");
             }
 
@@ -309,22 +312,22 @@ public class SettlementFileServiceImpl implements SettlementFileService {
             document.add(new Paragraph("--------------------------------------------"));
 
             BigDecimal totalOrder = settlements.stream()
-                    .map(MonthlySettlement::getOrderAmount)
+                    .map(s -> s.getOrderAmount() != null ? s.getOrderAmount() : BigDecimal.ZERO)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
             BigDecimal totalSale = settlements.stream()
-                    .map(MonthlySettlement::getTotalSaleAmount)
+                    .map(s -> s.getTotalSaleAmount() != null ? s.getTotalSaleAmount() : BigDecimal.ZERO)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
             BigDecimal totalFee = settlements.stream()
-                    .map(MonthlySettlement::getCommissionFee)
+                    .map(s -> s.getCommissionFee() != null ? s.getCommissionFee() : BigDecimal.ZERO)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
             BigDecimal totalDelivery = settlements.stream()
-                    .map(MonthlySettlement::getDeliveryFee)
+                    .map(s -> s.getDeliveryFee() != null ? s.getDeliveryFee() : BigDecimal.ZERO)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
             BigDecimal totalRefund = settlements.stream()
-                    .map(MonthlySettlement::getRefundAmount)
+                    .map(s -> s.getRefundAmount() != null ? s.getRefundAmount() : BigDecimal.ZERO)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
             BigDecimal totalLoss = settlements.stream()
-                    .map(MonthlySettlement::getLossAmount)
+                    .map(s -> s.getLossAmount() != null ? s.getLossAmount() : BigDecimal.ZERO)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
             BigDecimal hqTotalFinal = totalOrder.add(totalFee).add(totalDelivery)
@@ -333,24 +336,35 @@ public class SettlementFileServiceImpl implements SettlementFileService {
             document.add(new Paragraph("1. 전체 매출 합계(참고): " + totalSale + "원"));
             document.add(new Paragraph("2. 전체 발주 매출: " + totalOrder + "원"));
             document.add(new Paragraph("3. 전체 수수료 수익: " + totalFee + "원"));
+            document.add(new Paragraph("4. 전체 배송 수익: " + totalDelivery + "원"));
+            document.add(new Paragraph("5. 전체 반품 차감액: -" + totalRefund + "원"));
+            document.add(new Paragraph("6. 전체 본사 손실액: -" + totalLoss + "원"));
             document.add(new Paragraph("--------------------------------------------"));
             document.add(new Paragraph("전체 최종 정산 합계: " + hqTotalFinal + "원").setBold().setFontSize(14));
 
             document.add(new Paragraph("\n[가맹점별 요약 내역]"));
-            Table table = new Table(UnitValue.createPointArray(new float[] { 80, 150, 150 }));
+            Table table = new Table(UnitValue.createPointArray(new float[] { 80, 80, 80, 120, 100 }));
             table.addCell("가맹점 ID");
             table.addCell("총 매출");
+            table.addCell("수수료");
+            table.addCell("기타(배송/반품/손실)");
             table.addCell("정산금액");
 
             for (MonthlySettlement s : settlements) {
-                BigDecimal hqAmount = s.getOrderAmount()
-                        .add(s.getCommissionFee())
-                        .add(s.getDeliveryFee())
-                        .subtract(s.getRefundAmount())
-                        .subtract(s.getLossAmount());
+                BigDecimal order = s.getOrderAmount() != null ? s.getOrderAmount() : BigDecimal.ZERO;
+                BigDecimal fee = s.getCommissionFee() != null ? s.getCommissionFee() : BigDecimal.ZERO;
+                BigDecimal delivery = s.getDeliveryFee() != null ? s.getDeliveryFee() : BigDecimal.ZERO;
+                BigDecimal refund = s.getRefundAmount() != null ? s.getRefundAmount() : BigDecimal.ZERO;
+                BigDecimal loss = s.getLossAmount() != null ? s.getLossAmount() : BigDecimal.ZERO;
+                BigDecimal totalSaleRow = s.getTotalSaleAmount() != null ? s.getTotalSaleAmount() : BigDecimal.ZERO;
+
+                BigDecimal otherAmount = delivery.subtract(refund).subtract(loss);
+                BigDecimal hqAmount = order.add(fee).add(otherAmount);
 
                 table.addCell(s.getFranchiseId().toString());
-                table.addCell(s.getTotalSaleAmount().toString() + "원");
+                table.addCell(totalSaleRow.toString() + "원");
+                table.addCell(fee.toString() + "원");
+                table.addCell(otherAmount.toString() + "원");
                 table.addCell(hqAmount.toString() + "원");
             }
 

@@ -80,7 +80,9 @@ public class SecurityConfig {
         configuration.setAllowedOrigins(List.of(
                 "http://localhost:5173",
                 "https://chaing.org",
-                "https://img.chaing.org"
+                "https://api.chaing.org",
+                "https://img.chaing.org",
+                "https://minio.chaing.org"
         ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Authorization-Refresh", "Content-Type", "Cache-Control", "Connection"));

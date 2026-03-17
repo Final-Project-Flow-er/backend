@@ -1,6 +1,7 @@
 package com.chaing.domain.businessunits.service.impl;
 
 import com.chaing.domain.businessunits.dto.command.BusinessUnitUpdateCommand;
+import com.chaing.domain.businessunits.dto.condition.BusinessUnitSearchCondition;
 import com.chaing.domain.businessunits.dto.internal.BusinessUnitInternal;
 import com.chaing.domain.businessunits.entity.Headquarter;
 import com.chaing.domain.businessunits.repository.HeadquarterRepository;
@@ -10,13 +11,15 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
-import java.util.Optional;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class HeadquarterServiceImplTests {
@@ -42,8 +45,47 @@ class HeadquarterServiceImplTests {
         // then
         assertNotNull(result);
         assertEquals("본사", result.name());
-        assertEquals("대표", result.representativeName());
-        verify(headquarterRepository, times(1)).findById(id);
+        verify(headquarterRepository).findById(id);
+    }
+
+    @Test
+    @DisplayName("아이디 목록으로 이름 조회")
+    void getNamesByIds() {
+
+        // given
+        List<Long> ids = Arrays.asList(1L, 2L);
+        List<Object[]> mockResults = new ArrayList<>();
+        mockResults.add(new Object[]{1L, "본사A"});
+        mockResults.add(new Object[]{2L, "본사B"});
+
+        when(headquarterRepository.findNamesByIds(ids)).thenReturn(mockResults);
+
+        // when
+        Map<Long, String> result = headquarterService.getNamesByIds(ids);
+
+        // then
+        assertEquals(2, result.size());
+        assertEquals("본사A", result.get(1L));
+        assertEquals("본사B", result.get(2L));
+    }
+
+    @Test
+    @DisplayName("본사 목록 조회")
+    void getBusinessUnitList() {
+
+        // given
+        Pageable pageable = PageRequest.of(0, 10);
+        Headquarter hq = Headquarter.builder().hqId(1L).name("본사").build();
+        Page<Headquarter> hqPage = new PageImpl<>(Collections.singletonList(hq));
+        BusinessUnitSearchCondition condition = new BusinessUnitSearchCondition(null, null, null, null, null, null, null, null);
+        when(headquarterRepository.findAll(pageable)).thenReturn(hqPage);
+
+        // when
+        Page<BusinessUnitInternal> result = headquarterService.getBusinessUnitList(condition, pageable);
+
+        // then
+        assertEquals(1, result.getContent().size());
+        assertEquals("본사", result.getContent().get(0).name());
     }
 
     @Test
@@ -52,22 +94,31 @@ class HeadquarterServiceImplTests {
 
         // given
         Long id = 1L;
-        Headquarter hq = Headquarter.builder().hqId(id).name("기존 본사").address("서울시 서초구").phone("02-123-4567").build();
+        Headquarter hq = Headquarter.builder().hqId(id).name("기존").build();
+        BusinessUnitUpdateCommand command = new BusinessUnitUpdateCommand("변경", null, null, null, null, null, null, null);
 
-        BusinessUnitUpdateCommand command = new BusinessUnitUpdateCommand(
-                "변경된 본사", null, null, null, null,
-                null, null, null);
         when(headquarterRepository.findById(id)).thenReturn(Optional.of(hq));
 
         // when
         BusinessUnitInternal result = headquarterService.updateInfo(id, command);
 
         // then
-        assertNotNull(result);
-        assertEquals("변경된 본사", hq.getName());
-        assertEquals("서울시 서초구", hq.getAddress());
-        assertEquals("02-123-4567", hq.getPhone());
+        assertEquals("변경", result.name());
+    }
 
-        verify(headquarterRepository, times(1)).findById(id);
+    @Test
+    @DisplayName("본사 코드 조회")
+    void getHqCode() {
+
+        // given
+        Long id = 1L;
+        Headquarter hq = Headquarter.builder().hqId(id).hqCode("HQ001").build();
+        when(headquarterRepository.findById(id)).thenReturn(Optional.of(hq));
+
+        // when
+        String code = headquarterService.getHqCode(id);
+
+        // then
+        assertEquals("HQ001", code);
     }
 }

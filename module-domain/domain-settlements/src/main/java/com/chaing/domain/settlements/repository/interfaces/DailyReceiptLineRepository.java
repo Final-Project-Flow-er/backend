@@ -12,13 +12,13 @@ import java.util.List;
 @Repository
 public interface DailyReceiptLineRepository extends JpaRepository<DailyReceiptLine, Long> {
 
-    // 특정 일별 영수증 목록
-    List<DailyReceiptLine> findAllByDailyReceiptId(Long dailyReceiptId);
+        // 특정 일별 영수증 목록
+        List<DailyReceiptLine> findAllByDailyReceiptId(Long dailyReceiptId);
 
-    // 특정 일별 영수증  (유형별 필터 + 페이징) — 전표 상세 목록 페이지
-    Page<DailyReceiptLine> findAllByDailyReceiptId(Long dailyReceiptId, Pageable pageable);
+        // 특정 일별 영수증 (유형별 필터 + 페이징) — 전표 상세 목록 페이지
+        Page<DailyReceiptLine> findAllByDailyReceiptId(Long dailyReceiptId, Pageable pageable);
 
-    // 유형 필터링 + 페이징
-    Page<DailyReceiptLine> findAllByDailyReceiptIdAndLineType(
-            Long dailyReceiptId, VoucherType lineType, Pageable pageable);
+        // 유형 필터링 + 페이징
+        Page<DailyReceiptLine> findAllByDailyReceiptIdAndLineType(
+                        Long dailyReceiptId, VoucherType lineType, Pageable pageable);
 }

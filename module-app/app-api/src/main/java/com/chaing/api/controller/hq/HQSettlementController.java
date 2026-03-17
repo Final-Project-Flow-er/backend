@@ -2,6 +2,9 @@ package com.chaing.api.controller.hq;
 
 import com.chaing.api.dto.hq.settlement.request.*;
 import com.chaing.api.dto.hq.settlement.response.*;
+import com.chaing.api.dto.franchise.settlement.response.FranchiseSalesItemResponse;
+import com.chaing.api.dto.franchise.settlement.response.FranchiseOrderItemResponse;
+import com.chaing.api.dto.franchise.settlement.response.FranchiseDailyGraphResponse;
 import com.chaing.api.dto.franchise.settlement.response.FranchiseSettlementSummaryResponse;
 import com.chaing.api.dto.franchise.settlement.response.FranchiseVoucherResponse;
 import com.chaing.api.facade.hq.HQSettlementFacade;
@@ -229,4 +232,49 @@ public class HQSettlementController {
                 return ResponseEntity.ok(ApiResponse.success(url));
         }
 
+        // 가맹점 상세 연동용 추가 API
+
+        @Operation(summary = "본사 가맹점 일별 매출 항목 조회", description = "특정 가맹점의 일별 매출 상품 목록을 조회합니다.")
+        @GetMapping("/daily/franchises/{franchiseId}/sales-items")
+        public ResponseEntity<ApiResponse<List<FranchiseSalesItemResponse>>> getDailyFranchiseSalesItems(
+                        @PathVariable("franchiseId") Long franchiseId,
+                        @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+                        @RequestParam(value = "limit", required = false) Integer limit) {
+                return ResponseEntity.ok(ApiResponse.success(hqFacade.getDailySalesItems(franchiseId, date, limit)));
+        }
+
+        @Operation(summary = "본사 가맹점 일별 발주 항목 조회", description = "특정 가맹점의 일별 발주 품목 목록을 조회합니다.")
+        @GetMapping("/daily/franchises/{franchiseId}/order-items")
+        public ResponseEntity<ApiResponse<List<FranchiseOrderItemResponse>>> getDailyFranchiseOrderItems(
+                        @PathVariable("franchiseId") Long franchiseId,
+                        @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+                        @RequestParam(value = "limit", required = false) Integer limit) {
+                return ResponseEntity.ok(ApiResponse.success(hqFacade.getDailyOrderItems(franchiseId, date, limit)));
+        }
+
+        @Operation(summary = "본사 가맹점 월별 매출 항목 조회", description = "특정 가맹점의 월별 매출 상품 목록을 조회합니다.")
+        @GetMapping("/monthly/franchises/{franchiseId}/sales-items")
+        public ResponseEntity<ApiResponse<List<FranchiseSalesItemResponse>>> getMonthlyFranchiseSalesItems(
+                        @PathVariable("franchiseId") Long franchiseId,
+                        @RequestParam("month") @DateTimeFormat(pattern = "yyyy-MM") YearMonth month,
+                        @RequestParam(value = "limit", required = false) Integer limit) {
+                return ResponseEntity.ok(ApiResponse.success(hqFacade.getMonthlySalesItems(franchiseId, month, limit)));
+        }
+
+        @Operation(summary = "본사 가맹점 월별 발주 항목 조회", description = "특정 가맹점의 월별 발주 품목 목록을 조회합니다.")
+        @GetMapping("/monthly/franchises/{franchiseId}/order-items")
+        public ResponseEntity<ApiResponse<List<FranchiseOrderItemResponse>>> getMonthlyFranchiseOrderItems(
+                        @PathVariable("franchiseId") Long franchiseId,
+                        @RequestParam("month") @DateTimeFormat(pattern = "yyyy-MM") YearMonth month,
+                        @RequestParam(value = "limit", required = false) Integer limit) {
+                return ResponseEntity.ok(ApiResponse.success(hqFacade.getMonthlyOrderItems(franchiseId, month, limit)));
+        }
+
+        @Operation(summary = "본사 가맹점 월변 매출 추이 조회(그래프)", description = "특정 가맹점의 월별 일자별 매출 합계 리스트를 조회합니다.")
+        @GetMapping("/monthly/franchises/{franchiseId}/sales-graph")
+        public ResponseEntity<ApiResponse<List<FranchiseDailyGraphResponse>>> getMonthlyFranchiseSalesTrend(
+                        @PathVariable("franchiseId") Long franchiseId,
+                        @RequestParam("month") @DateTimeFormat(pattern = "yyyy-MM") YearMonth month) {
+                return ResponseEntity.ok(ApiResponse.success(hqFacade.getMonthlySalesTrend(franchiseId, month)));
+        }
 }

@@ -1,15 +1,9 @@
 package com.chaing.api.controller.hq;
 
-import com.chaing.api.dto.hq.inventorylogs.request.InventoryOrderLogTestRequest;
 import com.chaing.api.dto.hq.inventorylogs.request.InventoryReturnLogTestRequest;
-import com.chaing.api.security.principal.UserPrincipal;
-import com.chaing.domain.inventorylogs.enums.ActorType;
-import jakarta.validation.Valid;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableDefault;
-
 import com.chaing.api.facade.hq.HQInventoryLogFacade;
 import com.chaing.api.facade.inventorylogs.InventoryLogFacade;
+import com.chaing.api.security.principal.UserPrincipal;
 import com.chaing.core.dto.ApiResponse;
 import com.chaing.domain.inventorylogs.dto.request.FactoryLogRequest;
 import com.chaing.domain.inventorylogs.dto.request.FranchiseLogRequest;
@@ -18,9 +12,13 @@ import com.chaing.domain.inventorylogs.dto.response.BoxCodeResponse;
 import com.chaing.domain.inventorylogs.dto.response.FactoryInventoryLogListResponse;
 import com.chaing.domain.inventorylogs.dto.response.FranchiseInventoryLogListResponse;
 import com.chaing.domain.inventorylogs.dto.response.InventoryLogListResponse;
+import com.chaing.domain.inventorylogs.enums.ActorType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -165,20 +163,6 @@ public class HQInventoryLogController {
                 return ResponseEntity
                                 .ok(ApiResponse.success(hqInventoryLogFacade.findFactoryInventoryLogs(factoryId,
                                                 request, pageable)));
-        }
-
-        @Operation(summary = "입출고 테스트", description = "입출고 로그를 테스트합니다.")
-        @PostMapping("/order")
-        public ResponseEntity<ApiResponse<String>> testOrderLog(
-                        @Valid @RequestBody InventoryOrderLogTestRequest request) {
-                inventoryLogFacade.recordOrderLogs(
-                                request.orderId(),
-                                request.orderType(), // "FRANCHISE" | "HQ"
-                                request.toId(),
-                                request.logType(),
-                                request.actorType(), // "FACTORY" | "HQ" | "FRANCHISE"
-                                request.actorId());
-                return ResponseEntity.ok(ApiResponse.success("ORDER_LOG_CREATED"));
         }
 
         @Operation(summary = "반품 입출고 테스트", description = "반품 입출고 로그를 테스트합니다.")

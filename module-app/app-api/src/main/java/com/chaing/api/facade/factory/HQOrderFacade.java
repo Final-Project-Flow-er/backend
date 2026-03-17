@@ -1,5 +1,6 @@
 package com.chaing.api.facade.factory;
 
+import com.chaing.api.config.RedisCacheHelper;
 import com.chaing.core.dto.command.FranchiseOrderCodeAndQuantityCommand;
 import com.chaing.domain.businessunits.service.impl.FranchiseServiceImpl;
 import com.chaing.domain.businessunits.service.impl.HeadquarterServiceImpl;
@@ -77,6 +78,7 @@ public class HQOrderFacade {
     private final FranchiseServiceImpl franchiseService;
     private final HeadquarterServiceImpl headquarterService;
     private final InventoryService inventoryService;
+    private final RedisCacheHelper redisCacheHelper;
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper;
 
@@ -361,8 +363,8 @@ public class HQOrderFacade {
                 .isRegular(order.isRegular())
                 .items(items)
                 .build();
-        evictByPattern("ord:hq:*");
-        evictByPattern("ord:fr:*");
+        redisCacheHelper.evictByPattern("ord:hq:*");
+        redisCacheHelper.evictByPattern("ord:fr:*");
         return result;
     }
 
@@ -374,8 +376,8 @@ public class HQOrderFacade {
 
         // 반환
         HQOrderCancelResponse result = HQOrderCancelResponse.from(cancelOrder);
-        evictByPattern("ord:hq:*");
-        evictByPattern("ord:fr:*");
+        redisCacheHelper.evictByPattern("ord:hq:*");
+        redisCacheHelper.evictByPattern("ord:fr:*");
         return result;
     }
 
@@ -428,8 +430,8 @@ public class HQOrderFacade {
 
         // 상태 변경 및 반환
         List<HQOrderStatusUpdateResponse> result = franchiseOrderService.updateStatus(request);
-        evictByPattern("ord:hq:*");
-        evictByPattern("ord:fr:*");
+        redisCacheHelper.evictByPattern("ord:hq:*");
+        redisCacheHelper.evictByPattern("ord:fr:*");
         return result;
     }
 
@@ -470,8 +472,8 @@ public class HQOrderFacade {
                 .isRegular(order.isRegular())
                 .items(items)
                 .build();
-        evictByPattern("ord:hq:*");
-        evictByPattern("ord:fr:*");
+        redisCacheHelper.evictByPattern("ord:hq:*");
+        redisCacheHelper.evictByPattern("ord:fr:*");
         return result;
     }
 
@@ -679,8 +681,8 @@ public class HQOrderFacade {
         List<FranchiseOrderStatusShippingPendingResponse> result = orders.values().stream()
                 .map(FranchiseOrderStatusShippingPendingResponse::from)
                 .toList();
-        evictByPattern("ord:hq:*");
-        evictByPattern("ord:fr:*");
+        redisCacheHelper.evictByPattern("ord:hq:*");
+        redisCacheHelper.evictByPattern("ord:fr:*");
         return result;
     }
 
@@ -696,8 +698,8 @@ public class HQOrderFacade {
         List<HQFranchiseOrderCancelResponse> result = statusByOrderCode.entrySet().stream()
                 .map(HQFranchiseOrderCancelResponse::of)
                 .toList();
-        evictByPattern("ord:hq:*");
-        evictByPattern("ord:fr:*");
+        redisCacheHelper.evictByPattern("ord:hq:*");
+        redisCacheHelper.evictByPattern("ord:fr:*");
         return result;
     }
 
@@ -724,16 +726,6 @@ public class HQOrderFacade {
     private void writeCache(String key, Object value) {
         try {
             redisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(value), CACHE_TTL);
-        } catch (Exception ignored) {
-        }
-    }
-
-    private void evictByPattern(String pattern) {
-        try {
-            Set<String> keys = redisTemplate.keys(pattern);
-            if (keys != null && !keys.isEmpty()) {
-                redisTemplate.delete(keys);
-            }
         } catch (Exception ignored) {
         }
     }

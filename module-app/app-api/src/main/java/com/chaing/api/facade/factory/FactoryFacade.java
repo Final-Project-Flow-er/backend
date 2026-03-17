@@ -1,5 +1,6 @@
 package com.chaing.api.facade.factory;
 
+import com.chaing.api.config.RedisCacheHelper;
 import com.chaing.core.dto.command.UserContactCommand;
 import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.domain.orders.dto.command.HQOrderItemCommand;
@@ -31,7 +32,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -46,6 +46,7 @@ public class FactoryFacade {
     private final HQOrderService hqOrderService;
     private final ProductService productService;
     private final UserManagementService userManagementService;
+    private final RedisCacheHelper redisCacheHelper;
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper;
 
@@ -240,7 +241,7 @@ public class FactoryFacade {
                         .status(entry.getValue())
                         .build())
                 .toList();
-        evictByPattern("ord:fc:*");
+        redisCacheHelper.evictByPattern("ord:fc:*");
         return result;
     }
 
@@ -267,16 +268,6 @@ public class FactoryFacade {
     private void writeCache(String key, Object value) {
         try {
             redisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(value), CACHE_TTL);
-        } catch (Exception ignored) {
-        }
-    }
-
-    private void evictByPattern(String pattern) {
-        try {
-            Set<String> keys = redisTemplate.keys(pattern);
-            if (keys != null && !keys.isEmpty()) {
-                redisTemplate.delete(keys);
-            }
         } catch (Exception ignored) {
         }
     }

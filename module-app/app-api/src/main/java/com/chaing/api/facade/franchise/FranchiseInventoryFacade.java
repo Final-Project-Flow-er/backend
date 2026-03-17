@@ -1,5 +1,6 @@
 package com.chaing.api.facade.franchise;
 
+import com.chaing.api.config.RedisCacheHelper;
 import com.chaing.api.dto.franchise.sales.response.ScannedForSaleResponse;
 import com.chaing.api.dto.franchise.sales.response.ScannedItemForSaleResponse;
 import com.chaing.api.facade.notification.NotificationFacade;
@@ -56,7 +57,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 @RequiredArgsConstructor
 @Service
@@ -71,6 +71,7 @@ public class FranchiseInventoryFacade {
     private final ProductService productService;
     private final InventoryLogService inventoryLogService;
     private final UserManagementService userManagementService;
+    private final RedisCacheHelper redisCacheHelper;
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper;
     private final NotificationFacade notificationFacade;
@@ -400,19 +401,9 @@ public class FranchiseInventoryFacade {
         }
     }
 
-    private void evictByPattern(String pattern) {
-        try {
-            Set<String> keys = redisTemplate.keys(pattern);
-            if (keys != null && !keys.isEmpty()) {
-                redisTemplate.delete(keys);
-            }
-        } catch (Exception ignored) {
-        }
-    }
-
     private void evictInventoryCache() {
-        evictByPattern("inv:hq:*");
-        evictByPattern("inv:fr:*");
+        redisCacheHelper.evictByPattern("inv:hq:*");
+        redisCacheHelper.evictByPattern("inv:fr:*");
     }
 
     private String pageableKey(Pageable pageable) {

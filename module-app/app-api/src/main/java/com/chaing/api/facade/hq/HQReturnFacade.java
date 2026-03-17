@@ -1,5 +1,6 @@
 package com.chaing.api.facade.hq;
 
+import com.chaing.api.config.RedisCacheHelper;
 import com.chaing.api.dto.hq.response.HQReturnProductResponse;
 import com.chaing.api.dto.hq.response.HQReturnResponse;
 import com.chaing.core.dto.info.ProductInfo;
@@ -64,6 +65,7 @@ public class HQReturnFacade {
     private final FranchiseOrderService franchiseOrderService;
     private final FranchiseServiceImpl franchiseService;
     private final UserManagementService userManagementService;
+    private final RedisCacheHelper redisCacheHelper;
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper;
 
@@ -343,8 +345,8 @@ public class HQReturnFacade {
                 .status(updatedStatus)
                 .returnItemInspection(itemInspections)
                 .build();
-        evictByPattern("ret:hq:*");
-        evictByPattern("ret:fr:*");
+        redisCacheHelper.evictByPattern("ret:hq:*");
+        redisCacheHelper.evictByPattern("ret:fr:*");
         return result;
     }
 
@@ -359,8 +361,8 @@ public class HQReturnFacade {
         List<HQReturnProductResponse> result = acceptedReturns.stream()
                 .map(HQReturnProductResponse::from)
                 .toList();
-        evictByPattern("ret:hq:*");
-        evictByPattern("ret:fr:*");
+        redisCacheHelper.evictByPattern("ret:hq:*");
+        redisCacheHelper.evictByPattern("ret:fr:*");
         return result;
     }
 
@@ -379,8 +381,8 @@ public class HQReturnFacade {
         List<HQOrderStatusShippingPendingResponse> result = returns.values().stream()
                 .map(HQOrderStatusShippingPendingResponse::from)
                 .toList();
-        evictByPattern("ret:hq:*");
-        evictByPattern("ret:fr:*");
+        redisCacheHelper.evictByPattern("ret:hq:*");
+        redisCacheHelper.evictByPattern("ret:fr:*");
         return result;
     }
 
@@ -407,16 +409,6 @@ public class HQReturnFacade {
     private void writeCache(String key, Object value) {
         try {
             redisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(value), CACHE_TTL);
-        } catch (Exception ignored) {
-        }
-    }
-
-    private void evictByPattern(String pattern) {
-        try {
-            Set<String> keys = redisTemplate.keys(pattern);
-            if (keys != null && !keys.isEmpty()) {
-                redisTemplate.delete(keys);
-            }
         } catch (Exception ignored) {
         }
     }

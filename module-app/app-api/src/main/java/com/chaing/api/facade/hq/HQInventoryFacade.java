@@ -1,5 +1,6 @@
 package com.chaing.api.facade.hq;
 
+import com.chaing.api.config.RedisCacheHelper;
 import com.chaing.api.facade.notification.NotificationFacade;
 import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.core.enums.LogType;
@@ -69,7 +70,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -97,6 +97,7 @@ public class HQInventoryFacade {
     private final UserManagementService userManagementService;
     private final FranchiseRepository franchiseRepository;
     private final FranchiseSalesService franchiseSalesService;
+    private final RedisCacheHelper redisCacheHelper;
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper;
     private final NotificationFacade notificationFacade;
@@ -714,19 +715,9 @@ public class HQInventoryFacade {
         }
     }
 
-    private void evictByPattern(String pattern) {
-        try {
-            Set<String> keys = redisTemplate.keys(pattern);
-            if (keys != null && !keys.isEmpty()) {
-                redisTemplate.delete(keys);
-            }
-        } catch (Exception ignored) {
-        }
-    }
-
     private void evictInventoryCache() {
-        evictByPattern("inv:hq:*");
-        evictByPattern("inv:fr:*");
+        redisCacheHelper.evictByPattern("inv:hq:*");
+        redisCacheHelper.evictByPattern("inv:fr:*");
     }
 
     private String pageableKey(Pageable pageable) {

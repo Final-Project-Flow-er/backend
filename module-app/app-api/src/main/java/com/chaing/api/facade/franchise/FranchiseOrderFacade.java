@@ -1,5 +1,6 @@
 package com.chaing.api.facade.franchise;
 
+import com.chaing.api.config.RedisCacheHelper;
 import com.chaing.api.dto.franchise.orders.response.FranchiseOrderResponse;
 import com.chaing.core.dto.command.FranchiseOrderCodeAndQuantityCommand;
 import com.chaing.core.dto.info.ProductInfo;
@@ -69,6 +70,7 @@ public class FranchiseOrderFacade {
     private final FranchiseOrderCodeGenerator generator;
     private final FranchiseServiceImpl franchiseService;
     private final InventoryService inventoryService;
+    private final RedisCacheHelper redisCacheHelper;
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper;
 
@@ -355,8 +357,8 @@ public class FranchiseOrderFacade {
                     .cancelReason(order.canceledReason())
                     .items(itemResponses)
                     .build();
-            evictByPattern("ord:fr:*");
-            evictByPattern("ord:hq:*");
+            redisCacheHelper.evictByPattern("ord:fr:*");
+            redisCacheHelper.evictByPattern("ord:hq:*");
             return result;
         } finally {
             redisTemplate.execute(UNLOCK_SCRIPT, List.of(STOCK_LOCK_KEY), lockValue);
@@ -372,8 +374,8 @@ public class FranchiseOrderFacade {
 
         // 취소
         FranchiseOrderCancelResponse result = franchiseOrderService.cancelOrder(userId, franchiseId, orderCode);
-        evictByPattern("ord:fr:*");
-        evictByPattern("ord:hq:*");
+        redisCacheHelper.evictByPattern("ord:fr:*");
+        redisCacheHelper.evictByPattern("ord:hq:*");
         return result;
     }
 
@@ -439,8 +441,8 @@ public class FranchiseOrderFacade {
                     .deliveryDate(order.deliveryDate())
                     .items(orderItems)
                     .build();
-            evictByPattern("ord:fr:*");
-            evictByPattern("ord:hq:*");
+            redisCacheHelper.evictByPattern("ord:fr:*");
+            redisCacheHelper.evictByPattern("ord:hq:*");
             return result;
         } finally {
             redisTemplate.execute(UNLOCK_SCRIPT, List.of(STOCK_LOCK_KEY), lockValue);
@@ -471,16 +473,6 @@ public class FranchiseOrderFacade {
     private void writeCache(String key, Object value) {
         try {
             redisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(value), CACHE_TTL);
-        } catch (Exception ignored) {
-        }
-    }
-
-    private void evictByPattern(String pattern) {
-        try {
-            Set<String> keys = redisTemplate.keys(pattern);
-            if (keys != null && !keys.isEmpty()) {
-                redisTemplate.delete(keys);
-            }
         } catch (Exception ignored) {
         }
     }

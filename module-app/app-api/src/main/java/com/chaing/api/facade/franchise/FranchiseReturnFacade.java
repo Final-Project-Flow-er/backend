@@ -1,5 +1,6 @@
 package com.chaing.api.facade.franchise;
 
+import com.chaing.api.config.RedisCacheHelper;
 import com.chaing.core.dto.command.FranchiseInventoryCommand;
 import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.core.dto.request.FranchiseReturnUpdateRequest;
@@ -70,6 +71,7 @@ public class FranchiseReturnFacade {
     private final ReturnCodeGenerator generator;
     private final InventoryService inventoryService;
     private final FranchiseServiceImpl franchiseService;
+    private final RedisCacheHelper redisCacheHelper;
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper;
 
@@ -391,8 +393,8 @@ public class FranchiseReturnFacade {
                 .orderCode(orderCommand.orderCode())
                 .items(itemResponses)
                 .build();
-        evictByPattern("ret:fr:*");
-        evictByPattern("ret:hq:*");
+        redisCacheHelper.evictByPattern("ret:fr:*");
+        redisCacheHelper.evictByPattern("ret:hq:*");
         return result;
     }
 
@@ -404,8 +406,8 @@ public class FranchiseReturnFacade {
         Long franchiseId = userManagementService.getFranchiseIdByUserId(userId);
 
         String result = franchiseReturnService.cancel(franchiseId, userId, returnCode);
-        evictByPattern("ret:fr:*");
-        evictByPattern("ret:hq:*");
+        redisCacheHelper.evictByPattern("ret:fr:*");
+        redisCacheHelper.evictByPattern("ret:hq:*");
         return result;
     }
 
@@ -487,8 +489,8 @@ public class FranchiseReturnFacade {
                 .returnCode(returnCommand.returnCode())
                 .items(itemResponses)
                 .build();
-        evictByPattern("ret:fr:*");
-        evictByPattern("ret:hq:*");
+        redisCacheHelper.evictByPattern("ret:fr:*");
+        redisCacheHelper.evictByPattern("ret:hq:*");
         return result;
     }
 
@@ -618,8 +620,8 @@ public class FranchiseReturnFacade {
                         entry.getValue()
                 ))
                 .toList();
-        evictByPattern("ret:fr:*");
-        evictByPattern("ret:hq:*");
+        redisCacheHelper.evictByPattern("ret:fr:*");
+        redisCacheHelper.evictByPattern("ret:hq:*");
         return result;
     }
 
@@ -646,16 +648,6 @@ public class FranchiseReturnFacade {
     private void writeCache(String key, Object value) {
         try {
             redisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(value), CACHE_TTL);
-        } catch (Exception ignored) {
-        }
-    }
-
-    private void evictByPattern(String pattern) {
-        try {
-            Set<String> keys = redisTemplate.keys(pattern);
-            if (keys != null && !keys.isEmpty()) {
-                redisTemplate.delete(keys);
-            }
         } catch (Exception ignored) {
         }
     }

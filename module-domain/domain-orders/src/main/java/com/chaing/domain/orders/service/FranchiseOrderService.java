@@ -688,18 +688,21 @@ public class FranchiseOrderService {
                 ));
     }
 
-    public List<OrderInfoForLog> getOrderInfoForLog(List<Long> orderIds) {
+    public Map<Long, OrderInfoForLog> getOrderInfoForLog(List<Long> orderIds) {
 
         List<FranchiseOrder> orderInfos = franchiseOrderRepository.findByFranchiseOrderIdIn(orderIds);
 
-        if(orderInfos == null || orderInfos.isEmpty()) {
+        if (orderInfos == null || orderInfos.isEmpty()) {
             throw new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_NOT_FOUND);
         }
 
         return orderInfos.stream()
-                .map(orderInfo -> OrderInfoForLog.create(
-                        orderInfo.getOrderCode(),
-                        orderInfo.getFranchiseId()))
-                .toList();
+                .collect(Collectors.toMap(
+                        FranchiseOrder::getFranchiseOrderId,
+                        order -> OrderInfoForLog.create(
+                                order.getOrderCode(),
+                                order.getFranchiseId()
+                        )
+                ));
     }
 }

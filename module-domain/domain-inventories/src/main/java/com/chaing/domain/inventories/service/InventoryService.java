@@ -712,4 +712,8 @@ public class InventoryService {
                 .map(item -> StockInfoForLog.create(item.getOrderId(), item.getBoxCode(), item.getProductId()))
                 .toList();
     }
+
+    public Map<String, Long> getFactoryQuantityByBoxCodes(List<String> boxCodes) {
+        return factoryInventoryRepository.countByBoxCodes(boxCodes);
+    }
 }

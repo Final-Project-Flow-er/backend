@@ -128,7 +128,7 @@ public class InventoryLogFacade {
                         stock.boxCode(),
                         orderInfo.orderCode(),
                         status,
-                        quantityByBoxCode.get(stock.boxCode()).intValue(),
+                        quantityByBoxCode.getOrDefault(stock.boxCode(),1L).intValue(),
                         LocationType.FACTORY,
                         FACTORY_ID,
                         LocationType.FRANCHISE,

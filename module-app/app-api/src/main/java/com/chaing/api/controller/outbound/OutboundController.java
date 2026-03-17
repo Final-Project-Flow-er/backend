@@ -74,7 +74,7 @@ public class OutboundController {
     public ResponseEntity<ApiResponse<Void>> confirmOutbound(
             @Valid @RequestBody OutboundUpdateRequest request,
             @AuthenticationPrincipal UserPrincipal userPrincipal
-            ) {
+    ) {
         LogType currentStatus = LogType.PICKING;
         LogType status = LogType.OUTBOUND;
         outboundFacade.updateOutboundStatus(request, currentStatus);

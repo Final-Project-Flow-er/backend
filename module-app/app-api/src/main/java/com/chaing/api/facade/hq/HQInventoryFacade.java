@@ -53,6 +53,7 @@ import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -82,6 +83,10 @@ public class HQInventoryFacade {
 
     private static final Duration CACHE_TTL = Duration.ofSeconds(30);
     private static final Long DEFAULT_FACTORY_ID = 1L;
+    private static final DefaultRedisScript<Long> UNLOCK_SCRIPT = new DefaultRedisScript<>(
+            "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end",
+            Long.class
+    );
     private static final long FACTORY_STOCK_ALERT_TARGET_BASE = 2_000_000_000L;
     private static final long FRANCHISE_STOCK_ALERT_TARGET_BASE = 3_000_000_000L;
     private static final long TARGET_LOCATION_MULTIPLIER = 1_000_000L;
@@ -296,10 +301,7 @@ public class HQInventoryFacade {
             }
             franchiseIds.forEach(id -> publishStockAlert("FRANCHISE", id));
         } finally {
-            String current = redisTemplate.opsForValue().get(lockKey);
-            if (lockValue.equals(current)) {
-                redisTemplate.delete(lockKey);
-            }
+            redisTemplate.execute(UNLOCK_SCRIPT, List.of(lockKey), lockValue);
         }
     }
 

@@ -35,6 +35,7 @@ import org.springframework.retry.annotation.Retryable;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -57,6 +58,10 @@ public class FranchiseOrderFacade {
     private static final Duration CACHE_TTL = Duration.ofSeconds(30);
     private static final String STOCK_LOCK_KEY = "lock:stock:check";
     private static final Duration STOCK_LOCK_TTL = Duration.ofSeconds(2);
+    private static final DefaultRedisScript<Long> UNLOCK_SCRIPT = new DefaultRedisScript<>(
+            "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end",
+            Long.class
+    );
 
     private final FranchiseOrderService franchiseOrderService;
     private final UserManagementService userManagementService;
@@ -347,10 +352,7 @@ public class FranchiseOrderFacade {
             evictByPattern("ord:hq:*");
             return result;
         } finally {
-            String current = redisTemplate.opsForValue().get(STOCK_LOCK_KEY);
-            if (lockValue.equals(current)) {
-                redisTemplate.delete(STOCK_LOCK_KEY);
-            }
+            redisTemplate.execute(UNLOCK_SCRIPT, List.of(STOCK_LOCK_KEY), lockValue);
         }
     }
 
@@ -434,10 +436,7 @@ public class FranchiseOrderFacade {
             evictByPattern("ord:hq:*");
             return result;
         } finally {
-            String current = redisTemplate.opsForValue().get(STOCK_LOCK_KEY);
-            if (lockValue.equals(current)) {
-                redisTemplate.delete(STOCK_LOCK_KEY);
-            }
+            redisTemplate.execute(UNLOCK_SCRIPT, List.of(STOCK_LOCK_KEY), lockValue);
             log.info("[발주 생성] userId={}, 처리 시간={}ms", userId, System.currentTimeMillis() - startTime);
         }
     }

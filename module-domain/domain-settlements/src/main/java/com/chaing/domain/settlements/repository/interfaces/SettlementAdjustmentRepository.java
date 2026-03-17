@@ -14,9 +14,14 @@ public interface SettlementAdjustmentRepository extends JpaRepository<Settlement
 
     @Query("SELECT s FROM SettlementAdjustment s " +
             "WHERE (:franchiseId IS NULL OR s.franchiseId = :franchiseId) " +
-            "AND (:voucherType IS NULL OR s.voucherType = :voucherType)")
+            "AND (:voucherType IS NULL OR s.voucherType = :voucherType) " +
+            "AND (:startDate IS NULL OR s.occurredAt >= :startDate) " +
+            "AND (:endDate IS NULL OR s.occurredAt <= :endDate)")
     Page<SettlementAdjustment> findByConditions(
             @Param("franchiseId") Long franchiseId,
             @Param("voucherType") VoucherType voucherType,
+            @Param("startDate") java.time.LocalDateTime startDate,
+            @Param("endDate") java.time.LocalDateTime endDate,
             Pageable pageable);
 }
+

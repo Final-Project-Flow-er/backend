@@ -59,8 +59,9 @@ public class HQSettlementAdjustmentController {
             """)
     @PostMapping
     public ResponseEntity<ApiResponse<Void>> createAdjustment(
-            @Valid @RequestBody HQSettlementAdjustmentVoucherRequest request) {
-        adjustmentFacade.createAdjustment(request);
+            @Valid @RequestBody HQSettlementAdjustmentVoucherRequest request,
+            @org.springframework.security.core.annotation.AuthenticationPrincipal com.chaing.api.security.principal.UserPrincipal principal) {
+        adjustmentFacade.createAdjustment(request, principal);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

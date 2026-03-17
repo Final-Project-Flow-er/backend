@@ -22,7 +22,7 @@ public class FactoryInboundValidatorImpl
     @Qualifier("factory")
     private final InboundReader<FactoryInventoryRawData> inboundReader;
 
-    public final int SERIAL_CODE_LENGTH = 10;
+    public final int SERIAL_CODE_LENGTH = 26;
 
     @Override
     public void checkAlreadyScanned(String serialCode) {

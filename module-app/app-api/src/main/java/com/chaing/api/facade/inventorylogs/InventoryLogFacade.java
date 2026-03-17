@@ -24,7 +24,6 @@ import com.chaing.domain.products.service.ProductService;
 import com.chaing.domain.returns.entity.ReturnItem;
 import com.chaing.domain.returns.entity.Returns;
 import com.chaing.domain.returns.service.FranchiseReturnService;
-import com.chaing.domain.users.enums.UserRole;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -42,7 +41,7 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class InventoryLogFacade {
 
-    private static final Long HQ_ID = 1L;
+    private static final Long FACTORY_ID = 1L;
     private final InventoryLogService inventoryLogService;
     private final FranchiseReturnService franchiseReturnService;
     private final ProductService productService;
@@ -58,110 +57,109 @@ public class InventoryLogFacade {
 
         List<StockInfoForLog> inventoryLogInfo;
         List<Long> orderIds = new ArrayList<>();
+        Long quantity = serialCodes.stream().distinct().count();
+
+
+        Map<Long, OrderInfoForLog> orderInfos;
 
         switch (role) {
             case "FRANCHISE":
                 inventoryLogInfo = inventoryService.getStockBySerialCodeFromFranchise(serialCodes, unitId);
-                orderIds = inventoryLogInfo.stream().map(StockInfoForLog::orderId).toList();
-                if(orderIds == null || orderIds.isEmpty()) {
+                orderIds = inventoryLogInfo.stream()
+                        .map(StockInfoForLog::orderId)
+                        .distinct()
+                        .toList();
+
+                if (orderIds.isEmpty()) {
                     throw new InventoriesException(InventoriesErrorCode.INVALID_LOCATION_ID);
                 }
+                orderInfos = franchiseOrderService.getOrderInfoForLog(orderIds);
+                break;
 
             case "FACTORY":
                 inventoryLogInfo = inventoryService.getStockBySerialCodeFromFactory(serialCodes);
-                orderIds = inventoryLogInfo.stream().map(StockInfoForLog::orderId).toList();
-                if(orderIds == null || orderIds.isEmpty()) {
+                orderIds = inventoryLogInfo.stream()
+                        .map(StockInfoForLog::orderId)
+                        .distinct()
+                        .toList();
+
+                if (orderIds.isEmpty()) {
                     throw new InventoriesException(InventoriesErrorCode.INVALID_LOCATION_ID);
                 }
+                orderInfos = franchiseOrderService.getOrderInfoForLog(orderIds);
+                break;
+
+            default:
+                throw new InventoryLogException(InventoryLogtErrorCode.INVALID_ACTOR_TYPE);
         }
 
-        List<OrderInfoForLog> orderInfos = franchiseOrderService.getOrderInfoForLog(orderIds);
-    }
-
-    // FRANCHISE 주문: Factory -> Franchise
-    // boxCode 기준 1박스 1로그, quantity는 박스 내 개수
-    public void recordFranchiseOrderLogs(FranchiseOrder order, List<FactoryInventory> inventories, LogType logType, Long toId, ActorType actorType, Long actorId) {
-        Map<String, List<FactoryInventory>> inventoriesByBox = inventories.stream()
-                .filter(inv -> inv.getBoxCode() != null && !inv.getBoxCode().isBlank())
-                .collect(Collectors.groupingBy(
-                        FactoryInventory::getBoxCode,
-                        LinkedHashMap::new,
-                        Collectors.toList()));
-        List<Long> productIds = inventoriesByBox.values().stream()
-                .flatMap(List::stream)
-                .map(FactoryInventory::getProductId)
+        List<Long> productIds = inventoryLogInfo.stream()
+                .map(StockInfoForLog::productId)
                 .distinct()
                 .toList();
-        Map<Long, ProductInfo> productInfos = productIds.isEmpty()
+
+        Map<Long, ProductInfo> productInfoMap = productIds.isEmpty()
                 ? Map.of()
                 : productService.getProductInfos(productIds);
+
+        List<String> boxCodes = inventoryLogInfo.stream()
+                .map(StockInfoForLog::boxCode)
+                .filter(boxCode -> boxCode != null && !boxCode.isBlank())
+                .distinct()
+                .toList();
+
+        Map<String, Long> quantityByBoxCode = inventoryService.getFactoryQuantityByBoxCodes(boxCodes);
+
         List<InventoryLogCreateRequest> logs = new ArrayList<>();
-        for (Map.Entry<String, List<FactoryInventory>> entry : inventoriesByBox.entrySet()) {
-            String boxCode = entry.getKey();
-            List<FactoryInventory> boxItems = entry.getValue();
-            FactoryInventory first = boxItems.get(0);
-            int quantity = boxItems.size();
-            ProductInfo pInfo = productInfos.get(first.getProductId());
-            logs.add(new InventoryLogCreateRequest(
-                    first.getProductId(),
-                    pInfo != null ? pInfo.productName() : "알 수 없는 상품",
-                    boxCode,
-                    order.getOrderCode(),
-                    logType,
-                    quantity,
-                    LocationType.FACTORY,
-                    toId,
-                    LocationType.FRANCHISE,
-                    order.getFranchiseId(),
-                    actorType,
-                    actorId));
+
+        for (StockInfoForLog stock : inventoryLogInfo) {
+            OrderInfoForLog orderInfo = orderInfos.get(stock.orderId());
+            if (orderInfo == null) {
+                throw new InventoryLogException(InventoryLogtErrorCode.ORDER_NOT_FOUND);
+            }
+
+            ProductInfo productInfo = productInfoMap.get(stock.productId());
+            String productName = productInfo != null ? productInfo.productName() : "알 수 없는 상품";
+
+            InventoryLogCreateRequest log = switch (role) {
+                case "FRANCHISE" -> new InventoryLogCreateRequest(
+                        stock.productId(),
+                        productName,
+                        stock.boxCode(),
+                        orderInfo.orderCode(),
+                        status,
+                        quantityByBoxCode.get(stock.boxCode()).intValue(),
+                        LocationType.FACTORY,
+                        FACTORY_ID,
+                        LocationType.FRANCHISE,
+                        orderInfo.toId(),
+                        parseActorType(role),
+                        unitId
+                );
+                case "FACTORY" -> new InventoryLogCreateRequest(
+                        stock.productId(),
+                        productName,
+                        stock.boxCode(),
+                        orderInfo.orderCode(),
+                        status,
+                        quantity.intValue(),
+                        LocationType.FACTORY,
+                        FACTORY_ID,
+                        LocationType.FACTORY,
+                        FACTORY_ID,
+                        parseActorType(role),
+                        unitId
+                );
+                default -> throw new InventoryLogException(InventoryLogtErrorCode.INVALID_ACTOR_TYPE);
+            };
+
+            logs.add(log);
         }
+
         if (!logs.isEmpty()) {
             inventoryLogService.recordInventoryLog(logs);
         }
-    }
 
-    // HQ 주문: Factory -> HQ
-    // boxCode 기준 1박스 1로그, quantity는 박스 내 개수
-    public void recordHqOrderLogs(HeadOfficeOrder order, List<FranchiseInventory> inventories, LogType logType, Long toId, ActorType actorType, Long actorId) {
-        Map<String, List<FranchiseInventory>> inventoriesByBox = inventories.stream()
-                .filter(inv -> inv.getBoxCode() != null && !inv.getBoxCode().isBlank())
-                .collect(Collectors.groupingBy(
-                        FranchiseInventory::getBoxCode,
-                        LinkedHashMap::new,
-                        Collectors.toList()));
-        List<Long> productIds = inventoriesByBox.values().stream()
-                .flatMap(List::stream)
-                .map(FranchiseInventory::getProductId)
-                .distinct()
-                .toList();
-        Map<Long, ProductInfo> productInfos = productIds.isEmpty()
-                ? Map.of()
-                : productService.getProductInfos(productIds);
-        List<InventoryLogCreateRequest> logs = new ArrayList<>();
-        for (Map.Entry<String, List<FranchiseInventory>> entry : inventoriesByBox.entrySet()) {
-            String boxCode = entry.getKey();
-            List<FranchiseInventory> boxItems = entry.getValue();
-            FranchiseInventory first = boxItems.get(0);
-            int quantity = boxItems.size();
-            ProductInfo pInfo = productInfos.get(first.getProductId());
-            logs.add(new InventoryLogCreateRequest(
-                    first.getProductId(),
-                    pInfo != null ? pInfo.productName() : "알 수 없는 상품",
-                    boxCode,
-                    order.getOrderCode(),
-                    logType,
-                    quantity,
-                    LocationType.FACTORY,
-                    toId,
-                    LocationType.HQ,
-                    HQ_ID,
-                    actorType,
-                    actorId));
-        }
-        if (!logs.isEmpty()) {
-            inventoryLogService.recordInventoryLog(logs);
-        }
     }
 
     // 반품: Franchise -> HQ
@@ -210,9 +208,9 @@ public class InventoryLogFacade {
                     logType,
                     quantity,
                     actorType == ActorType.HQ ? LocationType.HQ : LocationType.FRANCHISE,
-                    actorType == ActorType.HQ ? HQ_ID : returns.getFranchiseId(),
+                    actorType == ActorType.HQ ? FACTORY_ID : returns.getFranchiseId(),
                     actorType == ActorType.HQ ? LocationType.FRANCHISE : LocationType.HQ,
-                    actorType == ActorType.HQ ? returns.getFranchiseId() : HQ_ID,
+                    actorType == ActorType.HQ ? returns.getFranchiseId() : FACTORY_ID,
                     actorType,
                     actorId));
         }

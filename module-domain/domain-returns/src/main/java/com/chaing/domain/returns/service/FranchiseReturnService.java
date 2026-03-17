@@ -20,8 +20,12 @@ import com.chaing.domain.returns.repository.FranchiseReturnItemRepository;
 import com.chaing.domain.returns.repository.FranchiseReturnRepository;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import com.chaing.domain.returns.dto.response.FranchiseReturnItemProjection;
+import com.chaing.domain.returns.dto.response.HQReturnItemProjection;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -57,6 +61,16 @@ public class FranchiseReturnService {
                         Returns::getReturnId,
                         ReturnCommand::from
                 ));
+    }
+
+    // 반품 목록 페이지네이션 조회 (아이템 행 단위)
+    public Page<FranchiseReturnItemProjection> getReturnItemPage(Long franchiseId, Pageable pageable) {
+        return franchiseReturnRepository.findReturnItemPage(franchiseId, pageable);
+    }
+
+    // 본사 반품 목록 페이지네이션 조회
+    public Page<HQReturnItemProjection> getHQReturnPage(boolean isAll, Pageable pageable) {
+        return franchiseReturnRepository.findHQReturnPage(isAll, pageable);
     }
 
     // 반품 세부정보 조회

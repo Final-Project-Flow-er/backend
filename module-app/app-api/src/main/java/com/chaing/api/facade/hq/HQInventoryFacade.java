@@ -1,5 +1,6 @@
 package com.chaing.api.facade.hq;
 
+import com.chaing.api.config.RedisCacheHelper;
 import com.chaing.api.facade.notification.NotificationFacade;
 import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.core.enums.LogType;
@@ -49,7 +50,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -65,7 +70,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -79,6 +83,10 @@ public class HQInventoryFacade {
 
     private static final Duration CACHE_TTL = Duration.ofSeconds(30);
     private static final Long DEFAULT_FACTORY_ID = 1L;
+    private static final DefaultRedisScript<Long> UNLOCK_SCRIPT = new DefaultRedisScript<>(
+            "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end",
+            Long.class
+    );
     private static final long FACTORY_STOCK_ALERT_TARGET_BASE = 2_000_000_000L;
     private static final long FRANCHISE_STOCK_ALERT_TARGET_BASE = 3_000_000_000L;
     private static final long TARGET_LOCATION_MULTIPLIER = 1_000_000L;
@@ -89,6 +97,7 @@ public class HQInventoryFacade {
     private final UserManagementService userManagementService;
     private final FranchiseRepository franchiseRepository;
     private final FranchiseSalesService franchiseSalesService;
+    private final RedisCacheHelper redisCacheHelper;
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper;
     private final NotificationFacade notificationFacade;
@@ -124,7 +133,8 @@ public class HQInventoryFacade {
                     return new HQInventoryProductResponse(
                             p.productId(), p.productCode(), p.name(),
                             info.totalQuantity(), p.productCode().substring(4, 6),
-                            info.safetyStock(), info.status());
+                            info.safetyStock() != null ? info.safetyStock() : 0,
+                            info.status());
                 })
                 .toList();
 
@@ -227,6 +237,7 @@ public class HQInventoryFacade {
     }
 
     @Scheduled(cron = "0 0 0 * * *")
+    @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100, multiplier = 2))
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public void calculateSafetyStock() {
         String lockKey = "lock:safety-stock:refresh";
@@ -291,10 +302,7 @@ public class HQInventoryFacade {
             }
             franchiseIds.forEach(id -> publishStockAlert("FRANCHISE", id));
         } finally {
-            String current = redisTemplate.opsForValue().get(lockKey);
-            if (lockValue.equals(current)) {
-                redisTemplate.delete(lockKey);
-            }
+            redisTemplate.execute(UNLOCK_SCRIPT, List.of(lockKey), lockValue);
         }
     }
 
@@ -374,6 +382,7 @@ public class HQInventoryFacade {
         return result;
     }
 
+    @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100, multiplier = 2))
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public Void increaseInventory(@Valid InventoryBatchRequest inventoryBatchRequest) {
         List<InventoryLogCreateRequest> logs = convert(inventoryBatchRequest);
@@ -411,6 +420,7 @@ public class HQInventoryFacade {
                 .toList();
     }
 
+    @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100, multiplier = 2))
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public Void decreaseInventory(@Valid InventoryBatchRequest inventoryBatchRequest) {
         List<String> serialCodes = convertsSerialCode(inventoryBatchRequest.boxes());
@@ -497,6 +507,7 @@ public class HQInventoryFacade {
         return result;
     }
 
+    @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100, multiplier = 2))
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public Void disposalInventory(DisposalRequest request, Long locationId) {
         String actorTypeRaw = request.actorType().toUpperCase();
@@ -601,6 +612,7 @@ public class HQInventoryFacade {
     }
 
 
+    @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100, multiplier = 2))
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public void setSafetyStock(SafetyStockRequest request) {
         inventoryService.setSafetyStock(request);
@@ -608,6 +620,7 @@ public class HQInventoryFacade {
         publishStockAlert(request.locationType(), request.locationId());
     }
 
+    @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100, multiplier = 2))
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public void resetSafetyStock(Long locationId, Long productId) {
         inventoryService.resetSafetyStockToDefault("FACTORY", locationId, productId);
@@ -702,19 +715,9 @@ public class HQInventoryFacade {
         }
     }
 
-    private void evictByPattern(String pattern) {
-        try {
-            Set<String> keys = redisTemplate.keys(pattern);
-            if (keys != null && !keys.isEmpty()) {
-                redisTemplate.delete(keys);
-            }
-        } catch (Exception ignored) {
-        }
-    }
-
     private void evictInventoryCache() {
-        evictByPattern("inv:hq:*");
-        evictByPattern("inv:fr:*");
+        redisCacheHelper.evictByPattern("inv:hq:*");
+        redisCacheHelper.evictByPattern("inv:fr:*");
     }
 
     private String pageableKey(Pageable pageable) {

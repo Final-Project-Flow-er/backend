@@ -17,6 +17,8 @@ import com.chaing.domain.sales.repository.FranchiseSalesRepository;
 import com.chaing.domain.sales.repository.interfaces.FranchiseSalesItemRepositoryCustom;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -37,6 +39,11 @@ public class FranchiseSalesService {
     public List<FranchiseSalesInfoResponse> getAllSales(Long franchiseId) {
         // 미취소 판매 기록 조회
         return franchiseSalesItemRepositoryCustom.searchAllSalesItems(franchiseId);
+    }
+
+    // 미취소 판매 목록 페이지네이션 조회
+    public Page<FranchiseSalesInfoResponse> getAllSalesPage(Long franchiseId, Pageable pageable) {
+        return franchiseSalesItemRepositoryCustom.searchAllSalesItemsPage(franchiseId, pageable);
     }
 
     public List<FranchiseSalesInfoResponse> getAllCanceledSales(Long franchiseId) {

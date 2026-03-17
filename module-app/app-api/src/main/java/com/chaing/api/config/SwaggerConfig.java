@@ -190,29 +190,6 @@ public class SwaggerConfig {
     }
 
     @Bean
-    public OpenAPI openAPI() {
-        String jwtSchemeName = "bearerAuth";
-
-        SecurityScheme securityScheme = new SecurityScheme()
-                .name(jwtSchemeName)
-                .type(SecurityScheme.Type.HTTP)   // HTTP 인증
-                .scheme("bearer")                 // Bearer 토큰
-                .bearerFormat("JWT")              // 표시용
-                .in(SecurityScheme.In.HEADER);    // Authorization 헤더
-
-        SecurityRequirement securityRequirement = new SecurityRequirement()
-                .addList(jwtSchemeName);
-
-        return new OpenAPI()
-                .components(new Components()
-                        .addSecuritySchemes(jwtSchemeName, securityScheme))
-                .addSecurityItem(securityRequirement)
-                .info(new Info()
-                        .title("CHAING-G")
-                        .version("v1"));
-    }
-
-    @Bean
     public GroupedOpenApi hqSettlementApi() {
         return GroupedOpenApi.builder()
                 .group("본사 정산(HqSettlement)")
@@ -242,5 +219,28 @@ public class SwaggerConfig {
                 .group("출고(OutboundProcess)")
                 .pathsToMatch("/api/v1/outbounds/**")
                 .build();
+    }
+
+    @Bean
+    public OpenAPI openAPI() {
+        String jwtSchemeName = "bearerAuth";
+
+        SecurityScheme securityScheme = new SecurityScheme()
+                .name(jwtSchemeName)
+                .type(SecurityScheme.Type.HTTP)   // HTTP 인증
+                .scheme("bearer")                 // Bearer 토큰
+                .bearerFormat("JWT")              // 표시용
+                .in(SecurityScheme.In.HEADER);    // Authorization 헤더
+
+        SecurityRequirement securityRequirement = new SecurityRequirement()
+                .addList(jwtSchemeName);
+
+        return new OpenAPI()
+                .components(new Components()
+                        .addSecuritySchemes(jwtSchemeName, securityScheme))
+                .addSecurityItem(securityRequirement)
+                .info(new Info()
+                        .title("CHAIN-G")
+                        .version("v1"));
     }
 }

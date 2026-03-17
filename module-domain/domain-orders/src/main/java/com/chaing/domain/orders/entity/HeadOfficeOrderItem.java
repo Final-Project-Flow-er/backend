@@ -11,6 +11,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
@@ -32,6 +33,9 @@ import java.math.BigDecimal;
                         name = "uk_head_order_product_id",
                         columnNames = {"head_office_order_id", "product_id"}
                 )
+        },
+        indexes = {
+                @Index(name = "idx_hoi_order_deleted", columnList = "head_office_order_id, deleted_at")
         }
 )
 public class HeadOfficeOrderItem extends BaseEntity {

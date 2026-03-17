@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -49,6 +50,11 @@ public class DailySettlementServiceImpl implements DailySettlementService {
                     return new SettlementException(SettlementErrorCode.DAILY_SETTLEMENT_NOT_FOUND);
                 });
     } // 가맹점에서 정산을 조회하고 싶을 때
+
+    @Override
+    public Optional<DailySettlementReceipt> findByFranchiseAndDate(Long franchiseId, LocalDate date) {
+        return receiptRepository.findByFranchiseIdAndSettlementDate(franchiseId, date);
+    }
 
     @Override
     public List<DailySettlementReceipt> getAllByDateRange(LocalDate start, LocalDate end) {

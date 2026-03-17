@@ -7,8 +7,10 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -18,6 +20,10 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 
 @Entity
+@Table(name = "sales_item", indexes = {
+        @Index(name = "idx_si_sales_id", columnList = "sales_id"),
+        @Index(name = "idx_si_product_id", columnList = "product_id")
+})
 @Getter
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -34,6 +40,9 @@ public class SalesItem extends BaseEntity {
 
     @Column(nullable = false)
     private Long productId; // fk, 타 도메인이기 때문에 기본키만 가짐
+
+    @Column(nullable = false)
+    private Integer quantity;
 
     @Column(nullable = false)
     private String productCode;    // snapshot

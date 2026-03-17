@@ -9,6 +9,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,13 +31,14 @@ public class FactoryOrderController {
 
     private final FactoryFacade factoryFacade;
 
-    @Operation(summary = "발주 조회", description = "본사의 발주 대기/전체 조회")
+    @Operation(summary = "발주 조회", description = "본사의 발주 대기/전체 조회 (페이지네이션)")
     @GetMapping
     @PreAuthorize("hasAnyRole('FACTORY', 'ADMIN')")
-    public ResponseEntity<ApiResponse<List<FactoryOrderResponse>>> getAllOrders(
-            @RequestParam(defaultValue = "false") boolean isAll
+    public ResponseEntity<ApiResponse<Page<FactoryOrderResponse>>> getAllOrders(
+            @RequestParam(defaultValue = "false") boolean isAll,
+            @PageableDefault(size = 20) Pageable pageable
     ) {
-        return ResponseEntity.ok(ApiResponse.success(factoryFacade.getAllOrders(isAll)));
+        return ResponseEntity.ok(ApiResponse.success(factoryFacade.getAllOrdersPaged(isAll, pageable)));
     }
 
     @Operation(summary = "발주 상태 변경", description = "발주 상태를 접수/반려로 변경")

@@ -2,6 +2,7 @@ package com.chaing.domain.returns.repository;
 
 import com.chaing.domain.returns.entity.Returns;
 import com.chaing.domain.returns.enums.ReturnStatus;
+import com.chaing.domain.returns.repository.interfaces.FranchiseReturnRepositoryCustom;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -11,7 +12,7 @@ import java.util.Optional;
 import java.util.Set;
 
 @Repository
-public interface FranchiseReturnRepository extends JpaRepository<Returns, Long> {
+public interface FranchiseReturnRepository extends JpaRepository<Returns, Long>, FranchiseReturnRepositoryCustom {
     Optional<Returns> findByReturnCodeAndDeletedAtIsNull(String returnCode);
 
     List<Returns> findAllByReturnStatus(ReturnStatus status);

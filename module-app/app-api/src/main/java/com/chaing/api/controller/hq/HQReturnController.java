@@ -14,6 +14,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -34,13 +37,14 @@ public class HQReturnController {
 
     private final HQReturnFacade hqReturnFacade;
 
-    @Operation(summary = "반품 요청 조회", description = "반품 요청 전체 조회")
+    @Operation(summary = "반품 요청 조회", description = "반품 요청 전체 조회 (페이지네이션)")
     @GetMapping
     @PreAuthorize("hasAnyRole('HQ', 'ADMIN')")
-    public ResponseEntity<ApiResponse<List<HQReturnResponse>>> getAllReturns(
-            @RequestParam boolean isAll
-            ) {
-        return ResponseEntity.ok(ApiResponse.success(hqReturnFacade.getAllReturns(isAll)));
+    public ResponseEntity<ApiResponse<Page<HQReturnResponse>>> getAllReturns(
+            @RequestParam boolean isAll,
+            @PageableDefault(size = 20) Pageable pageable
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(hqReturnFacade.getAllReturnsPaged(isAll, pageable)));
     }
 
     @Operation(summary = "특정 반품 요청 조회", description = "특정 반품 요청 조회")

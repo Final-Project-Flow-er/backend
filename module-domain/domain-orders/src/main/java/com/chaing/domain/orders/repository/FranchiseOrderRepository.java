@@ -5,6 +5,7 @@ import com.chaing.domain.orders.enums.FranchiseOrderStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import com.chaing.domain.orders.repository.interfaces.FranchiseOrderRepositoryCustom;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -13,7 +14,7 @@ import java.util.Optional;
 import java.util.Set;
 
 @Repository
-public interface FranchiseOrderRepository extends JpaRepository<FranchiseOrder, Long> {
+public interface FranchiseOrderRepository extends JpaRepository<FranchiseOrder, Long>, FranchiseOrderRepositoryCustom {
     List<FranchiseOrder> findAllByFranchiseIdAndUserId(Long franchiseId, Long username);
 
     Optional<FranchiseOrder> findByFranchiseIdAndUserIdAndOrderCodeAndDeletedAtIsNull(Long franchiseId, Long userId, String orderCode);

@@ -2,6 +2,7 @@ package com.chaing.domain.orders.service;
 
 import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.core.dto.returns.response.FranchiseReturnTargetResponse;
+import com.chaing.core.enums.LogType;
 import com.chaing.domain.orders.dto.command.FranchiseOrderCommand;
 import com.chaing.domain.orders.dto.command.FranchiseOrderDetailCommand;
 import com.chaing.domain.orders.dto.command.FranchiseOrderItemCommand;
@@ -23,8 +24,12 @@ import com.chaing.domain.orders.exception.OrderErrorCode;
 import com.chaing.domain.orders.exception.OrderException;
 import com.chaing.domain.orders.repository.FranchiseOrderItemRepository;
 import com.chaing.domain.orders.repository.FranchiseOrderRepository;
+import com.chaing.domain.orders.dto.response.FranchiseOrderItemProjection;
+import com.chaing.domain.orders.dto.response.HQRequestedOrderItemProjection;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -57,6 +62,17 @@ public class FranchiseOrderService {
                 .collect(Collectors.toMap(
                         FranchiseOrder::getFranchiseOrderId, FranchiseOrderCommand::from
                 ));
+    }
+
+    // 가맹점 발주 목록 페이지네이션 조회 (아이템 행 단위)
+    public Page<FranchiseOrderItemProjection> getOrderItemPage(
+            Long franchiseId, Long userId, Pageable pageable) {
+        return franchiseOrderRepository.findOrderItemPage(franchiseId, userId, pageable);
+    }
+
+    // 본사용 가맹점 발주 요청 페이지네이션 조회 (아이템 행 단위)
+    public Page<HQRequestedOrderItemProjection> getRequestedOrderItemPage(boolean isPending, Pageable pageable) {
+        return franchiseOrderRepository.findRequestedOrderItemPage(isPending, pageable);
     }
 
     // 발주 번호에 따른 가맹점 특정 발주 조회
@@ -685,5 +701,22 @@ public class FranchiseOrderService {
                         FranchiseOrder::getFranchiseOrderId,
                         FranchiseOrderDetailCommand::from
                 ));
+    }
+
+    public void updateDeliveryStatus(List<String> orderCodes, FranchiseOrderStatus orderStatus) {
+        List<FranchiseOrder> orders = franchiseOrderRepository.findAllByOrderCodeInAndDeletedAtIsNull(orderCodes);
+
+        if (orders == null || orders.isEmpty()) {
+            throw new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_NOT_FOUND);
+        }
+
+        Set<String> existingOrderCodes = orders.stream().map(FranchiseOrder::getOrderCode).collect(Collectors.toSet());
+        Set<String> requestedOrderCodes = new HashSet<>(orderCodes);
+
+        if (!existingOrderCodes.containsAll(requestedOrderCodes)) {
+            throw new FranchiseOrderException(FranchiseOrderErrorCode.DATA_OMISSION);
+        }
+
+        orders.forEach(order -> order.updateStatus(orderStatus));
     }
 }

@@ -12,6 +12,9 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,6 +24,12 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 
 @Entity
+@Table(name = "returns", indexes = {
+        @Index(name = "idx_ret_code_deleted", columnList = "return_code, deleted_at"),
+        @Index(name = "idx_ret_franchise_deleted", columnList = "franchise_id, deleted_at"),
+        @Index(name = "idx_ret_franchise_status_created", columnList = "franchise_id, return_status, created_at"),
+        @Index(name = "idx_ret_status_deleted", columnList = "return_status, deleted_at")
+})
 @Getter
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -30,6 +39,9 @@ public class Returns extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long returnId;
+
+    @Version
+    private Long version;
 
     @Column(nullable = false)
     private Long franchiseId;

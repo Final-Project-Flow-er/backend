@@ -10,8 +10,10 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -22,6 +24,9 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 
 @Entity
+@Table(name = "franchise_order_item", indexes = {
+        @Index(name = "idx_foi_order_deleted", columnList = "franchise_order_id, deleted_at")
+})
 @Getter
 @Builder
 @AllArgsConstructor(access = AccessLevel.PROTECTED)

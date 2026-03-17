@@ -18,8 +18,11 @@ public enum OrderErrorCode implements ErrorCode {
     INVALID_STATUS(400, "OR005", "발주의 상태가 올바르지 않습니다."),
     INVALID_STOCK(400, "OR006", "본사 수량이 부족합니다."),
 
+    // 409 CONFLICT
+    ORDER_CONFLICT(409, "OR007", "다른 발주가 처리 중입니다. 잠시 후 다시 시도해주세요."),
+
     // 403 FORBIDDEN
-    UNAUTHORIZED(403, "OR007", "권한이 없습니다.");
+    UNAUTHORIZED(403, "OR008", "권한이 없습니다.");
 
     private final Integer status;
     private final String code;

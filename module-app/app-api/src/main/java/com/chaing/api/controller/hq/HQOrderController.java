@@ -21,6 +21,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -43,11 +46,13 @@ public class HQOrderController {
 
     private final HQOrderFacade hqOrderFacade;
 
-    @Operation(summary = "발주 조회", description = "본사의 발주 전체 조회")
+    @Operation(summary = "발주 조회", description = "본사의 발주 전체 조회 (페이지네이션)")
     @GetMapping
     @PreAuthorize("hasRole('HQ')")
-    public ResponseEntity<ApiResponse<List<HQOrderResponse>>> getAllOrders() {
-        return ResponseEntity.ok(ApiResponse.success(hqOrderFacade.getAllOrders()));
+    public ResponseEntity<ApiResponse<Page<HQOrderResponse>>> getAllOrders(
+            @PageableDefault(size = 20) Pageable pageable
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(hqOrderFacade.getAllOrdersPaged(pageable)));
     }
 
     @Operation(summary = "특정 발주 조회", description = "발주 번호로 특정 발주 조회")
@@ -72,13 +77,14 @@ public class HQOrderController {
         return ResponseEntity.ok(ApiResponse.success(hqOrderFacade.updateOrder(userId, orderCode, request)));
     }
 
-    @Operation(summary = "가맹점 발주 요청 조회", description = "가맹점이 생성한 발주 요청 전체 조회")
+    @Operation(summary = "가맹점 발주 요청 조회", description = "가맹점이 생성한 발주 요청 전체 조회 (페이지네이션)")
     @GetMapping("/requested")
     @PreAuthorize("hasRole('HQ')")
-    public ResponseEntity<ApiResponse<List<HQRequestedOrderResponse>>> getRequestedOrders(
-            @RequestParam(defaultValue = "false") boolean isPending
+    public ResponseEntity<ApiResponse<Page<HQRequestedOrderResponse>>> getRequestedOrders(
+            @RequestParam(defaultValue = "false") boolean isPending,
+            @PageableDefault(size = 20) Pageable pageable
     ) {
-        return ResponseEntity.ok(ApiResponse.success(hqOrderFacade.getRequestedOrders(isPending)));
+        return ResponseEntity.ok(ApiResponse.success(hqOrderFacade.getRequestedOrdersPaged(isPending, pageable)));
     }
 
     @Operation(summary = "가맹점의 발주 상태 변경", description = "가맹점의 발주의 상태를 접수/반려로 변경")

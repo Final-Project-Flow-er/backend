@@ -23,7 +23,11 @@ import com.chaing.domain.users.enums.UserRole;
 import jakarta.validation.Valid;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
@@ -45,12 +49,14 @@ public class InboundFacade {
     private final ProductService productService;
     private final FranchiseOrderService orderService;
 
-    @Transactional
+    @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100, multiplier = 2))
+    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public void scanInboundItem(@Valid InboundScanItemRequest request) {
         factoryInboundService.scanInbound(InboundScanItemRequest.from(request));
     }
 
-    @Transactional
+    @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100, multiplier = 2))
+    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public void scanInboundBox(@Valid InboundScanBoxRequest request, Long franchiseId) {
         List<InboundPendingItemInfo> inboundBoxDetails = factoryInboundService.getInboundBoxDetails(request.boxCode());
 
@@ -151,7 +157,8 @@ public class InboundFacade {
     }
 
     // 입고 승인
-    @Transactional
+    @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100, multiplier = 2))
+    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public void confirmInbound(@Valid InboundConfirmRequest request, UserRole role) {
 
         List<String> selectedList = request.serialCodes();

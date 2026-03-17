@@ -155,7 +155,7 @@ public class FranchiseOrderFacade {
                 franchiseOrderService.getOrderItemPage(franchiseId, userId, pageable);
 
         if (page.isEmpty()) {
-            Page<FranchiseOrderResponse> empty = new PageImpl<>(List.of(), pageable, 0);
+            Page<FranchiseOrderResponse> empty = new PageImpl<>(List.of(), pageable, page.getTotalElements());
             writePageCache(cacheKey, empty);
             return empty;
         }
@@ -335,8 +335,15 @@ public class FranchiseOrderFacade {
 
             // Map<productId, FranchiseOrderUpdateRequest>
             Map<Long, FranchiseOrderUpdateRequest> requestByProductId = requests.stream()
-                    .collect(Collectors.toMap(
-                            request -> productInfoByProductCode.get(request.productCode()).productId(),
+                    .collect(Collectors.toMap(request -> {
+                                    ProductInfo productInfo = productInfoByProductCode.get(request.productCode());
+
+                                    if (productInfo == null) {
+                                        throw new OrderException(OrderErrorCode.PRODUCT_NOT_FOUND);
+                                    }
+
+                                    return productInfo.productId();
+                            },
                             Function.identity()
                     ));
 

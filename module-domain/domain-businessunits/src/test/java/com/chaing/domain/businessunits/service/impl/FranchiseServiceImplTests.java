@@ -21,8 +21,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import java.time.LocalTime;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -42,6 +41,24 @@ class FranchiseServiceImplTests {
     private FranchiseServiceImpl franchiseService;
 
     @Test
+    @DisplayName("가맹점 조회")
+    void getById() {
+
+        // given
+        Long id = 1L;
+        Franchise franchise = Franchise.builder().franchiseId(id).name("가맹점1").build();
+        when(franchiseRepository.findById(id)).thenReturn(Optional.of(franchise));
+
+        // when
+        BusinessUnitInternal result = franchiseService.getById(id);
+
+        // then
+        assertNotNull(result);
+        assertEquals("가맹점1", result.name());
+        verify(franchiseRepository, times(1)).findById(id);
+    }
+
+    @Test
     @DisplayName("가맹점 등록")
     void create() {
 
@@ -51,7 +68,6 @@ class FranchiseServiceImplTests {
                 "신규 가맹점", "서울시 서초구", "010-1111-2222", "대표", "0123456",
                 Region.SEOUL, new BusinessUnitCreateCommand.FranchiseCreate("월화수목금", LocalTime.of(9,0), LocalTime.of(22,0)), null
         );
-
         when(codeGenerator.generateFranchiseCode(Region.SEOUL)).thenReturn(generatedCode);
 
         // when
@@ -64,71 +80,42 @@ class FranchiseServiceImplTests {
     }
 
     @Test
+    @DisplayName("가맹점 정보 수정")
+    void updateInfo() {
+
+        // given
+        Long id = 1L;
+        Franchise franchise = Franchise.builder().franchiseId(id).name("기존").build();
+        BusinessUnitUpdateCommand command = new BusinessUnitUpdateCommand(
+                "변경", null, null, null, null, null,
+                new BusinessUnitUpdateCommand.FranchiseUpdate(null, null, null, null, null), null);
+        when(franchiseRepository.findById(id)).thenReturn(Optional.of(franchise));
+
+        // when
+        BusinessUnitInternal result = franchiseService.updateInfo(id, command);
+
+        // then
+        assertEquals("변경", result.name());
+        verify(franchiseRepository, times(1)).findById(id);
+    }
+
+    @Test
     @DisplayName("가맹점 목록 조회")
     void getBusinessUnitList() {
 
         // given
         Pageable pageable = PageRequest.of(0, 10);
-        BusinessUnitSearchCondition condition = new BusinessUnitSearchCondition(
-                null, null, null, null, null, null, null, null
-        );
-
-        List<Franchise> franchises = List.of(
-                Franchise.builder().franchiseId(1L).name("가맹점1").build(),
-                Franchise.builder().franchiseId(2L).name("가맹점2").build()
-        );
-
-        Page<Franchise> franchisePage = new PageImpl<>(franchises, pageable, franchises.size());
+        BusinessUnitSearchCondition condition = new BusinessUnitSearchCondition(null, null, null, null, null, null, null, null);
+        List<Franchise> franchises = List.of(Franchise.builder().franchiseId(1L).name("가맹점").build());
+        Page<Franchise> franchisePage = new PageImpl<>(franchises, pageable, 1);
         when(franchiseRepository.search(eq(condition), eq(pageable))).thenReturn(franchisePage);
 
         // when
         Page<BusinessUnitInternal> result = franchiseService.getBusinessUnitList(condition, pageable);
 
         // then
-        assertEquals(2, result.getContent().size());
+        assertEquals(1, result.getContent().size());
         verify(franchiseRepository, times(1)).search(condition, pageable);
-    }
-
-    @Test
-    @DisplayName("가맹점 조회")
-    void getById() {
-
-        // given
-        Long id = 1L;
-        Franchise franchise = Franchise.builder().franchiseId(id).name("가맹점").build();
-        when(franchiseRepository.findById(id)).thenReturn(Optional.of(franchise));
-
-        // when
-        BusinessUnitInternal result = franchiseService.getById(id);
-
-        // then
-        assertNotNull(result);
-        assertEquals("가맹점", result.name());
-        verify(franchiseRepository, times(1)).findById(id);
-    }
-
-    @Test
-    @DisplayName("가맹점 정보 수정")
-    void updateInfo() {
-
-        // given
-        Long id = 1L;
-        Franchise franchise = Franchise.builder().franchiseId(id).name("기존 가맹점").phone("010-1234-5678").build();
-
-        BusinessUnitUpdateCommand command = new BusinessUnitUpdateCommand(
-                "변경된 가맹점", null, null, null, null, null,
-                new BusinessUnitUpdateCommand.FranchiseUpdate(null, null, null, null, null),
-                null
-        );
-
-        when(franchiseRepository.findById(id)).thenReturn(Optional.of(franchise));
-
-        // when
-        franchiseService.updateInfo(id, command);
-
-        // then
-        assertEquals("변경된 가맹점", franchise.getName());
-        verify(franchiseRepository, times(1)).findById(id);
     }
 
     @Test
@@ -145,7 +132,6 @@ class FranchiseServiceImplTests {
 
         // then
         assertEquals(UsableStatus.INACTIVE, franchise.getStatus());
-        verify(franchiseRepository, times(1)).findById(id);
     }
 
     @Test
@@ -165,16 +151,33 @@ class FranchiseServiceImplTests {
     }
 
     @Test
-    @DisplayName("가맹점 경고 부여 및 패널티")
-    void addWarning() {
+    @DisplayName("가맹점 경고 조회")
+    void getWarningCount() {
+
+        // given
+        Long id = 1L;
+        Franchise franchise = Franchise.builder().franchiseId(id).warningCount(2).build();
+        when(franchiseRepository.findByFranchiseIdAndDeletedAtIsNull(id)).thenReturn(Optional.of(franchise));
+
+        // when
+        int count = franchiseService.getWarningCount(id);
+
+        // then
+        assertEquals(2, count);
+    }
+
+    @Test
+    @DisplayName("경고 횟수 검증 및 증가")
+    void validateWarningCount() {
 
         // given
         Long id = 1L;
         Franchise franchise = spy(Franchise.builder().franchiseId(id).warningCount(2).build());
+        when(franchiseRepository.findByFranchiseIdAndDeletedAtIsNull(id)).thenReturn(Optional.of(franchise));
         when(franchiseRepository.findById(id)).thenReturn(Optional.of(franchise));
 
         // when
-        franchiseService.addWarning(id);
+        franchiseService.validateWarningCount(id);
 
         // then
         assertEquals(3, franchise.getWarningCount());

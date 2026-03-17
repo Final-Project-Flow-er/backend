@@ -17,6 +17,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -72,7 +73,7 @@ public class OutboundController {
     @Operation(summary = "출고 확정", description = "피킹 상태 제품의 출고를 확정합니다.")
     public ResponseEntity<ApiResponse<Void>> confirmOutbound(
             @Valid @RequestBody OutboundUpdateRequest request,
-            UserPrincipal userPrincipal
+            @AuthenticationPrincipal UserPrincipal userPrincipal
     ) {
         LogType currentStatus = LogType.PICKING;
         LogType status = LogType.OUTBOUND;

@@ -54,6 +54,6 @@ public interface FranchiseOrderRepository extends JpaRepository<FranchiseOrder, 
 
     Optional<FranchiseOrder> findByOrderCodeAndDeletedAtIsNull(String orderCode);
 
-    @Query("select f from FranchiseOrder f where f.franchiseId = :orderIds")
+    @Query("select f from FranchiseOrder f where f.franchiseId in :orderIds")
     List<FranchiseOrder> findByFranchiseOrderIdIn(@Param("orderIds") List<Long> orderIds);
 }

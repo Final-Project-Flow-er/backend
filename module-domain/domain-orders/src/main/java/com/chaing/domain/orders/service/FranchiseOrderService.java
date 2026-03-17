@@ -729,6 +729,14 @@ public class FranchiseOrderService {
             throw new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_NOT_FOUND);
         }
 
+        Set<Long> foundOrderIds = orderInfos.stream()
+                .map(FranchiseOrder::getFranchiseOrderId)
+                .collect(Collectors.toSet());
+
+        if (!foundOrderIds.containsAll(new HashSet<>(orderIds))) {
+            throw new FranchiseOrderException(FranchiseOrderErrorCode.DATA_OMISSION);
+        }
+
         return orderInfos.stream()
                 .collect(Collectors.toMap(
                         FranchiseOrder::getFranchiseOrderId,

@@ -21,6 +21,10 @@ public interface TransitRepository extends JpaRepository<Transit, Long> {
     @Query("select t from Transit t where t.orderCode in(:orderCodes)")
     List<Transit> findByOrderCodeIn(@Param("orderCodes") List<String> orderCodes);
 
+    List<Transit> findAllByFranchiseIdAndStatusInAndCreatedAtBetween(
+            Long franchiseId, java.util.Collection<DeliverStatus> statuses,
+            java.time.LocalDateTime start, java.time.LocalDateTime end);
+
     @Modifying(clearAutomatically = true)
     @Query("update Transit t set t.status = :targetStatus where t.orderCode = :orderCode")
     void updateDeliverStatus(@Param("orderCode") String orderCode, @Param("targetStatus") DeliverStatus targetStatus);

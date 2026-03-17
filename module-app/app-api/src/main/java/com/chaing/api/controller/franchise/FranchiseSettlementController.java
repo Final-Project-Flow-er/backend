@@ -104,6 +104,16 @@ public class FranchiseSettlementController {
                                 facade.getMonthlyOrderItems(franchiseId, month, limit)));
         }
 
+        @Operation(summary = "월별 매출 추이 조회(그래프)", description = "월별 일자별 매출 합계 리스트 조회")
+        @GetMapping("/monthly/sales-graph")
+        public ResponseEntity<ApiResponse<?>> getMonthlySalesTrend(
+                        @RequestParam("month") @DateTimeFormat(pattern = "yyyy-MM") YearMonth month,
+                        @AuthenticationPrincipal UserPrincipal principal) {
+                Long franchiseId = principal.getBusinessUnitId();
+                return ResponseEntity.ok(ApiResponse.success(
+                                facade.getMonthlySalesTrend(franchiseId, month)));
+        }
+
         // 전표 상세 목록 조회, 일/월 공통
         @Operation(summary = "전표 상세 목록 조회(일/월 공통)", description = """
                         전표 페이지1개 period, date, month, type으로 목록 필터링

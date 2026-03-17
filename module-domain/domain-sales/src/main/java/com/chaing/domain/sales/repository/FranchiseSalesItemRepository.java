@@ -16,4 +16,11 @@ public interface FranchiseSalesItemRepository extends JpaRepository<SalesItem, L
     @org.springframework.data.jpa.repository.Query("SELECT si FROM SalesItem si JOIN FETCH si.sales s WHERE s.franchiseId = :franchiseId")
     List<SalesItem> findAllBySalesFranchiseId(Long franchiseId);
 
+    // 가맹점별 기간 내 판매 아이템 조회
+    @org.springframework.data.jpa.repository.Query("SELECT si FROM SalesItem si JOIN FETCH si.sales s WHERE s.franchiseId = :franchiseId AND si.createdAt BETWEEN :start AND :end")
+    List<SalesItem> findAllBySalesFranchiseIdAndCreatedAtBetween(
+            @org.springframework.data.repository.query.Param("franchiseId") Long franchiseId,
+            @org.springframework.data.repository.query.Param("start") java.time.LocalDateTime start,
+            @org.springframework.data.repository.query.Param("end") java.time.LocalDateTime end);
+
 }

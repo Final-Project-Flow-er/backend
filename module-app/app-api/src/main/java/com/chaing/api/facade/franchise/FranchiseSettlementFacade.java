@@ -61,6 +61,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.time.LocalTime;
+import com.chaing.api.dto.franchise.settlement.response.FranchiseDailyGraphResponse;
 
 @Slf4j
 @Service
@@ -127,12 +129,12 @@ public class FranchiseSettlementFacade {
                 log.info("[DEBUG] getDailySalesItems - franchiseId: {}, date: {}",
                                 franchiseId, date);
 
-                // 명시적인 필터링을 위해 전체 조회 후 toLocalDate()로 필터링 (정합성 극대화)
-                List<SalesItem> items = salesItemRepository.findAllBySalesFranchiseId(franchiseId).stream()
-                                .filter(item -> {
-                                        LocalDateTime createdAt = item.getCreatedAt();
-                                        return createdAt != null && createdAt.toLocalDate().equals(date);
-                                })
+                LocalDateTime start = date.atStartOfDay();
+                LocalDateTime end = date.atTime(LocalTime.MAX);
+
+                // DB 레벨 필터링 사용
+                List<SalesItem> items = salesItemRepository.findAllBySalesFranchiseIdAndCreatedAtBetween(franchiseId, start, end)
+                                .stream()
                                 .filter(item -> {
                                         Boolean canceled = item.getSales().getIsCanceled();
                                         return canceled == null || !canceled;
@@ -158,13 +160,10 @@ public class FranchiseSettlementFacade {
                                 FranchiseOrderStatus.COMPLETED);
 
                 // DB 레벨 조회가 아닌, 전체 데이터를 가져와 toLocalDate()로 필터링 (정합성 보장)
-                List<FranchiseOrder> orders = orderRepository.findAllByFranchiseId(franchiseId).stream()
-                                .filter(order -> {
-                                        LocalDateTime createdAt = order.getCreatedAt();
-                                        return createdAt != null && createdAt.toLocalDate().equals(date);
-                                })
-                                .filter(order -> validStatuses.contains(order.getOrderStatus()))
-                                .toList();
+                LocalDateTime start = date.atStartOfDay();
+                LocalDateTime end = date.atTime(LocalTime.MAX);
+                List<FranchiseOrder> orders = orderRepository.findAllByFranchiseIdAndOrderStatusInAndCreatedAtBetween(
+                                franchiseId, validStatuses, start, end);
                 // OrderItem 가져오기
                 List<Long> orderIds = orders.stream()
                                 .map(FranchiseOrder::getFranchiseOrderId).toList();
@@ -235,15 +234,11 @@ public class FranchiseSettlementFacade {
         public List<FranchiseSalesItemResponse> getMonthlySalesItems(
                         Long franchiseId, YearMonth month, Integer limit) {
                 LocalDateTime start = month.atDay(1).atStartOfDay();
-                LocalDateTime end = month.atEndOfMonth().atTime(23, 59, 59, 999999999);
+                LocalDateTime end = month.atEndOfMonth().atTime(LocalTime.MAX);
 
-                // SalesItem에서 직접 조회 후 메모리 필터링
-                List<SalesItem> items = salesItemRepository.findAllBySalesFranchiseId(franchiseId).stream()
-                                .filter(item -> {
-                                        LocalDateTime createdAt = item.getCreatedAt();
-                                        return createdAt != null && !createdAt.isBefore(start)
-                                                        && !createdAt.isAfter(end);
-                                })
+                // DB 레벨 필터링 사용
+                List<SalesItem> items = salesItemRepository.findAllBySalesFranchiseIdAndCreatedAtBetween(franchiseId, start, end)
+                                .stream()
                                 .filter(item -> {
                                         Boolean canceled = item.getSales().getIsCanceled();
                                         return canceled == null || !canceled;
@@ -272,7 +267,7 @@ public class FranchiseSettlementFacade {
                                                 franchiseId,
                                                 validStatuses,
                                                 start.atStartOfDay(),
-                                                end.atTime(23, 59, 59));
+                                                end.atTime(LocalTime.MAX));
                 List<Long> orderIds = orders.stream()
                                 .map(FranchiseOrder::getFranchiseOrderId).toList();
                 List<FranchiseOrderItem> items = orderItemRepository
@@ -362,14 +357,9 @@ public class FranchiseSettlementFacade {
 
                 // 1. 매출 (SALES)
                 if (filterType == null || filterType == VoucherType.SALES) {
-                        List<SalesItem> salesItems = salesItemRepository.findAllBySalesFranchiseId(franchiseId).stream()
-                                        .filter(item -> {
-                                                LocalDateTime createdAt = item.getCreatedAt();
-                                                if (createdAt == null)
-                                                        return false;
-                                                LocalDate d = createdAt.toLocalDate();
-                                                return !d.isBefore(start) && !d.isAfter(end);
-                                        })
+                        List<SalesItem> salesItems = salesItemRepository.findAllBySalesFranchiseIdAndCreatedAtBetween(
+                                        franchiseId, start.atStartOfDay(), end.atTime(LocalTime.MAX))
+                                        .stream()
                                         .filter(item -> {
                                                 Boolean canceled = item.getSales().getIsCanceled();
                                                 return canceled == null || !canceled;
@@ -393,16 +383,8 @@ public class FranchiseSettlementFacade {
                                         FranchiseOrderStatus.PARTIAL, FranchiseOrderStatus.SHIPPING_PENDING,
                                         FranchiseOrderStatus.SHIPPING, FranchiseOrderStatus.COMPLETED);
 
-                        List<FranchiseOrder> orders = orderRepository.findAllByFranchiseId(franchiseId).stream()
-                                        .filter(order -> {
-                                                LocalDateTime createdAt = order.getCreatedAt();
-                                                if (createdAt == null)
-                                                        return false;
-                                                LocalDate d = createdAt.toLocalDate();
-                                                return !d.isBefore(start) && !d.isAfter(end);
-                                        })
-                                        .filter(order -> validStatuses.contains(order.getOrderStatus()))
-                                        .toList();
+                        List<FranchiseOrder> orders = orderRepository.findAllByFranchiseIdAndOrderStatusInAndCreatedAtBetween(
+                                        franchiseId, validStatuses, start.atStartOfDay(), end.atTime(LocalTime.MAX));
 
                         if (!orders.isEmpty()) {
                                 List<Long> orderIds = orders.stream().map(FranchiseOrder::getFranchiseOrderId).toList();
@@ -479,16 +461,8 @@ public class FranchiseSettlementFacade {
                 if (filterType == null || filterType == VoucherType.DELIVERY) {
                         List<DeliverStatus> validDeliverStatuses = List.of(DeliverStatus.IN_TRANSIT,
                                         DeliverStatus.DELIVERED);
-                        List<Transit> transits = transitRepository.findByFranchiseId(franchiseId).stream()
-                                        .filter(t -> {
-                                                LocalDateTime createdAt = t.getCreatedAt();
-                                                if (createdAt == null)
-                                                        return false;
-                                                LocalDate d = createdAt.toLocalDate();
-                                                return !d.isBefore(start) && !d.isAfter(end);
-                                        })
-                                        .filter(t -> validDeliverStatuses.contains(t.getStatus()))
-                                        .toList();
+                        List<Transit> transits = transitRepository.findAllByFranchiseIdAndStatusInAndCreatedAtBetween(
+                                        franchiseId, validDeliverStatuses, start.atStartOfDay(), end.atTime(LocalTime.MAX));
 
                         Map<String, List<Transit>> transitsByTracking = transits.stream()
                                         .collect(Collectors.groupingBy(Transit::getTrackingNumber));
@@ -522,14 +496,8 @@ public class FranchiseSettlementFacade {
                 if (filterType == null || filterType == VoucherType.COMMISSION) {
                         // 일자별 매출 합산
                         Map<LocalDate, BigDecimal> salesByDate = salesItemRepository
-                                        .findAllBySalesFranchiseId(franchiseId).stream()
-                                        .filter(item -> {
-                                                LocalDateTime createdAt = item.getCreatedAt();
-                                                if (createdAt == null)
-                                                        return false;
-                                                LocalDate d = createdAt.toLocalDate();
-                                                return !d.isBefore(start) && !d.isAfter(end);
-                                        })
+                                        .findAllBySalesFranchiseIdAndCreatedAtBetween(franchiseId, start.atStartOfDay(), end.atTime(LocalTime.MAX))
+                                        .stream()
                                         .filter(item -> {
                                                 Boolean canceled = item.getSales().getIsCanceled();
                                                 return canceled == null || !canceled;
@@ -1036,11 +1004,11 @@ public class FranchiseSettlementFacade {
 
                 // SalesItem 기준으로 집계하여 판매 관리 페이지와 100% 일치 보장
                 // 시간대 오차 방지를 위해 toLocalDate()로 직접 비교
-                List<SalesItem> salesItems = salesItemRepository.findAllBySalesFranchiseId(franchiseId).stream()
-                                .filter(item -> {
-                                        LocalDateTime createdAt = item.getCreatedAt();
-                                        return createdAt != null && createdAt.toLocalDate().equals(date);
-                                })
+                LocalDateTime start = date.atStartOfDay();
+                LocalDateTime end = date.atTime(LocalTime.MAX);
+
+                List<SalesItem> salesItems = salesItemRepository.findAllBySalesFranchiseIdAndCreatedAtBetween(franchiseId, start, end)
+                                .stream()
                                 .filter(item -> {
                                         Boolean canceled = item.getSales().getIsCanceled();
                                         return canceled == null || !canceled;
@@ -1080,13 +1048,8 @@ public class FranchiseSettlementFacade {
                                 FranchiseOrderStatus.COMPLETED);
 
                 // DB 레벨 조회가 아닌, 전체 데이터를 가져와 toLocalDate()로 필터링하여 정합성 극대화
-                List<FranchiseOrder> orders = orderRepository.findAllByFranchiseId(franchiseId).stream()
-                                .filter(order -> {
-                                        LocalDateTime createdAt = order.getCreatedAt();
-                                        return createdAt != null && createdAt.toLocalDate().equals(date);
-                                })
-                                .filter(order -> validOrderStatuses.contains(order.getOrderStatus()))
-                                .toList();
+                List<FranchiseOrder> orders = orderRepository.findAllByFranchiseIdAndOrderStatusInAndCreatedAtBetween(
+                                franchiseId, validOrderStatuses, date.atStartOfDay(), date.atTime(LocalTime.MAX));
 
                 log.info("[DEBUG] 발주대금 조회 - franchiseId={}, date={}, 전체건수={}, 필터후건수={}",
                                 franchiseId, date,
@@ -1204,10 +1167,8 @@ public class FranchiseSettlementFacade {
 
                 // 4. 해당 날짜, 해당 가맹점의 유효한 배송 기록(배송 중, 완료) 조회 및 집계
                 List<DeliverStatus> validDeliverStatuses = List.of(DeliverStatus.IN_TRANSIT, DeliverStatus.DELIVERED);
-                List<Transit> transits = transitRepository.findByFranchiseId(franchiseId).stream()
-                                .filter(t -> t.getCreatedAt() != null && t.getCreatedAt().toLocalDate().equals(date))
-                                .filter(t -> validDeliverStatuses.contains(t.getStatus()))
-                                .toList();
+                List<Transit> transits = transitRepository.findAllByFranchiseIdAndStatusInAndCreatedAtBetween(
+                                franchiseId, validDeliverStatuses, date.atStartOfDay(), date.atTime(LocalTime.MAX));
 
                 // 송장 번호(trackingNumber) 기준으로 그룹화하여 동일 배송은 1건으로 처리
                 Map<String, List<Transit>> transitsByTracking = transits.stream()
@@ -1286,6 +1247,48 @@ public class FranchiseSettlementFacade {
                                                                 .add(refundAmount))
                                                 .build(),
                                 lines);
+        }
+
+        // 월별 매출 추이 조회 (그래프용)
+        @Transactional(readOnly = true)
+        public List<FranchiseDailyGraphResponse> getMonthlySalesTrend(Long franchiseId, YearMonth month) {
+                log.info("[DEBUG] getMonthlySalesTrend - franchiseId: {}, month: {}", franchiseId, month);
+
+                LocalDateTime start = month.atDay(1).atStartOfDay();
+                LocalDateTime end = month.atEndOfMonth().atTime(LocalTime.MAX);
+
+                // 월간 모든 매출 아이템 조회
+                List<SalesItem> items = salesItemRepository.findAllBySalesFranchiseIdAndCreatedAtBetween(franchiseId, start, end)
+                                .stream()
+                                .filter(item -> {
+                                        Boolean canceled = item.getSales().getIsCanceled();
+                                        return canceled == null || !canceled;
+                                })
+                                .toList();
+
+                // 일자별 합계 계산
+                Map<LocalDate, BigDecimal> dailySums = items.stream()
+                                .collect(Collectors.groupingBy(
+                                                item -> item.getCreatedAt().toLocalDate(),
+                                                Collectors.reducing(BigDecimal.ZERO,
+                                                                item -> item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity())),
+                                                                BigDecimal::add)));
+
+                // 해당 월의 모든 날짜에 대해 데이터 생성 (비어있는 날은 0원)
+                List<FranchiseDailyGraphResponse> result = new ArrayList<>();
+                LocalDate dateLoop = month.atDay(1);
+                LocalDate lastDate = month.atEndOfMonth();
+                if (lastDate.isAfter(LocalDate.now())) {
+                        lastDate = LocalDate.now();
+                }
+
+                while (!dateLoop.isAfter(lastDate)) {
+                        BigDecimal amount = dailySums.getOrDefault(dateLoop, BigDecimal.ZERO);
+                        result.add(new FranchiseDailyGraphResponse(dateLoop, amount));
+                        dateLoop = dateLoop.plusDays(1);
+                }
+
+                return result;
         }
 
 }

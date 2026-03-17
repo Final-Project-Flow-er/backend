@@ -18,6 +18,9 @@ public record FranchiseSellItemRequest(
         String productName,
 
         @NotNull
+        Integer quantity,
+
+        @NotNull
         BigDecimal unitPrice,
 
         @NotBlank

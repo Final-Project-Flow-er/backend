@@ -15,4 +15,7 @@ public interface FranchiseSalesRepository extends JpaRepository<Sales, Long> {
     // 특정 가맹점의 날짜 범위 매출 (취소 안 된 것만)
     List<Sales> findAllByFranchiseIdAndIsCanceledFalseAndCreatedAtBetween(
             Long franchiseId, LocalDateTime start, LocalDateTime end);
+
+    List<Sales> findAllByFranchiseIdAndCreatedAtBetween(
+            Long franchiseId, LocalDateTime start, LocalDateTime end);
 }

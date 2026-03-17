@@ -43,13 +43,12 @@ public class DailySettlementServiceImpl implements DailySettlementService {
 
     @Override
     public DailySettlementReceipt getByFranchiseAndDate(Long franchiseId, LocalDate date) {
-        log.info("[DEBUG] getByFranchiseAndDate called for franchiseId: {}, date: {}", franchiseId, date);
-        return receiptRepository.findByFranchiseIdAndSettlementDate(franchiseId, date)
+        return findByFranchiseAndDate(franchiseId, date)
                 .orElseThrow(() -> {
                     log.warn("[DEBUG] Daily Settlement NOT FOUND for franchiseId: {}, date: {}", franchiseId, date);
                     return new SettlementException(SettlementErrorCode.DAILY_SETTLEMENT_NOT_FOUND);
                 });
-    } // 가맹점에서 정산을 조회하고 싶을 때
+    }
 
     @Override
     public Optional<DailySettlementReceipt> findByFranchiseAndDate(Long franchiseId, LocalDate date) {

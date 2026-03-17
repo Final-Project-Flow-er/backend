@@ -48,6 +48,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.Collections;
 
 import java.math.BigDecimal;
 import java.time.Duration;
@@ -87,6 +88,10 @@ public class FranchiseReturnFacade {
         // Map<returnId, ReturnCommand>
         Map<Long, ReturnCommand> returns = franchiseReturnService.getAllReturns(franchiseId);
         log.info("returns: {}", returns);
+
+        if (returns.isEmpty()) {
+            return Collections.emptyList();
+        }
 
         // List<returnId>
         List<Long> returnIds = returns.keySet().stream().toList();

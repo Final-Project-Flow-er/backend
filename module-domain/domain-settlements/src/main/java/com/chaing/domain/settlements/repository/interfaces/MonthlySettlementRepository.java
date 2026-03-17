@@ -26,6 +26,9 @@ public interface MonthlySettlementRepository extends JpaRepository<MonthlySettle
             @Param("month") YearMonth month,
             @Param("keyword") String keyword);
 
+    // 특정 가맹점의 모든 월별 정산 내역 조회
+    List<MonthlySettlement> findAllByFranchiseId(Long franchiseId);
+
     // 특정 가맹점 + 월 (가맹점 월별 요약)
     Optional<MonthlySettlement> findByFranchiseIdAndSettlementMonth(
             Long franchiseId, YearMonth month);

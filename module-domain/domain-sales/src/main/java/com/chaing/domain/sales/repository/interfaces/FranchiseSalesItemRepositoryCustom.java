@@ -25,6 +25,5 @@ public interface FranchiseSalesItemRepositoryCustom {
             List<Long> franchiseIds,
             List<Long> productIds,
             LocalDate startDate,
-            LocalDate endDate
-    );
+            LocalDate endDate);
 }

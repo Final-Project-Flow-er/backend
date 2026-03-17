@@ -6,6 +6,8 @@ import com.chaing.api.dto.franchise.sales.response.ScannedItemForSaleResponse;
 import com.chaing.api.facade.notification.NotificationFacade;
 import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.core.enums.LogType;
+import com.chaing.domain.businessunits.entity.Franchise;
+import com.chaing.domain.businessunits.repository.FranchiseRepository;
 import com.chaing.domain.inventories.dto.request.DisposalRequest;
 import com.chaing.domain.inventories.dto.request.FranchiseInventoryItemsRequest;
 import com.chaing.domain.inventories.dto.request.InventoryBatchRequest;
@@ -71,6 +73,7 @@ public class FranchiseInventoryFacade {
     private final ProductService productService;
     private final InventoryLogService inventoryLogService;
     private final UserManagementService userManagementService;
+    private final FranchiseRepository franchiseRepository;
     private final RedisCacheHelper redisCacheHelper;
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper;
@@ -354,7 +357,7 @@ public class FranchiseInventoryFacade {
 
         int lowStockCount = safetyAlerts.size();
         int expirationCount = expirationAlerts.size();
-        String message = "[재고 알림] 가맹점(" + franchiseId + ") - 안전재고 부족 "
+        String message = "[재고 알림] 가맹점(" + resolveFranchiseName(franchiseId) + ") - 안전재고 부족 "
                 + lowStockCount + "건, 유통기한 임박 " + expirationCount + "건";
 
         for (Long userId : recipientUserIds) {
@@ -372,6 +375,16 @@ public class FranchiseInventoryFacade {
                     targetId
             ));
         }
+    }
+
+    private String resolveFranchiseName(Long franchiseId) {
+        if (franchiseId == null) {
+            return "-";
+        }
+
+        return franchiseRepository.findByFranchiseIdAndDeletedAtIsNull(franchiseId)
+                .map(Franchise::getName)
+                .orElse("ID:" + franchiseId);
     }
 
     private <T> List<T> readListCache(String key, TypeReference<List<T>> typeRef) {

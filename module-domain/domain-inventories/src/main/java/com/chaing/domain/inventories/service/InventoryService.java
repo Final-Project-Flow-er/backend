@@ -687,7 +687,7 @@ public class InventoryService {
         if(serialCodes == null || serialCodes.isEmpty()){
             throw new InventoriesException(InventoriesErrorCode.INVENTORIES_SERIAL_CODE_IS_NULL);
         }
-        List<FranchiseInventory> itemInfosForLog = franchiseInventoryRepository.getAllByFranchiseIdAndSerialCodeIn(serialCodes, franchiseId);
+        List<FranchiseInventory> itemInfosForLog = franchiseInventoryRepository.getAllByFranchiseIdAndSerialCodeIn(franchiseId, serialCodes);
         
         if(itemInfosForLog == null ||  itemInfosForLog.isEmpty()){
             throw new InventoriesException(InventoriesErrorCode.INVENTORIES_IS_INVALID);

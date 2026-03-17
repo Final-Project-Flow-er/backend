@@ -1,9 +1,13 @@
 package com.chaing.api.facade.inventorylogs;
 
+import com.chaing.api.security.principal.UserPrincipal;
 import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.core.enums.LogType;
+import com.chaing.domain.inventories.dto.info.StockInfoForLog;
 import com.chaing.domain.inventories.entity.FactoryInventory;
 import com.chaing.domain.inventories.entity.FranchiseInventory;
+import com.chaing.domain.inventories.exception.InventoriesErrorCode;
+import com.chaing.domain.inventories.exception.InventoriesException;
 import com.chaing.domain.inventories.service.InventoryService;
 import com.chaing.domain.inventorylogs.dto.request.InventoryLogCreateRequest;
 import com.chaing.domain.inventorylogs.dto.response.BoxCodeResponse;
@@ -12,14 +16,15 @@ import com.chaing.domain.inventorylogs.enums.LocationType;
 import com.chaing.domain.inventorylogs.exception.InventoryLogException;
 import com.chaing.domain.inventorylogs.exception.InventoryLogtErrorCode;
 import com.chaing.domain.inventorylogs.service.InventoryLogService;
+import com.chaing.domain.orders.dto.info.OrderInfoForLog;
 import com.chaing.domain.orders.entity.FranchiseOrder;
 import com.chaing.domain.orders.entity.HeadOfficeOrder;
-import com.chaing.domain.orders.repository.FranchiseOrderRepository;
-import com.chaing.domain.orders.repository.HeadOfficeOrderRepository;
+import com.chaing.domain.orders.service.FranchiseOrderService;
 import com.chaing.domain.products.service.ProductService;
 import com.chaing.domain.returns.entity.ReturnItem;
 import com.chaing.domain.returns.entity.Returns;
 import com.chaing.domain.returns.service.FranchiseReturnService;
+import com.chaing.domain.users.enums.UserRole;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -39,42 +44,38 @@ public class InventoryLogFacade {
 
     private static final Long HQ_ID = 1L;
     private final InventoryLogService inventoryLogService;
-    private final HeadOfficeOrderRepository headOfficeOrderRepository;
-    private final FranchiseOrderRepository franchiseOrderRepository;
     private final FranchiseReturnService franchiseReturnService;
     private final ProductService productService;
     private final InventoryService inventoryService;
+    private final FranchiseOrderService franchiseOrderService;
 
-    // orderType: FRANCHISE | HQ
+    // orderType: FRANCHISE | FACTORY
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
-    public void recordOrderLogs(Long orderId, String orderType, Long toId, LogType logType, String actorType, Long actorId) {
-        if (orderId == null || toId == null || logType == null || actorId == null) {
-            throw new InventoryLogException(InventoryLogtErrorCode.INVALID_INPUT);
+    public void recordOrderLogs(List<String> serialCodes, UserPrincipal userInfo, LogType status) {
+
+        Long unitId = userInfo.getBusinessUnitId();
+        String role = userInfo.getRole().name();
+
+        List<StockInfoForLog> inventoryLogInfo;
+        List<Long> orderIds = new ArrayList<>();
+
+        switch (role) {
+            case "FRANCHISE":
+                inventoryLogInfo = inventoryService.getStockBySerialCodeFromFranchise(serialCodes, unitId);
+                orderIds = inventoryLogInfo.stream().map(StockInfoForLog::orderId).toList();
+                if(orderIds == null || orderIds.isEmpty()) {
+                    throw new InventoriesException(InventoriesErrorCode.INVALID_LOCATION_ID);
+                }
+
+            case "FACTORY":
+                inventoryLogInfo = inventoryService.getStockBySerialCodeFromFactory(serialCodes);
+                orderIds = inventoryLogInfo.stream().map(StockInfoForLog::orderId).toList();
+                if(orderIds == null || orderIds.isEmpty()) {
+                    throw new InventoriesException(InventoriesErrorCode.INVALID_LOCATION_ID);
+                }
         }
 
-        ActorType parsedActorType = parseActorType(actorType);
-        if ("FRANCHISE".equalsIgnoreCase(orderType)) {
-            FranchiseOrder order = franchiseOrderRepository
-                    .findByFranchiseOrderIdAndDeletedAtIsNull(orderId)
-                    .orElseThrow(() -> new InventoryLogException(
-                            InventoryLogtErrorCode.INVALID_INPUT));
-            List<FactoryInventory> inventories = inventoryService.getFactoryInventoriesByOrderId(orderId);
-            recordFranchiseOrderLogs(order, inventories, logType, toId, parsedActorType, actorId);
-            return;
-        }
-
-        if ("HQ".equalsIgnoreCase(orderType)) {
-            HeadOfficeOrder order = headOfficeOrderRepository
-                    .findByHeadOfficeOrderIdAndDeletedAtIsNull(orderId)
-                    .orElseThrow(() -> new InventoryLogException(
-                            InventoryLogtErrorCode.INVALID_INPUT));
-            List<FranchiseInventory> inventories = inventoryService
-                    .getFranchiseInventoriesByOrderId(orderId);
-            recordHqOrderLogs(order, inventories, logType, toId, parsedActorType, actorId);
-            return;
-        }
-
-        throw new InventoryLogException(InventoryLogtErrorCode.INVALID_INPUT);
+        List<OrderInfoForLog> orderInfos = franchiseOrderService.getOrderInfoForLog(orderIds);
     }
 
     // FRANCHISE 주문: Factory -> Franchise

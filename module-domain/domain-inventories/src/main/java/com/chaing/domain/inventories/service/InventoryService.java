@@ -6,6 +6,7 @@ import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.core.dto.info.ReturnItemInspection;
 import com.chaing.core.enums.LogType;
 import com.chaing.core.enums.ReturnItemStatus;
+import com.chaing.domain.inventories.dto.info.StockInfoForLog;
 import com.chaing.domain.inventories.dto.request.DisposalRequest;
 import com.chaing.domain.inventories.dto.request.FranchiseInventoryItemsRequest;
 import com.chaing.domain.inventories.dto.request.HQInventoryItemsRequest;
@@ -679,5 +680,36 @@ public class InventoryService {
                                 .boxCode(inventory.getBoxCode())
                                 .build()
                 ));
+    }
+
+    public List<StockInfoForLog> getStockBySerialCodeFromFranchise(List<String> serialCodes, Long franchiseId) {
+
+        if(serialCodes == null || serialCodes.isEmpty()){
+            throw new InventoriesException(InventoriesErrorCode.INVENTORIES_SERIAL_CODE_IS_NULL);
+        }
+        List<FranchiseInventory> itemInfosForLog = franchiseInventoryRepository.getAllByFranchiseIdAndSerialCodeIn(serialCodes, franchiseId);
+        
+        if(itemInfosForLog == null ||  itemInfosForLog.isEmpty()){
+            throw new InventoriesException(InventoriesErrorCode.INVENTORIES_IS_INVALID);
+        }
+
+        return itemInfosForLog.stream()
+                .map(item -> StockInfoForLog.create(item.getOrderId(), item.getBoxCode(), item.getProductId()))
+                .toList();
+    }
+
+    public List<StockInfoForLog> getStockBySerialCodeFromFactory(List<String> serialCodes) {
+        if(serialCodes == null || serialCodes.isEmpty()){
+            throw new InventoriesException(InventoriesErrorCode.INVENTORIES_SERIAL_CODE_IS_NULL);
+        }
+        List<FactoryInventory> itemInfosForLog = factoryInventoryRepository.findAllBySerialCodeIn(serialCodes);
+
+        if(itemInfosForLog == null ||  itemInfosForLog.isEmpty()){
+            throw new InventoriesException(InventoriesErrorCode.INVENTORIES_IS_INVALID);
+        }
+
+        return itemInfosForLog.stream()
+                .map(item -> StockInfoForLog.create(item.getOrderId(), item.getBoxCode(), item.getProductId()))
+                .toList();
     }
 }

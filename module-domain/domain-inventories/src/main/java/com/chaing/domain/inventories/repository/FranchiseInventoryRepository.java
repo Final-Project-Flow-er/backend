@@ -43,4 +43,9 @@ public interface FranchiseInventoryRepository extends JpaRepository<FranchiseInv
             @Param("serialCodes") @NotEmpty(message = "선택된 제품이 존재하지 않습니다.") List<String> serialCodes,
             @Param("franchiseId") Long franchiseId,
             @Param("status") LogType status);
+
+    @Query
+    List<FranchiseInventory> getAllByFranchiseIdAndSerialCodeIn(
+            @Param("serialCodes") List<String> serialCodes,
+            @Param("franchiseId") Long franchiseId);
 }

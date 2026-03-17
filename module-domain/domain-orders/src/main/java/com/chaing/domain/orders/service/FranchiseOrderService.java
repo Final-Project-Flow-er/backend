@@ -5,6 +5,7 @@ import com.chaing.core.dto.returns.response.FranchiseReturnTargetResponse;
 import com.chaing.domain.orders.dto.command.FranchiseOrderCommand;
 import com.chaing.domain.orders.dto.command.FranchiseOrderDetailCommand;
 import com.chaing.domain.orders.dto.command.FranchiseOrderItemCommand;
+import com.chaing.domain.orders.dto.info.OrderInfoForLog;
 import com.chaing.domain.orders.dto.request.FranchiseOrderCreateRequest;
 import com.chaing.core.dto.request.FranchiseOrderCreateRequestItem;
 import com.chaing.core.dto.request.FranchiseOrderUpdateRequest;
@@ -685,5 +686,20 @@ public class FranchiseOrderService {
                         FranchiseOrder::getFranchiseOrderId,
                         FranchiseOrderDetailCommand::from
                 ));
+    }
+
+    public List<OrderInfoForLog> getOrderInfoForLog(List<Long> orderIds) {
+
+        List<FranchiseOrder> orderInfos = franchiseOrderRepository.findByFranchiseOrderIdIn(orderIds);
+
+        if(orderInfos == null || orderInfos.isEmpty()) {
+            throw new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_NOT_FOUND);
+        }
+
+        return orderInfos.stream()
+                .map(orderInfo -> OrderInfoForLog.create(
+                        orderInfo.getOrderCode(),
+                        orderInfo.getFranchiseId()))
+                .toList();
     }
 }

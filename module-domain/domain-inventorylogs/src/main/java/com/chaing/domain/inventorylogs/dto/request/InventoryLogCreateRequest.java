@@ -4,8 +4,6 @@ import com.chaing.core.enums.LogType;
 import com.chaing.domain.inventorylogs.enums.ActorType;
 import com.chaing.domain.inventorylogs.enums.LocationType;
 
-import java.math.BigDecimal;
-
 public record InventoryLogCreateRequest(
         Long productId,
         String productName,

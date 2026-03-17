@@ -5,6 +5,7 @@ import com.chaing.api.dto.inbound.request.InboundScanBoxRequest;
 import com.chaing.api.dto.inbound.request.InboundScanItemRequest;
 import com.chaing.api.dto.inbound.response.InboundBoxSummaryResponse;
 import com.chaing.api.dto.inbound.response.InboundDetailResponse;
+import com.chaing.api.facade.inventorylogs.InventoryLogFacade;
 import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.domain.inventories.dto.command.FactoryInboundCreateCommand;
 import com.chaing.domain.inventories.dto.command.FranchiseInboundCreateCommand;
@@ -17,6 +18,7 @@ import com.chaing.domain.inventories.exception.InventoriesErrorCode;
 import com.chaing.domain.inventories.exception.InventoriesException;
 import com.chaing.domain.inventories.service.InventoryService;
 import com.chaing.domain.inventories.service.inbound.InboundService;
+import com.chaing.domain.inventorylogs.service.InventoryLogService;
 import com.chaing.domain.orders.dto.response.FranchiseOrderForTransitResponse;
 import com.chaing.domain.orders.service.FranchiseOrderService;
 import com.chaing.domain.products.service.ProductService;
@@ -46,6 +48,7 @@ public class InboundFacade {
     private final ProductService productService;
     private final FranchiseOrderService orderService;
     private final InventoryService inventoryService;
+    private final InventoryLogFacade inventoryLogFacade;
 
     @Transactional
     public void scanInboundItem(@Valid InboundScanItemRequest request) {

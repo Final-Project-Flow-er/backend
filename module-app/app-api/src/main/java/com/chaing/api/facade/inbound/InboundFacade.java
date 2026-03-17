@@ -15,6 +15,7 @@ import com.chaing.domain.inventories.dto.raw.FactoryInventoryRawData;
 import com.chaing.domain.inventories.dto.raw.FranchiseInventoryRawData;
 import com.chaing.domain.inventories.exception.InventoriesErrorCode;
 import com.chaing.domain.inventories.exception.InventoriesException;
+import com.chaing.domain.inventories.service.InventoryService;
 import com.chaing.domain.inventories.service.inbound.InboundService;
 import com.chaing.domain.orders.dto.response.FranchiseOrderForTransitResponse;
 import com.chaing.domain.orders.service.FranchiseOrderService;
@@ -44,6 +45,7 @@ public class InboundFacade {
     private final InboundService<FactoryInboundCreateCommand, FactoryInventoryRawData> factoryInboundService;
     private final ProductService productService;
     private final FranchiseOrderService orderService;
+    private final InventoryService inventoryService;
 
     @Transactional
     public void scanInboundItem(@Valid InboundScanItemRequest request) {
@@ -161,7 +163,7 @@ public class InboundFacade {
             factoryInboundService.confirmInbound(selectedList);
         } else if (role == UserRole.FRANCHISE) {
             franchiseInboundService.confirmInbound(selectedList);
-
+            inventoryService.deleteFactoryInventory(selectedList);
         } else {
             throw new InventoriesException(InventoriesErrorCode.INBOUND_ROLE_INVALID);
         }

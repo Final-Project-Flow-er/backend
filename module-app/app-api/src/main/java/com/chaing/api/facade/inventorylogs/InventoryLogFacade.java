@@ -3,8 +3,8 @@ package com.chaing.api.facade.inventorylogs;
 import com.chaing.api.security.principal.UserPrincipal;
 import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.core.enums.LogType;
+import com.chaing.domain.inventories.dto.info.InboundProductIdInfo;
 import com.chaing.domain.inventories.dto.info.StockInfoForLog;
-import com.chaing.domain.inventories.entity.FactoryInventory;
 import com.chaing.domain.inventories.entity.FranchiseInventory;
 import com.chaing.domain.inventories.exception.InventoriesErrorCode;
 import com.chaing.domain.inventories.exception.InventoriesException;
@@ -17,8 +17,6 @@ import com.chaing.domain.inventorylogs.exception.InventoryLogException;
 import com.chaing.domain.inventorylogs.exception.InventoryLogtErrorCode;
 import com.chaing.domain.inventorylogs.service.InventoryLogService;
 import com.chaing.domain.orders.dto.info.OrderInfoForLog;
-import com.chaing.domain.orders.entity.FranchiseOrder;
-import com.chaing.domain.orders.entity.HeadOfficeOrder;
 import com.chaing.domain.orders.service.FranchiseOrderService;
 import com.chaing.domain.products.service.ProductService;
 import com.chaing.domain.returns.entity.ReturnItem;
@@ -80,12 +78,46 @@ public class InventoryLogFacade {
                 inventoryLogInfo = inventoryService.getStockBySerialCodeFromFactory(serialCodes);
                 orderIds = inventoryLogInfo.stream()
                         .map(StockInfoForLog::orderId)
+                        .filter(orderId -> orderId != null)
                         .distinct()
                         .toList();
 
                 if (orderIds.isEmpty()) {
-                    throw new InventoriesException(InventoriesErrorCode.INVALID_LOCATION_ID);
+                    List<InboundProductIdInfo> inboundProductIdInfos = inventoryService.getProductIdFromFactory(serialCodes);
+
+                    List<Long> productIds = inboundProductIdInfos.stream()
+                            .map(InboundProductIdInfo::productId)
+                            .toList();
+
+                    Map<Long, ProductInfo> productInfoMap = productIds.isEmpty()
+                            ? Map.of()
+                            : productService.getProductInfos(productIds);
+
+                    List<InventoryLogCreateRequest> logs = new ArrayList<>();
+
+                    for(InboundProductIdInfo info : inboundProductIdInfos){
+                        InventoryLogCreateRequest log = new InventoryLogCreateRequest(
+                                info.productId(),
+                                productInfoMap.get(info.productId()).productName(),
+                                "",
+                                "",
+                                status,
+                                info.quantity().intValue(),
+                                LocationType.FACTORY,
+                                FACTORY_ID,
+                                LocationType.FACTORY,
+                                FACTORY_ID,
+                                ActorType.FACTORY,
+                                FACTORY_ID
+                        );
+                        logs.add(log);
+                    }
+                    if (!logs.isEmpty()) {
+                        inventoryLogService.recordInventoryLog(logs);
+                    }
+                    return;
                 }
+
                 orderInfos = franchiseOrderService.getOrderInfoForLog(orderIds);
                 break;
 
@@ -108,7 +140,12 @@ public class InventoryLogFacade {
                 .distinct()
                 .toList();
 
-        Map<String, Long> quantityByBoxCode = inventoryService.getFactoryQuantityByBoxCodes(boxCodes);
+        // 박스당 속해있는 수
+        Map<String, Long> quantityByBoxCode = switch (role) {
+            case "FRANCHISE" -> inventoryService.getFranchiseQuantityByBoxCodes(unitId, boxCodes);
+            case "FACTORY" -> inventoryService.getFactoryQuantityByBoxCodes(boxCodes);
+            default -> Map.of();
+        };
 
         List<InventoryLogCreateRequest> logs = new ArrayList<>();
 
@@ -139,7 +176,7 @@ public class InventoryLogFacade {
                 case "FACTORY" -> new InventoryLogCreateRequest(
                         stock.productId(),
                         productName,
-                        null,
+                        stock.boxCode() != null ? stock.boxCode() : "",
                         orderInfo.orderCode(),
                         status,
                         quantity.intValue(),

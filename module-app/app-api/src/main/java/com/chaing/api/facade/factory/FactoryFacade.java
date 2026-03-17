@@ -94,7 +94,7 @@ public class FactoryFacade {
 
         Page<FactoryOrderResponse> result = new PageImpl<>(content, pageable, page.getTotalElements());
         writePageCache(cacheKey, result);
-        return new PageImpl<>(content, pageable, page.getTotalElements());
+        return result;
     }
 
     // 발주 전체/대기 조회 (기존)

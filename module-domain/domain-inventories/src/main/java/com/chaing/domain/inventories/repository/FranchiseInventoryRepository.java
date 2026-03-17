@@ -44,7 +44,6 @@ public interface FranchiseInventoryRepository extends JpaRepository<FranchiseInv
             @Param("franchiseId") Long franchiseId,
             @Param("status") LogType status);
 
-    @Query
     List<FranchiseInventory> getAllByFranchiseIdAndSerialCodeIn(
             @Param("franchiseId") Long franchiseId,
             @Param("serialCodes") List<String> serialCodes);

@@ -77,6 +77,27 @@ public class MinioService {
         }
     }
 
+    // 파일 존재 여부 확인 (MinIO stat)
+    public boolean objectExists(String fileName, BucketName bucket) {
+        try {
+            minioClient.statObject(
+                    io.minio.StatObjectArgs.builder()
+                            .bucket(bucket.getBucketName())
+                            .object(fileName)
+                            .build());
+            return true;
+        } catch (io.minio.errors.ErrorResponseException e) {
+            if ("NoSuchKey".equals(e.errorResponse().code())) {
+                return false;
+            }
+            log.error("MinIO statObject error for key '{}': {}", fileName, e.getMessage());
+            return false;
+        } catch (Exception e) {
+            log.error("MinIO objectExists check failed for key '{}': {}", fileName, e.getMessage());
+            return false;
+        }
+    }
+
     // 이미지 조회 URL 생성
     public String getFileUrl(String fileName, BucketName bucket) {
         if (fileName == null || fileName.isBlank()) {

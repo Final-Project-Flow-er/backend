@@ -644,7 +644,12 @@ public class HQSettlementFacade {
                                                 com.chaing.domain.settlements.exception.SettlementErrorCode.SETTLEMENT_DATA_EMPTY);
                         }
 
-                        byte[] pdfBytes = fileService.createDailyReceiptPdf(currentReceipt, currentLines);
+                        // 가맹점명 조회
+                        String franchiseName = franchiseRepository.findById(franchiseId)
+                                .map(com.chaing.domain.businessunits.entity.Franchise::getName)
+                                .orElse("Unknown Store");
+
+                        byte[] pdfBytes = fileService.createDailyReceiptPdf(currentReceipt, currentLines, franchiseName);
 
                         // 4. MinIO 업로드 (확정 데이터면 daily, 아니면 provisional 폴더)
                         String folder = receiptOpt.isPresent() ? "settlement/daily/" : "settlement/provisional/";
@@ -955,8 +960,13 @@ public class HQSettlementFacade {
                 com.chaing.domain.settlements.entity.MonthlySettlement provisionalSettlement = aggregateMonthlySettlement(
                                 franchiseId, month, receipts);
 
+                // 가맹점명 조회
+                String franchiseName = franchiseRepository.findById(franchiseId)
+                        .map(com.chaing.domain.businessunits.entity.Franchise::getName)
+                        .orElse("Unknown Store");
+
                 // 3. PDF 생성
-                byte[] pdfBytes = fileService.createMonthlyReceiptPdf(provisionalSettlement, vouchers);
+                byte[] pdfBytes = fileService.createMonthlyReceiptPdf(provisionalSettlement, vouchers, franchiseName);
 
                 // 4. MinIO 업로드
                 String fileName = "settlement/provisional/FR_" + franchiseId + "_" + month + "_Preview_"

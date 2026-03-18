@@ -14,6 +14,12 @@ import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.layout.element.Table;
 import com.itextpdf.layout.properties.UnitValue;
 import com.itextpdf.io.font.PdfEncodings;
+import com.itextpdf.kernel.geom.PageSize;
+import com.itextpdf.layout.properties.TextAlignment;
+import com.itextpdf.layout.borders.Border;
+import com.itextpdf.kernel.colors.DeviceRgb;
+import com.itextpdf.layout.borders.SolidBorder;
+import com.itextpdf.kernel.colors.ColorConstants;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -33,55 +39,74 @@ import java.util.List;
 public class SettlementFileServiceImpl implements SettlementFileService {
 
     @Override
-    public byte[] createDailyReceiptPdf(DailySettlementReceipt receipt, List<DailyReceiptLine> lines) {
+    public byte[] createDailyReceiptPdf(DailySettlementReceipt receipt, List<DailyReceiptLine> lines, String franchiseName) {
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
             PdfWriter writer = new PdfWriter(baos);
             PdfDocument pdf = new PdfDocument(writer);
-            Document document = new Document(pdf);
+            Document document = new Document(pdf, PageSize.A4);
+            document.setMargins(40, 40, 40, 40);
 
-            // 1. 폰트 로드 (실패 시 IllegalStateException 발생하여 즉시 중단)
             PdfFont font = loadKoreanFont();
             document.setFont(font);
 
-            document.add(new Paragraph("Daily Settlement Receipt").setBold().setFontSize(20));
-            document.add(new Paragraph("가맹점 ID: " + receipt.getFranchiseId()));
-            document.add(new Paragraph("정산 일자: " + receipt.getSettlementDate()));
-            document.add(new Paragraph("--------------------------------------------"));
-            document.add(new Paragraph("1. 총 매출액: " + receipt.getTotalSaleAmount() + "원"));
-            document.add(new Paragraph("2. 차감 내역:"));
-            document.add(new Paragraph("   - 발주 대금: -" + receipt.getOrderAmount() + "원"));
-            document.add(new Paragraph("   - 정산 수수료: -" + receipt.getCommissionFee() + "원"));
-            document.add(new Paragraph("   - 배송비: -" + receipt.getDeliveryFee() + "원"));
-            document.add(new Paragraph("   - 본사 손실액: -" + receipt.getLossAmount() + "원"));
-            document.add(new Paragraph("3. 가산 내역:"));
-            document.add(new Paragraph("   - 반품 환급액: +" + receipt.getRefundAmount() + "원"));
-            document.add(new Paragraph("--------------------------------------------"));
-            document.add(new Paragraph("최종 정산 금액: " + receipt.getFinalAmount() + "원").setBold().setFontSize(14));
+            // 색상 정의
+            DeviceRgb navy = new DeviceRgb(0, 21, 41);
+            DeviceRgb blueGray = new DeviceRgb(69, 90, 100);
+            DeviceRgb lightGray = new DeviceRgb(240, 242, 245);
 
-            document.add(new Paragraph("\n[상세 내역]")
-                    .setFontSize(14)
-                    .setBold());
+            // 1. 헤더 영역
+            Table headerTable = new Table(UnitValue.createPercentArray(new float[]{70, 30})).useAllAvailableWidth();
+            headerTable.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph("DAILY SETTLEMENT REPORT")
+                    .setBold().setFontSize(24).setFontColor(navy)).setBorder(Border.NO_BORDER).setVerticalAlignment(com.itextpdf.layout.properties.VerticalAlignment.MIDDLE));
+            headerTable.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(franchiseName + "\n" + "ID: " + receipt.getFranchiseId())
+                    .setFontSize(10).setFontColor(blueGray).setTextAlignment(TextAlignment.RIGHT)).setBorder(Border.NO_BORDER));
+            document.add(headerTable);
+            
+            document.add(new Paragraph("정산 일자: " + receipt.getSettlementDate().toString())
+                    .setFontSize(10).setFontColor(blueGray).setTextAlignment(TextAlignment.RIGHT).setMarginBottom(20));
 
-            // 5개 컬럼: 유형, 상품/내역, 수량, 단가, 합계
-            float[] columnWidths = { 80, 180, 50, 80, 100 };
-            Table table = new Table(UnitValue.createPointArray(columnWidths));
-            table.setWidth(UnitValue.createPercentValue(100));
+            // 2. 요약 정산 섹션 (강조 박스)
+            Table summaryBox = new Table(1).useAllAvailableWidth();
+            summaryBox.setMarginBottom(30);
+            com.itextpdf.layout.element.Cell summaryCell = new com.itextpdf.layout.element.Cell()
+                    .setBackgroundColor(lightGray).setPadding(20).setBorder(new SolidBorder(navy, 1f));
+            
+            summaryCell.add(new Paragraph("최종 정산 금액").setFontSize(12).setFontColor(navy).setBold().setTextAlignment(TextAlignment.CENTER));
+            summaryCell.add(new Paragraph(formatCurrency(receipt.getFinalAmount()))
+                    .setFontSize(32).setBold().setFontColor(navy).setTextAlignment(TextAlignment.CENTER));
+            
+            summaryBox.addCell(summaryCell);
+            document.add(summaryBox);
 
-            table.addCell("유형").setBold();
-            table.addCell("상품/내역").setBold();
-            table.addCell("수량").setBold();
-            table.addCell("단가").setBold();
-            table.addCell("합계").setBold();
+            // 3. 상세 항목 리스트
+            document.add(new Paragraph("정산 상세 내역").setBold().setFontSize(14).setFontColor(navy).setMarginBottom(10));
+            Table itemTable = new Table(UnitValue.createPercentArray(new float[]{60, 40})).useAllAvailableWidth();
+            itemTable.setMarginBottom(20);
 
-            for (DailyReceiptLine line : lines) {
-                table.addCell(line.getLineType().name());
-                table.addCell(line.getDescription());
-                table.addCell(line.getQuantity() != null ? line.getQuantity().toString() : "-");
-                table.addCell(line.getUnitPrice() != null ? line.getUnitPrice().toString() + "원" : "-");
-                table.addCell(line.getAmount().toString() + "원");
+            addReportRow(itemTable, "총 매출액", receipt.getTotalSaleAmount(), false, navy, blueGray);
+            addReportRow(itemTable, "반품 환급액", receipt.getRefundAmount(), false, navy, blueGray);
+            addReportRow(itemTable, "발주 대금", receipt.getOrderAmount(), true, navy, blueGray);
+            addReportRow(itemTable, "정산 수수료", receipt.getCommissionFee(), true, navy, blueGray);
+            addReportRow(itemTable, "배송비", receipt.getDeliveryFee(), true, navy, blueGray);
+            addReportRow(itemTable, "본사 손실액", receipt.getLossAmount(), true, navy, blueGray);
+            addReportRow(itemTable, "기타 조정", receipt.getAdjustmentAmount(), false, navy, blueGray);
+
+            document.add(itemTable);
+
+            // 4. 상품별 판매 내역
+            if (lines != null && !lines.isEmpty()) {
+                document.add(new Paragraph("상품별 상세 내역").setBold().setFontSize(14).setFontColor(navy).setMarginTop(20).setMarginBottom(10));
+                Table table = new Table(UnitValue.createPercentArray(new float[]{60, 40})).useAllAvailableWidth();
+                for (DailyReceiptLine line : lines) {
+                    table.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(line.getDescription()).setFontSize(9).setFontColor(blueGray)).setBorder(Border.NO_BORDER).setBorderBottom(new SolidBorder(ColorConstants.LIGHT_GRAY, 0.5f)));
+                    table.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(formatCurrency(line.getAmount())).setFontSize(9).setFontColor(blueGray)).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER).setBorderBottom(new SolidBorder(ColorConstants.LIGHT_GRAY, 0.5f)));
+                }
+                document.add(table);
             }
 
-            document.add(table);
+            document.add(new Paragraph("\n\n본 명세서는 시스템에 의해 자동 생성된 월간 정산 공식 문서입니다.")
+                    .setFontSize(8).setFontColor(ColorConstants.GRAY).setTextAlignment(TextAlignment.CENTER).setMarginTop(30));
+
             document.close();
             return baos.toByteArray();
         } catch (IOException e) {
@@ -89,6 +114,7 @@ public class SettlementFileServiceImpl implements SettlementFileService {
             throw new RuntimeException("PDF generation failed", e);
         }
     }
+
 
     @Override
     public byte[] createMonthlySettlementExcel(List<MonthlySettlement> settlements) {
@@ -167,47 +193,63 @@ public class SettlementFileServiceImpl implements SettlementFileService {
     }
 
     @Override
-    public byte[] createMonthlyReceiptPdf(MonthlySettlement settlement, List<SettlementVoucher> vouchers) {
+    public byte[] createMonthlyReceiptPdf(MonthlySettlement settlement, List<SettlementVoucher> vouchers, String franchiseName) {
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
             PdfWriter writer = new PdfWriter(baos);
             PdfDocument pdf = new PdfDocument(writer);
-            Document document = new Document(pdf);
+            Document document = new Document(pdf, PageSize.A4);
+            document.setMargins(40, 40, 40, 40);
 
-            // 1. 폰트 로드 (실패 시 IllegalStateException 발생하여 즉시 중단)
             PdfFont font = loadKoreanFont();
             document.setFont(font);
 
-            document.add(new Paragraph("Monthly Settlement Receipt").setBold().setFontSize(20));
-            document.add(new Paragraph("가맹점 ID: " + settlement.getFranchiseId()));
-            document.add(new Paragraph("정산 월: " + settlement.getSettlementMonth()));
-            document.add(new Paragraph("--------------------------------------------"));
-            document.add(new Paragraph("1. 총 매출액: " + settlement.getTotalSaleAmount() + "원"));
-            document.add(new Paragraph("2. 차감 내역:"));
-            document.add(new Paragraph("   - 발주 대금: -" + settlement.getOrderAmount() + "원"));
-            document.add(new Paragraph("   - 정산 수수료: -" + settlement.getCommissionFee() + "원"));
-            document.add(new Paragraph("   - 배송비: -" + settlement.getDeliveryFee() + "원"));
-            document.add(new Paragraph("   - 본사 손실액: -" + settlement.getLossAmount() + "원"));
-            document.add(new Paragraph("3. 가산 내역:"));
-            document.add(new Paragraph("   - 반품 환급액: +" + settlement.getRefundAmount() + "원"));
-            document.add(new Paragraph("--------------------------------------------"));
-            document.add(new Paragraph("최종 정산 금액: " + settlement.getFinalSettlementAmount() + "원").setBold()
-                    .setFontSize(14));
+            // 색상 정의
+            DeviceRgb navy = new DeviceRgb(0, 21, 41);
+            DeviceRgb blueGray = new DeviceRgb(69, 90, 100);
+            DeviceRgb lightGray = new DeviceRgb(240, 242, 245);
 
-            document.add(new Paragraph("\n[상세 전표 목록]"));
-            Table table = new Table(UnitValue.createPointArray(new float[] { 100, 80, 150, 100 }));
-            table.addCell("날짜");
-            table.addCell("유형");
-            table.addCell("설명");
-            table.addCell("금액");
+            // 1. 헤더 영역
+            Table headerTable = new Table(UnitValue.createPercentArray(new float[]{70, 30})).useAllAvailableWidth();
+            headerTable.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph("MONTHLY SETTLEMENT REPORT")
+                    .setBold().setFontSize(24).setFontColor(navy)).setBorder(Border.NO_BORDER).setVerticalAlignment(com.itextpdf.layout.properties.VerticalAlignment.MIDDLE));
+            headerTable.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(franchiseName + "\n" + "ID: " + settlement.getFranchiseId())
+                    .setFontSize(10).setFontColor(blueGray).setTextAlignment(TextAlignment.RIGHT)).setBorder(Border.NO_BORDER));
+            document.add(headerTable);
+            
+            document.add(new Paragraph("정산 월: " + settlement.getSettlementMonth().toString())
+                    .setFontSize(10).setFontColor(blueGray).setTextAlignment(TextAlignment.RIGHT).setMarginBottom(20));
 
-            for (SettlementVoucher v : vouchers) {
-                table.addCell(v.getOccurredAt().toLocalDate().toString());
-                table.addCell(v.getVoucherType().name());
-                table.addCell(v.getDescription());
-                table.addCell(v.getAmount().toString() + "원");
-            }
+            // 2. 요약 정산 섹션 (강조 박스)
+            Table summaryBox = new Table(1).useAllAvailableWidth();
+            summaryBox.setMarginBottom(30);
+            com.itextpdf.layout.element.Cell summaryCell = new com.itextpdf.layout.element.Cell()
+                    .setBackgroundColor(lightGray).setPadding(20).setBorder(new SolidBorder(navy, 1f));
+            
+            summaryCell.add(new Paragraph("당월 최종 정산 금액").setFontSize(12).setFontColor(navy).setBold().setTextAlignment(TextAlignment.CENTER));
+            summaryCell.add(new Paragraph(formatCurrency(settlement.getFinalSettlementAmount()))
+                    .setFontSize(32).setBold().setFontColor(navy).setTextAlignment(TextAlignment.CENTER));
+            
+            summaryBox.addCell(summaryCell);
+            document.add(summaryBox);
 
-            document.add(table);
+            // 3. 상세 항목 리스트
+            document.add(new Paragraph("정산 상세 내역").setBold().setFontSize(14).setFontColor(navy).setMarginBottom(10));
+            Table itemTable = new Table(UnitValue.createPercentArray(new float[]{60, 40})).useAllAvailableWidth();
+            itemTable.setMarginBottom(20);
+
+            addReportRow(itemTable, "총 매출액", settlement.getTotalSaleAmount(), false, navy, blueGray);
+            addReportRow(itemTable, "반품 환급액", settlement.getRefundAmount(), false, navy, blueGray);
+            addReportRow(itemTable, "발주 대금", settlement.getOrderAmount(), true, navy, blueGray);
+            addReportRow(itemTable, "정산 수수료", settlement.getCommissionFee(), true, navy, blueGray);
+            addReportRow(itemTable, "배송비", settlement.getDeliveryFee(), true, navy, blueGray);
+            addReportRow(itemTable, "본사 손실액", settlement.getLossAmount(), true, navy, blueGray);
+            addReportRow(itemTable, "기타 조정", settlement.getAdjustmentAmount(), false, navy, blueGray);
+
+            document.add(itemTable);
+
+            document.add(new Paragraph("\n\n본 명세서는 시스템에 의해 자동 생성된 월간 정산 공식 문서입니다.")
+                    .setFontSize(8).setFontColor(ColorConstants.GRAY).setTextAlignment(TextAlignment.CENTER).setMarginTop(30));
+
             document.close();
             return baos.toByteArray();
         } catch (IOException e) {
@@ -215,6 +257,7 @@ public class SettlementFileServiceImpl implements SettlementFileService {
             throw new RuntimeException("Monthly PDF generation failed", e);
         }
     }
+
 
     @Override
     public byte[] createHQSettlementDailyPdf(java.time.LocalDate date, List<DailySettlementReceipt> receipts) {
@@ -400,5 +443,32 @@ public class SettlementFileServiceImpl implements SettlementFileService {
             log.error("[CRITICAL] Failed to load Korean font '{}': {}", fontPath, e.getMessage());
             throw new IllegalStateException("한글 폰트 로드 실패: " + fontPath, e);
         }
+    }
+
+    private void addReportRow(Table table, String label, BigDecimal amount, boolean isDeduction, DeviceRgb navy, DeviceRgb blueGray) {
+        if (amount == null) amount = BigDecimal.ZERO;
+        
+        // 0원인 경우 흐리게 처리
+        com.itextpdf.kernel.colors.Color fontColor = (amount.compareTo(BigDecimal.ZERO) == 0) ? ColorConstants.LIGHT_GRAY : blueGray;
+        
+        table.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(label).setFontSize(10).setFontColor(fontColor)).setBorder(Border.NO_BORDER).setPadding(5));
+        
+        String sign = "";
+        if (amount.compareTo(BigDecimal.ZERO) != 0) {
+            if (isDeduction) sign = "-";
+            else if (amount.compareTo(BigDecimal.ZERO) > 0) sign = "+";
+        }
+        
+        String value = sign + formatCurrency(amount.abs());
+        table.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(value).setFontSize(10).setBold().setFontColor(fontColor))
+                .setTextAlignment(TextAlignment.RIGHT)
+                .setBorder(Border.NO_BORDER)
+                .setPadding(5));
+    }
+
+    private String formatCurrency(BigDecimal amount) {
+        if (amount == null) return "0원";
+        java.text.DecimalFormat df = new java.text.DecimalFormat("#,###");
+        return df.format(amount.longValue()) + "원";
     }
 }

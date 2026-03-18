@@ -11,7 +11,7 @@ public interface SettlementFileService {
 
     // 일별 정산 영수증 PDF 생성
 
-    byte[] createDailyReceiptPdf(DailySettlementReceipt receipt, List<DailyReceiptLine> lines);
+    byte[] createDailyReceiptPdf(DailySettlementReceipt receipt, List<DailyReceiptLine> lines, String franchiseName);
 
     /**
      * 월별 정산 내역 엑셀 생성 (본사/요약용)
@@ -26,7 +26,7 @@ public interface SettlementFileService {
     /**
      * 월별 정산 영수증 PDF 생성
      */
-    byte[] createMonthlyReceiptPdf(MonthlySettlement settlement, List<SettlementVoucher> vouchers);
+    byte[] createMonthlyReceiptPdf(MonthlySettlement settlement, List<SettlementVoucher> vouchers, String franchiseName);
 
     byte[] createHQSettlementDailyPdf(java.time.LocalDate date, List<DailySettlementReceipt> receipts);
 

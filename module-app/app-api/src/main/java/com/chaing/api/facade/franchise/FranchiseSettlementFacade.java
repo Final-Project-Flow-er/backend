@@ -713,8 +713,13 @@ public class FranchiseSettlementFacade {
                                 java.util.Optional<SettlementDocument> existingDoc = documentService
                                                 .getDailyDocument(receipt.getDailyReceiptId());
                                 if (existingDoc.isPresent()) {
-                                        return minioService.getFileUrl(existingDoc.get().getObjectKey(),
-                                                        BucketName.SETTLEMENTS);
+                                        String existingKey = existingDoc.get().getObjectKey();
+                                        // MinIO에 실제 파일이 존재하는지 확인 (유령 레코드 방지)
+                                        if (minioService.objectExists(existingKey, BucketName.SETTLEMENTS)) {
+                                                return minioService.getFileUrl(existingKey, BucketName.SETTLEMENTS);
+                                        }
+                                        log.warn("[PDF] SettlementDocument record exists (id={}) but file not found in MinIO (key={}). Regenerating.",
+                                                        existingDoc.get().getSettlementDocumentId(), existingKey);
                                 }
                         }
 
@@ -729,7 +734,12 @@ public class FranchiseSettlementFacade {
                                 throw new SettlementException(SettlementErrorCode.SETTLEMENT_DATA_EMPTY);
                         }
 
-                        byte[] pdfBytes = fileService.createDailyReceiptPdf(currentReceipt, currentLines);
+                        // 가맹점명 조회
+                        String franchiseName = franchiseRepository.findById(franchiseId)
+                                .map(com.chaing.domain.businessunits.entity.Franchise::getName)
+                                .orElse("Unknown Store");
+
+                        byte[] pdfBytes = fileService.createDailyReceiptPdf(currentReceipt, currentLines, franchiseName);
 
                         // 4. MinIO 업로드 (확정 데이터면 daily, 아니면 provisional 폴더)
                         String folder = receiptOpt.isPresent() ? "settlement/daily/" : "settlement/provisional/";
@@ -784,14 +794,19 @@ public class FranchiseSettlementFacade {
                                 java.util.List<com.chaing.domain.settlements.entity.SettlementDocument> documents = documentService
                                                 .getMonthlyDocuments(settlement.getMonthlySettlementId());
 
-                                String existingKey = documents.stream()
+                                SettlementDocument existingDoc = documents.stream()
                                                 .filter(doc -> doc.getDocumentType() == DocumentType.RECEIPT_PDF)
                                                 .findFirst()
-                                                .map(com.chaing.domain.settlements.entity.SettlementDocument::getObjectKey)
                                                 .orElse(null);
 
-                                if (existingKey != null) {
-                                        return minioService.getFileUrl(existingKey, BucketName.SETTLEMENTS);
+                                if (existingDoc != null) {
+                                        String existingKey = existingDoc.getObjectKey();
+                                        // MinIO에 실제 파일이 존재하는지 확인 (유령 레코드 방지)
+                                        if (minioService.objectExists(existingKey, BucketName.SETTLEMENTS)) {
+                                                return minioService.getFileUrl(existingKey, BucketName.SETTLEMENTS);
+                                        }
+                                        log.warn("[PDF] Monthly SettlementDocument record exists (id={}) but file not found in MinIO (key={}). Regenerating.",
+                                                        existingDoc.getSettlementDocumentId(), existingKey);
                                 }
                         }
 
@@ -879,8 +894,13 @@ public class FranchiseSettlementFacade {
                 // 2. 가집계 MonthlySettlement 객체 생성
                 MonthlySettlement provisionalSettlement = aggregateMonthlySettlement(franchiseId, month, receipts);
 
+                // 가맹점명 조회
+                String franchiseName = franchiseRepository.findById(franchiseId)
+                        .map(com.chaing.domain.businessunits.entity.Franchise::getName)
+                        .orElse("Unknown Store");
+
                 // 3. PDF 생성
-                byte[] pdfBytes = fileService.createMonthlyReceiptPdf(provisionalSettlement, vouchers);
+                byte[] pdfBytes = fileService.createMonthlyReceiptPdf(provisionalSettlement, vouchers, franchiseName);
 
                 // 4. MinIO 업로드
                 String fileName = "settlement/provisional/FR_" + franchiseId + "_" + month + "_Preview_"

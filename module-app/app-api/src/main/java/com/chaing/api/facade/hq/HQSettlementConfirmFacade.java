@@ -3,6 +3,15 @@ package com.chaing.api.facade.hq;
 import com.chaing.api.dto.hq.settlement.request.HQSettlementConfirmMonthlyRequest;
 import com.chaing.api.dto.hq.settlement.response.HQConfirmFranchiseResponse;
 import com.chaing.api.dto.hq.settlement.response.HQConfirmStatusCountResponse;
+import com.chaing.domain.businessunits.entity.Franchise;
+import com.chaing.domain.businessunits.repository.FranchiseRepository;
+import com.chaing.domain.settlements.entity.DailySettlementReceipt;
+import com.chaing.domain.settlements.entity.MonthlySettlement;
+import com.chaing.domain.settlements.enums.SettlementStatus;
+import com.chaing.domain.settlements.repository.interfaces.MonthlySettlementRepository;
+import com.chaing.domain.settlements.repository.interfaces.SettlementAdjustmentRepository;
+import com.chaing.domain.settlements.service.DailySettlementService;
+import com.chaing.domain.settlements.service.MonthlySettlementService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -11,7 +20,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.YearMonth;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -21,36 +32,74 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class HQSettlementConfirmFacade {
 
-    private final com.chaing.domain.settlements.service.MonthlySettlementService monthlyService;
+    private final MonthlySettlementService monthlyService;
+    private final DailySettlementService dailyService;
+    private final FranchiseRepository franchiseRepository;
+    private final SettlementAdjustmentRepository adjustmentRepository;
+    private final MonthlySettlementRepository monthlyRepo;
 
     // 1. 상단 상태별 카운트 조회
     public HQConfirmStatusCountResponse getMonthlyStatusCounts(YearMonth month) {
-        Map<String, Long> counts = monthlyService.getStatusCounts(month);
-        return HQConfirmStatusCountResponse.of(
-                counts.getOrDefault("CALCULATED", 0L),
-                counts.getOrDefault("CONFIRM_REQUESTED", 0L),
-                counts.getOrDefault("CONFIRMED", 0L));
+        List<Franchise> allFranchises = franchiseRepository.findAll();
+        List<MonthlySettlement> existingSettlements = monthlyService.getAllByMonth(month, null);
+        Map<Long, SettlementStatus> statusMap = existingSettlements.stream()
+                .collect(Collectors.toMap(MonthlySettlement::getFranchiseId, MonthlySettlement::getStatus));
+
+        long draftCount = 0;
+        long requestedCount = 0;
+        long confirmedCount = 0;
+
+        for (Franchise f : allFranchises) {
+            SettlementStatus status = statusMap.getOrDefault(f.getFranchiseId(), SettlementStatus.CALCULATED);
+            if (status == SettlementStatus.CALCULATED) draftCount++;
+            else if (status == SettlementStatus.CONFIRM_REQUESTED) requestedCount++;
+            else if (status == SettlementStatus.CONFIRMED) confirmedCount++;
+        }
+
+        return HQConfirmStatusCountResponse.of(draftCount, requestedCount, confirmedCount);
     }
 
     // 2. 월별 정산 확정 목록 페이징 조회
     public Page<HQConfirmFranchiseResponse> getMonthlyConfirmList(HQSettlementConfirmMonthlyRequest request) {
-        List<com.chaing.domain.settlements.entity.MonthlySettlement> settlements = monthlyService
-                .getAllByMonth(request.month(), request.keyword());
-
-        if (request.status() != null) {
-            settlements = settlements.stream()
-                    .filter(s -> s.getStatus() == request.status())
+        // 모든 가맹점 조회
+        List<Franchise> franchises = franchiseRepository.findAll();
+        if (request.keyword() != null && !request.keyword().trim().isEmpty()) {
+            franchises = franchises.stream()
+                    .filter(f -> f.getName().contains(request.keyword()))
                     .collect(Collectors.toList());
         }
 
-        List<HQConfirmFranchiseResponse> dtos = settlements.stream()
-                .map(s -> HQConfirmFranchiseResponse.of(
-                        s.getFranchiseId(),
-                        "가맹점명 (추후 연동)", // TODO: Franchise API 연동
-                        s.getFinalSettlementAmount().longValue(),
-                        s.getStatus()))
-                .collect(Collectors.toList());
+        List<MonthlySettlement> existingSettlements = monthlyService.getAllByMonth(request.month(), null);
+        Map<Long, MonthlySettlement> settlementMap = existingSettlements.stream()
+                .collect(Collectors.toMap(MonthlySettlement::getFranchiseId, s -> s));
 
+        List<HQConfirmFranchiseResponse> dtos = new ArrayList<>();
+        for (Franchise f : franchises) {
+            MonthlySettlement ms = settlementMap.get(f.getFranchiseId());
+            SettlementStatus status = (ms != null) ? ms.getStatus() : SettlementStatus.CALCULATED;
+            
+            // 상태 필터링
+            if (request.status() != null && status != request.status()) {
+                continue;
+            }
+
+            long finalAmount;
+            if (status == SettlementStatus.CONFIRMED && ms != null) {
+                // 최종 확정된 경우엔 저장된 스냅샷 금액 사용
+                finalAmount = ms.getFinalSettlementAmount().longValue();
+            } else {
+                // 그 외엔(작성중, 확정요청) 실시간 집계 금액 표시
+                finalAmount = calculatePotentialAmount(f.getFranchiseId(), request.month());
+            }
+
+            dtos.add(HQConfirmFranchiseResponse.of(
+                    f.getFranchiseId(),
+                    f.getName(),
+                    finalAmount,
+                    status));
+        }
+
+        // 페이지네이션
         int page = request.page() != null ? request.page() : 0;
         int size = request.size() != null ? request.size() : 20;
         Pageable pageable = PageRequest.of(page, size);
@@ -65,37 +114,90 @@ public class HQSettlementConfirmFacade {
         return new PageImpl<>(dtos.subList(start, end), pageable, dtos.size());
     }
 
-    // 3. 상태 변경: 작성중 -> 확정요청
+    private long calculatePotentialAmount(Long franchiseId, YearMonth month) {
+        List<DailySettlementReceipt> receipts = dailyService.getAllByFranchiseAndDateRange(
+                franchiseId, month.atDay(1), month.atEndOfMonth());
+        
+        BigDecimal totalFinal = receipts.stream()
+                .map(DailySettlementReceipt::getFinalAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        
+        BigDecimal adj = adjustmentRepository.sumAdjustmentAmountByMonth(month.toString(), franchiseId);
+        return totalFinal.add(adj != null ? adj : BigDecimal.ZERO).longValue();
+    }
+
     @Transactional
     public void requestConfirm(Long franchiseId, YearMonth month) {
-        com.chaing.domain.settlements.entity.MonthlySettlement ms = monthlyService.getByFranchiseAndMonth(franchiseId,
-                month);
+        MonthlySettlement ms = getOrCreateMonthlySettlement(franchiseId, month);
         monthlyService.requestConfirm(ms.getMonthlySettlementId());
     }
 
-    // 4. 상태 변경: 확정요청 -> 최종확정 (단건)
     @Transactional
     public void finalizeConfirm(Long franchiseId, YearMonth month) {
-        com.chaing.domain.settlements.entity.MonthlySettlement ms = monthlyService.getByFranchiseAndMonth(franchiseId,
-                month);
+        MonthlySettlement ms = getOrCreateMonthlySettlement(franchiseId, month);
         monthlyService.confirm(ms.getMonthlySettlementId());
     }
 
-    // 5. 상태 롤백: 확정요청/최종확정 -> 작성중
     @Transactional
     public void rollbackToDraft(Long franchiseId, YearMonth month) {
-        com.chaing.domain.settlements.entity.MonthlySettlement ms = monthlyService.getByFranchiseAndMonth(franchiseId,
-                month);
+        MonthlySettlement ms = getOrCreateMonthlySettlement(franchiseId, month);
         monthlyService.rollback(ms.getMonthlySettlementId());
     }
 
-    // 6. 상태 변경: 일괄 최종확정
     @Transactional
     public void finalizeAll(YearMonth month) {
-        List<com.chaing.domain.settlements.entity.MonthlySettlement> settlements = monthlyService.getAllByMonth(month,
-                null);
+        List<MonthlySettlement> settlements = monthlyService.getAllByMonth(month, null);
         settlements.stream()
-                .filter(s -> s.getStatus() == com.chaing.domain.settlements.enums.SettlementStatus.CONFIRM_REQUESTED)
+                .filter(s -> s.getStatus() == SettlementStatus.CONFIRM_REQUESTED)
                 .forEach(s -> monthlyService.confirm(s.getMonthlySettlementId()));
+    }
+
+    private MonthlySettlement getOrCreateMonthlySettlement(Long franchiseId, YearMonth month) {
+        return monthlyService.findByFranchiseAndMonth(franchiseId, month)
+                .orElseGet(() -> {
+                    List<DailySettlementReceipt> receipts = dailyService.getAllByFranchiseAndDateRange(
+                            franchiseId, month.atDay(1), month.atEndOfMonth());
+                    
+                    BigDecimal totalSale = BigDecimal.ZERO;
+                    BigDecimal orderAmt = BigDecimal.ZERO;
+                    BigDecimal delivery = BigDecimal.ZERO;
+                    BigDecimal commission = BigDecimal.ZERO;
+                    BigDecimal refund = BigDecimal.ZERO;
+                    BigDecimal loss = BigDecimal.ZERO;
+                    BigDecimal finalAmt = BigDecimal.ZERO;
+
+                    for (DailySettlementReceipt r : receipts) {
+                        totalSale = totalSale.add(r.getTotalSaleAmount());
+                        orderAmt = orderAmt.add(r.getOrderAmount());
+                        delivery = delivery.add(r.getDeliveryFee());
+                        commission = commission.add(r.getCommissionFee());
+                        refund = refund.add(r.getRefundAmount());
+                        loss = loss.add(r.getLossAmount());
+                        finalAmt = finalAmt.add(r.getFinalAmount());
+                    }
+
+                    BigDecimal adj = adjustmentRepository.sumAdjustmentAmountByMonth(month.toString(), franchiseId);
+                    BigDecimal currentAdj = adj != null ? adj : BigDecimal.ZERO;
+
+                    return createAndSaveMonthlySettlement(franchiseId, month, totalSale, orderAmt, delivery, commission, refund, loss, currentAdj, finalAmt.add(currentAdj));
+                });
+    }
+
+    private MonthlySettlement createAndSaveMonthlySettlement(Long franchiseId, YearMonth month, 
+            BigDecimal totalSale, BigDecimal orderAmt, BigDecimal delivery, BigDecimal commission, BigDecimal refund, BigDecimal loss, BigDecimal adjAmt, BigDecimal finalAmt) {
+        MonthlySettlement ms = MonthlySettlement.builder()
+                .franchiseId(franchiseId)
+                .settlementMonth(month)
+                .totalSaleAmount(totalSale)
+                .orderAmount(orderAmt)
+                .deliveryFee(delivery)
+                .commissionFee(commission)
+                .refundAmount(refund)
+                .lossAmount(loss)
+                .adjustmentAmount(adjAmt)
+                .finalSettlementAmount(finalAmt)
+                .status(SettlementStatus.CALCULATED)
+                .build();
+        return monthlyRepo.save(ms);
     }
 }

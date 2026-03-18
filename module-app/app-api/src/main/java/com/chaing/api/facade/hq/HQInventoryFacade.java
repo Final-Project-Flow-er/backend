@@ -424,7 +424,7 @@ public class HQInventoryFacade {
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public Void decreaseInventory(@Valid InventoryBatchRequest inventoryBatchRequest) {
         List<String> serialCodes = convertsSerialCode(inventoryBatchRequest.boxes());
-        inventoryService.updateShippingStatus(serialCodes);
+        inventoryService.updateShippingStatus(serialCodes, LogType.SHIPPING);
 
         List<InventoryLogCreateRequest> logs = convert(inventoryBatchRequest);
         inventoryLogService.recordInventoryLog(logs);

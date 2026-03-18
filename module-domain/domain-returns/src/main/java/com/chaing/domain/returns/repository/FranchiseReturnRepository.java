@@ -4,6 +4,9 @@ import com.chaing.domain.returns.entity.Returns;
 import com.chaing.domain.returns.enums.ReturnStatus;
 import com.chaing.domain.returns.repository.interfaces.FranchiseReturnRepositoryCustom;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -43,4 +46,9 @@ public interface FranchiseReturnRepository extends JpaRepository<Returns, Long>,
     List<Returns> findAllByFranchiseIdAndDeletedAtIsNull(Long franchiseId);
 
     List<Returns> findAllByReturnIdInAndDeletedAtIsNull(List<Long> returnIds);
+
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE Returns r SET r.returnStatus = :returnStatus WHERE r.returnCode IN :returnCodes")
+    void updateReturnStatusByReturnCodeIn(@Param("returnCodes") List<String> returnCodes,
+            @Param("returnStatus") ReturnStatus returnStatus);
 }

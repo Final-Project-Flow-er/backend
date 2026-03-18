@@ -67,9 +67,89 @@
 
 <br>
 
+## 📝 프로젝트 문서
+
+### ⚡ 요구사항 정의서
+
+<details>
+<summary style="font-size:1.2em;">요구사항 정의서</summary>
+<div markdown="1">
+
+<img width="700" height="745" alt="image" src="https://github.com/user-attachments/assets/203abd45-0447-49d1-b954-cfd0bd375f1a" />
+<img width="700" height="731" alt="image" src="https://github.com/user-attachments/assets/28d5387c-a88d-4534-a012-511a93a4a529" />
+<img width="700" height="761" alt="image" src="https://github.com/user-attachments/assets/20fbda18-127a-4707-9fbc-1903d451266a" />
+<img width="700" height="765" alt="image" src="https://github.com/user-attachments/assets/d664d485-f305-490a-bd8e-3fbdef7c76e9" />
+<img width="700" height="431" alt="image" src="https://github.com/user-attachments/assets/70928ac3-7b13-434b-8bcd-c66487fedbcf" />
+
+</div>
+</details>
+
+
+### ⚡ ERD
+
+<details>
+<summary style="font-size:1.2em;">ERD</summary>
+<div markdown="1">
+
+<img width="2000" alt="image" src="https://github.com/user-attachments/assets/63e01507-7fc2-416d-8d48-6569474a7b49" />
+
+</div>
+</details>
+
+### ⚡ WBS
+
+<details>
+<summary style="font-size:1.2em;">WBS</summary>
+<div markdown="1">
+
+<img width="1008" height="826" alt="image" src="https://github.com/user-attachments/assets/02541551-296e-43ac-b28c-041cea26cd57" />
+
+</div>
+</details>
+
+### ⚡API 테스트케이스
+
+<details>
+<summary style="font-size:1.2em;">API 테스트케이스</summary>
+<div markdown="1">
+
+<img width="700" alt="image" src="https://github.com/user-attachments/assets/38c1c675-0613-4c76-a4af-508448df9866" />
+<img width="700" alt="image" src="https://github.com/user-attachments/assets/e58f34e8-800a-4c26-96c5-10e41541a1b6" />
+<img width="700" alt="image" src="https://github.com/user-attachments/assets/226aa8d9-26ca-4ade-a037-1c65762ad495" />
+<img width="700" alt="image" src="https://github.com/user-attachments/assets/49166126-3a81-4025-957f-e1e3a5d9ed60" />
+<img width="700" alt="image" src="https://github.com/user-attachments/assets/5b5d2350-8a56-4d7b-a93a-490f7780fa43" />
+<img width="700" alt="image" src="https://github.com/user-attachments/assets/00ff65a4-bbe8-41f9-853a-1ac4242feff5" />
+<img width="700" alt="image" src="https://github.com/user-attachments/assets/4b717a16-3b25-4ccb-a20f-a493aa60dc4e" />
+<img width="700" alt="image" src="https://github.com/user-attachments/assets/b0e30e1b-999a-47d5-aedf-0b797d694d6d" />
+
+</div>
+</details>
+
+### ⚡ API 문서
+
+<details>
+<summary style="font-size:1.2em;">API 문서</summary>
+<div markdown="1">
+
+<img width="500" alt="image" src="https://github.com/user-attachments/assets/d6e11ee1-dcb7-47b1-b472-e898ca0f5bbc" />
+<img width="500" alt="image" src="https://github.com/user-attachments/assets/6927f96e-2cad-412e-9378-1e822c15a31c" />
+<img width="500" alt="image" src="https://github.com/user-attachments/assets/c5d4a1d4-95d7-4329-8337-34734aace578" />
+<img width="500" alt="image" src="https://github.com/user-attachments/assets/f595012f-26ae-4eae-bbed-e02a87c0441a" />
+<img width="500" alt="image" src="https://github.com/user-attachments/assets/f42a26cb-eed4-4615-b35c-3e4625be703a" />
+<img width="500" alt="image" src="https://github.com/user-attachments/assets/aab13dd8-e671-4b41-820a-e4bb859bd1f6" />
+<img width="500" alt="image" src="https://github.com/user-attachments/assets/2c1a326e-4a3d-45e7-bc62-9cd841e0d313" />
+<img width="500" alt="image" src="https://github.com/user-attachments/assets/8cf6b0d9-0103-472e-a360-cb28bebff6bb" />
+<img width="500" alt="image" src="https://github.com/user-attachments/assets/41b5b1af-af86-4949-a067-ce083c47bfe4" />
+<img width="500" alt="image" src="https://github.com/user-attachments/assets/59ff62e9-4588-409b-8850-9b2a36f5776d" />
+
+</div>
+</details>
+
+<br>
+
 ## 📖 개발 가이드 및 컨벤션
 
-## 👥 팀 협업 규칙
+### 👥 팀 협업 규칙
 
 - **데일리 스크럼**: 평일 오전 09:00 (10분 내외)
 - **지라(Jira) 연동**: 작업 시작 전 이슈 생성 및 브랜치(`feat/이슈번호-도메인`) 생성 필수

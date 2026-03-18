@@ -33,7 +33,6 @@ public interface DailySettlementService {
     // 일별 전표 전체 목록 (PDF/Excel용)
     List<DailyReceiptLine> getAllReceiptLines(Long dailyReceiptId);
 
-    // 저장 및 업데이트
+    // 정산 데이터 저장
     DailySettlementReceipt save(DailySettlementReceipt receipt);
-    void saveLines(List<DailyReceiptLine> lines);
 }

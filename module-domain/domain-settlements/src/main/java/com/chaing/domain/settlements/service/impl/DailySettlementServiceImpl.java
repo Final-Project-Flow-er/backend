@@ -85,12 +85,8 @@ public class DailySettlementServiceImpl implements DailySettlementService {
     @Override
     @Transactional
     public DailySettlementReceipt save(DailySettlementReceipt receipt) {
+        log.info("[DEBUG] Saving DailySettlementReceipt for franchiseId: {}, date: {}", 
+                receipt.getFranchiseId(), receipt.getSettlementDate());
         return receiptRepository.save(receipt);
-    }
-
-    @Override
-    @Transactional
-    public void saveLines(List<DailyReceiptLine> lines) {
-        lineRepository.saveAll(lines);
     }
 }

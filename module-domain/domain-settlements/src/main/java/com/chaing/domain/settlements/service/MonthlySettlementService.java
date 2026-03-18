@@ -30,6 +30,6 @@ public interface MonthlySettlementService {
     // 확정 취소 (수정 버튼)
     MonthlySettlement rollback(Long monthlySettlementId);
 
-    // 저장 및 업데이트
+    // 정산 데이터 저장
     MonthlySettlement save(MonthlySettlement settlement);
 }

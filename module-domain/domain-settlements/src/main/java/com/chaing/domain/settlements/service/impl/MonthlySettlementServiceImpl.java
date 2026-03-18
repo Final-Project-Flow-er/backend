@@ -7,6 +7,7 @@ import com.chaing.domain.settlements.exception.SettlementException;
 import com.chaing.domain.settlements.repository.interfaces.MonthlySettlementRepository;
 import com.chaing.domain.settlements.service.MonthlySettlementService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -76,9 +78,12 @@ public class MonthlySettlementServiceImpl implements MonthlySettlementService {
         settlement.rollback(); // 상태 변경: CONFIRM_REQUESTED → CALCULATED
         return repository.save(settlement);
     } // 상태 : 수정 누르면 그 전으로 rollback
+
     @Override
     @Transactional
     public MonthlySettlement save(MonthlySettlement settlement) {
+        log.info("[DEBUG] Saving MonthlySettlement for franchiseId: {}, month: {}", 
+                settlement.getFranchiseId(), settlement.getSettlementMonth());
         return repository.save(settlement);
     }
 }

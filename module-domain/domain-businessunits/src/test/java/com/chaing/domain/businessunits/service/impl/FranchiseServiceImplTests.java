@@ -85,18 +85,20 @@ class FranchiseServiceImplTests {
 
         // given
         Long id = 1L;
-        Franchise franchise = Franchise.builder().franchiseId(id).name("기존").build();
+        Franchise franchise = Franchise.builder().franchiseId(id).name("기존점").build();
         BusinessUnitUpdateCommand command = new BusinessUnitUpdateCommand(
-                "변경", null, null, null, null, null,
+                "새이름", null, null, null, null, null,
                 new BusinessUnitUpdateCommand.FranchiseUpdate(null, null, null, null, null), null);
+
         when(franchiseRepository.findById(id)).thenReturn(Optional.of(franchise));
+        when(franchiseRepository.existsByNameExcludeDeleted("새이름")).thenReturn(false);
 
         // when
         BusinessUnitInternal result = franchiseService.updateInfo(id, command);
 
         // then
-        assertEquals("변경", result.name());
-        verify(franchiseRepository, times(1)).findById(id);
+        assertEquals("새이름", result.name());
+        verify(franchiseRepository).existsByNameExcludeDeleted("새이름");
     }
 
     @Test

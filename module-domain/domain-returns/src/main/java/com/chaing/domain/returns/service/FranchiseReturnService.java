@@ -331,7 +331,7 @@ public class FranchiseReturnService {
                 .collect(Collectors.toMap(
                         HQReturnItemUpdateRequest::boxCode,
                         HQReturnItemUpdateRequest::status,
-                        (a, b) -> a
+                        this::mergeByBoxStatusPriority
                 ));
 
         returnItemStatusByBoxCode.forEach((boxCode, status) -> {
@@ -347,6 +347,13 @@ public class FranchiseReturnService {
         franchiseReturnItemRepository.saveAll(returnItemByBoxCode.values());
 
         return returnItemStatusByBoxCode;
+    }
+
+    private ReturnItemStatus mergeByBoxStatusPriority(ReturnItemStatus current, ReturnItemStatus incoming) {
+        if (current == ReturnItemStatus.NORMAL && incoming != ReturnItemStatus.NORMAL) {
+            return incoming;
+        }
+        return current;
     }
 
     // returnItemStatus를 전부 같은 상태로 수정

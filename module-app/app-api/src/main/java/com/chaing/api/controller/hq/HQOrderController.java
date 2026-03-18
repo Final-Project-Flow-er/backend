@@ -137,4 +137,13 @@ public class HQOrderController {
     ) {
         return ResponseEntity.ok(ApiResponse.success(hqOrderFacade.updateShippingPending(request)));
     }
+
+    @Operation(summary = "발주 접수 가불 판단", description = "가맹점 발주 요청 시 재고가 충분한지 확인 후 가불 판단")
+    @GetMapping("/is-possible")
+    @PreAuthorize("hasRole('HQ')")
+    public ResponseEntity<ApiResponse<HQOrderPossibleResponse>> isPossible(
+            @RequestBody List<String> orderCodes
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(hqOrderFacade.isPossible(orderCodes)));
+    }
 }

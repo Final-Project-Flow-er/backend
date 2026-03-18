@@ -511,6 +511,7 @@ public class HQInventoryFacade {
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public Void disposalInventory(DisposalRequest request, Long locationId) {
         String actorTypeRaw = request.actorType().toUpperCase();
+        String disposalTransactionCode = "DISP-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
 
         // 1) 사용자가 선택한 재고를 boxCode 기준으로 전체 확장
         List<Long> expandedIds = inventoryService.expandInventoryIdsByBoxCode(
@@ -538,7 +539,7 @@ public class HQInventoryFacade {
                         inv.getProductId(),
                         pInfo != null ? pInfo.productName() : "Unknown",
                         inv.getBoxCode(),
-                        null,
+                        disposalTransactionCode,
                         LogType.DISPOSAL,
                         1,
                         LocationType.HQ,
@@ -561,7 +562,7 @@ public class HQInventoryFacade {
                         inv.getProductId(),
                         pInfo != null ? pInfo.productName() : "Unknown",
                         inv.getBoxCode(),
-                        null,
+                        disposalTransactionCode,
                         LogType.DISPOSAL,
                         1,
                         LocationType.FACTORY,
@@ -584,7 +585,7 @@ public class HQInventoryFacade {
                         inv.getProductId(),
                         pInfo != null ? pInfo.productName() : "Unknown",
                         inv.getBoxCode(),
-                        null,
+                        disposalTransactionCode,
                         LogType.DISPOSAL,
                         1,
                         LocationType.FRANCHISE,

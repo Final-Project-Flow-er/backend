@@ -59,6 +59,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @RequiredArgsConstructor
 @Service
@@ -274,6 +275,7 @@ public class FranchiseInventoryFacade {
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public Void disposalInventory(DisposalRequest request, Long locationId) {
         String actorTypeRaw = request.actorType().toUpperCase();
+        String disposalTransactionCode = "DISP-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         List<InventoryLogCreateRequest> logs = new ArrayList<>();
 
         List<Long> expandedIds = inventoryService.expandInventoryIdsByBoxCode(
@@ -298,7 +300,7 @@ public class FranchiseInventoryFacade {
                         inv.getProductId(),
                         pInfo != null ? pInfo.productName() : "Unknown",
                         inv.getBoxCode(),
-                        null,
+                        disposalTransactionCode,
                         LogType.DISPOSAL,
                         1,
                         LocationType.FRANCHISE,

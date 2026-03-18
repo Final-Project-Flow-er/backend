@@ -46,7 +46,7 @@ public class SettlementAdjustment extends BaseEntity {
         private Long franchiseId; // 가맹점 드롭다운
 
         @Enumerated(EnumType.STRING)
-        @Column(name = "voucher_type", nullable = false, length = 30)
+        @Column(name = "voucher_type", nullable = false, length = 50, columnDefinition = "VARCHAR(50)")
         private VoucherType voucherType; // 전표 유형 (기타 조정)
 
         @Column(name = "occurred_at", nullable = false)
@@ -56,7 +56,7 @@ public class SettlementAdjustment extends BaseEntity {
         private String settlementMonth; // 정산 반영월 (예: "2026-04")
 
         @Enumerated(EnumType.STRING)
-        @Column(name = "return_type", length = 30)
+        @Column(name = "return_type", length = 50, columnDefinition = "VARCHAR(50)")
         private com.chaing.domain.returns.enums.ReturnType returnType; // 반품 사유 (오발주, 상품하자 등)
 
         @Builder.Default

@@ -18,6 +18,7 @@ import com.chaing.domain.products.service.ProductService;
 import com.chaing.domain.transports.service.InternalTransportService;
 import com.chaing.external.transport.ExternalTransportService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
@@ -52,9 +53,8 @@ public class OutboundFacade {
     // 재고 상태 변경
     @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100, multiplier = 2))
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
-    public void updateOutboundStatus(@Valid OutboundUpdateRequest request, LogType currentStatus) {
-        List<String> selectedList = request.serialCodes();
-        outboundService.updateStatus(selectedList, currentStatus);
+    public void updateOutboundStatus(@NotEmpty List<String> request, LogType currentStatus) {
+        outboundService.updateStatus(request, currentStatus);
 
         /*
          * System.out.println(currentStatus);
@@ -78,8 +78,11 @@ public class OutboundFacade {
     // 박스 할당
     @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100, multiplier = 2))
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
-    public void assignBoxToInventories(String boxCode, List<String> serialCodes) {
-        outboundService.assignBox(boxCode, serialCodes);
+    public void assignBoxToInventories(String boxCode, Long orderItemId, List<String> serialCodes) {
+
+        Long orderId = orderService.getOrderIdByOrderItemId(orderItemId);
+
+        outboundService.assignBox(boxCode, orderId, orderItemId, serialCodes);
     }
 
     @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100, multiplier = 2))

@@ -411,7 +411,7 @@ public class FranchiseOrderFacade {
             Long franchiseId = userManagementService.getFranchiseIdByUserId(userId);
 
             // franchiseCode
-            String franchiseCode = franchiseService.getById(franchiseId).businessNumber();
+            String franchiseCode = franchiseService.getById(franchiseId).code();
             log.info("franchiseId: {}", franchiseId);
             log.info("userId: {}", userId);
 

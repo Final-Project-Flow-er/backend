@@ -41,6 +41,13 @@ public class FactoryServiceImpl implements BusinessUnitManagementService {
     public BusinessUnitInternal updateInfo(Long id, BusinessUnitUpdateCommand command) {
         Factory factory = factoryRepository.findById(id)
                 .orElseThrow(() -> new BusinessUnitException(BusinessUnitErrorCode.BUSINESS_UNIT_NOT_FOUND));
+
+        if (command.name() != null && !factory.getName().equals(command.name().trim())) {
+            if (factoryRepository.existsByNameExcludeDeleted(command.name().trim())) {
+                throw new BusinessUnitException(BusinessUnitErrorCode.DUPLICATE_BUSINESS_UNIT_NAME);
+            }
+        }
+
         factory.updateFactoryInfo(command);
         return BusinessUnitInternal.from(factory);
     }
@@ -48,6 +55,10 @@ public class FactoryServiceImpl implements BusinessUnitManagementService {
     // 공장 등록
     @Override
     public BusinessUnitInternal create(BusinessUnitCreateCommand command) {
+        if (command.name() != null && factoryRepository.existsByNameExcludeDeleted(command.name().trim())) {
+            throw new BusinessUnitException(BusinessUnitErrorCode.DUPLICATE_BUSINESS_UNIT_NAME);
+        }
+
         String generatedCode = codeGenerator.generateFactoryCode();
         Factory factory = Factory.from(command, generatedCode);
         factoryRepository.save(factory);

@@ -22,4 +22,7 @@ public interface FactoryRepository extends JpaRepository<Factory, Long>, Factory
 
     @Query("SELECT f.factoryId, f.name FROM Factory f WHERE f.factoryId IN :ids")
     List<Object[]> findNamesByIds(@Param("ids") List<Long> ids);
+
+    @Query("SELECT COUNT(f) > 0 FROM Factory f WHERE f.name = :name AND f.deletedAt IS NULL")
+    boolean existsByNameExcludeDeleted(@Param("name") String name);
 }

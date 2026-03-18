@@ -427,21 +427,31 @@ public class SettlementFileServiceImpl implements SettlementFileService {
             ClassPathResource resource = new ClassPathResource(fontPath);
 
             if (!resource.exists()) {
-                log.error("[ERROR] Font file NOT found in classpath: {}", fontPath);
-                throw new java.io.IOException("Font file not found: " + fontPath);
+                log.warn("[WARN] Font file NOT found in classpath: {}. Trying alternative locations...", fontPath);
+                // 런타임 환경에 따라 /를 붙여야 할 수도 있음
+                resource = new ClassPathResource("/" + fontPath);
+            }
+
+            if (!resource.exists()) {
+                log.error("[ERROR] Font file NOT found in any known locations: {}", fontPath);
+                // 마지막 수단: 기본 폰트로 폴백 (한글이 깨질 수 있지만 500 에러는 방지)
+                return PdfFontFactory.createFont(com.itextpdf.io.font.constants.StandardFonts.HELVETICA);
             }
 
             byte[] fontBytes = FileCopyUtils.copyToByteArray(resource.getInputStream());
-            log.info("[DEBUG] Font file loaded. Size: {} bytes, Path: {}", fontBytes.length, fontPath);
+            log.info("[DEBUG] Font file loaded. Size: {} bytes", fontBytes.length);
 
-            log.info("[DEBUG] Creating PdfFont with IDENTITY_H and PREFER_EMBEDDED");
             return PdfFontFactory.createFont(
                     fontBytes,
                     PdfEncodings.IDENTITY_H,
                     PdfFontFactory.EmbeddingStrategy.PREFER_EMBEDDED);
         } catch (Exception e) {
-            log.error("[CRITICAL] Failed to load Korean font '{}': {}", fontPath, e.getMessage());
-            throw new IllegalStateException("한글 폰트 로드 실패: " + fontPath, e);
+            log.error("[CRITICAL] Failed to load Korean font '{}': {}. Falling back to standard HELVETICA.", fontPath, e.getMessage());
+            try {
+                return PdfFontFactory.createFont(com.itextpdf.io.font.constants.StandardFonts.HELVETICA);
+            } catch (IOException io) {
+                throw new IllegalStateException("Critical failure: even StandardFonts cannot be loaded", io);
+            }
         }
     }
 

@@ -76,5 +76,9 @@ public class MonthlySettlementServiceImpl implements MonthlySettlementService {
         settlement.rollback(); // 상태 변경: CONFIRM_REQUESTED → CALCULATED
         return repository.save(settlement);
     } // 상태 : 수정 누르면 그 전으로 rollback
-
+    @Override
+    @Transactional
+    public MonthlySettlement save(MonthlySettlement settlement) {
+        return repository.save(settlement);
+    }
 }

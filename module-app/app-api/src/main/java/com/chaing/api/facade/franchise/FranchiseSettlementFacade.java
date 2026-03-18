@@ -718,10 +718,23 @@ public class FranchiseSettlementFacade {
                                 });
                         }
 
-                        // 3. 현재 정산 데이터 실시간 집계
+                        // 3. 현재 정산 데이터 실시간 집게
                         AggregationResult result = aggregateDailySettlement(franchiseId, date);
-                        DailySettlementReceipt currentReceipt = result.receipt();
+                        DailySettlementReceipt currentReceipt;
                         List<DailyReceiptLine> currentLines = result.lines();
+
+                        // DB에 정산 레코드를 먼저 생성하여 ID 확보 (ID 필수 제약조건 충족)
+                        if (receiptOpt.isEmpty()) {
+                                currentReceipt = receiptService.save(result.receipt());
+                                
+                                // 상세 내역 라인들도 함께 저장 (영수증 PDF와 데이터 정합성 유지)
+                                for (var line : currentLines) {
+                                        line.setDailyReceiptId(currentReceipt.getDailyReceiptId());
+                                }
+                                receiptService.saveLines(currentLines);
+                        } else {
+                                currentReceipt = receiptOpt.get();
+                        }
 
                         // 데이터가 전혀 없는 경우 (매출/발주 모두 0) 예외 처리
                         if (currentReceipt.getTotalSaleAmount().compareTo(BigDecimal.ZERO) == 0 &&
@@ -737,18 +750,18 @@ public class FranchiseSettlementFacade {
                         // 5. PDF 생성
                         byte[] pdfBytes = fileService.createDailyReceiptPdf(currentReceipt, currentLines, franchiseName);
 
-                        // 6. MinIO 업로드 (항상 settlement/daily/ 폴더)
                         String fileName = "settlement/daily/FR_" + franchiseId + "_Daily_" + date + "_"
                                         + System.currentTimeMillis() + ".pdf";
+
                         minioService.uploadFile(pdfBytes, fileName, "application/pdf", BucketName.SETTLEMENTS);
                         String fileUrl = minioService.getFileUrl(fileName, BucketName.SETTLEMENTS);
 
-                        // 7. DB에 메타데이터 저장
                         SettlementDocument.SettlementDocumentBuilder docBuilder = SettlementDocument.builder()
                                         .periodType(PeriodType.DAILY)
                                         .documentType(DocumentType.RECEIPT_PDF)
                                         .documentOwner(DocumentOwner.FRANCHISE)
                                         .franchiseId(franchiseId)
+                                        .dailyReceiptId(currentReceipt.getDailyReceiptId())
                                         .storageProvider("MINIO")
                                         .bucket(BucketName.SETTLEMENTS.getBucketName())
                                         .objectKey(fileName)
@@ -756,10 +769,6 @@ public class FranchiseSettlementFacade {
                                         .fileName(fileName.substring(fileName.lastIndexOf("/") + 1))
                                         .contentType("application/pdf")
                                         .fileSize((long) pdfBytes.length);
-
-                        if (receiptOpt.isPresent()) {
-                                docBuilder.dailyReceiptId(receiptOpt.get().getDailyReceiptId());
-                        }
 
                         documentService.save(docBuilder.build());
                         return fileUrl;
@@ -822,7 +831,8 @@ public class FranchiseSettlementFacade {
                         }
 
                         // 4. 확정 레코드 없으면 실시간 가집계로 PDF 생성 (당월 등)
-                        return generateProvisionalMonthlyPdf(franchiseId, month);
+                        // 가집계 시에도 레코드를 DB에 먼저 생성하여 ID 확보
+                        return saveAndGenerateProvisionalMonthlyPdf(franchiseId, month);
                 } catch (Exception e) {
                         log.error("Failed to generate Monthly Franchise Receipt PDF: ", e);
                         if (e instanceof SettlementException)
@@ -865,7 +875,7 @@ public class FranchiseSettlementFacade {
                 }
         }
 
-        private String generateProvisionalMonthlyPdf(Long franchiseId, YearMonth month) {
+        private String saveAndGenerateProvisionalMonthlyPdf(Long franchiseId, YearMonth month) {
                 // 1. 해당 월의 모든 날짜를 순회하며 데이터 수집 (확정 + 실시간 가집계)
                 LocalDate start = month.atDay(1);
                 LocalDate end = month.atEndOfMonth();
@@ -1000,21 +1010,29 @@ public class FranchiseSettlementFacade {
 
         private MonthlySettlement aggregateMonthlySettlement(Long franchiseId, YearMonth month,
                         List<DailySettlementReceipt> dailyReceipts) {
-                BigDecimal totalSale = dailyReceipts.stream().map(DailySettlementReceipt::getTotalSaleAmount)
+                BigDecimal totalSale = dailyReceipts.stream()
+                                .map(r -> r.getTotalSaleAmount() != null ? r.getTotalSaleAmount() : BigDecimal.ZERO)
                                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-                BigDecimal orderAmount = dailyReceipts.stream().map(DailySettlementReceipt::getOrderAmount)
+                BigDecimal orderAmount = dailyReceipts.stream()
+                                .map(r -> r.getOrderAmount() != null ? r.getOrderAmount() : BigDecimal.ZERO)
                                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-                BigDecimal commissionFee = dailyReceipts.stream().map(DailySettlementReceipt::getCommissionFee)
+                BigDecimal commissionFee = dailyReceipts.stream()
+                                .map(r -> r.getCommissionFee() != null ? r.getCommissionFee() : BigDecimal.ZERO)
                                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-                BigDecimal deliveryFee = dailyReceipts.stream().map(DailySettlementReceipt::getDeliveryFee)
+                BigDecimal deliveryFee = dailyReceipts.stream()
+                                .map(r -> r.getDeliveryFee() != null ? r.getDeliveryFee() : BigDecimal.ZERO)
                                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-                BigDecimal lossAmount = dailyReceipts.stream().map(DailySettlementReceipt::getLossAmount)
+                BigDecimal lossAmount = dailyReceipts.stream()
+                                .map(r -> r.getLossAmount() != null ? r.getLossAmount() : BigDecimal.ZERO)
                                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-                BigDecimal refundAmount = dailyReceipts.stream().map(DailySettlementReceipt::getRefundAmount)
+                BigDecimal refundAmount = dailyReceipts.stream()
+                                .map(r -> r.getRefundAmount() != null ? r.getRefundAmount() : BigDecimal.ZERO)
                                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-                BigDecimal adjustmentAmount = dailyReceipts.stream().map(DailySettlementReceipt::getAdjustmentAmount)
+                BigDecimal adjustmentAmount = dailyReceipts.stream()
+                                .map(r -> r.getAdjustmentAmount() != null ? r.getAdjustmentAmount() : BigDecimal.ZERO)
                                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-                BigDecimal finalAmount = dailyReceipts.stream().map(DailySettlementReceipt::getFinalAmount)
+                BigDecimal finalAmount = dailyReceipts.stream()
+                                .map(r -> r.getFinalAmount() != null ? r.getFinalAmount() : BigDecimal.ZERO)
                                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
                 return MonthlySettlement.builder()
@@ -1270,6 +1288,13 @@ public class FranchiseSettlementFacade {
                                         .build());
                 }
 
+                // Null-safe finalAmount 계산 (모든 항목이 null이 아님을 보장하지만 명시적으로 처리)
+                BigDecimal totalDeductions = orderAmount.add(lossAmount).add(commissionFee).add(deliveryFee);
+                BigDecimal finalAmount = totalSale.subtract(totalDeductions).add(refundAmount);
+
+                log.info("[DEBUG] 정산 금액 산출 - 매출(+): {}, 환급(+): {}, 공제(-): {}, 최종: {}", 
+                                totalSale, refundAmount, totalDeductions, finalAmount);
+
                 // 간소화된 가집계 결과 반환
                 return new AggregationResult(
                                 DailySettlementReceipt.builder()
@@ -1282,11 +1307,7 @@ public class FranchiseSettlementFacade {
                                                 .deliveryFee(deliveryFee)
                                                 .commissionFee(commissionFee)
                                                 .adjustmentAmount(BigDecimal.ZERO)
-                                                .finalAmount(totalSale
-                                                                .subtract(orderAmount.add(lossAmount)
-                                                                                .add(commissionFee)
-                                                                                .add(deliveryFee))
-                                                                .add(refundAmount))
+                                                .finalAmount(finalAmount)
                                                 .build(),
                                 lines);
         }

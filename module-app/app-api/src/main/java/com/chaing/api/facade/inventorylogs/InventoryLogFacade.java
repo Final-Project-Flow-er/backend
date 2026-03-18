@@ -179,7 +179,7 @@ public class InventoryLogFacade {
                         stock.boxCode() != null ? stock.boxCode() : "",
                         orderInfo.orderCode(),
                         status,
-                        quantity.intValue(),
+                        quantityByBoxCode.getOrDefault(stock.boxCode(),1L).intValue(),
                         LocationType.FACTORY,
                         FACTORY_ID,
                         LocationType.FACTORY,

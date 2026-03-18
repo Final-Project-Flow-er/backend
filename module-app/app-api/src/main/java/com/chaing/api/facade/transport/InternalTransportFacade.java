@@ -41,6 +41,7 @@ import org.springframework.util.StringUtils;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static com.chaing.domain.returns.enums.ReturnStatus.ACCEPTED;
@@ -262,26 +263,28 @@ public class InternalTransportFacade {
         transportService.updateDeliveryStatus(orderCodes);
         List<UpdateDeliverStatusInfo> currentStatusInfos = transportService.getDeliveryStatus(orderCodes);
 
-        DeliverStatus status = currentStatusInfos.get(0).currentStatus();
-        List<String> orderCode = currentStatusInfos.stream().map(UpdateDeliverStatusInfo::orderCode).toList();
-        List<String> returnCode = currentStatusInfos.stream().map(UpdateDeliverStatusInfo::returnCode).toList();
+        if (CollectionUtils.isEmpty(currentStatusInfos)) {
+            return;
+        }
 
-        if(CollectionUtils.isEmpty(returnCode) || !StringUtils.hasText(returnCode.get(0))) {
+        DeliverStatus status = currentStatusInfos.get(0).currentStatus();
+        List<String> orderCodeList = currentStatusInfos.stream().map(UpdateDeliverStatusInfo::orderCode).toList();
+        List<String> returnCodeList = currentStatusInfos.stream().map(UpdateDeliverStatusInfo::returnCode).toList();
+
+        if(CollectionUtils.isEmpty(returnCodeList) || !StringUtils.hasText(returnCodeList.get(0))) {
             switch (status) {
                 case IN_TRANSIT:
-                    franchiseOrderService.updateDeliveryStatus(orderCode, FranchiseOrderStatus.SHIPPING);
+                    franchiseOrderService.updateDeliveryStatus(orderCodeList, FranchiseOrderStatus.SHIPPING);
                     break;
                 case DELIVERED:
-                    franchiseOrderService.updateDeliveryStatus(orderCode, FranchiseOrderStatus.COMPLETED);
-                    inventoryService.updateShippingStatus(orderCode, LogType.SHIPPED);
+                    franchiseOrderService.updateDeliveryStatus(orderCodeList, FranchiseOrderStatus.COMPLETED);
+                    inventoryService.updateShippingStatus(orderCodeList, LogType.SHIPPED);
                     break;
             }
         } else {
-            switch (status) {
-                case DELIVERED:
-                    franchiseReturnService.updateDeliveryStatus(returnCode, ReturnStatus.COMPLETED);
-                    inventoryService.updateShippingStatus(orderCode, LogType.SHIPPED);
-                    break;
+            if (Objects.requireNonNull(status) == DeliverStatus.DELIVERED) {
+                franchiseReturnService.updateDeliveryStatus(returnCodeList, ReturnStatus.COMPLETED);
+                inventoryService.updateShippingStatus(orderCodeList, LogType.SHIPPED);
             }
         }
 

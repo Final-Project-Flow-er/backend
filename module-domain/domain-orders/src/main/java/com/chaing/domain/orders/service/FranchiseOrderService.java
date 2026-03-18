@@ -32,6 +32,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.Collections;
@@ -723,6 +724,7 @@ public class FranchiseOrderService {
                 ));
     }
 
+    @Transactional
     public void updateDeliveryStatus(List<String> orderCodes, FranchiseOrderStatus orderStatus) {
         List<FranchiseOrder> orders = franchiseOrderRepository.findAllByOrderCodeInAndDeletedAtIsNull(orderCodes);
 

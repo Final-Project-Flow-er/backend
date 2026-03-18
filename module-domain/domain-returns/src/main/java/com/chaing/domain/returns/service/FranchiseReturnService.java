@@ -494,4 +494,9 @@ public class FranchiseReturnService {
                         selectedReturn.getFranchiseId()
                 )).toList();
     }
+
+    @Transactional
+    public void updateDeliveryStatus(List<String> returnCodes, ReturnStatus deliverStatus) {
+        franchiseReturnRepository.updateReturnStatusByReturnCodeIn(returnCodes, deliverStatus);
+    }
 }

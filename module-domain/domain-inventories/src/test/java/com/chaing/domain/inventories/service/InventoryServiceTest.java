@@ -270,7 +270,7 @@ class InventoryServiceTest {
         List<String> serialCodes = List.of("SERIAL1");
 
         // when
-        inventoryService.updateShippingStatus(serialCodes);
+        inventoryService.updateShippingStatus(serialCodes, LogType.SHIPPING);
 
         // then
         verify(factoryInventoryRepository).updateStatus(eq(serialCodes), eq(LogType.SHIPPING));

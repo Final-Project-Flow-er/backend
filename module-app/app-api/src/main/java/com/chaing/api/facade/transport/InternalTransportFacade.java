@@ -6,20 +6,26 @@ import com.chaing.api.dto.transport.internal.response.TransportCancelResponse;
 import com.chaing.api.dto.transport.internal.response.TransportLogResponse;
 import com.chaing.api.dto.transport.internal.response.UnassignedOrderResponse;
 import com.chaing.api.dto.transport.internal.response.UnassignedReturnResponse;
+import com.chaing.core.enums.LogType;
 import com.chaing.domain.businessunits.dto.internal.BusinessUnitInternal;
 import com.chaing.domain.businessunits.exception.BusinessUnitErrorCode;
 import com.chaing.domain.businessunits.exception.BusinessUnitException;
 import com.chaing.domain.businessunits.service.BusinessUnitService;
+import com.chaing.domain.inventories.service.InventoryService;
 import com.chaing.domain.orders.dto.response.FranchiseOrderForTransitResponse;
+import com.chaing.domain.orders.enums.FranchiseOrderStatus;
 import com.chaing.domain.orders.service.FranchiseOrderService;
 import com.chaing.domain.products.service.ProductService;
 import com.chaing.domain.returns.dto.command.HQReturnCommand;
+import com.chaing.domain.returns.enums.ReturnStatus;
 import com.chaing.domain.returns.service.FranchiseReturnService;
 import com.chaing.domain.transports.dto.DeliveryFeeInfo;
 import com.chaing.domain.transports.dto.OrderInfo;
 import com.chaing.domain.returns.dto.command.FranchiseReturnCommandForTransit;
 import com.chaing.domain.transports.dto.info.TransportLogInfo;
+import com.chaing.domain.transports.dto.info.UpdateDeliverStatusInfo;
 import com.chaing.domain.transports.dto.response.AvailableVehicleInfo;
+import com.chaing.domain.transports.enums.DeliverStatus;
 import com.chaing.domain.transports.exception.TransportErrorCode;
 import com.chaing.domain.transports.exception.TransportException;
 import com.chaing.domain.transports.service.InternalTransportService;
@@ -30,9 +36,12 @@ import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static com.chaing.domain.returns.enums.ReturnStatus.ACCEPTED;
@@ -44,6 +53,7 @@ public class InternalTransportFacade {
 
     private final InternalTransportService transportService;
     private final FranchiseOrderService franchiseOrderService;
+    private final InventoryService inventoryService;
     private final ProductService productService;
     private final BusinessUnitService franchiseServiceImpl;
     private final FranchiseReturnService franchiseReturnService;
@@ -245,11 +255,42 @@ public class InternalTransportFacade {
         );
     }
 
+    @Transactional
     public void updateDeliverStatus(@NotEmpty List<String> orderCodes) {
 
         boolean isPendingOrders = transportService.filterPendingOrders(orderCodes);
 
         transportService.updateDeliveryStatus(orderCodes);
+        List<UpdateDeliverStatusInfo> currentStatusInfos = transportService.getDeliveryStatus(orderCodes);
+
+        if (CollectionUtils.isEmpty(currentStatusInfos)) {
+            return;
+        }
+
+        DeliverStatus status = currentStatusInfos.get(0).currentStatus();
+        List<String> orderCodeList = currentStatusInfos.stream().map(UpdateDeliverStatusInfo::orderCode).toList();
+        List<String> returnCodeList = currentStatusInfos.stream()
+                .map(UpdateDeliverStatusInfo::returnCode)
+                .filter(StringUtils::hasText)
+                .toList();
+
+        if(CollectionUtils.isEmpty(returnCodeList)) {
+            switch (status) {
+                case IN_TRANSIT:
+                    franchiseOrderService.updateDeliveryStatus(orderCodeList, FranchiseOrderStatus.SHIPPING);
+                    break;
+                case DELIVERED:
+                    franchiseOrderService.updateDeliveryStatus(orderCodeList, FranchiseOrderStatus.COMPLETED);
+                    inventoryService.updateShippingStatus(orderCodeList, LogType.SHIPPED);
+                    break;
+            }
+        } else {
+            if (Objects.requireNonNull(status) == DeliverStatus.DELIVERED) {
+                franchiseReturnService.updateDeliveryStatus(returnCodeList, ReturnStatus.COMPLETED);
+                inventoryService.updateShippingStatus(orderCodeList, LogType.SHIPPED);
+            }
+        }
+
         if (isPendingOrders) {
             externalTrackingModule.scheduleDeliveryCompletion(orderCodes);
         }

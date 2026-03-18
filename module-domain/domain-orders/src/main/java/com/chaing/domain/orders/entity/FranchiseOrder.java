@@ -81,7 +81,8 @@ public class FranchiseOrder extends BaseEntity {
     private LocalDateTime deliveryDate;
 
     @Column(nullable = false)
-    private String deliveryTime;
+    @Builder.Default
+    private String deliveryTime = "09:00";
 
     @Column
     private String cancelledReason;

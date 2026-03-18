@@ -18,10 +18,10 @@ import com.chaing.domain.inventories.exception.InventoriesErrorCode;
 import com.chaing.domain.inventories.exception.InventoriesException;
 import com.chaing.domain.inventories.service.InventoryService;
 import com.chaing.domain.inventories.service.inbound.InboundService;
-import com.chaing.domain.inventorylogs.service.InventoryLogService;
 import com.chaing.domain.orders.dto.response.FranchiseOrderForTransitResponse;
 import com.chaing.domain.orders.service.FranchiseOrderService;
 import com.chaing.domain.products.service.ProductService;
+import com.chaing.domain.transports.service.InternalTransportService;
 import com.chaing.domain.users.enums.UserRole;
 import jakarta.validation.Valid;
 import lombok.Getter;
@@ -53,6 +53,7 @@ public class InboundFacade {
     private final FranchiseOrderService orderService;
     private final InventoryService inventoryService;
     private final InventoryLogFacade inventoryLogFacade;
+    private final InternalTransportService transportService;
 
     @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100, multiplier = 2))
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)

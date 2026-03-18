@@ -748,6 +748,10 @@ public class FranchiseOrderService {
     }
 
     public Long getOrderIdByOrderItemId(Long orderItemId) {
-        return franchiseOrderItemRepository.getOrderIdByOrderItemId(orderItemId);
+        Long orderId = franchiseOrderItemRepository.getOrderIdByOrderItemId(orderItemId);
+        if(orderId == null) {
+            throw new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_NOT_FOUND);
+        }
+        return orderId;
     }
 }

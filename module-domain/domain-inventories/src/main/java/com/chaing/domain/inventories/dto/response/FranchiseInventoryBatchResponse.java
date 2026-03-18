@@ -6,7 +6,6 @@ public record FranchiseInventoryBatchResponse(
 
         LocalDate manufactureDate,      // 제조일
         Integer totalQuantity,          // 총 수량
-        Integer availableQuantity,         // 가용 수량
-        Integer returnPending              // 반품 대기
+        Integer availableQuantity       // 가용 수량
 
 ) {}

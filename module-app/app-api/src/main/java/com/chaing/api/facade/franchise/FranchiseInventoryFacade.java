@@ -338,10 +338,6 @@ public class FranchiseInventoryFacade {
         publishFranchiseStockAlert(franchiseId);
     }
 
-    public boolean verifyAdminPassword(Long userId, String password) {
-        return userManagementService.verifyPassword(userId, password);
-    }
-
     private String nullToDash(String value) {
         return value == null ? "-" : value;
     }

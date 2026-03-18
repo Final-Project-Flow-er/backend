@@ -628,10 +628,6 @@ public class HQInventoryFacade {
         publishStockAlert("FACTORY", locationId);
     }
 
-    public boolean verifyAdminPassword(Long userId, String password) {
-        return userManagementService.verifyPassword(userId, password);
-    }
-
     private String nullToDash(String value) {
         return value == null ? "-" : value;
     }

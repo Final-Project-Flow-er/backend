@@ -395,11 +395,13 @@ public class InventoryService {
     public void verifyOmission(List<String> requestedBoxCodes) {
         List<HQInventory> inventories = hqInventoryRepository.findAllByBoxCodeInAndDeletedAtIsNull(requestedBoxCodes);
 
+        Set<String> requestedBoxCodesSet = new HashSet<>(requestedBoxCodes);
+
         Set<String> boxCodes = inventories.stream()
                 .map(HQInventory::getBoxCode)
                 .collect(Collectors.toSet());
 
-        if (boxCodes.isEmpty() || boxCodes.size() != requestedBoxCodes.size()) {
+        if (boxCodes.isEmpty() || boxCodes.size() != requestedBoxCodesSet.size()) {
             throw new InventoriesException(InventoriesErrorCode.DATA_OMISSION);
         }
     }

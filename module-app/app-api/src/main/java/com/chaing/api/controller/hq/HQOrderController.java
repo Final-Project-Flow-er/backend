@@ -13,6 +13,7 @@ import com.chaing.domain.orders.dto.response.HQFranchiseOrderCancelResponse;
 import com.chaing.domain.orders.dto.response.HQOrderCancelResponse;
 import com.chaing.domain.orders.dto.response.HQOrderCreateResponse;
 import com.chaing.domain.orders.dto.response.HQOrderDetailResponse;
+import com.chaing.domain.orders.dto.response.HQOrderPossibleResponse;
 import com.chaing.domain.orders.dto.response.HQOrderResponse;
 import com.chaing.domain.orders.dto.response.HQOrderStatusUpdateResponse;
 import com.chaing.domain.orders.dto.response.HQOrderUpdateResponse;

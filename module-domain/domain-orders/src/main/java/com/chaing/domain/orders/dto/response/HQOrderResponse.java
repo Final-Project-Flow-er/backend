@@ -3,6 +3,7 @@ package com.chaing.domain.orders.dto.response;
 import com.chaing.domain.orders.enums.HQOrderStatus;
 import lombok.Builder;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Builder
@@ -19,11 +20,7 @@ public record HQOrderResponse(
 
         LocalDateTime requestedDate,
 
-        LocalDateTime manufacturedDate,
-
-        String storedDate,
-
-        String productCode
+        BigDecimal totalPrice
 ) {
 
 }

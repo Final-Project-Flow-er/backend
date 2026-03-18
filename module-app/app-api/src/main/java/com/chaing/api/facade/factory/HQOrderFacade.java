@@ -186,9 +186,6 @@ public class HQOrderFacade {
                                         .username(username)
                                         .phoneNumber(phoneNumber)
                                         .requestedDate(order.requestedDate())
-                                        .manufacturedDate(order.manufacturedDate())
-                                        .storedDate(order.storedDate())
-                                        .productCode(productInfo.productCode())
                                         .build();
                             });
                 })
@@ -197,7 +194,7 @@ public class HQOrderFacade {
         return result;
     }
 
-    // 발주 페이지네이션 조회 (아이템 행 단위)
+    // 발주 페이지네이션 조회 (주문 단위)
     public Page<HQOrderResponse> getAllOrdersPaged(Pageable pageable) {
         String cacheKey = "ord:hq:page:%s".formatted(pageableKey(pageable));
         Page<HQOrderResponse> cached = readPageCache(cacheKey, HQOrderResponse.class, pageable);
@@ -221,23 +218,15 @@ public class HQOrderFacade {
                 .collect(Collectors.toMap(Function.identity(),
                         userManagementService::getPhoneNumberByUserId));
 
-        // productId → productCode 매핑
-        List<Long> productIds = page.getContent().stream()
-                .map(HQOrderItemProjection::productId).distinct().toList();
-        Map<Long, ProductInfo> productInfoMap = productService.getProductInfos(productIds);
-
         List<HQOrderResponse> content = page.getContent().stream()
                 .map(p -> HQOrderResponse.builder()
                         .orderCode(p.orderCode())
                         .status(p.status())
-                        .quantity(p.quantity())
+                        .quantity(p.totalQuantity())
                         .username(usernameByUserId.get(p.userId()))
                         .phoneNumber(phoneNumberByUserId.get(p.userId()))
                         .requestedDate(p.requestedDate())
-                        .manufacturedDate(p.manufacturedDate())
-                        .storedDate(p.storedDate())
-                        .productCode(productInfoMap.containsKey(p.productId())
-                                ? productInfoMap.get(p.productId()).productCode() : null)
+                        .totalPrice(p.totalAmount())
                         .build())
                 .toList();
 

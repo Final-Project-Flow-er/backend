@@ -269,9 +269,12 @@ public class InternalTransportFacade {
 
         DeliverStatus status = currentStatusInfos.get(0).currentStatus();
         List<String> orderCodeList = currentStatusInfos.stream().map(UpdateDeliverStatusInfo::orderCode).toList();
-        List<String> returnCodeList = currentStatusInfos.stream().map(UpdateDeliverStatusInfo::returnCode).toList();
+        List<String> returnCodeList = currentStatusInfos.stream()
+                .map(UpdateDeliverStatusInfo::returnCode)
+                .filter(StringUtils::hasText)
+                .toList();
 
-        if(CollectionUtils.isEmpty(returnCodeList) || !StringUtils.hasText(returnCodeList.get(0))) {
+        if(CollectionUtils.isEmpty(returnCodeList)) {
             switch (status) {
                 case IN_TRANSIT:
                     franchiseOrderService.updateDeliveryStatus(orderCodeList, FranchiseOrderStatus.SHIPPING);

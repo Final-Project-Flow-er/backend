@@ -26,7 +26,7 @@ public interface FactoryInventoryRepositoryCustom {
     Page<HQInventoryItemResponse> getItems(HQInventoryItemsRequest request, Pageable pageable);
 
     @Modifying
-    @Query("UPDATE FactoryInventory fi SET fi.status = :status, fi.version = fi.version + 1 WHERE fi.serialCode IN :serialCode")
+    @Query("UPDATE FactoryInventory fi SET fi.status = :status WHERE fi.serialCode IN :serialCode")
     void updateStatus(List<String> serialCode, LogType status);
 
     void deleteFactoryInventory(List<String> serialCode);

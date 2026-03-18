@@ -33,9 +33,15 @@ public interface FactoryInventoryRepository extends JpaRepository<FactoryInvento
             @Param("targetStatus") LogType targetStatus);
 
     @Modifying
-    @Query("update FactoryInventory f set f.boxCode = :boxCode where f.serialCode in :ids")
+    @Query("update FactoryInventory f " +
+            "set f.boxCode = :boxCode" +
+            ", f.orderId = :orderId" +
+            ", f.orderItemId = :orderItemId " +
+            "where f.serialCode in :ids")
     void setBoxCode(
             @Param("boxCode") String boxCode,
+            @Param("orderId") Long orderId,
+            @Param("orderItemId") Long orderItemId,
             @Param("ids") List<String> selectedList);
 
     @Modifying(clearAutomatically = true)
@@ -78,4 +84,7 @@ public interface FactoryInventoryRepository extends JpaRepository<FactoryInvento
             group by i.productId
             """)
     List<InboundProductIdInfo> getInboundProductIdInfosBySerialCodes(@Param("serialCodes") List<String> serialCodes);
+
+    @Query("select f from FactoryInventory f where f.serialCode = :serialCode")
+    FactoryInventory isAlreadyExist(@Param("serialCode") String serialCode);
 }

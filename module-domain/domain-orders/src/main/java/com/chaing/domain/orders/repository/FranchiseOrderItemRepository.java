@@ -3,6 +3,8 @@ package com.chaing.domain.orders.repository;
 import com.chaing.domain.orders.entity.FranchiseOrderItem;
 import com.chaing.domain.orders.enums.FranchiseOrderStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -21,4 +23,7 @@ public interface FranchiseOrderItemRepository extends JpaRepository<FranchiseOrd
     List<FranchiseOrderItem> findAllByFranchiseOrder_FranchiseOrderIdAndDeletedAtIsNull(Long orderId);
 
     List<FranchiseOrderItem> findAllByFranchiseOrder_OrderCodeInAndDeletedAtIsNull(List<String> orderCodes);
+
+    @Query("select fo.franchiseOrder.franchiseOrderId from FranchiseOrderItem fo where fo.franchiseOrderItemId = :orderItemId")
+    Long getOrderIdByOrderItemId(@Param("orderItemId") Long orderItemId);
 }

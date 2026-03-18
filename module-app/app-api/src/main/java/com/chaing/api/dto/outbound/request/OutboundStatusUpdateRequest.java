@@ -2,13 +2,10 @@ package com.chaing.api.dto.outbound.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
 
 import java.util.List;
 
-public record OutboundAssignRequest(
-        @NotBlank String boxCode,
-        @NotNull Long orderItemId,
+public record OutboundStatusUpdateRequest(
         @NotEmpty List<@NotBlank String> serialCodes
 ) {
 }

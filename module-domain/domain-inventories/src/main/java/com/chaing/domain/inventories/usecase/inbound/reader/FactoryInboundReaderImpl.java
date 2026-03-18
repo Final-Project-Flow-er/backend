@@ -3,6 +3,8 @@ package com.chaing.domain.inventories.usecase.inbound.reader;
 import com.chaing.core.enums.LogType;
 import com.chaing.domain.inventories.dto.raw.FactoryInventoryRawData;
 import com.chaing.domain.inventories.entity.FactoryInventory;
+import com.chaing.domain.inventories.exception.InventoriesErrorCode;
+import com.chaing.domain.inventories.exception.InventoriesException;
 import com.chaing.domain.inventories.repository.FactoryInventoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -16,9 +18,17 @@ import java.util.List;
 public class FactoryInboundReaderImpl implements InboundReader<FactoryInventoryRawData> {
 
     private final FactoryInventoryRepository repository;
+
     @Override
     public boolean existsBySerialCode(String serialCode) {
-        return false;
+
+        FactoryInventory isExist = repository.isAlreadyExist(serialCode);
+
+        if(isExist == null) {
+            return false;
+        }
+
+        return true;
     }
 
     @Override

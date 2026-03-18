@@ -3,6 +3,7 @@ package com.chaing.api.controller.outbound;
 import com.chaing.api.dto.outbound.request.OutboundAssignRequest;
 import com.chaing.api.dto.outbound.request.OutboundCancelRequest;
 import com.chaing.api.dto.outbound.request.OutboundItemRequest;
+import com.chaing.api.dto.outbound.request.OutboundStatusUpdateRequest;
 import com.chaing.api.dto.outbound.request.OutboundUpdateRequest;
 import com.chaing.api.dto.outbound.response.OutboundBoxSummaryResponse;
 import com.chaing.api.dto.outbound.response.OutboundItemResponse;
@@ -43,7 +44,7 @@ public class OutboundController {
         @Valid @RequestBody OutboundUpdateRequest request
     ) {
         LogType currentStatus = LogType.AVAILABLE;
-        outboundFacade.updateOutboundStatus(request, currentStatus);
+        outboundFacade.updateOutboundStatus(request.toSerialCodeList(), currentStatus);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
@@ -53,7 +54,7 @@ public class OutboundController {
     public ResponseEntity<ApiResponse<Void>> assignBox(
             @Valid @RequestBody OutboundAssignRequest request
     ) {
-        outboundFacade.assignBoxToInventories(request.boxCode(), request.serialCodes());
+        outboundFacade.assignBoxToInventories(request.boxCode(), request.orderItemId(), request.serialCodes());
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
@@ -61,10 +62,10 @@ public class OutboundController {
     @PatchMapping("/pickings")
     @Operation(summary = "피킹 확정", description = "피킹 대기 상태의 제품의 피킹을 확정합니다.")
     public ResponseEntity<ApiResponse<Void>> pickOutbound(
-        @Valid @RequestBody OutboundUpdateRequest request
+        @Valid @RequestBody OutboundStatusUpdateRequest request
     ){
         LogType currentStatus = LogType.PICKING_WAIT;
-        outboundFacade.updateOutboundStatus(request, currentStatus);
+        outboundFacade.updateOutboundStatus(request.serialCodes(), currentStatus);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
@@ -72,12 +73,12 @@ public class OutboundController {
     @PatchMapping("/confirms")
     @Operation(summary = "출고 확정", description = "피킹 상태 제품의 출고를 확정합니다.")
     public ResponseEntity<ApiResponse<Void>> confirmOutbound(
-            @Valid @RequestBody OutboundUpdateRequest request,
+            @Valid @RequestBody OutboundStatusUpdateRequest request,
             @AuthenticationPrincipal UserPrincipal userPrincipal
     ) {
         LogType currentStatus = LogType.PICKING;
         LogType status = LogType.OUTBOUND;
-        outboundFacade.updateOutboundStatus(request, currentStatus);
+        outboundFacade.updateOutboundStatus(request.serialCodes(), currentStatus);
         logFacade.recordOrderLogs(request.serialCodes(), userPrincipal, status);
         return ResponseEntity.ok(ApiResponse.success(null));
     }

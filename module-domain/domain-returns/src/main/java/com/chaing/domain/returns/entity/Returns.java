@@ -92,7 +92,12 @@ public class Returns extends BaseEntity {
     }
 
     public void updateStatusInInspection(ReturnStatus returnStatus) {
-        if (!returnStatus.equals(ReturnStatus.PENDING)) {
+        if (!this.returnStatus.equals(ReturnStatus.COMPLETED)) {
+            throw new FranchiseReturnException(FranchiseReturnErrorCode.INVALID_RETURN_STATUS);
+        }
+
+        if (!returnStatus.equals(ReturnStatus.DEDUCTION_COMPLETED)
+                && !returnStatus.equals(ReturnStatus.DEDUCTION_REJECTED)) {
             throw new FranchiseReturnException(FranchiseReturnErrorCode.INVALID_RETURN_STATUS);
         }
 

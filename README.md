@@ -1,4 +1,4 @@
-# 📦 CHAIN-G
+# 📦 CHAIN-G (Back-end)
 
 <img width="300" alt="Gemini_Generated_Image_8j8ddp8j8ddp8j8d-Photoroom" src="https://github.com/user-attachments/assets/6f623ede-7a0d-4fcd-a74f-3bec56de2c63" />
 
@@ -18,6 +18,17 @@
 | [@chaewoo-kim](https://github.com/chaewoo-kim) | [@rlatjddms](https://github.com/rlatjddms) | [@kyk5095](https://github.com/kyk5095) | [@Yoocy0](https://github.com/Yoocy0) | [@cho-yunho01](https://github.com/cho-yunho01) |
 
 <br>
+
+## 🛠 기술 스택
+
+| Category | Stack |
+| :--- | :--- |
+| **Language** | Java 21 |
+| **Framework** | Spring Boot 3.2.2 |
+| **Persistence** | Spring Data JPA, MySQL 8.x |
+| **Build Tool** | Gradle |
+| **Testing** | JUnit 5, AssertJ, JaCoCo (Line Coverage 80% 이상 준수) |
+| **CI/CD & Tools** | SonarQube, Lombok, GitHub Actions |
 
 <br>
 
@@ -53,19 +64,6 @@
 ### 3. 정산 (Settlement)
 - **매출 및 대금 정산**: 가맹점의 판매 데이터를 기반으로 본사 대금 차감 및 수수료 정산을 수행합니다.
 - **반품 관리**: 하자 상품에 대한 반품 요청 및 검수 후 대금 차감을 지원합니다.
-
-<br>
-
-## 🛠 기술 스택
-
-| Category | Stack |
-| :--- | :--- |
-| **Language** | Java 21 |
-| **Framework** | Spring Boot 3.2.2 |
-| **Persistence** | Spring Data JPA, MySQL 8.x |
-| **Build Tool** | Gradle |
-| **Testing** | JUnit 5, AssertJ, JaCoCo (Line Coverage 80% 이상 준수) |
-| **CI/CD & Tools** | SonarQube, Lombok, GitHub Actions |
 
 <br>
 
@@ -151,7 +149,7 @@
 
 <br>
 
-## 📝 프로젝트 회고 (Team Retrospective)
+## 📝 프로젝트 회고
 
 프로젝트를 마치며 팀원 각자가 느낀 기술적 도전과 성장을 기록합니다.
 

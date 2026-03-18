@@ -183,4 +183,12 @@ public class FranchiseOrder extends BaseEntity {
     public void updateStatus(FranchiseOrderStatus orderStatus) {
         this.orderStatus = orderStatus;
     }
+
+    public void updateQuantityAndPrice(List<FranchiseOrderItem> targetItems) {
+        this.totalQuantity = targetItems.stream()
+                .mapToInt(FranchiseOrderItem::getQuantity).sum();
+        this.totalAmount = targetItems.stream()
+                .map(FranchiseOrderItem::getTotalPrice)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
 }

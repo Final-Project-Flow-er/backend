@@ -12,6 +12,7 @@ import com.chaing.domain.businessunits.exception.BusinessUnitException;
 import com.chaing.domain.businessunits.repository.FranchiseRepository;
 import com.chaing.domain.businessunits.service.BusinessUnitManagementService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -49,8 +50,13 @@ public class FranchiseServiceImpl implements BusinessUnitManagementService {
             }
         }
 
-        franchise.updateFranchiseInfo(command);
-        return BusinessUnitInternal.from(franchise);
+        try {
+            franchise.updateFranchiseInfo(command);
+            franchiseRepository.saveAndFlush(franchise);
+            return BusinessUnitInternal.from(franchise);
+        } catch (DataIntegrityViolationException e) {
+            throw new BusinessUnitException(BusinessUnitErrorCode.DUPLICATE_BUSINESS_UNIT_NAME);
+        }
     }
 
     // 가맹점 등록
@@ -60,11 +66,16 @@ public class FranchiseServiceImpl implements BusinessUnitManagementService {
             throw new BusinessUnitException(BusinessUnitErrorCode.DUPLICATE_BUSINESS_UNIT_NAME);
         }
 
-        String generatedCode = codeGenerator.generateFranchiseCode(command.region());
-        Double distance = calculate();
-        Franchise franchise = Franchise.from(command, generatedCode, distance);
-        franchiseRepository.save(franchise);
-        return BusinessUnitInternal.from(franchise);
+        try {
+            String generatedCode = codeGenerator.generateFranchiseCode(command.region());
+            Double distance = calculate();
+            Franchise franchise = Franchise.from(command, generatedCode, distance);
+            franchiseRepository.saveAndFlush(franchise);
+            return BusinessUnitInternal.from(franchise);
+
+        } catch (DataIntegrityViolationException e) {
+            throw new BusinessUnitException(BusinessUnitErrorCode.DUPLICATE_BUSINESS_UNIT_NAME);
+        }
     }
 
     // 공장과 가맹점 사이 거리 랜덤 생성

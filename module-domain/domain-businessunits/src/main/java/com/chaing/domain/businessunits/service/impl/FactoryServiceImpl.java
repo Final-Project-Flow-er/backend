@@ -12,6 +12,7 @@ import com.chaing.domain.businessunits.exception.BusinessUnitException;
 import com.chaing.domain.businessunits.repository.FactoryRepository;
 import com.chaing.domain.businessunits.service.BusinessUnitManagementService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -48,8 +49,13 @@ public class FactoryServiceImpl implements BusinessUnitManagementService {
             }
         }
 
-        factory.updateFactoryInfo(command);
-        return BusinessUnitInternal.from(factory);
+        try {
+            factory.updateFactoryInfo(command);
+            factoryRepository.saveAndFlush(factory);
+            return BusinessUnitInternal.from(factory);
+        } catch (DataIntegrityViolationException e) {
+            throw new BusinessUnitException(BusinessUnitErrorCode.DUPLICATE_BUSINESS_UNIT_NAME);
+        }
     }
 
     // 공장 등록
@@ -59,10 +65,15 @@ public class FactoryServiceImpl implements BusinessUnitManagementService {
             throw new BusinessUnitException(BusinessUnitErrorCode.DUPLICATE_BUSINESS_UNIT_NAME);
         }
 
-        String generatedCode = codeGenerator.generateFactoryCode();
-        Factory factory = Factory.from(command, generatedCode);
-        factoryRepository.save(factory);
-        return BusinessUnitInternal.from(factory);
+        try {
+            String generatedCode = codeGenerator.generateFactoryCode();
+            Factory factory = Factory.from(command, generatedCode);
+            factoryRepository.saveAndFlush(factory);
+            return BusinessUnitInternal.from(factory);
+
+        } catch (DataIntegrityViolationException e) {
+            throw new BusinessUnitException(BusinessUnitErrorCode.DUPLICATE_BUSINESS_UNIT_NAME);
+        }
     }
 
     // 공장 목록 조회

@@ -18,6 +18,7 @@ import com.chaing.domain.products.service.ProductService;
 import com.chaing.domain.transports.service.InternalTransportService;
 import com.chaing.external.transport.ExternalTransportService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
@@ -52,7 +53,7 @@ public class OutboundFacade {
     // 재고 상태 변경
     @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100, multiplier = 2))
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
-    public void updateOutboundStatus(@Valid List<String> request, LogType currentStatus) {
+    public void updateOutboundStatus(@NotEmpty List<String> request, LogType currentStatus) {
         outboundService.updateStatus(request, currentStatus);
 
         /*

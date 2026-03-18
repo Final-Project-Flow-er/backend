@@ -71,14 +71,14 @@ public class OutboundService {
 
     // 박스 할당
     @Transactional
-    public void assignBox(String boxCode, List<String> serialCodes) {
+    public void assignBox(String boxCode, Long orderId, Long orderItemId, List<String> serialCodes) {
         List<FactoryInventory> selectedList = getListAndValidate(serialCodes);
 
         List<String> confirmedIds = selectedList.stream()
                 .map(FactoryInventory::getSerialCode)
                 .toList();
 
-        outboundExecutor.assignBoxCode(boxCode, confirmedIds);
+        outboundExecutor.assignBoxCode(boxCode, orderId, orderItemId, confirmedIds);
     }
 
     // 할당 취소 및 출고 취소

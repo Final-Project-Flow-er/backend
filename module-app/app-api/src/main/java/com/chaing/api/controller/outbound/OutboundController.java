@@ -43,7 +43,7 @@ public class OutboundController {
         @Valid @RequestBody OutboundUpdateRequest request
     ) {
         LogType currentStatus = LogType.AVAILABLE;
-        outboundFacade.updateOutboundStatus(request, currentStatus);
+        outboundFacade.updateOutboundStatus(request.toSerialCodeList(), currentStatus);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
@@ -53,7 +53,7 @@ public class OutboundController {
     public ResponseEntity<ApiResponse<Void>> assignBox(
             @Valid @RequestBody OutboundAssignRequest request
     ) {
-        outboundFacade.assignBoxToInventories(request.boxCode(), request.serialCodes());
+        outboundFacade.assignBoxToInventories(request.boxCode(), request.orderItemId(), request.serialCodes());
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
@@ -64,7 +64,7 @@ public class OutboundController {
         @Valid @RequestBody OutboundUpdateRequest request
     ){
         LogType currentStatus = LogType.PICKING_WAIT;
-        outboundFacade.updateOutboundStatus(request, currentStatus);
+        outboundFacade.updateOutboundStatus(request.toSerialCodeList(), currentStatus);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
@@ -77,8 +77,8 @@ public class OutboundController {
     ) {
         LogType currentStatus = LogType.PICKING;
         LogType status = LogType.OUTBOUND;
-        outboundFacade.updateOutboundStatus(request, currentStatus);
-        logFacade.recordOrderLogs(request.serialCodes(), userPrincipal, status);
+        outboundFacade.updateOutboundStatus(request.toSerialCodeList(), currentStatus);
+        logFacade.recordOrderLogs(request.toSerialCodeList(), userPrincipal, status);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

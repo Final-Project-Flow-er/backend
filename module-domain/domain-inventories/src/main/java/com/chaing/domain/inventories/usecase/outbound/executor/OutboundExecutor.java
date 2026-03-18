@@ -7,7 +7,7 @@ import java.util.List;
 public interface OutboundExecutor {
     void updateAll(List<String> confirmedIds, LogType targetStatus);
 
-    void assignBoxCode(String boxCode, List<String> confirmedIds);
+    void assignBoxCode(String boxCode, Long orderId, Long orderItemId, List<String> confirmedIds);
 
     void cancelOutbound(List<String> confirmedIds);
 }

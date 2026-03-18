@@ -746,4 +746,8 @@ public class FranchiseOrderService {
                         )
                 ));
     }
+
+    public Long getOrderIdByOrderItemId(Long orderItemId) {
+        return franchiseOrderItemRepository.getOrderIdByOrderItemId(orderItemId);
+    }
 }

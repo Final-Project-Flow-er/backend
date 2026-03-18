@@ -11,6 +11,7 @@ import com.chaing.domain.settlements.service.DailySettlementService;
 import com.chaing.domain.settlements.service.MonthlySettlementService;
 import com.chaing.domain.settlements.service.SettlementFileService;
 import com.chaing.domain.settlements.service.SettlementDocumentService;
+import com.chaing.domain.settlements.repository.interfaces.SettlementAdjustmentRepository;
 import com.chaing.domain.settlements.repository.interfaces.SettlementVoucherRepository;
 import com.chaing.domain.settlements.entity.MonthlySettlement;
 import com.chaing.domain.settlements.entity.SettlementDocument;
@@ -73,6 +74,7 @@ public class HQSettlementFacade {
         private final MinioService minioService;
         private final SettlementDocumentService documentService;
         private final SettlementVoucherRepository voucherRepository;
+        private final SettlementAdjustmentRepository adjustmentRepository;
         private final FranchiseRepository franchiseRepository;
 
         private final FranchiseSalesItemRepository salesItemRepository;
@@ -112,9 +114,14 @@ public class HQSettlementFacade {
 
                 hqTotalFinal = totalOrder.add(totalCommission).add(totalDelivery)
                                 .subtract(totalRefund).subtract(totalLoss);
+                
+                // 조정 금액 합산 (해당 월의 전체 조정)
+                String monthStr = request.date().toString().substring(0, 7);
+                BigDecimal totalAdjustment = adjustmentRepository.sumAdjustmentAmountByMonth(monthStr, null);
+                hqTotalFinal = hqTotalFinal.add(totalAdjustment);
 
                 return HQSettlementSummaryResponse.of(hqTotalFinal, totalOrder, totalSale, totalCommission,
-                                totalDelivery, totalRefund, totalLoss);
+                                totalDelivery, totalRefund, totalLoss, totalAdjustment);
         }
 
         @Transactional(readOnly = true)
@@ -136,6 +143,11 @@ public class HQSettlementFacade {
                         AggregationResult result = getInternalDailyAggregation(f.getFranchiseId(), request.date());
                         DailySettlementReceipt r = result.receipt();
 
+                        // 개별 가맹점 조정 금액 (해당 월)
+                        String monthStr = request.date().toString().substring(0, 7);
+                        BigDecimal adjAmount = adjustmentRepository.sumAdjustmentAmountByMonth(monthStr, f.getFranchiseId());
+                        BigDecimal finalAmount = r.getFinalAmount().add(adjAmount);
+
                         dtos.add(HQFranchiseSettlementResponse.of(
                                         f.getFranchiseId(),
                                         f.getName(),
@@ -145,7 +157,8 @@ public class HQSettlementFacade {
                                         r.getCommissionFee(),
                                         r.getRefundAmount(),
                                         r.getLossAmount(),
-                                        r.getFinalAmount(), // 가맹점 관점 최종 정산액
+                                        adjAmount,
+                                        finalAmount, // 가맹점 관점 최종 정산액 (조정 포함)
                                         SettlementStatus.CONFIRMED, // 가집계이므로 논리적으로 CONFIRMED 또는 PENDING 처리 가능
                                         r.getSettlementDate()));
                 }
@@ -211,12 +224,12 @@ public class HQSettlementFacade {
                                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
                 // 본사 관점 최종 정산 금액
+                BigDecimal totalAdjustment = adjustmentRepository.sumAdjustmentAmountByMonth(request.month().toString(), null);
                 BigDecimal hqTotalFinal = totalOrder.add(totalCommission).add(totalDelivery)
-                                .subtract(totalRefund).subtract(totalLoss);
+                                .subtract(totalRefund).subtract(totalLoss).add(totalAdjustment);
 
                 return HQSettlementSummaryResponse.of(hqTotalFinal, totalOrder, totalSale, totalCommission,
-                                totalDelivery,
-                                totalRefund, totalLoss);
+                                totalDelivery, totalRefund, totalLoss, totalAdjustment);
         }
 
         @Transactional(readOnly = true)
@@ -244,6 +257,9 @@ public class HQSettlementFacade {
                                 .map(s -> {
                                         String franchiseName = franchiseNameMap.getOrDefault(s.getFranchiseId(),
                                                         "Unknown");
+                                        BigDecimal adjAmount = adjustmentRepository.sumAdjustmentAmountByMonth(s.getSettlementMonth().toString(), s.getFranchiseId());
+                                        BigDecimal finalSettlementAmount = s.getFinalSettlementAmount().add(adjAmount);
+
                                         return HQFranchiseSettlementResponse.of(
                                                         s.getFranchiseId(),
                                                         franchiseName,
@@ -253,7 +269,8 @@ public class HQSettlementFacade {
                                                         s.getCommissionFee(),
                                                         s.getRefundAmount(),
                                                         s.getLossAmount(),
-                                                        s.getFinalSettlementAmount(),
+                                                        adjAmount,
+                                                        finalSettlementAmount,
                                                         s.getStatus(),
                                                         s.getSettlementMonth().atDay(1)); // 기준일
                                 })

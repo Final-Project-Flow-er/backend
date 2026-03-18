@@ -40,6 +40,9 @@ public record HQSettlementAdjustmentVoucherRequest(
         @Schema(description = "정산 반영월", example = "2026-04", requiredMode = Schema.RequiredMode.REQUIRED)
         @NotNull
         @org.springframework.format.annotation.DateTimeFormat(pattern = "yyyy-MM")
-        java.time.YearMonth settlementMonth
+        java.time.YearMonth settlementMonth,
+
+        @Schema(description = "반품 사유 (전표 유형이 RETURN일 때 필수)", example = "PRODUCT_DEFECT")
+        com.chaing.domain.returns.enums.ReturnType returnType
 ) {
 }

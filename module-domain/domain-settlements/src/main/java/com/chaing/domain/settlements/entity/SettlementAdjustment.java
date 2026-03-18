@@ -55,6 +55,10 @@ public class SettlementAdjustment extends BaseEntity {
         @Column(name = "settlement_month", nullable = false, length = 7)
         private String settlementMonth; // 정산 반영월 (예: "2026-04")
 
+        @Enumerated(EnumType.STRING)
+        @Column(name = "return_type", length = 30)
+        private com.chaing.domain.returns.enums.ReturnType returnType; // 반품 사유 (오발주, 상품하자 등)
+
         @Builder.Default
         @Column(name = "is_minus", nullable = false)
         private Boolean isMinus = false; // 마이너스 체크박스

@@ -30,9 +30,13 @@ public record HQAdjustmentResponse(
         String reason,
 
         @Schema(description = "정산 반영월", example = "2026-04")
-        String settlementMonth) {
+        String settlementMonth,
+
+        @Schema(description = "반품 사유", example = "PRODUCT_DEFECT")
+        com.chaing.domain.returns.enums.ReturnType returnType) {
     public static HQAdjustmentResponse of(Long adjustmentId, String franchiseName, VoucherType type,
-            LocalDate occurredAt, Long amount, com.chaing.domain.settlements.enums.AdjustmentDirection direction, String reason, String settlementMonth) {
+            LocalDate occurredAt, Long amount, com.chaing.domain.settlements.enums.AdjustmentDirection direction,
+            String reason, String settlementMonth, com.chaing.domain.returns.enums.ReturnType returnType) {
         return HQAdjustmentResponse.builder()
                 .adjustmentId(adjustmentId)
                 .franchiseName(franchiseName)
@@ -42,6 +46,7 @@ public record HQAdjustmentResponse(
                 .direction(direction)
                 .reason(reason)
                 .settlementMonth(settlementMonth)
+                .returnType(returnType)
                 .build();
     }
 }

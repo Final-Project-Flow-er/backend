@@ -12,6 +12,7 @@ public enum VoucherType {
     COMMISSION("수수료"),
     LOSS("손실"),
     REFUND("반품환급"),
+    RETURN("반품"),
     ADJUSTMENT("조정");
 
     private String description;

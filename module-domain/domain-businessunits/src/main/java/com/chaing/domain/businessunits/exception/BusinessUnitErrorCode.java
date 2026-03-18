@@ -13,7 +13,8 @@ public enum BusinessUnitErrorCode implements ErrorCode {
     WARNING_ONLY_FOR_FRANCHISE(400, "B003", "가맹점을 위한 경고 로직입니다."),
     CODE_OVERFLOW(400, "B004", "생성 가능한 사업장 코드 범위를 초과했습니다."),
     INVALID_PRODUCTION_LINE_COUNT(400, "B005", "생산 라인 개수는 0 이상이어야 합니다."),
-    INVALID_WARNING_COUNT(400, "B006", "가맹점 경고 횟수가 3회 이상입니다.");
+    INVALID_WARNING_COUNT(400, "B006", "가맹점 경고 횟수가 3회 이상입니다."),
+    DUPLICATE_BUSINESS_UNIT_NAME(400, "B007", "이미 존재하는 사업장 이름입니다.");
 
     private final Integer status;
     private final String code;

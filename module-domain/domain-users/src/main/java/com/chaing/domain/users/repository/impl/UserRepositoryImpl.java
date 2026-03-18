@@ -33,9 +33,7 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
         List<User> content = queryFactory
                 .selectFrom(user)
                 .where(
-                        loginIdContains(condition.loginId()),
-                        usernameContains(condition.username()),
-                        employeeNumber(condition.employeeNumber()),
+                        loginIdOrUsernameOrEmployeeNumber(condition.loginId(), condition.username(), condition.employeeNumber()),
                         roleEq(condition.role()),
                         positionEq(condition.position()),
                         statusEq(condition.status()),
@@ -50,9 +48,7 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
                 .select(user.count())
                 .from(user)
                 .where(
-                        loginIdContains(condition.loginId()),
-                        usernameContains(condition.username()),
-                        employeeNumber(condition.employeeNumber()),
+                        loginIdOrUsernameOrEmployeeNumber(condition.loginId(), condition.username(), condition.employeeNumber()),
                         roleEq(condition.role()),
                         positionEq(condition.position()),
                         statusEq(condition.status()),
@@ -64,16 +60,17 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
         return new PageImpl<>(content, pageable, totalCount);
     }
 
-    private BooleanExpression loginIdContains(String loginId) {
-        return hasText(loginId) ? QUser.user.loginId.contains(loginId) : null;
-    }
+    private BooleanExpression loginIdOrUsernameOrEmployeeNumber(String loginId, String username,
+            String employeeNumber) {
+        BooleanExpression loginIdExpr = hasText(loginId) ? QUser.user.loginId.containsIgnoreCase(loginId) : null;
+        BooleanExpression usernameExpr = hasText(username) ? QUser.user.username.containsIgnoreCase(username) : null;
+        BooleanExpression empNumExpr = hasText(employeeNumber) ? QUser.user.employeeNumber.containsIgnoreCase(employeeNumber) : null;
 
-    private BooleanExpression usernameContains(String username) {
-        return hasText(username) ? QUser.user.username.contains(username) : null;
-    }
-
-    private BooleanExpression employeeNumber(String employeeNumber) {
-        return hasText(employeeNumber) ? QUser.user.employeeNumber.contains(employeeNumber) : null;
+        BooleanExpression result = null;
+        if (loginIdExpr != null) result = loginIdExpr;
+        if (usernameExpr != null) result = result != null ? result.or(usernameExpr) : usernameExpr;
+        if (empNumExpr != null) result = result != null ? result.or(empNumExpr) : empNumExpr;
+        return result;
     }
 
     private BooleanExpression roleEq(UserRole role) {

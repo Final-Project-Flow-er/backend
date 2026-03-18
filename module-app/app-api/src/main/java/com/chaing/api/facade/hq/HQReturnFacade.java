@@ -6,6 +6,8 @@ import com.chaing.api.dto.hq.response.HQReturnResponse;
 import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.core.enums.ReturnItemStatus;
 import com.chaing.domain.businessunits.service.impl.FranchiseServiceImpl;
+import com.chaing.domain.inventories.entity.FranchiseInventory;
+import com.chaing.domain.inventories.entity.HQInventory;
 import com.chaing.domain.inventories.service.InventoryService;
 import com.chaing.domain.orders.service.FranchiseOrderService;
 import com.chaing.domain.products.service.ProductService;
@@ -178,89 +180,48 @@ public class HQReturnFacade {
         // 발주 코드 조회
         String orderCode = franchiseOrderService.getOrderCodeByOrderId(returnInfo.franchiseOrderId());
 
-        // 연관 발주 제품 정보 조회
-        // Map<returnItemId, orderItemId>
-        Map<Long, Long> orderItemIdByReturnItemId = franchiseReturnService.getReturnItemId(returnCode);
-        List<Long> orderItemIds = orderItemIdByReturnItemId.values().stream().toList();
-        List<Long> returnItemIds = orderItemIdByReturnItemId.keySet().stream().toList();
+        // returnItem의 boxCode 목록 조회
+        List<String> boxCodes = franchiseReturnService.getReturnItemBoxCodes(returnCode);
+        log.info("boxCodes: {}", boxCodes);
 
-        // Map<boxCode, ReturnItemInspection>
-        Map<String, ReturnItemInspection> itemInspectionByBoxCode;
-        Map<String, Long> orderItemIdBySerialCode;
-        List<String> serialCodes;
-        Map<String, String> boxCodeBySerialCode;
-        Map<String, Long> productIdBySerialCode;
-
+        // 상태에 따라 조회 대상 인벤토리 분기
         Set<ReturnStatus> hqStatuses = Set.of(
                 ReturnStatus.COMPLETED,
                 ReturnStatus.INSPECTING,
                 ReturnStatus.DEDUCTION_COMPLETED,
                 ReturnStatus.DEDUCTION_REJECTED
-                );
+        );
 
-        if (!hqStatuses.contains(returnInfo.status())) {
-            // FranchiseInventory에 제품 존재
-            // 재고 정보 조회
-            // Map<serialCode, orderItemId>
-            orderItemIdBySerialCode = inventoryService.getSerialCodesByOrderItemIdsFromFranchise(orderItemIds);
-            // List<serialCode>
-            serialCodes = orderItemIdBySerialCode.keySet().stream().toList();
-            // Map<serialCode, boxCode>
-            boxCodeBySerialCode = inventoryService.getBoxCodeFromFranchise(serialCodes);
-            // Map<serialCode, productId>
-            productIdBySerialCode = inventoryService.getProductIdBySerialCodeFromFranchise(serialCodes);
-            // Map<boxCode, returnItemInspection>
-            itemInspectionByBoxCode = inventoryService.getReturnItemInspectionFromFranchise(orderItemIds);
+        List<FranchiseReturnItemDetailResponse> items;
+
+        if (hqStatuses.contains(returnInfo.status())) {
+            // 배송완료, 검수중 → HQInventory에서 조회
+            List<HQInventory> inventories = inventoryService.getHQInventoriesByBoxCodes(boxCodes);
+            log.info("배송완료, 검수중");
+            log.info("inventories: {}", inventories);
+
+            items = inventories.stream()
+                    .map(inv -> FranchiseReturnItemDetailResponse.builder()
+                            .boxCode(inv.getBoxCode())
+                            .serialCode(inv.getSerialCode())
+                            .isInspected(inv.getIsInspected())
+                            .status(inv.getReturnItemStatus() != null ? inv.getReturnItemStatus() : ReturnItemStatus.BEFORE_INSPECTION)
+                            .build())
+                    .toList();
         } else {
-            // HQInventory에 제품 존재
-            // 재고 정보 조회
-            // Map<serialCode, orderItemId>
-            orderItemIdBySerialCode = inventoryService.getSerialCodesByOrderItemIdsFromHQ(orderItemIds);
-            // List<serialCode>
-            serialCodes = orderItemIdBySerialCode.keySet().stream().toList();
-            // Map<serialCode, boxCode>
-            boxCodeBySerialCode = inventoryService.getBoxCodeFromHQ(serialCodes);
-            // Map<serialCode, productId>
-            productIdBySerialCode = inventoryService.getProductIdBySerialCodeFromHQ(serialCodes);
-            // Map<boxCode, returnItemInspection>
-            itemInspectionByBoxCode = inventoryService.getReturnItemInspection(orderItemIdByReturnItemId);
+            // 대기, 접수, 배송대기, 배송중 → FranchiseInventory에서 조회
+            List<FranchiseInventory> inventories = inventoryService.getFranchiseInventoriesByBoxCodes(boxCodes);
+            log.info("대기, 접수, 배송대기, 배송중");
+
+            items = inventories.stream()
+                    .map(inv -> FranchiseReturnItemDetailResponse.builder()
+                            .boxCode(inv.getBoxCode())
+                            .serialCode(inv.getSerialCode())
+                            .isInspected(false)
+                            .status(ReturnItemStatus.BEFORE_INSPECTION)
+                            .build())
+                    .toList();
         }
-
-        log.info("productIdBySerialCode: {}", productIdBySerialCode);
-
-        // 제품 정보 조회
-        List<Long> productIds = productIdBySerialCode.values().stream().toList();
-        log.info("productIds: {}", productIds);
-        // Map<productId, ProductInfo>
-        Map<Long, ProductInfo> productInfoByProductId = productService.getProductInfos(productIds);
-        log.info("productInfoByProductId: {}", productInfoByProductId);
-
-        // 반품 제품 DTO
-        List<FranchiseReturnItemDetailResponse> items = boxCodeBySerialCode.entrySet().stream()
-                .map(entry -> {
-                    log.info("entry: {}", entry);
-                    Long productId = productIdBySerialCode.get(entry.getKey());
-                    log.info("productId: {}", productId);
-                    ProductInfo productInfo = productInfoByProductId.get(productId);
-                    log.info("productInfo: {}", productInfo);
-
-                    ReturnItemInspection inspection = itemInspectionByBoxCode.get(entry.getValue());
-
-                    if (inspection == null) {
-                        throw new FranchiseReturnException(FranchiseReturnErrorCode.RETURN_ITEM_NOT_FOUND);
-                    }
-
-                    if (productInfo == null) {
-                        throw new FranchiseReturnException(FranchiseReturnErrorCode.PRODUCT_NOT_FOUND);
-                    }
-
-                    return FranchiseReturnItemDetailResponse.builder()
-                            .boxCode(entry.getValue())
-                            .serialCode(entry.getKey())
-                            .status(inspection.status())
-                            .build();
-                })
-                .toList();
 
         // 반환
         HQReturnDetailResponse result = HQReturnDetailResponse.builder()

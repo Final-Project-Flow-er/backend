@@ -495,7 +495,8 @@ public class FranchiseReturnService {
                 )).toList();
     }
 
-    public void updateDeliveryStatus(List<String> returnCode, ReturnStatus deliverStatus) {
-        franchiseReturnRepository.updateReturnStatusByReturnCodeIn(returnCode, deliverStatus);
+    @Transactional
+    public void updateDeliveryStatus(List<String> returnCodes, ReturnStatus deliverStatus) {
+        franchiseReturnRepository.updateReturnStatusByReturnCodeIn(returnCodes, deliverStatus);
     }
 }

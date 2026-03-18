@@ -164,7 +164,6 @@ public class UserManagementFacade {
                 case HQ -> hqNameMap.getOrDefault(user.getBusinessUnitId(), "-");
                 case FRANCHISE -> franchiseNameMap.getOrDefault(user.getBusinessUnitId(), "-");
                 case FACTORY -> factoryNameMap.getOrDefault(user.getBusinessUnitId(), "-");
-                default -> "-";
             };
             return UserSummaryResponse.from(user, unitName);
         });

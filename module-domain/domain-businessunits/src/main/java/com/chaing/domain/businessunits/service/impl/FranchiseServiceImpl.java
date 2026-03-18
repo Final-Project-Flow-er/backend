@@ -42,6 +42,13 @@ public class FranchiseServiceImpl implements BusinessUnitManagementService {
     public BusinessUnitInternal updateInfo(Long id, BusinessUnitUpdateCommand command) {
         Franchise franchise = franchiseRepository.findById(id)
                 .orElseThrow(() -> new BusinessUnitException(BusinessUnitErrorCode.BUSINESS_UNIT_NOT_FOUND));
+
+        if (command.name() != null && !franchise.getName().equals(command.name().trim())) {
+            if (franchiseRepository.existsByNameExcludeDeleted(command.name().trim())) {
+                throw new BusinessUnitException(BusinessUnitErrorCode.DUPLICATE_BUSINESS_UNIT_NAME);
+            }
+        }
+
         franchise.updateFranchiseInfo(command);
         return BusinessUnitInternal.from(franchise);
     }
@@ -49,6 +56,10 @@ public class FranchiseServiceImpl implements BusinessUnitManagementService {
     // 가맹점 등록
     @Override
     public BusinessUnitInternal create(BusinessUnitCreateCommand command) {
+        if (command.name() != null && franchiseRepository.existsByNameExcludeDeleted(command.name().trim())) {
+            throw new BusinessUnitException(BusinessUnitErrorCode.DUPLICATE_BUSINESS_UNIT_NAME);
+        }
+
         String generatedCode = codeGenerator.generateFranchiseCode(command.region());
         Double distance = calculate();
         Franchise franchise = Franchise.from(command, generatedCode, distance);
@@ -71,13 +82,13 @@ public class FranchiseServiceImpl implements BusinessUnitManagementService {
     // 아이디로 이름 조회
     @Override
     public Map<Long, String> getNamesByIds(List<Long> ids) {
-        if (ids == null || ids.isEmpty()) return Collections.emptyMap();
+        if (ids == null || ids.isEmpty())
+            return Collections.emptyMap();
 
         List<Object[]> results = franchiseRepository.findNamesByIds(ids);
         return results.stream().collect(Collectors.toMap(
                 row -> (Long) row[0],
-                row -> (String) row[1]
-        ));
+                row -> (String) row[1]));
     }
 
     // 가맹점 상태 변경

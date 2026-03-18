@@ -29,16 +29,17 @@ public record HQSettlementAdjustmentVoucherRequest(
         @Min(0)
         Long amount,
 
-        @Schema(description = "차감 처리(마이너스) 체크 여부", example = "false", defaultValue = "false")
-        Boolean isMinus,
+        @Schema(description = "증가/차감 여부", example = "INCREASE", requiredMode = Schema.RequiredMode.REQUIRED)
+        @NotNull
+        com.chaing.domain.settlements.enums.AdjustmentDirection direction,
 
         @Schema(description = "내역(조정 사유)", example = "본사 프로모션 보전금", requiredMode = Schema.RequiredMode.REQUIRED)
         @NotBlank
-        String reason
+        String reason,
+
+        @Schema(description = "정산 반영월", example = "2026-04", requiredMode = Schema.RequiredMode.REQUIRED)
+        @NotNull
+        @org.springframework.format.annotation.DateTimeFormat(pattern = "yyyy-MM")
+        java.time.YearMonth settlementMonth
 ) {
-    public HQSettlementAdjustmentVoucherRequest {
-        if (isMinus == null) {
-            isMinus = false;
-        }
-    }
 }

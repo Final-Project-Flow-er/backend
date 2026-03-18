@@ -11,7 +11,7 @@ public interface SettlementAdjustmentService {
     SettlementAdjustment create(SettlementAdjustment adjustment);
 
     // 목록 조회 (페이징 + 필터링)
-    Page<SettlementAdjustment> getAll(Long franchiseId, VoucherType voucherType, java.time.LocalDateTime startDate, java.time.LocalDateTime endDate, Pageable pageable);
+    Page<SettlementAdjustment> getAll(Long franchiseId, VoucherType voucherType, String settlementMonth, Pageable pageable);
 
     // 단건 조회 (하단 상세)
     SettlementAdjustment getById(Long id);

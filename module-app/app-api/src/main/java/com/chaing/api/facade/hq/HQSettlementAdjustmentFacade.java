@@ -46,6 +46,12 @@ public class HQSettlementAdjustmentFacade {
                 .map(com.chaing.domain.users.entity.User::getUsername)
                 .orElse("Unknown");
 
+        com.chaing.domain.settlements.enums.AdjustmentDirection direction = request.direction();
+        BigDecimal amount = BigDecimal.valueOf(request.amount());
+        BigDecimal finalAmount = (direction == com.chaing.domain.settlements.enums.AdjustmentDirection.INCREASE) 
+                ? amount 
+                : amount.negate();
+
         com.chaing.domain.settlements.entity.SettlementAdjustment adjustment = com.chaing.domain.settlements.entity.SettlementAdjustment
                 .builder()
                 .settlementVoucherId(0L) // 특정 전표 매핑이 없는 일반 조정의 경우 0L
@@ -53,9 +59,10 @@ public class HQSettlementAdjustmentFacade {
                 .franchiseId(request.franchiseId())
                 .voucherType(request.type())
                 .occurredAt(request.occurredAt().atStartOfDay())
-                .isMinus(request.isMinus())
+                .settlementMonth(request.settlementMonth().toString()) 
+                .isMinus(direction == com.chaing.domain.settlements.enums.AdjustmentDirection.DECREASE)
                 .createdByName(createdByName)
-                .adjustmentAmount(BigDecimal.valueOf(request.amount()))
+                .adjustmentAmount(finalAmount)
                 .reason(request.reason())
                 .createdBy(principal.getId())
                 .build();
@@ -69,11 +76,10 @@ public class HQSettlementAdjustmentFacade {
         int size = request.size() != null ? request.size() : 20;
         Pageable pageable = PageRequest.of(page, size);
 
-        java.time.LocalDateTime startDate = request.month().atDay(1).atStartOfDay();
-        java.time.LocalDateTime endDate = request.month().atEndOfMonth().atTime(23, 59, 59);
+        String settlementMonth = request.month() != null ? request.month().toString() : null;
 
         Page<com.chaing.domain.settlements.entity.SettlementAdjustment> adjustments = adjustmentService.getAll(
-                request.franchiseId(), request.type(), startDate, endDate, pageable);
+                request.franchiseId(), request.type(), settlementMonth, pageable);
 
         List<Long> franchiseIds = adjustments.stream()
                 .map(com.chaing.domain.settlements.entity.SettlementAdjustment::getFranchiseId)
@@ -93,8 +99,9 @@ public class HQSettlementAdjustmentFacade {
                         a.getVoucherType(),
                         a.getOccurredAt().toLocalDate(),
                         a.getAdjustmentAmount().longValue(),
-                        a.getIsMinus(),
-                        a.getReason()))
+                        a.getIsMinus() ? com.chaing.domain.settlements.enums.AdjustmentDirection.DECREASE : com.chaing.domain.settlements.enums.AdjustmentDirection.INCREASE,
+                        a.getReason(),
+                        a.getSettlementMonth())) // ⭐️ 응답에 반영월 포함
                 .collect(Collectors.toList());
 
         return new PageImpl<>(dtos, pageable, adjustments.getTotalElements());

@@ -47,8 +47,8 @@ public interface FranchiseReturnRepository extends JpaRepository<Returns, Long>,
 
     List<Returns> findAllByReturnIdInAndDeletedAtIsNull(List<Long> returnIds);
 
-    @Modifying
-    @Query("UPDATE Returns r SET r.returnStatus = :deliverStatus WHERE r.returnCode IN :returnCode")
-    void updateReturnStatusByReturnCodeIn(@Param("returnCode") List<String> returnCode,
-                                            @Param("deliverStatus") ReturnStatus deliverStatus);
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE Returns r SET r.returnStatus = :returnStatus WHERE r.returnCode IN :returnCodes")
+    void updateReturnStatusByReturnCodeIn(@Param("returnCodes") List<String> returnCodes,
+            @Param("returnStatus") ReturnStatus returnStatus);
 }

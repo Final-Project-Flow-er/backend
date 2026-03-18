@@ -183,7 +183,6 @@ public class FranchiseOrderService {
                 .totalQuantity(totalQuantity)
                 .totalAmount(totalPrice)
                 .deliveryDate(request.deliveryDate())
-                .deliveryTime(request.deliveryTime())
                 .build();
 
         // 발주 저장

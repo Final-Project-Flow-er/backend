@@ -38,6 +38,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @Tag(name = "HQ Order API", description = "본사 발주 관련 API")
@@ -140,9 +141,9 @@ public class HQOrderController {
     }
 
     @Operation(summary = "발주 접수 가불 판단", description = "가맹점 발주 요청 시 재고가 충분한지 확인 후 가불 판단")
-    @GetMapping("/is-possible")
+    @PostMapping("/is-possible")
     @PreAuthorize("hasRole('HQ')")
-    public ResponseEntity<ApiResponse<HQOrderPossibleResponse>> isPossible(
+    public ResponseEntity<ApiResponse<List<HQOrderPossibleResponse>>> isPossible(
             @RequestBody List<String> orderCodes
     ) {
         return ResponseEntity.ok(ApiResponse.success(hqOrderFacade.isPossible(orderCodes)));

@@ -737,4 +737,18 @@ public class InventoryService {
 
         return itemInfos;
     }
+
+    // return: Map<productId, quantity>
+    public Map<Long, Long> getFactoryInventoryByProductId(List<Long> productIds) {
+        // Set<productId>
+        Set<Long> productIdSet = new HashSet<>(productIds);
+
+        List<FactoryInventory> inventories = factoryInventoryRepository.findAllByProductIdInAndStatusAndDeletedAtIsNull(productIdSet, LogType.AVAILABLE);
+
+        return inventories.stream()
+                .collect(Collectors.groupingBy(
+                        FactoryInventory::getProductId,
+                        Collectors.counting()
+                ));
+    }
 }

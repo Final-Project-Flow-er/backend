@@ -6,7 +6,8 @@ import java.util.Map;
 
 @Builder
 public record HQOrderPossibleResponse(
-        // Map<returnCode, possible/impossible>
-        Map<String, Boolean> isPossibleByReturnCode
+        String orderCode,
+
+        Boolean isPossible
 ) {
 }

@@ -8,6 +8,7 @@ import com.chaing.domain.inventories.service.InventoryService;
 import com.chaing.domain.orders.dto.command.FranchiseOrderCommand;
 import com.chaing.domain.orders.dto.command.HQOrderCancelCommand;
 import com.chaing.domain.orders.dto.response.HQOrderItemProjection;
+import com.chaing.domain.orders.dto.response.HQOrderPossibleResponse;
 import com.chaing.domain.orders.dto.response.HQRequestedOrderItemProjection;
 import com.chaing.domain.orders.dto.command.FranchiseOrderDetailCommand;
 import com.chaing.domain.orders.dto.command.FranchiseOrderItemCommand;
@@ -17,7 +18,6 @@ import com.chaing.domain.orders.dto.request.HQOrderCreateRequest;
 import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.domain.orders.dto.info.HQOrderCommand;
 import com.chaing.domain.orders.dto.info.HQOrderItemCommand;
-import com.chaing.domain.orders.dto.request.HQOrderItemCreateCommand;
 import com.chaing.domain.orders.dto.request.HQOrderUpdateRequest;
 import com.chaing.domain.orders.dto.request.HQOrderUpdateStatusRequest;
 import com.chaing.domain.orders.dto.response.FranchiseOrderStatusShippingPendingResponse;
@@ -55,12 +55,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -749,5 +750,76 @@ public class HQOrderFacade {
             redisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(payload), CACHE_TTL);
         } catch (Exception ignored) {
         }
+    }
+
+    // 가맹점 발주 접수 가불 판단
+    public List<HQOrderPossibleResponse> isPossible(List<String> orderCodes) {
+        // 캐싱 적용
+
+        // Map<orderId, FranchiseOrderDetailCommand>
+        Map<Long, FranchiseOrderDetailCommand> orderByOrderId = franchiseOrderService.getOrdersByOrderCode(orderCodes);
+        log.info("orderByOrderId={}", orderByOrderId);
+
+        // List<orderId>
+        List<Long> orderIds = orderByOrderId.keySet().stream().toList();
+
+        // Map<orderId, List<FranchiseOrderItemCommand>>
+        Map<Long, List<FranchiseOrderItemCommand>> orderItemsByOrderId = franchiseOrderService.getOrderItemsByOrderIds(orderIds);
+        log.info("orderItemsByOrderId={}", orderItemsByOrderId);
+
+        // List<productId>
+        List<Long> productIds = orderItemsByOrderId.values().stream()
+                .flatMap(List::stream)
+                .map(FranchiseOrderItemCommand::productId)
+                .toList();
+
+        // Map<productId, FactoryInventoryQuantity>
+        Map<Long, Long> facInventoryQuantityByProductId = inventoryService.getFactoryInventoryByProductId(productIds);
+
+        // 반환
+        return orderItemsByOrderId.entrySet().stream()
+                .map(entry -> {
+                    Long orderId = entry.getKey();
+                    FranchiseOrderDetailCommand orderDetailCommand = orderByOrderId.get(orderId);
+                    List<FranchiseOrderItemCommand> items = entry.getValue();
+                    log.info("orderDetailCommand={}", orderDetailCommand);
+                    log.info("items={}", items);
+
+                    if (orderDetailCommand == null) {
+                        throw new OrderException(OrderErrorCode.ORDER_NOT_FOUND);
+                    }
+
+                    if (items == null || items.isEmpty()) {
+                        throw new OrderException(OrderErrorCode.ORDER_ITEM_NOT_FOUND);
+                    }
+
+                    // Map<productId, OrderQuantity>
+                    Map<Long, Integer> orderQuantityByProductId = items.stream()
+                            .collect(Collectors.toMap(
+                                    FranchiseOrderItemCommand::productId,
+                                    FranchiseOrderItemCommand::quantity
+                            ));
+
+                    AtomicReference<Boolean> isPossible = new AtomicReference<>(true);
+
+                    orderQuantityByProductId.forEach((productId, orderQuantity) -> {
+                        Long inventoryQuantity = facInventoryQuantityByProductId.get(productId);
+
+                        if (orderQuantity == null || inventoryQuantity == null) {
+                            throw new OrderException(OrderErrorCode.ORDER_NOT_FOUND);
+                        }
+                        log.info("orderQuantity={}, inventoryQuantity={}", orderQuantity, inventoryQuantity);
+
+                        if (orderQuantity > inventoryQuantity) {
+                            isPossible.set(false);
+                        }
+                    });
+
+                    return HQOrderPossibleResponse.builder()
+                            .orderCode(orderDetailCommand.orderCode())
+                            .isPossible(isPossible.get())
+                            .build();
+                })
+                .toList();
     }
 }

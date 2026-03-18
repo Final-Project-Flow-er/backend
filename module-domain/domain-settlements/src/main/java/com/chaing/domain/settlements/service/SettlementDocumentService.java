@@ -18,4 +18,7 @@ public interface SettlementDocumentService {
 
     // 4. 문서 메타데이터 저장
     void save(SettlementDocument document);
+
+    // 5. 유령 레코드 삭제 (MinIO 파일 없는 stale 레코드 정리용)
+    void deleteById(Long settlementDocumentId);
 }

@@ -703,58 +703,50 @@ public class FranchiseSettlementFacade {
         @Transactional
         public String getDailyReceiptPdf(Long franchiseId, LocalDate date) {
                 try {
-                        // 1. 해당 가맹점의 일별 정산 데이터 조회 (Optional 사용으로 트랜잭션 롤백 방지)
+                        // 1. DB에서 확정 정산 레코드 조회 (없어도 실시간 집계로 대체)
                         java.util.Optional<DailySettlementReceipt> receiptOpt = dailyService
                                         .findByFranchiseAndDate(franchiseId, date);
 
+                        // 2. 기존 문서 레코드가 있으면 삭제 (매 요청마다 최신 데이터로 재생성)
                         if (receiptOpt.isPresent()) {
-                                DailySettlementReceipt receipt = receiptOpt.get();
-                                // 2. 해당 정산 ID로 이미 생성된 문서가 있는지 확인
                                 java.util.Optional<SettlementDocument> existingDoc = documentService
-                                                .getDailyDocument(receipt.getDailyReceiptId());
-                                if (existingDoc.isPresent()) {
-                                        String existingKey = existingDoc.get().getObjectKey();
-                                        // MinIO에 실제 파일이 존재하는지 확인 (유령 레코드 방지)
-                                        if (minioService.objectExists(existingKey, BucketName.SETTLEMENTS)) {
-                                                return minioService.getFileUrl(existingKey, BucketName.SETTLEMENTS);
-                                        }
-                                        log.warn("[PDF] SettlementDocument record exists (id={}) but file not found in MinIO (key={}). Regenerating.",
-                                                        existingDoc.get().getSettlementDocumentId(), existingKey);
-                                }
+                                                .getDailyDocument(receiptOpt.get().getDailyReceiptId());
+                                existingDoc.ifPresent(doc -> {
+                                        // MinIO 파일도 삭제 (선택적 — 버킷 정리 원하면 활성화)
+                                        // minioService.deleteFile(doc.getObjectKey(), BucketName.SETTLEMENTS);
+                                        documentService.deleteById(doc.getSettlementDocumentId());
+                                });
                         }
 
-                        // 3. 문서가 없으면 실시간 생성 (상세 라인 포함)
+                        // 3. 현재 정산 데이터 실시간 집계
                         AggregationResult result = aggregateDailySettlement(franchiseId, date);
                         DailySettlementReceipt currentReceipt = result.receipt();
                         List<DailyReceiptLine> currentLines = result.lines();
 
-                        // 데이터가 전혀 없는 경우 (오늘 매출/발주 0) 예외 처리
+                        // 데이터가 전혀 없는 경우 (매출/발주 모두 0) 예외 처리
                         if (currentReceipt.getTotalSaleAmount().compareTo(BigDecimal.ZERO) == 0 &&
                                         currentReceipt.getOrderAmount().compareTo(BigDecimal.ZERO) == 0) {
                                 throw new SettlementException(SettlementErrorCode.SETTLEMENT_DATA_EMPTY);
                         }
 
-                        // 가맹점명 조회
+                        // 4. 가맹점명 조회
                         String franchiseName = franchiseRepository.findById(franchiseId)
                                 .map(com.chaing.domain.businessunits.entity.Franchise::getName)
                                 .orElse("Unknown Store");
 
+                        // 5. PDF 생성
                         byte[] pdfBytes = fileService.createDailyReceiptPdf(currentReceipt, currentLines, franchiseName);
 
-                        // 4. MinIO 업로드 (확정 데이터면 daily, 아니면 provisional 폴더)
-                        String folder = receiptOpt.isPresent() ? "settlement/daily/" : "settlement/provisional/";
-                        String prefix = receiptOpt.isPresent() ? "FR_" : "FR_Preview_";
-                        String fileName = folder + prefix + franchiseId + "_Daily_" + date + "_"
+                        // 6. MinIO 업로드 (항상 settlement/daily/ 폴더)
+                        String fileName = "settlement/daily/FR_" + franchiseId + "_Daily_" + date + "_"
                                         + System.currentTimeMillis() + ".pdf";
-
                         minioService.uploadFile(pdfBytes, fileName, "application/pdf", BucketName.SETTLEMENTS);
                         String fileUrl = minioService.getFileUrl(fileName, BucketName.SETTLEMENTS);
 
-                        // 5. DB에 메타데이터 저장
+                        // 7. DB에 메타데이터 저장
                         SettlementDocument.SettlementDocumentBuilder docBuilder = SettlementDocument.builder()
                                         .periodType(PeriodType.DAILY)
-                                        .documentType(receiptOpt.isPresent() ? DocumentType.RECEIPT_PDF
-                                                        : DocumentType.PROVISIONAL_RECEIPT_PDF)
+                                        .documentType(DocumentType.RECEIPT_PDF)
                                         .documentOwner(DocumentOwner.FRANCHISE)
                                         .franchiseId(franchiseId)
                                         .storageProvider("MINIO")
@@ -770,7 +762,6 @@ public class FranchiseSettlementFacade {
                         }
 
                         documentService.save(docBuilder.build());
-
                         return fileUrl;
                 } catch (Exception e) {
                         log.error("Failed to generate Daily Franchise Receipt PDF: ", e);
@@ -784,33 +775,53 @@ public class FranchiseSettlementFacade {
         @Transactional
         public String getMonthlyReceiptPdf(Long franchiseId, YearMonth month) {
                 try {
-                        // 1. 해당 가맹점의 월별 정산 데이터 조회 (Optional 사용으로 트랜잭션 롤백 방지)
+                        // 1. DB에서 확정 월별 정산 조회
                         java.util.Optional<MonthlySettlement> settlementOpt = monthlyService
                                         .findByFranchiseAndMonth(franchiseId, month);
 
+                        String franchiseName = franchiseRepository.findById(franchiseId)
+                                        .map(Franchise::getName).orElse("Unknown Store");
+
+                        byte[] pdfBytes;
+                        String fileName = "settlement/monthly/FR_" + franchiseId + "_Monthly_"
+                                        + month + "_" + System.currentTimeMillis() + ".pdf";
+
                         if (settlementOpt.isPresent()) {
                                 MonthlySettlement settlement = settlementOpt.get();
-                                // 2. 이미 생성된 문서(RECEIPT_PDF)가 있는지 확인
-                                java.util.List<com.chaing.domain.settlements.entity.SettlementDocument> documents = documentService
+
+                                // 2. 기존 문서 레코드 삭제 (매 요청마다 최신 데이터로 재생성)
+                                List<SettlementDocument> documents = documentService
                                                 .getMonthlyDocuments(settlement.getMonthlySettlementId());
-
-                                SettlementDocument existingDoc = documents.stream()
+                                documents.stream()
                                                 .filter(doc -> doc.getDocumentType() == DocumentType.RECEIPT_PDF)
-                                                .findFirst()
-                                                .orElse(null);
+                                                .forEach(doc -> documentService.deleteById(doc.getSettlementDocumentId()));
 
-                                if (existingDoc != null) {
-                                        String existingKey = existingDoc.getObjectKey();
-                                        // MinIO에 실제 파일이 존재하는지 확인 (유령 레코드 방지)
-                                        if (minioService.objectExists(existingKey, BucketName.SETTLEMENTS)) {
-                                                return minioService.getFileUrl(existingKey, BucketName.SETTLEMENTS);
-                                        }
-                                        log.warn("[PDF] Monthly SettlementDocument record exists (id={}) but file not found in MinIO (key={}). Regenerating.",
-                                                        existingDoc.getSettlementDocumentId(), existingKey);
-                                }
+                                // 3. 확정 스냅샷으로 RECEIPT_PDF 생성
+                                List<SettlementVoucher> vouchers = voucherRepository
+                                                .findAllByMonthlySettlementId(settlement.getMonthlySettlementId());
+                                pdfBytes = fileService.createMonthlyReceiptPdf(settlement, vouchers, franchiseName);
+
+                                minioService.uploadFile(pdfBytes, fileName, "application/pdf", BucketName.SETTLEMENTS);
+                                String fileUrl = minioService.getFileUrl(fileName, BucketName.SETTLEMENTS);
+
+                                documentService.save(SettlementDocument.builder()
+                                                .periodType(PeriodType.MONTHLY)
+                                                .documentType(DocumentType.RECEIPT_PDF)
+                                                .documentOwner(DocumentOwner.FRANCHISE)
+                                                .franchiseId(franchiseId)
+                                                .monthlySettlementId(settlement.getMonthlySettlementId())
+                                                .storageProvider("MINIO")
+                                                .bucket(BucketName.SETTLEMENTS.getBucketName())
+                                                .objectKey(fileName)
+                                                .fileUrl(fileUrl)
+                                                .fileName(fileName.substring(fileName.lastIndexOf("/") + 1))
+                                                .contentType("application/pdf")
+                                                .fileSize((long) pdfBytes.length)
+                                                .build());
+                                return fileUrl;
                         }
 
-                        // 3. 데이터가 없거나 문서가 없으면 실시간 가집계 PDF 생성 시도
+                        // 4. 확정 레코드 없으면 실시간 가집계로 PDF 생성 (당월 등)
                         return generateProvisionalMonthlyPdf(franchiseId, month);
                 } catch (Exception e) {
                         log.error("Failed to generate Monthly Franchise Receipt PDF: ", e);

@@ -47,6 +47,17 @@ public class HQSettlementAdjustmentFacade {
                 .orElse("Unknown");
 
         com.chaing.domain.settlements.enums.AdjustmentDirection direction = request.direction();
+        com.chaing.domain.returns.enums.ReturnType returnType = request.returnType();
+
+        // ⭐️ 반품 유형(RETURN)일 경우 자동 매핑 로직 적용
+        if (request.type() == com.chaing.domain.settlements.enums.VoucherType.RETURN && returnType != null) {
+            if (returnType == com.chaing.domain.returns.enums.ReturnType.MISORDER) {
+                direction = com.chaing.domain.settlements.enums.AdjustmentDirection.DECREASE; // 오배송 -> 가맹점 차감
+            } else if (returnType == com.chaing.domain.returns.enums.ReturnType.PRODUCT_DEFECT) {
+                direction = com.chaing.domain.settlements.enums.AdjustmentDirection.INCREASE; // 상품하자 -> 본사 보전
+            }
+        }
+
         BigDecimal amount = BigDecimal.valueOf(request.amount());
         BigDecimal finalAmount = (direction == com.chaing.domain.settlements.enums.AdjustmentDirection.INCREASE) 
                 ? amount 
@@ -54,13 +65,14 @@ public class HQSettlementAdjustmentFacade {
 
         com.chaing.domain.settlements.entity.SettlementAdjustment adjustment = com.chaing.domain.settlements.entity.SettlementAdjustment
                 .builder()
-                .settlementVoucherId(0L) // 특정 전표 매핑이 없는 일반 조정의 경우 0L
+                .settlementVoucherId(0L)
                 .adjustmentCode("AD-" + System.currentTimeMillis())
                 .franchiseId(request.franchiseId())
                 .voucherType(request.type())
                 .occurredAt(request.occurredAt().atStartOfDay())
                 .settlementMonth(request.settlementMonth().toString()) 
                 .isMinus(direction == com.chaing.domain.settlements.enums.AdjustmentDirection.DECREASE)
+                .returnType(returnType) // ⭐️ 반품 사유 저장
                 .createdByName(createdByName)
                 .adjustmentAmount(finalAmount)
                 .reason(request.reason())
@@ -101,7 +113,8 @@ public class HQSettlementAdjustmentFacade {
                         a.getAdjustmentAmount().longValue(),
                         a.getIsMinus() ? com.chaing.domain.settlements.enums.AdjustmentDirection.DECREASE : com.chaing.domain.settlements.enums.AdjustmentDirection.INCREASE,
                         a.getReason(),
-                        a.getSettlementMonth())) // ⭐️ 응답에 반영월 포함
+                        a.getSettlementMonth(),
+                        a.getReturnType())) // ⭐️ 응답에 반품 사유 포함
                 .collect(Collectors.toList());
 
         return new PageImpl<>(dtos, pageable, adjustments.getTotalElements());

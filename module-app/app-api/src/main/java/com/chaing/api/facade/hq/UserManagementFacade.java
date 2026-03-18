@@ -11,7 +11,9 @@ import com.chaing.api.dto.hq.user.response.UserSummaryResponse;
 import com.chaing.domain.businessunits.service.BusinessUnitService;
 import com.chaing.domain.notifications.enums.NotificationType;
 import com.chaing.domain.notifications.event.NotificationEvent;
+import com.chaing.domain.businessunits.dto.condition.BusinessUnitSearchCondition;
 import com.chaing.domain.users.enums.UserRole;
+import com.chaing.domain.businessunits.dto.internal.BusinessUnitInternal;
 import com.chaing.domain.users.event.ProfileImageDeleteEvent;
 import com.chaing.domain.users.event.UserInfoResendEvent;
 import com.chaing.domain.users.event.UserRegisteredEvent;
@@ -32,6 +34,7 @@ import com.chaing.domain.users.service.UserManagementService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -117,7 +120,22 @@ public class UserManagementFacade {
 
     // 회원 목록 조회
     public Page<UserSummaryResponse> getUserList(UserSearchRequest request, Pageable pageable) {
-        UserSearchCondition condition = request.toCondition();
+        List<Long> hqIds = null;
+        List<Long> franchiseIds = null;
+        List<Long> factoryIds = null;
+
+        if (request.orgName() != null && !request.orgName().isBlank()) {
+            BusinessUnitSearchCondition buCondition = new BusinessUnitSearchCondition(
+                    null, request.orgName(), null, null, null, null, null, null);
+            hqIds = headquarterServiceImpl.getBusinessUnitList(buCondition, PageRequest.of(0, 500))
+                    .getContent().stream().map(BusinessUnitInternal::id).toList();
+            franchiseIds = franchiseServiceImpl.getBusinessUnitList(buCondition, PageRequest.of(0, 500))
+                    .getContent().stream().map(BusinessUnitInternal::id).toList();
+            factoryIds = factoryServiceImpl.getBusinessUnitList(buCondition, PageRequest.of(0, 500))
+                    .getContent().stream().map(BusinessUnitInternal::id).toList();
+        }
+
+        UserSearchCondition condition = request.toCondition(hqIds, franchiseIds, factoryIds);
         Page<User> userPage = userManagementService.getUserList(condition, pageable);
 
         Map<UserRole, List<Long>> roleUnitIdsMap = userPage.getContent().stream()
@@ -235,7 +253,6 @@ public class UserManagementFacade {
                 case HQ -> headquarterServiceImpl.getById(unitId).name();
                 case FRANCHISE -> franchiseServiceImpl.getById(unitId).name();
                 case FACTORY -> factoryServiceImpl.getById(unitId).name();
-                default -> "-";
             };
         } catch (Exception e) {
             return "-";

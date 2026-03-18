@@ -1,289 +1,203 @@
-# Back-end
-## 공통 사항
-- TDD(Test-Driven Development)
-- 단위 테스트 작성(controller, service, repository 메소드 별로) : Junit 사용
-  - service 메소드가 많아져 분리한다면 테스트코드도 그에 맞게 분리
-- 지라 티켓을 생성하고 브랜치 생성 후 작업 시작
-- 데이터 입출력에 대한 로그 잘 작성
-- 평일 오전 09시 10분간 데일리 스크럼 실시
-- 매주 화요일 09시 위클리 스크럼
+# 📦 CHAIN-G
+
+<img width="300" alt="Gemini_Generated_Image_8j8ddp8j8ddp8j8d-Photoroom" src="https://github.com/user-attachments/assets/6f623ede-7a0d-4fcd-a74f-3bec56de2c63" />
+
+> CONNECT GOOD, VALUE CHAIN
+>
+**CHAIN-G**는 떡볶이 밀키트의 생산부터 유통, 가맹점 판매 및 정산까지의 전 과정을 효율적으로 관리하는 **공급망 관리(SCM) 시스템**입니다.  
+본사, 가맹점, 공장 세 주체 간의 유기적인 발주, 재고 관리, 물류 배차 및 정산 프로세스를 자동화합니다.
 
 <br>
 
-## 개발규칙
+## 👥 팀원 소개 (Team Flow-er)
+
+| <img src="https://github.com/chaewoo-kim.png" width="120"> | <img src="https://github.com/rlatjddms.png" width="120"> | <img src="https://github.com/kyk5095.png" width="120"> | <img src="https://github.com/Yoocy0.png" width="120"> | <img src="https://github.com/cho-yunho01.png" width="120"> |
+| :---: | :---: | :---: | :---: | :---: |
+| **김채우** | **김성은** | **김윤경** | **유찬연** | **조윤호** |
+| Order / Sales / <br>Return | User / BusinessUnit / <br>Notice / Notification | Settlement | In&Outbound / <br>Transport | Inventory / Product |
+| [@chaewoo-kim](https://github.com/chaewoo-kim) | [@rlatjddms](https://github.com/rlatjddms) | [@kyk5095](https://github.com/kyk5095) | [@Yoocy0](https://github.com/Yoocy0) | [@cho-yunho01](https://github.com/cho-yunho01) |
+
+<br>
+
+<br>
+
+## 🏢 프로젝트 아키텍처
+
+본 프로젝트는 유지보수성과 확장성을 위해 **멀티 모듈 아키텍처**를 채택하고 있으며, 도메인 중심 설계(Domain-Driven Design)를 지향합니다.
+
+### 모듈 구조
+- **`module-core`**: 시스템 전반에서 공통으로 사용되는 유틸리티, 예외 처리, 공통 응답 규격을 포함합니다.
+- **`module-domain`**: 순수 비즈니스 로직과 데이터 모델(Entity)을 담당하는 핵심 모듈입니다.
+  - `domain-orders`: 가맹점 및 본사의 발주(Order) 프로세스
+  - `domain-inventories`: 공장 및 가맹점의 재고(Inventory) 관리
+  - `domain-settlements`: 가맹점 수익 및 본사 정산(Settlement) 로직
+  - `domain-transports`: 물류 및 차량 배차(Logistics) 정보
+  - `domain-users`: 회원 정보 및 권한 관리
+  - *기타 도메인*: `products`, `notices`, `notifications`, `sales`, `returns` 등
+- **`module-app:app-api`**: 외부 요청을 처리하는 API 엔드포인트를 제공하며 도메인 모듈을 조합하여 실제 서비스를 제공합니다.
+- **`module-external-transport`**: 외부 시스템(물류 시스템 등)과의 연동을 담당합니다.
+
+<br>
+
+## 🚀 주요 비즈니스 프로세스
+
+### 1. 발주 및 생산 (Ordering & Production)
+- **가맹점 -> 본사 발주**: 가맹점에서 부족한 밀키트 품목을 본사에 요청합니다. (화/금 도착 기준)
+- **본사 -> 공장 생산 요청**: 본사에서 전체 가맹점의 수요를 취합하여 공장에 생산 지시를 내립니다.
+- **제품 코드 체계**: 제품명 + 매운맛(01~04) + 사이즈(01, 03)의 조합으로 관리됩니다.
+
+- ### 2. 물류 및 재고 (Logistics & Inventory)
+- **박스 및 제품 식별 코드**: 생산된 제품은 지역/공장/생산라인 정보가 포함된 고유 코드로 관리됩니다.
+- **피킹 및 차량 배차**: 출고 전 패키징 확정(피킹) 후 적재 중량을 고려하여 물류 차량에 자동/반자동 배차를 진행합니다.
+
+### 3. 정산 (Settlement)
+- **매출 및 대금 정산**: 가맹점의 판매 데이터를 기반으로 본사 대금 차감 및 수수료 정산을 수행합니다.
+- **반품 관리**: 하자 상품에 대한 반품 요청 및 검수 후 대금 차감을 지원합니다.
+
+<br>
+
+## 🛠 기술 스택
+
+| Category | Stack |
+| :--- | :--- |
+| **Language** | Java 21 |
+| **Framework** | Spring Boot 3.2.2 |
+| **Persistence** | Spring Data JPA, MySQL 8.x |
+| **Build Tool** | Gradle |
+| **Testing** | JUnit 5, AssertJ, JaCoCo (Line Coverage 80% 이상 준수) |
+| **CI/CD & Tools** | SonarQube, Lombok, GitHub Actions |
+
+<br>
+
+## 📖 개발 가이드 및 컨벤션
+
+## 👥 팀 협업 규칙
+
+- **데일리 스크럼**: 평일 오전 09:00 (10분 내외)
+- **지라(Jira) 연동**: 작업 시작 전 이슈 생성 및 브랜치(`feat/이슈번호-도메인`) 생성 필수
+- **품질 관리**: 모든 PR은 SonarQube 분석 및 테스트 통과를 기본으로 합니다.
 
 ### ⭐ Code Convention
 
----
-
 <details>
-<summary style = " font-size:1.3em;">Naming</summary>
+<summary style="font-size:1.2em;">1. Naming (명명 규칙)</summary>
 <div markdown="1">
 
-- 패키지 : 언더스코어(`_`)나 대문자를 섞지 않고 소문자를 사용하여 작성합니다.
-- 클래스 : 클래스 이름은 명사나 명사절로 지으며, 대문자 카멜표기법(Upper camel case)을 사용합니다.
-- 메서드 : 메서드 이름은 동사/전치사로 시작하며, 소문자 카멜표기법(Lower camel case)를 사용합니다. 의도가 전달되도록 최대한 간결하게 표현합니다.
-- 변수 : 소문자 카멜표기법(Lower camel case)를 사용합니다.
-- ENUM, 상수 : 상태를 가지지 않는 자료형이면서 `static final`로 선언되어 있는 필드일 때를 상수로 간주하며, 대문자와 언더스코어(Upper_snake_case)로 구성합니다.
-- DB 테이블: 소문자와 언더스코어로(lower_snake_case) 구성합니다.
-- 컬렉션(Collection): **복수형**을 사용하거나 **컬렉션을 명시합니다**. (Ex. userList, users, userMap)
-
+- **패키지**: 언더스코어(`_`) 없이 소문자만 사용
+- **클래스**: 대문자 카멜 케이스 (`UpperCamelCase`)
+- **메서드**: 동사/전치사 시작, 소문자 카멜 케이스 (`lowerCamelCase`)
+- **변수**: 소문자 카멜 케이스 (`lowerCamelCase`)
+- **ENUM/상수**: 대문자 및 언더스코어 (`UPPER_SNAKE_CASE`)
+- **DB 테이블**: 소문자 및 언더스코어 (`lower_snake_case`)
+- **컬렉션**: 복수형 사용 혹은 명시 (`users`, `userList`, `userMap`)
 
 </div>
 </details>
+
 <details>
-<summary style = " font-size:1.3em;">Comment</summary>
+<summary style="font-size:1.2em;">2. Comment & Import (주석 및 임포트)</summary>
 <div markdown="1">
 
-### 1. 한줄 주석은 // 를 사용한다.
-
-```java
-// 하이~
-```
-
-### 2. Bracket 사용 시 내부에 주석을 작성한다.
-
-```java
-/*
-   하이~!
-*/
-```
+- **주석**: 한 줄 주석은 `//`, 여러 줄은 `/* ... */` 사용
+- **파일 구조**: 소스파일당 1개의 탑레벨 클래스만 포함
+- **Import**: 와일드카드(`*`) 사용 금지 (단, static import는 허용)
+- **Annotation**: 선언 후 새 줄 사용 (파라미터 없는 1개는 같은 줄 허용)
+- **기타**: 배열 대괄호는 타입 뒤에 (`String[]`), `long`형 값 끝에는 대문자 `L` 사용
 
 </div>
 </details>
+
 <details>
-<summary style = " font-size:1.3em;">Import</summary>
+<summary style="font-size:1.2em;">3. URL (RESTful API)</summary>
 <div markdown="1">
 
-### 1. 소스파일당 1개의 탑레벨 클래스를 담기
-
-> 탑레벨 클래스(Top level class)는 소스 파일에 1개만 존재해야 한다.
-
-### 2. static import에만 와일드 카드 허용
-
-> 클래스를 import할때는 와일드카드(`*`) 없이 모든 클래스명을 다 쓴다. static import에서는 와일드카드를 허용한다.
-
-### 3. 애너테이션 선언 후 새줄 사용
-
-> 클래스, 인터페이스, 메서드, 생성자에 붙는 애너테이션은 선언 후 새줄을 사용한다. 이 위치에서도 파라미터가 없는 애너테이션 1개는 같은 줄에 선언할 수 있다.
-
-
-### 4. 배열에서 대괄호는 타입 뒤에 선언
-
-> 배열 선언에 오는 대괄호(`[]`)는 타입의 바로 뒤에 붙인다. 변수명 뒤에 붙이지 않는다.
-
-### 5. `long`형 값의 마지막에 `L`붙이기
-
-> long형의 숫자에는 마지막에 대문자 'L’을 붙인다. 소문자 'l’보다 숫자 '1’과의 차이가 커서 가독성이 높아진다.
+- **행위 배제**: URL에 get, put 등 행위 표현 금지 (HTTP Method로 구분)
+- **구분자**: `_` 대신 `-`(Kebab-case) 사용
+- **형식**: 소문자 사용, 마지막 `/` 및 확장자 포함 금지
 
 </div>
 </details>
+
+### ⭐ Commit Convention
+
 <details>
-<summary style = " font-size:1.3em;">URL</summary>
+<summary style="font-size:1.2em;">1. Git Flow & Rules</summary>
 <div markdown="1">
 
-### URL
+- **프로세스**: Issue 생성 → Jira 티켓 관리 → feature 브랜치 생성 → add/commit/push → PR 생성 → dev 머지
+- **기본 규칙**: `dev` 브랜치 직접 작업 금지 (README 제외), 모든 작업은 정상 실행 확인 후 수행
+- **브랜치 네이밍**: `<Prefix>/<Ticket_Number>-<Domain>-<Description>`
+  - 예시: `feat/7-order-create-order`, `feat/5-settlement-monthly`
 
-URL은 RESTful API 설계 가이드에 따라 작성합니다.
+</div>
+</details>
 
-- HTTP Method로 구분할 수 있는 get, put 등의 행위는 url에 표현하지 않습니다.
-- 마지막에 `/` 를 포함하지 않습니다.
-- `_` 대신 `-`를 사용합니다.
-- 소문자를 사용합니다.
-- 확장자는 포함하지 않습니다.
+<details>
+<summary style="font-size:1.2em;">2. Commit Message & PR</summary>
+<div markdown="1">
 
+- **양식**: `[<Prefix>] #<Issue_Number> <Description>`
+- **Prefix**:
+  - `feat`: 새로운 기능 구현
+  - `fix`: 버그 수정
+  - `del`: 코드 삭제
+  - `docs`: 문서 개정
+  - `refactor`: 리팩터링
+  - `chore`: 빌드 업무, 패키지 구조 변경, 의존성 추가
+  - `test`: 테스트 코드 작성 및 수정
 
 </div>
 </details>
 
 <br>
 
-### ☀️ Commit Convention
+## 📝 프로젝트 회고 (Team Retrospective)
 
----
+프로젝트를 마치며 팀원 각자가 느낀 기술적 도전과 성장을 기록합니다.
 
 <details>
-<summary style = " font-size:1.3em;">Rules</summary>
+<summary style="font-size:1.2em;">🦫 김채우</summary>
 <div markdown="1">
 
-### 1. Git Flow
-
-작업 시작 시 선행되어야 할 작업은 다음과 같습니다.
-
-
-> 1. issue를 생성합니다.
-> 2. 생성된 Jira의 티켓의 세부 내용(Story Point, Start Date, Due Date 등)을 관리합니다. 
-> 3. Jira의 티켓 번호에 따라 feature branch를 생성합니다.
-> 4. add → commit → push → pull request 를 진행합니다.
-> 5. pull request를 dev branch로 merge 합니다.
-> 6. 이전에 merge된 작업이 있을 경우 다른 branch에서 진행하던 작업에 merge된 작업을 pull 받아옵니다.
-
-
-### 2. Etc
-
-준수해야 할 규칙은 다음과 같습니다.
-
-> 1. develop branch에서의 작업은 원칙적으로 금지합니다. 단, README 작성은 develop branch에서 수행합니다.
-> 2. commit, push, merge, pull request 등 모든 작업은 오류 없이 정상적으로 실행되는 지 확인 후 수행합니다.
+(작성 예정)
 
 </div>
 </details>
 
 <details>
-<summary style = " font-size:1.3em;">Branch</summary>
+<summary style="font-size:1.2em;">☠️ 김성은</summary>
 <div markdown="1">
 
-### 1. Branch
-
-branch는 작업 단위 & 기능 단위로 생성하며 이는 Jira Ticket를 기반으로 합니다.
-
-### 2. Branch Naming Rule
-
-branch를 생성하기 전 issue를 먼저 작성합니다. issue 작성 후 생성되는 티켓의 번호와 domain 명을 조합하여 branch의 이름을 결정합니다. `<Prefix>/<Ticket_Number>-<Domain>-<Description>` 의 양식을 준수합니다.
-
-### 3. Prefix
-
-- `main` : 개발이 완료된 산출물이 저장될 공간입니다.
-- `dev`: feature branch에서 구현된 기능들이 merge될 default branch 입니다.
-- `feat`: 기능을 개발하는 branch 입니다. 이슈 별 & 작업 별로 branch를 생성 후 기능을 개발하며 naming은 소문자를 사용합니다.
-
-### 4. Domain
-
-- `user`, `inventory`, `settlement`, `order`, `purchase` 
-
-
-### 5. Etc
-
-- `feat/7-order-create-order`, `feat/5-settlement-monthly`
-
+(작성 예정)
 
 </div>
 </details>
 
 <details>
-<summary style = " font-size:1.3em;">Issue</summary>
+<summary style="font-size:1.2em;">🐇 김윤경</summary>
 <div markdown="1">
 
-### 1. Issue
-
-작업 시작 전 issue 생성이 선행되어야 합니다. issue 는 작업 단위 & 기능 단위로 생성하며 연동되어 생성되는 Jira의 ticket number 를 참조하여 branch 이름과 commit message를 작성합니다.
-
-issue 제목에는 기능의 대표적인 설명을 적고 내용에는 세부적인 내용 및 작업 진행 상황을 작성합니다.
-
-### 2. Issue Naming Rule
-
-`[<Prefix>] <Description>` 의 양식을 준수하되, prefix는 commit message convention을 따릅니다.
-
-### 3. Etc
-
-<aside>
-[feat] 약속 잡기 API 구현
-<br/>[chore] spring data JPA 의존성 추가
-
-</aside>
-
----
+(작성 예정)
 
 </div>
 </details>
 
 <details>
-<summary style = " font-size:1.3em;">Commit</summary>
+<summary style="font-size:1.2em;">🦘 유찬연</summary>
 <div markdown="1">
 
-### 1. Commit Message Convention
-
-`[<Prefix>] #<Issue_Number> <Description>` 의 양식을 준수합니다.
-
-- **feat** : 새로운 기능 구현 `[feat] #11 구글 로그인 API 기능 구현`
-- **fix** : 코드 오류 수정 `[fix] #10 회원가입 비즈니스 로직 오류 수정`
-- **del** : 쓸모없는 코드 삭제 `[del] #12 불필요한 import 제거`
-- **docs** : README나 wiki 등의 문서 개정 `[docs] #14 리드미 수정`
-- **refactor** : 내부 로직은 변경 하지 않고 기존의 코드를 개선하는 리팩터링 `[refactor] #15 코드 로직 개선`
-- **chore** : 의존성 추가, yml 추가와 수정, 패키지 구조 변경, 파일 이동 `[chore] #21 yml 수정`, `[chore] #22 lombok 의존성 추가`
-- **test**: 테스트 코드 작성, 수정 `[test] #20 로그인 API 테스트 코드 작성`
-- **style** : 코드에 관련 없는 주석 달기, 줄바꿈
-
-커밋에 대해 설명해야 하는 부분이 많다면 git commit -m "[<Prefix>] #<Issue_Number> <Description>" -m "<Description>"으로 작성합니다.
+(작성 예정)
 
 </div>
 </details>
 
 <details>
-<summary style = " font-size:1.3em;">Pull Request</summary>
+<summary style="font-size:1.2em;">🐜 조윤호</summary>
 <div markdown="1">
 
-### 1. Pull Request
-
-develop & main branch로 merge할 때에는 pull request가 필요합니다. pull request의 내용에는 변경된 사항에 대한 설명을 명시합니다.
-
-### 2. Pull Request Naming Rule
-
-`[<Prefix>] #<Issue_Number> <Description>` 의 양식을 준수하되, prefix는 commit message convention을 따릅니다.
-
-### 3. Etc
-
-[feat] #3 약속 잡기 API 구현
-<br/>
-[chore] #5 spring data JPA 의존성 추가
-
+(작성 예정)
 
 </div>
 </details>
 
-<br/>
-
-
-### ☀️ Test Code Convention
-
----
-
-### 1. 테스트 네이밍 컨벤션
-- 메서드명 패턴: MethodName_Given상황_Should기대결과
-```
-@Test
-void createOrder_GivenValidProduct_ShouldReturnOrderId() {
-    // given
-    Product product = new Product("떡볶이", 5000);
-    
-    // when
-    Long orderId = orderService.createOrder(product);
-    
-    // then
-    assertThat(orderId).isNotNull();
-}
-```
-
-### 2. 테스트 구조
-1. Arrange (given): 테스트 데이터와 Mock 설정
-2. Act (when): 테스트 대상 메소드 실행
-3. Assert (then): 결과 검증
-- 기존 사용하던 방식과 동일
-- 모든 테스트 메소드는 해당 구조를 따르도록 작성
-
-### 3. 패키지 구조
-테스트 구조는 원본 클래스와 동일한 패키지 구조를 유지
-```
-src/main/java/com/example/order/OrderService.java
-src/test/java/com/example/order/OrderServiceTest.java
-```
-- 서비스 코드가 분리되면 테스트 코드도 분리되어야 함
-
-
-### 4. 테스트 코드 작성 대상
-- Controller
-  - @WebMvcTest 사용
-  - Mock 대상: Service
-  - 테스트 목적: HTTP 통신, 유효성 검증
-- Service
-  - @SpringBootTest 사용
-  - Mock 대상: 없음. 실제 DB 사용
-  - 테스트 목적: 비즈니스 로직, 트랜잭션 검증
-- Repository
-  - @DataJpaTest 사용
-  - Mock 대상: 없음
-  - 테스트 목적: 쿼리 메소드, 데이터 접근 검증
- 
-<br/>
-<br/>
-<br/>
+<br>

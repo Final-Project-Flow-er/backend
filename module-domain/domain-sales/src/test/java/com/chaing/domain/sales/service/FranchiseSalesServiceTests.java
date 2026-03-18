@@ -1,4 +1,3 @@
-/*
 package com.chaing.domain.sales.service;
 
 import com.chaing.domain.sales.dto.request.FranchiseSellItemRequest;
@@ -57,6 +56,7 @@ class FranchiseSalesServiceTests {
     private SalesCodeGenerator salesCodeGenerator;
 
     Long franchiseId;
+    String franchiseCode;
     String username;
 
     Long salesId;
@@ -81,6 +81,7 @@ class FranchiseSalesServiceTests {
     @BeforeEach
     void setUp() {
         franchiseId = 1L;
+        franchiseCode = "SE";
         username = "test";
 
         salesId = 1L;
@@ -136,7 +137,7 @@ class FranchiseSalesServiceTests {
                 .salesCode(salesCode)
                 .salesDate(LocalDateTime.now())
                 .products(
-                        FranchiseSalesProductResponse.from(List.of(salesItem))
+                        FranchiseSalesProductResponse.from(List.of(salesItem), 10)
                 )
                 .build();
 
@@ -146,7 +147,7 @@ class FranchiseSalesServiceTests {
                 .productId(productId)
                 .quantity(10)
                 .unitPrice(BigDecimal.valueOf(5000))
-                .lot("lot")
+                .serialCode("lot")
                 .build();
         franchiseSellRequest = FranchiseSellRequest.builder()
                 .totalAmount(BigDecimal.valueOf(50000))
@@ -219,7 +220,7 @@ class FranchiseSalesServiceTests {
     @DisplayName("판매 생성 - 성공")
     void createSales_Success() {
         // when
-        FranchiseSellResponse response = franchiseSalesService.sell(franchiseId, franchiseSellRequest);
+        FranchiseSellResponse response = franchiseSalesService.sell(franchiseId, franchiseCode, franchiseSellRequest);
 
         // then
         verify(franchiseSalesRepository, times(1)).save(any());
@@ -228,26 +229,24 @@ class FranchiseSalesServiceTests {
         assertEquals(BigDecimal.valueOf(50000), response.totalPrice());
         assertEquals("productCode", response.items().get(0).productCode());
         assertEquals("productName", response.items().get(0).productName());
-        assertEquals(10, response.items().get(0).quantity());
         assertEquals(BigDecimal.valueOf(5000), response.items().get(0).unitPrice());
-        assertEquals(BigDecimal.valueOf(50000), response.items().get(0).totalPrice());
     }
 
     @Test
     @DisplayName("동일한 salesCode로 판매 생성 시 예외 발생")
     void createSales_Failure_DUPLICATE_SALES_CODE() {
         // given
-        given(salesCodeGenerator.generate()).willReturn("salesCode");
+        given(salesCodeGenerator.generate(franchiseCode)).willReturn("salesCode");
 
         given(franchiseSalesRepository.save(any(Sales.class)))
                 .willReturn(sales)
                 .willThrow(new DataIntegrityViolationException("duplicate salesCode"));
 
         // when & then
-        franchiseSalesService.sell(franchiseId, franchiseSellRequest);
+        franchiseSalesService.sell(franchiseId, franchiseCode, franchiseSellRequest);
 
         FranchiseSalesException exception = assertThrows(FranchiseSalesException.class, () -> {
-            franchiseSalesService.sell(franchiseId, franchiseSellRequest);
+            franchiseSalesService.sell(franchiseId, franchiseCode, franchiseSellRequest);
         });
         verify(franchiseSalesRepository, times(2)).save(any());
         assertEquals(FranchiseSalesErrorCode.DUPLICATE_SALES_CODE, exception.getErrorCode());
@@ -264,7 +263,7 @@ class FranchiseSalesServiceTests {
 
         // when & then
         FranchiseSalesException exception = assertThrows(FranchiseSalesException.class, () -> {
-            franchiseSalesService.sell(franchiseId, franchiseSellRequest);
+            franchiseSalesService.sell(franchiseId, franchiseCode, franchiseSellRequest);
         });
         verify(franchiseSalesRepository, times(1)).save(any());
         verify(franchiseSalesItemRepository, times(1)).saveAll(any());
@@ -320,4 +319,4 @@ class FranchiseSalesServiceTests {
         verify(franchiseSalesRepository, times(1)).findByFranchiseIdAndSalesCode(franchiseId, salesCode);
         assertEquals(FranchiseSalesErrorCode.ALREADY_CANCELLED, exception.getErrorCode());
     }
-}*/
+}

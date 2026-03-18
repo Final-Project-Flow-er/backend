@@ -13,6 +13,7 @@ import com.chaing.domain.orders.dto.command.FranchiseOrderItemCommand;
 import com.chaing.domain.orders.dto.request.FranchiseOrderCreateRequest;
 import com.chaing.core.dto.request.FranchiseOrderUpdateRequest;
 import com.chaing.domain.orders.dto.response.FranchiseOrderCancelResponse;
+import com.chaing.domain.orders.dto.response.FranchiseOrderCreateInfoResponse;
 import com.chaing.domain.orders.dto.response.FranchiseOrderCreateResponse;
 import com.chaing.domain.orders.dto.response.FranchiseOrderDetailResponse;
 import com.chaing.domain.orders.dto.response.FranchiseOrderItemDetailResponse;
@@ -507,5 +508,26 @@ public class FranchiseOrderFacade {
             redisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(payload), CACHE_TTL);
         } catch (Exception ignored) {
         }
+    }
+
+    // 가맹점주 이름, 전화번호, 주소 반환
+    public FranchiseOrderCreateInfoResponse getUserInfo(Long userId) {
+        // franchiseId
+        Long franchiseId = userManagementService.getFranchiseIdByUserId(userId);
+
+        // username
+        String username = userManagementService.getUsernameByUserId(userId);
+
+        // phoneNumber
+        String phoneNumber = userManagementService.getPhoneNumberByUserId(userId);
+
+        // address
+        String address = franchiseService.getById(franchiseId).address();
+
+        return FranchiseOrderCreateInfoResponse.builder()
+                .username(username)
+                .phoneNumber(phoneNumber)
+                .address(address)
+                .build();
     }
 }

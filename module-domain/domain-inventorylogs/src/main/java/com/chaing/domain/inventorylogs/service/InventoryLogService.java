@@ -193,13 +193,21 @@ public class InventoryLogService {
 
     public void recordInventoryLog(List<InventoryLogCreateRequest> logs) {
         List<InventoryLog> entities = logs.stream()
-                .filter(request -> !inventoryLogRepository
-                        .existsByTransactionCodeAndBoxCodeAndLogTypeAndActorTypeAndActorIdAndDeletedAtIsNull(
-                                request.transactionCode(),
-                                request.boxCode(),
-                                request.logType(),
-                                request.actorType(),
-                                request.actorId()))
+                .filter(request -> {
+                    // 폐기 로그는 transactionCode가 null이어서 기존 중복 검증이
+                    // 과도하게 동작할 수 있으므로 항상 기록한다.
+                    if (request.logType() == LogType.DISPOSAL) {
+                        return true;
+                    }
+
+                    return !inventoryLogRepository
+                            .existsByTransactionCodeAndBoxCodeAndLogTypeAndActorTypeAndActorIdAndDeletedAtIsNull(
+                                    request.transactionCode(),
+                                    request.boxCode(),
+                                    request.logType(),
+                                    request.actorType(),
+                                    request.actorId());
+                })
                 .map(this::toEntity)
                 .toList();
 

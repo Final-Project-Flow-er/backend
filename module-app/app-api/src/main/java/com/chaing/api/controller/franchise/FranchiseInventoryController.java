@@ -37,7 +37,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.security.Principal;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @Tag(name = "FranchiseInventory API", description = "가맹점 재고 관련 API")
@@ -134,16 +133,6 @@ public class FranchiseInventoryController {
                         @PathVariable Long productId) {
                 franchiseInventoryFacade.resetSafetyStock(principal.getBusinessUnitId(), productId);
                 return ResponseEntity.ok(ApiResponse.success(null));
-        }
-
-        @Operation(summary = "안전재고 설정 비밀번호 확인", description = "관리자 비밀번호가 실제 사용자 비밀번호와 일치하는지 확인합니다.")
-        @PostMapping("/verify-password")
-        public ResponseEntity<ApiResponse<Boolean>> verifyPassword(
-                        @AuthenticationPrincipal UserPrincipal principal,
-                        @RequestBody Map<String, String> request) {
-                return ResponseEntity.ok(ApiResponse.success(
-                                franchiseInventoryFacade.verifyAdminPassword(principal.getId(),
-                                                request.get("password"))));
         }
 
         @Operation(summary = "판매 제품 목록 조회", description = "스캔된 판매 목록이 화면에 출력된다.")

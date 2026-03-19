@@ -33,7 +33,9 @@ public interface FranchiseInventoryRepository extends JpaRepository<FranchiseInv
     @Query("SELECT DISTINCT fi.franchiseId FROM FranchiseInventory fi")
     List<Long> getAllFranchiseIds();
 
-    void deleteByFranchiseIdAndInventoryIdIn(Long aLong, List<Long> longs);
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("delete from FranchiseInventory f where f.franchiseId = :franchiseId and f.inventoryId in :ids")
+    void deleteByFranchiseIdAndInventoryIdIn(@Param("franchiseId") Long franchiseId, @Param("ids") List<Long> ids);
 
     List<FranchiseInventory> findAllByBoxCode(String boxCode);
     List<FranchiseInventory> findByInventoryIdIn(List<Long> ids);

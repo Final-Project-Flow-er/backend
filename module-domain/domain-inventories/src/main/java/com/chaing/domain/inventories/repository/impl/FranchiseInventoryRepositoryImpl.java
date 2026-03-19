@@ -122,17 +122,12 @@ public class FranchiseInventoryRepositoryImpl implements FranchiseInventoryRepos
                     .when(franchiseInventory.status.eq(LogType.AVAILABLE)).then(1)
                     .otherwise(0).sum().intValue();
 
-            NumberExpression<Integer> returnPending = new CaseBuilder()
-                    .when(franchiseInventory.status.eq(LogType.RETURN_WAIT)).then(1)
-                    .otherwise(0).sum().intValue();
-
             List<FranchiseInventoryBatchResponse> content = queryFactory
                     .select(Projections.constructor(
                             FranchiseInventoryBatchResponse.class,
                             franchiseInventory.manufactureDate,
                             quantity,
-                            availableQuantity,
-                            returnPending))
+                            availableQuantity))
                     .from(franchiseInventory)
                     .where(
                             franchiseInventory.franchiseId.eq(franchiseId),

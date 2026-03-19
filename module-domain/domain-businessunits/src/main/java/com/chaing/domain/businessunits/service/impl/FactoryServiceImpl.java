@@ -82,6 +82,12 @@ public class FactoryServiceImpl implements BusinessUnitManagementService {
         return factoryRepository.search(condition, pageable).map(BusinessUnitInternal::from);
     }
 
+    // 검색 조건에 따른 ID 리스트 반환
+    @Override
+    public List<Long> getAllIdsByCondition(BusinessUnitSearchCondition condition) {
+        return factoryRepository.findAllIdsByName(condition.name());
+    }
+
     // 아이디로 이름 조회
     @Override
     public Map<Long, String> getNamesByIds(List<Long> ids) {

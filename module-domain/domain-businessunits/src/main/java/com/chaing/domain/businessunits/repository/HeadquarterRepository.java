@@ -17,4 +17,7 @@ public interface HeadquarterRepository extends JpaRepository<Headquarter, Long> 
     List<Object[]> findNamesByIds(@Param("ids") List<Long> ids);
 
     Page<Headquarter> findByNameContainingIgnoreCase(String name, Pageable pageable);
+
+    @Query("SELECT f.hqId FROM Headquarter f WHERE f.name LIKE %:name% AND f.deletedAt IS NULL")
+    List<Long> findAllIdsByName(@Param("name") String name);
 }

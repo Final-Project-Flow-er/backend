@@ -127,12 +127,10 @@ public class UserManagementFacade {
         if (request.orgName() != null && !request.orgName().isBlank()) {
             BusinessUnitSearchCondition buCondition = new BusinessUnitSearchCondition(
                     null, request.orgName(), null, null, null, null, null, null);
-            hqIds = headquarterServiceImpl.getBusinessUnitList(buCondition, PageRequest.of(0, 500))
-                    .getContent().stream().map(BusinessUnitInternal::id).toList();
-            franchiseIds = franchiseServiceImpl.getBusinessUnitList(buCondition, PageRequest.of(0, 500))
-                    .getContent().stream().map(BusinessUnitInternal::id).toList();
-            factoryIds = factoryServiceImpl.getBusinessUnitList(buCondition, PageRequest.of(0, 500))
-                    .getContent().stream().map(BusinessUnitInternal::id).toList();
+
+            hqIds = headquarterServiceImpl.getAllIdsByCondition(buCondition);
+            franchiseIds = franchiseServiceImpl.getAllIdsByCondition(buCondition);
+            factoryIds = factoryServiceImpl.getAllIdsByCondition(buCondition);
         }
 
         UserSearchCondition condition = request.toCondition(hqIds, franchiseIds, factoryIds);

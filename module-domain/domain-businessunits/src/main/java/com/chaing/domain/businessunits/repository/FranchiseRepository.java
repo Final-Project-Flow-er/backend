@@ -28,4 +28,7 @@ public interface FranchiseRepository extends JpaRepository<Franchise, Long>, Fra
 
     @Query("SELECT COUNT(f) > 0 FROM Franchise f WHERE f.name = :name AND f.deletedAt IS NULL")
     boolean existsByNameExcludeDeleted(@Param("name") String name);
+
+    @Query("SELECT f.franchiseId FROM Franchise f WHERE f.name LIKE %:name% AND f.deletedAt IS NULL")
+    List<Long> findAllIdsByName(@Param("name") String name);
 }

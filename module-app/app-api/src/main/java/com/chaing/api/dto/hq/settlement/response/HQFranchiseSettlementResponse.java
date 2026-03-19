@@ -24,7 +24,7 @@ public record HQFranchiseSettlementResponse(
         @Schema(description = "반품 환급", example = "100000") BigDecimal refundAmount,
 
         @Schema(description = "손실액", example = "50000") BigDecimal lossAmount,
-
+        @Schema(description = "조정액", example = "10000") BigDecimal adjustmentAmount,
         @Schema(description = "최종 정산 금액", example = "4500000") BigDecimal finalAmount,
 
         @Schema(description = "정산 상태", example = "CONFIRMED") SettlementStatus status,
@@ -33,7 +33,7 @@ public record HQFranchiseSettlementResponse(
 
     public static HQFranchiseSettlementResponse of(Long franchiseId, String franchiseName,
             BigDecimal totalSaleAmount, BigDecimal orderAmount, BigDecimal deliveryFee, BigDecimal commissionFee,
-            BigDecimal refundAmount, BigDecimal lossAmount, BigDecimal finalAmount, SettlementStatus status,
+            BigDecimal refundAmount, BigDecimal lossAmount, BigDecimal adjustmentAmount, BigDecimal finalAmount, SettlementStatus status,
             LocalDate settlementDate) {
         return HQFranchiseSettlementResponse.builder()
                 .franchiseId(franchiseId)
@@ -44,6 +44,7 @@ public record HQFranchiseSettlementResponse(
                 .commissionFee(commissionFee)
                 .refundAmount(refundAmount)
                 .lossAmount(lossAmount)
+                .adjustmentAmount(adjustmentAmount)
                 .finalAmount(finalAmount)
                 .status(status)
                 .settlementDate(settlementDate)

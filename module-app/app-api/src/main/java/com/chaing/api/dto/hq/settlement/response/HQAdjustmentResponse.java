@@ -23,21 +23,30 @@ public record HQAdjustmentResponse(
         @Schema(description = "조정 금액", example = "50000")
         Long amount,
 
-        @Schema(description = "차감 여부(true면 마이너스 처리)", example = "false")
-        Boolean isMinus,
+        @Schema(description = "처리 방식(증가/차감)", example = "INCREASE")
+        com.chaing.domain.settlements.enums.AdjustmentDirection direction,
 
         @Schema(description = "조정 사유", example = "본사 이벤트 지원금")
-        String reason) {
+        String reason,
+
+        @Schema(description = "정산 반영월", example = "2026-04")
+        String settlementMonth,
+
+        @Schema(description = "반품 사유", example = "PRODUCT_DEFECT")
+        com.chaing.domain.returns.enums.ReturnType returnType) {
     public static HQAdjustmentResponse of(Long adjustmentId, String franchiseName, VoucherType type,
-            LocalDate occurredAt, Long amount, Boolean isMinus, String reason) {
+            LocalDate occurredAt, Long amount, com.chaing.domain.settlements.enums.AdjustmentDirection direction,
+            String reason, String settlementMonth, com.chaing.domain.returns.enums.ReturnType returnType) {
         return HQAdjustmentResponse.builder()
                 .adjustmentId(adjustmentId)
                 .franchiseName(franchiseName)
                 .type(type)
                 .occurredAt(occurredAt)
                 .amount(amount)
-                .isMinus(isMinus)
+                .direction(direction)
                 .reason(reason)
+                .settlementMonth(settlementMonth)
+                .returnType(returnType)
                 .build();
     }
 }

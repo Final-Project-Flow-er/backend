@@ -81,4 +81,12 @@ public class DailySettlementServiceImpl implements DailySettlementService {
     public List<DailyReceiptLine> getAllReceiptLines(Long dailyReceiptId) {
         return lineRepository.findAllByDailyReceiptId(dailyReceiptId);
     } // Excel 다운로드
+
+    @Override
+    @Transactional
+    public DailySettlementReceipt save(DailySettlementReceipt receipt) {
+        log.info("[DEBUG] Saving DailySettlementReceipt for franchiseId: {}, date: {}", 
+                receipt.getFranchiseId(), receipt.getSettlementDate());
+        return receiptRepository.save(receipt);
+    }
 }

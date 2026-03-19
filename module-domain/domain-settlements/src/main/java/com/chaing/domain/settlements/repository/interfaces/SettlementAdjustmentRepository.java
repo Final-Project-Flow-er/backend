@@ -14,9 +14,20 @@ public interface SettlementAdjustmentRepository extends JpaRepository<Settlement
 
     @Query("SELECT s FROM SettlementAdjustment s " +
             "WHERE (:franchiseId IS NULL OR s.franchiseId = :franchiseId) " +
-            "AND (:voucherType IS NULL OR s.voucherType = :voucherType)")
+            "AND (:voucherType IS NULL OR s.voucherType = :voucherType) " +
+            "AND (:settlementMonth IS NULL OR s.settlementMonth = :settlementMonth)")
     Page<SettlementAdjustment> findByConditions(
             @Param("franchiseId") Long franchiseId,
             @Param("voucherType") VoucherType voucherType,
+            @Param("settlementMonth") String settlementMonth,
             Pageable pageable);
+
+    @Query("SELECT COALESCE(SUM(s.adjustmentAmount), 0) " +
+            "FROM SettlementAdjustment s " +
+            "WHERE s.settlementMonth = :settlementMonth " +
+            "AND (:franchiseId IS NULL OR s.franchiseId = :franchiseId)")
+    java.math.BigDecimal sumAdjustmentAmountByMonth(
+            @Param("settlementMonth") String settlementMonth,
+            @Param("franchiseId") Long franchiseId);
 }
+

@@ -48,20 +48,22 @@ public class FranchiseSettlementController {
         @GetMapping("/daily/sales-items")
         public ResponseEntity<ApiResponse<?>> getDailySalesItems(
                         @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+                        @RequestParam(value = "limit", required = false) Integer limit,
                         @AuthenticationPrincipal UserPrincipal principal) {
                 Long franchiseId = principal.getBusinessUnitId();
                 return ResponseEntity.ok(ApiResponse.success(
-                                facade.getDailySalesItems(franchiseId, date, 5))); // top5
+                                facade.getDailySalesItems(franchiseId, date, limit)));
         }
 
         @Operation(summary = "일별 발주 내역 조회", description = "발주 내역 리스트(상품명/수량/단가/총금액)")
         @GetMapping("/daily/order-items")
         public ResponseEntity<ApiResponse<?>> getDailyOrdersItems(
                         @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+                        @RequestParam(value = "limit", required = false) Integer limit,
                         @AuthenticationPrincipal UserPrincipal principal) {
                 Long franchiseId = principal.getBusinessUnitId();
                 return ResponseEntity.ok(ApiResponse.success(
-                                facade.getDailyOrderItems(franchiseId, date, 5)));
+                                facade.getDailyOrderItems(franchiseId, date, limit)));
         }
 
         // 월별

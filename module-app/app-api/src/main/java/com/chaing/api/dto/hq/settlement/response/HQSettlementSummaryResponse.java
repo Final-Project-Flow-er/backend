@@ -18,12 +18,12 @@ public record HQSettlementSummaryResponse(
                 @Schema(description = "배달비 수익", example = "5000000") BigDecimal deliveryFee,
 
                 @Schema(description = "반품 차감액", example = "2000000") BigDecimal refundAmount,
-
-                @Schema(description = "본사 손실", example = "500000") BigDecimal lossAmount) {
+                @Schema(description = "본사 손실", example = "500000") BigDecimal lossAmount,
+                @Schema(description = "기타 조정", example = "100000") BigDecimal adjustmentAmount) {
         public static HQSettlementSummaryResponse of(BigDecimal finalAmount, BigDecimal orderAmount,
                         BigDecimal saleAmount,
                         BigDecimal commissionFee, BigDecimal deliveryFee, BigDecimal refundAmount,
-                        BigDecimal lossAmount) {
+                        BigDecimal lossAmount, BigDecimal adjustmentAmount) {
                 return HQSettlementSummaryResponse.builder()
                                 .finalAmount(finalAmount)
                                 .orderAmount(orderAmount)
@@ -32,6 +32,7 @@ public record HQSettlementSummaryResponse(
                                 .deliveryFee(deliveryFee)
                                 .refundAmount(refundAmount)
                                 .lossAmount(lossAmount)
+                                .adjustmentAmount(adjustmentAmount)
                                 .build();
         }
 }

@@ -28,12 +28,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.Locale;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Slf4j
 @RequiredArgsConstructor
 @Service
 public class ProductService {
+    private static final Pattern PRODUCT_TYPE_CODE_PATTERN = Pattern.compile("^[A-Z]{2}$");
+    private static final Pattern HANGUL_JAMO_ONLY_PATTERN = Pattern.compile("^[ㄱ-ㅎㅏ-ㅣ\\s]+$");
+
     private final ProductRepository productRepository;
     private final ProductTypeRepository productTypeRepository;
     private final ProductComponentRepository productComponentRepository;
@@ -100,14 +105,43 @@ public class ProductService {
     }
 
     public void createProductTypes(String type, String productName) {
-        if (productTypeRepository.existsByProductType(type)) {
+        String normalizedType = normalizeProductTypeCode(type);
+        String normalizedName = normalizeProductTypeName(productName);
+
+        if (productTypeRepository.existsByProductType(normalizedType)) {
             throw new ProductException(ProductErrorCode.DUPLICATE_PRODUCT_CODE);
         }
         ProductType pt = ProductType.builder()
-                .productType(type)
-                .name(productName)
+                .productType(normalizedType)
+                .name(normalizedName)
                 .build();
         productTypeRepository.save(pt);
+    }
+
+    private String normalizeProductTypeCode(String type) {
+        if (type == null) {
+            throw new ProductException(ProductErrorCode.INVALID_PRODUCT_CODE_FORMAT);
+        }
+
+        String normalized = type.trim().toUpperCase(Locale.ROOT);
+        if (!PRODUCT_TYPE_CODE_PATTERN.matcher(normalized).matches()) {
+            throw new ProductException(ProductErrorCode.INVALID_PRODUCT_CODE_FORMAT);
+        }
+
+        return normalized;
+    }
+
+    private String normalizeProductTypeName(String productName) {
+        if (productName == null) {
+            throw new ProductException(ProductErrorCode.INVALID_PRODUCT_TYPE_NAME);
+        }
+
+        String normalized = productName.trim();
+        if (normalized.isBlank() || HANGUL_JAMO_ONLY_PATTERN.matcher(normalized).matches()) {
+            throw new ProductException(ProductErrorCode.INVALID_PRODUCT_TYPE_NAME);
+        }
+
+        return normalized;
     }
 
     public Long existType(String productCode) {

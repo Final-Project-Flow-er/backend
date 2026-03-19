@@ -22,6 +22,8 @@ public interface FranchiseInventoryRepository extends JpaRepository<FranchiseInv
 
     List<FranchiseInventory> findAllByBoxCodeIn(List<String> boxCodes);
 
+    List<FranchiseInventory> findAllByBoxCodeInAndDeletedAtIsNull(List<String> boxCodes);
+
     List<FranchiseInventory> findAllByStatus(LogType status);
 
     @Modifying

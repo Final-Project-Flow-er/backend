@@ -393,6 +393,18 @@ public class InventoryService {
     }
 
 
+    // boxCode 목록으로 HQInventory 조회
+    public List<HQInventory> getHQInventoriesByBoxCodes(List<String> boxCodes) {
+        List<HQInventory> inventories = hqInventoryRepository.findAllByBoxCodeInAndDeletedAtIsNull(boxCodes);
+        return inventories != null ? inventories : List.of();
+    }
+
+    // boxCode 목록으로 FranchiseInventory 조회
+    public List<FranchiseInventory> getFranchiseInventoriesByBoxCodes(List<String> boxCodes) {
+        List<FranchiseInventory> inventories = franchiseInventoryRepository.findAllByBoxCodeInAndDeletedAtIsNull(boxCodes);
+        return inventories != null ? inventories : List.of();
+    }
+
     // return: 데이터 누락 있는지 없는지
     public void verifyOmission(List<String> requestedBoxCodes) {
         List<HQInventory> inventories = hqInventoryRepository.findAllByBoxCodeInAndDeletedAtIsNull(requestedBoxCodes);
@@ -738,5 +750,19 @@ public class InventoryService {
         }
 
         return itemInfos;
+    }
+
+    // return: Map<productId, quantity>
+    public Map<Long, Long> getFactoryInventoryByProductId(List<Long> productIds) {
+        // Set<productId>
+        Set<Long> productIdSet = new HashSet<>(productIds);
+
+        List<FactoryInventory> inventories = factoryInventoryRepository.findAllByProductIdInAndStatusAndDeletedAtIsNull(productIdSet, LogType.AVAILABLE);
+
+        return inventories.stream()
+                .collect(Collectors.groupingBy(
+                        FactoryInventory::getProductId,
+                        Collectors.counting()
+                ));
     }
 }

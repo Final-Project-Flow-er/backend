@@ -125,12 +125,34 @@ public class FranchiseOrderService {
             }
         }).toList();
 
+        // 발주 총 금액, 총 수량 업데이트
+        // Map<FranchiseOrder, List<FranchiseOrderItem>>
+        Map<FranchiseOrder, List<FranchiseOrderItem>> itemsByReturnId = upsertItems.stream()
+                .collect(Collectors.groupingBy(
+                        FranchiseOrderItem::getFranchiseOrder
+                ));
+        List<FranchiseOrder> updatedOrders = itemsByReturnId.entrySet().stream()
+                .map(entry -> {
+                    FranchiseOrder targetOrder = entry.getKey();
+                    List<FranchiseOrderItem> targetItems = entry.getValue();
+
+                    if (targetOrder == null || targetItems == null || targetItems.isEmpty()) {
+                        throw new OrderException(OrderErrorCode.ORDER_ITEM_NOT_FOUND);
+                    }
+
+                    targetOrder.updateQuantityAndPrice(targetItems);
+
+                    return targetOrder;
+                })
+                .toList();
+
         // 변경사항 저장
         franchiseOrderItemRepository.deleteAll(deletedItems);
         franchiseOrderItemRepository.saveAll(upsertItems);
+        franchiseOrderRepository.saveAll(updatedOrders);
 
         // 반환
-        List<FranchiseOrderItemDetailResponse> responses = upsertItems.stream()
+        return upsertItems.stream()
                 .map(item -> {
                     ProductInfo productInfo = productInfoByProductId.get(item.getProductId());
                     String productCode = productInfo.productCode();
@@ -144,8 +166,6 @@ public class FranchiseOrderService {
                             .totalPrice(item.getTotalPrice())
                             .build();
                 }).toList();
-
-        return responses;
     }
 
     // 가맹점 발주 취소
@@ -184,7 +204,6 @@ public class FranchiseOrderService {
                 .totalQuantity(totalQuantity)
                 .totalAmount(totalPrice)
                 .deliveryDate(request.deliveryDate())
-                .deliveryTime(request.deliveryTime())
                 .build();
 
         // 발주 저장

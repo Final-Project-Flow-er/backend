@@ -18,6 +18,7 @@ public enum ProductErrorCode implements ErrorCode {
     INVALID_PRODUCT_STATUS(400, "PR005", "잘못된 상품 상태 값입니다."),
     DATA_OMISSION(400, "PR006", "데이터 누락이 존재합니다."),
     INVALID_COMPONENT_NAME(400, "PR007", "구성용품 이름이 올바르지 않습니다."),
+    INVALID_PRODUCT_TYPE_NAME(400, "PR010", "상품 타입 이름 형식이 올바르지 않습니다."),
 
     // 409 CONFLICT
     DUPLICATE_PRODUCT_CODE(409, "PR007", "상품 코드가 중복됩니다."),

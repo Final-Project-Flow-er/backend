@@ -113,7 +113,7 @@ class UserManagementServiceTests {
 
         // given
         Pageable pageable = PageRequest.of(0, 10);
-        UserSearchCondition condition = new UserSearchCondition(null, null, null, null, null, null, null);
+        UserSearchCondition condition = new UserSearchCondition(null, null, null, null, null, null, null, null, null, null);
 
         List<User> users = List.of(User.builder().userId(1L).build());
         Page<User> userPage = new PageImpl<>(users, pageable, users.size());

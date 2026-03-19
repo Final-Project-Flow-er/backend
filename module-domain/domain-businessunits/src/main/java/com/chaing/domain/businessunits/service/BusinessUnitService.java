@@ -15,5 +15,5 @@ public interface BusinessUnitService {
     Map<Long, String> getNamesByIds(List<Long> ids);
     Page<BusinessUnitInternal> getBusinessUnitList(BusinessUnitSearchCondition condition, Pageable pageable);
     BusinessUnitInternal updateInfo(Long id, BusinessUnitUpdateCommand command);
-
+    List<Long> getAllIdsByCondition(BusinessUnitSearchCondition condition);
 }

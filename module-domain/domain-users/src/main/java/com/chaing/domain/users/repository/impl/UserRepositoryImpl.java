@@ -33,13 +33,12 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
         List<User> content = queryFactory
                 .selectFrom(user)
                 .where(
-                        loginIdContains(condition.loginId()),
-                        usernameContains(condition.username()),
-                        employeeNumber(condition.employeeNumber()),
+                        loginIdOrUsernameOrEmployeeNumber(condition.loginId(), condition.username(), condition.employeeNumber()),
                         roleEq(condition.role()),
                         positionEq(condition.position()),
                         statusEq(condition.status()),
-                        businessUnitIdEq(condition.businessUnitId())
+                        businessUnitIdEq(condition.businessUnitId()),
+                        orgNameIdsMatch(condition)
                 )
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
@@ -50,13 +49,12 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
                 .select(user.count())
                 .from(user)
                 .where(
-                        loginIdContains(condition.loginId()),
-                        usernameContains(condition.username()),
-                        employeeNumber(condition.employeeNumber()),
+                        loginIdOrUsernameOrEmployeeNumber(condition.loginId(), condition.username(), condition.employeeNumber()),
                         roleEq(condition.role()),
                         positionEq(condition.position()),
                         statusEq(condition.status()),
-                        businessUnitIdEq(condition.businessUnitId())
+                        businessUnitIdEq(condition.businessUnitId()),
+                        orgNameIdsMatch(condition)
                 )
                 .fetchOne();
 
@@ -64,16 +62,17 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
         return new PageImpl<>(content, pageable, totalCount);
     }
 
-    private BooleanExpression loginIdContains(String loginId) {
-        return hasText(loginId) ? QUser.user.loginId.contains(loginId) : null;
-    }
+    private BooleanExpression loginIdOrUsernameOrEmployeeNumber(String loginId, String username,
+            String employeeNumber) {
+        BooleanExpression loginIdExpr = hasText(loginId) ? QUser.user.loginId.containsIgnoreCase(loginId) : null;
+        BooleanExpression usernameExpr = hasText(username) ? QUser.user.username.containsIgnoreCase(username) : null;
+        BooleanExpression empNumExpr = hasText(employeeNumber) ? QUser.user.employeeNumber.containsIgnoreCase(employeeNumber) : null;
 
-    private BooleanExpression usernameContains(String username) {
-        return hasText(username) ? QUser.user.username.contains(username) : null;
-    }
-
-    private BooleanExpression employeeNumber(String employeeNumber) {
-        return hasText(employeeNumber) ? QUser.user.employeeNumber.contains(employeeNumber) : null;
+        BooleanExpression result = null;
+        if (loginIdExpr != null) result = loginIdExpr;
+        if (usernameExpr != null) result = result != null ? result.or(usernameExpr) : usernameExpr;
+        if (empNumExpr != null) result = result != null ? result.or(empNumExpr) : empNumExpr;
+        return result;
     }
 
     private BooleanExpression roleEq(UserRole role) {
@@ -90,5 +89,22 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
 
     private BooleanExpression businessUnitIdEq(Long businessUnitId) {
         return businessUnitId != null ? QUser.user.businessUnitId.eq(businessUnitId) : null;
+    }
+
+    private BooleanExpression orgNameIdsMatch(UserSearchCondition condition) {
+        if (condition.hqIds() == null && condition.franchiseIds() == null && condition.factoryIds() == null) {
+            return null;
+        }
+
+        BooleanExpression hqMatch = (condition.hqIds() != null && !condition.hqIds().isEmpty()) ? QUser.user.role.eq(UserRole.HQ).and(QUser.user.businessUnitId.in(condition.hqIds())) : null;
+        BooleanExpression franchiseMatch = (condition.franchiseIds() != null && !condition.franchiseIds().isEmpty()) ? QUser.user.role.eq(UserRole.FRANCHISE).and(QUser.user.businessUnitId.in(condition.franchiseIds())) : null;
+        BooleanExpression factoryMatch = (condition.factoryIds() != null && !condition.factoryIds().isEmpty()) ? QUser.user.role.eq(UserRole.FACTORY).and(QUser.user.businessUnitId.in(condition.factoryIds())) : null;
+
+        BooleanExpression result = null;
+        if (hqMatch != null) result = hqMatch;
+        if (franchiseMatch != null) result = (result != null) ? result.or(franchiseMatch) : franchiseMatch;
+        if (factoryMatch != null) result = (result != null) ? result.or(factoryMatch) : factoryMatch;
+
+        return result != null ? result : QUser.user.userId.isNull();
     }
 }

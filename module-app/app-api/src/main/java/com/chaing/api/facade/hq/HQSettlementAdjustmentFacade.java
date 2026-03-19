@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
@@ -65,8 +66,8 @@ public class HQSettlementAdjustmentFacade {
 
         com.chaing.domain.settlements.entity.SettlementAdjustment adjustment = com.chaing.domain.settlements.entity.SettlementAdjustment
                 .builder()
-                .settlementVoucherId(0L)
-                .adjustmentCode("AD-" + System.currentTimeMillis())
+                .settlementVoucherId(null)
+                .adjustmentCode("AD-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase())
                 .franchiseId(request.franchiseId())
                 .voucherType(request.type())
                 .occurredAt(request.occurredAt().atStartOfDay())

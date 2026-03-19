@@ -19,6 +19,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -27,6 +28,7 @@ import java.time.YearMonth;
 @Entity
 @Getter
 @Builder
+@Slf4j
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "monthly_settlement", uniqueConstraints = @UniqueConstraint(name = "uk_monthly_settlement_franchise_month", columnNames = {
@@ -130,7 +132,17 @@ public class MonthlySettlement extends BaseEntity {
         this.lossAmount = loss;
         this.refundAmount = refund;
         this.adjustmentAmount = adjustment;
-        this.finalSettlementAmount = finalAmt;
+        
+        // 데이터 무결성 검증: 상세 항목의 합계와 전달받은 최종 금액이 일치하는지 확인
+        BigDecimal expectedFinal = calculatedFranchisedFinal();
+        if (finalAmt != null && finalAmt.compareTo(expectedFinal) != 0) {
+            log.error("Settlement Total Mismatch: Expected {}, but received {} for Franchise {}", 
+                expectedFinal, finalAmt, this.franchiseId);
+            // 불일치 시 시스템이 계산한 정확한 값으로 강제 보정하거나 예외를 던질 수 있음
+            // 여기서는 정밀한 정산을 위해 계산된 값으로 할당함
+        }
+        
+        this.finalSettlementAmount = expectedFinal;
         this.calculatedAt = LocalDateTime.now();
     }
 }

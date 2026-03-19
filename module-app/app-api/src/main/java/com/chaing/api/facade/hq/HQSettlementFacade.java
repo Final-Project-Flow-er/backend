@@ -807,10 +807,6 @@ public class HQSettlementFacade {
                                 .map(item -> item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
                                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-                // [임시 서비스 모드] 오늘 날짜 매출 데이터가 없는 경우 가맹점별 50만원 이상 가상 매출 생성 (그래프 검증용)
-                if (date.equals(LocalDate.now()) && totalSale.compareTo(BigDecimal.ZERO) == 0) {
-                    totalSale = new BigDecimal("500000").add(new BigDecimal((franchiseId % 7 + 1) * 150000));
-                }
 
                 // 2. 발주 집계
                 List<FranchiseOrderStatus> validOrderStatuses = List.of(

@@ -89,7 +89,7 @@ public class SettlementFileServiceImpl implements SettlementFileService {
             document.add(new Paragraph("[ 매출 현황 상세 ]").setBold().setMarginBottom(5));
             float[] detailWidths = {20, 40, 10, 15, 15};
             Table salesTable = new Table(UnitValue.createPercentArray(detailWidths)).useAllAvailableWidth();
-            addDetailHeader(salesTable);
+            addDetailHeader(salesTable, "시간");
             
             List<DailyReceiptLine> salesLines = lines.stream().filter(l -> l.getLineType() == com.chaing.domain.settlements.enums.VoucherType.SALES).toList();
             if (salesLines.isEmpty()) {
@@ -104,7 +104,7 @@ public class SettlementFileServiceImpl implements SettlementFileService {
             // 5. 발주 내역 상세 (VoucherType.ORDER)
             document.add(new Paragraph("[ 발주 내역 상세 ]").setBold().setMarginBottom(5));
             Table purchaseTable = new Table(UnitValue.createPercentArray(detailWidths)).useAllAvailableWidth();
-            addDetailHeader(purchaseTable);
+            addDetailHeader(purchaseTable, "시간");
             
             List<DailyReceiptLine> purchaseLines = lines.stream().filter(l -> l.getLineType() == com.chaing.domain.settlements.enums.VoucherType.ORDER).toList();
             if (purchaseLines.isEmpty()) {
@@ -117,7 +117,7 @@ public class SettlementFileServiceImpl implements SettlementFileService {
             document.add(purchaseTable.setMarginBottom(20));
 
             // 6. 하단 푸터
-            document.add(new Paragraph("\n본 문서는 시스템에 의해 자동 발행된 정식 명세서이며, 정산 증빙용으로 사용 가능합니다.")
+            document.add(new Paragraph("\n본 문서는 시스템에 의해 자동 발행된 일일 정산 명세서이며, 정산 증빙용으로 사용 가능합니다.")
                     .setFontSize(8).setFontColor(ColorConstants.GRAY).setTextAlignment(TextAlignment.CENTER).setMarginTop(30));
             document.add(new Paragraph("(주)채잉 귀하").setBold().setTextAlignment(TextAlignment.RIGHT).setMarginTop(20));
 
@@ -254,7 +254,7 @@ public class SettlementFileServiceImpl implements SettlementFileService {
             document.add(new Paragraph("[ 정산 항목 상세 ]").setBold().setMarginBottom(5));
             float[] detailWidths = {20, 40, 10, 15, 15};
             Table details = new Table(UnitValue.createPercentArray(detailWidths)).useAllAvailableWidth();
-            addDetailHeader(details);
+            addDetailHeader(details, "일자");
             
             if (vouchers == null || vouchers.isEmpty()) {
                 details.addCell(new com.itextpdf.layout.element.Cell(1, 5).add(new Paragraph("상세 내역이 없습니다.").setTextAlignment(TextAlignment.CENTER)).setPadding(5).setBorder(new SolidBorder(0.5f)));
@@ -268,6 +268,11 @@ public class SettlementFileServiceImpl implements SettlementFileService {
                 }
             }
             document.add(details);
+            
+            // 5. 하단 푸터
+            document.add(new Paragraph("\n본 문서는 시스템에 의해 자동 발행된 월간 정산 명세서이며, 정산 증빙용으로 사용 가능합니다.")
+                    .setFontSize(8).setFontColor(ColorConstants.GRAY).setTextAlignment(TextAlignment.CENTER).setMarginTop(30));
+            document.add(new Paragraph("(주)채잉 귀하").setBold().setTextAlignment(TextAlignment.RIGHT).setMarginTop(20));
 
             document.close();
             return baos.toByteArray();
@@ -289,8 +294,8 @@ public class SettlementFileServiceImpl implements SettlementFileService {
         table.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(formatCurrency(amount))).setTextAlignment(TextAlignment.RIGHT).setPadding(3).setBorder(new SolidBorder(0.5f)));
     }
 
-    private void addDetailHeader(Table table) {
-        String[] headers = {"시간", "상품(항목)명", "수량", "단가", "금액"};
+    private void addDetailHeader(Table table, String firstColumnName) {
+        String[] headers = {firstColumnName, "상품(항목)명", "수량", "단가", "금액"};
         for (String h : headers) {
             table.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(h).setBold())
                     .setBackgroundColor(ColorConstants.LIGHT_GRAY).setTextAlignment(TextAlignment.CENTER).setPadding(3).setBorder(new SolidBorder(0.5f)));
@@ -505,6 +510,6 @@ public class SettlementFileServiceImpl implements SettlementFileService {
     private String formatCurrency(BigDecimal amount) {
         if (amount == null) return "0원";
         java.text.DecimalFormat df = new java.text.DecimalFormat("#,###");
-        return df.format(amount.longValue()) + "원";
+        return df.format(amount) + "원";
     }
 }

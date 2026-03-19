@@ -98,4 +98,17 @@ public class DailySettlementReceipt extends BaseEntity {
         }
     }
 
+    public void updateAmounts(BigDecimal totalSale, BigDecimal order, BigDecimal delivery,
+                              BigDecimal commission, BigDecimal loss, BigDecimal refund,
+                              BigDecimal adjustment, BigDecimal finalAmt) {
+        this.totalSaleAmount = totalSale;
+        this.orderAmount = order;
+        this.deliveryFee = delivery;
+        this.commissionFee = commission;
+        this.lossAmount = loss;
+        this.refundAmount = refund;
+        this.adjustmentAmount = adjustment;
+        this.finalAmount = finalAmt;
+    }
+
 }

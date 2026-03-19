@@ -728,8 +728,27 @@ public class FranchiseSettlementFacade {
                                 throw new SettlementException(SettlementErrorCode.SETTLEMENT_DATA_EMPTY);
                         }
 
-                        // [중요] ID missing 에러 해결: 실시간 집계된 정산 데이터를 DB에 먼저 저장하여 ID 확보
-                        currentReceipt = dailyService.save(currentReceipt);
+                        // [중요] ID missing 및 중복 키 에러 해결: 기존 데이터 조회 후 Upsert
+                        java.util.Optional<DailySettlementReceipt> existingReceipt = 
+                            dailyService.findByFranchiseAndDate(franchiseId, date);
+
+                        if (existingReceipt.isPresent()) {
+                            DailySettlementReceipt legacy = existingReceipt.get();
+                            legacy.updateAmounts(
+                                currentReceipt.getTotalSaleAmount(),
+                                currentReceipt.getOrderAmount(),
+                                currentReceipt.getDeliveryFee(),
+                                currentReceipt.getCommissionFee(),
+                                currentReceipt.getLossAmount(),
+                                currentReceipt.getRefundAmount(),
+                                currentReceipt.getAdjustmentAmount(),
+                                currentReceipt.getFinalAmount()
+                            );
+                            currentReceipt = dailyService.save(legacy);
+                        } else {
+                            currentReceipt = dailyService.save(currentReceipt);
+                        }
+
 
                         // 4. 가맹점명 조회
                         String franchiseName = franchiseRepository.findById(franchiseId)
@@ -781,6 +800,7 @@ public class FranchiseSettlementFacade {
                         throw new SettlementException(SettlementErrorCode.DOCUMENT_GENERATION_FAILED);
                 }
         }
+
 
         @Transactional
         public String getMonthlyReceiptPdf(Long franchiseId, YearMonth month) {
@@ -911,9 +931,28 @@ public class FranchiseSettlementFacade {
                                 throw new SettlementException(SettlementErrorCode.SETTLEMENT_DATA_EMPTY);
                         }
 
-                        // 2. 가집계 MonthlySettlement 객체 생성 및 [저장] (ID 확보)
+                        // 2. 가집계 MonthlySettlement 객체 생성 및 [Upsert] (ID 확보 및 중복 방지)
                         MonthlySettlement provisionalSettlement = aggregateMonthlySettlement(franchiseId, month, receipts);
-                        provisionalSettlement = monthlyService.save(provisionalSettlement);
+                        
+                        java.util.Optional<MonthlySettlement> existingSettlement = 
+                            monthlyService.findByFranchiseAndMonth(franchiseId, month);
+
+                        if (existingSettlement.isPresent()) {
+                            MonthlySettlement legacy = existingSettlement.get();
+                            legacy.updateAmounts(
+                                provisionalSettlement.getTotalSaleAmount(),
+                                provisionalSettlement.getOrderAmount(),
+                                provisionalSettlement.getDeliveryFee(),
+                                provisionalSettlement.getCommissionFee(),
+                                provisionalSettlement.getLossAmount(),
+                                provisionalSettlement.getRefundAmount(),
+                                provisionalSettlement.getAdjustmentAmount(),
+                                provisionalSettlement.getFinalSettlementAmount()
+                            );
+                            provisionalSettlement = monthlyService.save(legacy);
+                        } else {
+                            provisionalSettlement = monthlyService.save(provisionalSettlement);
+                        }
 
                         // 가맹점명 조회
                         String franchiseName = franchiseRepository.findById(franchiseId)
@@ -995,9 +1034,28 @@ public class FranchiseSettlementFacade {
                                 throw new SettlementException(SettlementErrorCode.SETTLEMENT_DATA_EMPTY);
                         }
 
-                        // [중요] ID missing 에러 해결을 위해 MonthlySettlement 가집계 데이터 생성 및 저장
+                        // [중요] ID missing 및 중복 키 에러 해결을 위해 MonthlySettlement 가집계 데이터 Upsert
                         MonthlySettlement provisionalSettlement = aggregateMonthlySettlement(franchiseId, month, receipts);
-                        provisionalSettlement = monthlyService.save(provisionalSettlement);
+                        
+                        java.util.Optional<MonthlySettlement> existingSettlement = 
+                            monthlyService.findByFranchiseAndMonth(franchiseId, month);
+
+                        if (existingSettlement.isPresent()) {
+                            MonthlySettlement legacy = existingSettlement.get();
+                            legacy.updateAmounts(
+                                provisionalSettlement.getTotalSaleAmount(),
+                                provisionalSettlement.getOrderAmount(),
+                                provisionalSettlement.getDeliveryFee(),
+                                provisionalSettlement.getCommissionFee(),
+                                provisionalSettlement.getLossAmount(),
+                                provisionalSettlement.getRefundAmount(),
+                                provisionalSettlement.getAdjustmentAmount(),
+                                provisionalSettlement.getFinalSettlementAmount()
+                            );
+                            provisionalSettlement = monthlyService.save(legacy);
+                        } else {
+                            provisionalSettlement = monthlyService.save(provisionalSettlement);
+                        }
 
                         // 2. 엑셀 생성
                         byte[] excelBytes = fileService.createMonthlyVoucherExcel(vouchers);

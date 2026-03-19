@@ -119,4 +119,18 @@ public class MonthlySettlement extends BaseEntity {
         }
         this.status = SettlementStatus.CALCULATED;
     }
+
+    public void updateAmounts(BigDecimal totalSale, BigDecimal order, BigDecimal delivery,
+                              BigDecimal commission, BigDecimal loss, BigDecimal refund,
+                              BigDecimal adjustment, BigDecimal finalAmt) {
+        this.totalSaleAmount = totalSale;
+        this.orderAmount = order;
+        this.deliveryFee = delivery;
+        this.commissionFee = commission;
+        this.lossAmount = loss;
+        this.refundAmount = refund;
+        this.adjustmentAmount = adjustment;
+        this.finalSettlementAmount = finalAmt;
+        this.calculatedAt = LocalDateTime.now();
+    }
 }

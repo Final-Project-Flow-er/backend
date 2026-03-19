@@ -17,7 +17,6 @@ import com.itextpdf.io.font.PdfEncodings;
 import com.itextpdf.kernel.geom.PageSize;
 import com.itextpdf.layout.properties.TextAlignment;
 import com.itextpdf.layout.borders.Border;
-import com.itextpdf.kernel.colors.DeviceRgb;
 import com.itextpdf.layout.borders.SolidBorder;
 import com.itextpdf.kernel.colors.ColorConstants;
 import lombok.extern.slf4j.Slf4j;
@@ -44,68 +43,83 @@ public class SettlementFileServiceImpl implements SettlementFileService {
             PdfWriter writer = new PdfWriter(baos);
             PdfDocument pdf = new PdfDocument(writer);
             Document document = new Document(pdf, PageSize.A4);
-            document.setMargins(40, 40, 40, 40);
+            document.setMargins(30, 30, 30, 30);
 
             PdfFont font = loadKoreanFont();
             document.setFont(font);
-
-            // 색상 정의
-            DeviceRgb navy = new DeviceRgb(0, 21, 41);
-            DeviceRgb blueGray = new DeviceRgb(69, 90, 100);
-            DeviceRgb lightGray = new DeviceRgb(240, 242, 245);
+            document.setFontSize(9);
 
             // 1. 헤더 영역
-            Table headerTable = new Table(UnitValue.createPercentArray(new float[]{70, 30})).useAllAvailableWidth();
-            headerTable.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph("DAILY SETTLEMENT REPORT")
-                    .setBold().setFontSize(24).setFontColor(navy)).setBorder(Border.NO_BORDER).setVerticalAlignment(com.itextpdf.layout.properties.VerticalAlignment.MIDDLE));
-            headerTable.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(franchiseName + "\n" + "ID: " + receipt.getFranchiseId())
-                    .setFontSize(10).setFontColor(blueGray).setTextAlignment(TextAlignment.RIGHT)).setBorder(Border.NO_BORDER));
-            document.add(headerTable);
+            document.add(new Paragraph("일일 정산 영수증 (공급증)")
+                    .setBold().setFontSize(18).setTextAlignment(TextAlignment.CENTER).setMarginBottom(10));
             
-            document.add(new Paragraph("정산 일자: " + receipt.getSettlementDate().toString())
-                    .setFontSize(10).setFontColor(blueGray).setTextAlignment(TextAlignment.RIGHT).setMarginBottom(20));
+            Table metaTable = new Table(UnitValue.createPercentArray(new float[]{50, 50})).useAllAvailableWidth();
+            metaTable.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph("가맹점: " + franchiseName + " (ID: " + receipt.getFranchiseId() + ")")).setBorder(Border.NO_BORDER));
+            metaTable.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph("No. " + receipt.getDailyReceiptId() + "\n정산일자: " + receipt.getSettlementDate())).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER));
+            document.add(metaTable.setMarginBottom(15));
 
-            // 2. 요약 정산 섹션 (강조 박스)
-            Table summaryBox = new Table(1).useAllAvailableWidth();
-            summaryBox.setMarginBottom(30);
-            com.itextpdf.layout.element.Cell summaryCell = new com.itextpdf.layout.element.Cell()
-                    .setBackgroundColor(lightGray).setPadding(20).setBorder(new SolidBorder(navy, 1f));
+            // 2. 공급자 정보
+            Table providerTable = new Table(UnitValue.createPercentArray(new float[]{15, 35, 15, 35})).useAllAvailableWidth();
+            addInfoCell(providerTable, "사업자번호", "123-45-67890", true);
+            addInfoCell(providerTable, "상호", "(주)채잉 본사", false);
+            addInfoCell(providerTable, "대표자", "김채잉", true);
+            addInfoCell(providerTable, "주소", "서울 서초구 반포동 123", false);
+            document.add(providerTable.setMarginBottom(20));
+
+            // 3. 정산 요약 영역
+            document.add(new Paragraph("[ 정산 요약 ]").setBold().setMarginBottom(5));
+            Table summaryTable = new Table(UnitValue.createPercentArray(new float[]{40, 60})).useAllAvailableWidth();
+            addSummaryRow(summaryTable, "1. 총 매출액", receipt.getTotalSaleAmount());
+            addSummaryRow(summaryTable, "2. 반품 환급액 (+)", receipt.getRefundAmount());
+            addSummaryRow(summaryTable, "3. 발주 대금 (-)", receipt.getOrderAmount().negate());
+            addSummaryRow(summaryTable, "4. 정산 수수료 (-)", receipt.getCommissionFee().negate());
+            addSummaryRow(summaryTable, "5. 배송비 (-)", receipt.getDeliveryFee().negate());
+            addSummaryRow(summaryTable, "6. 본사 손실액 (-)", receipt.getLossAmount().negate());
+            addSummaryRow(summaryTable, "7. 기타 조정", receipt.getAdjustmentAmount());
             
-            summaryCell.add(new Paragraph("최종 정산 금액").setFontSize(12).setFontColor(navy).setBold().setTextAlignment(TextAlignment.CENTER));
-            summaryCell.add(new Paragraph(formatCurrency(receipt.getFinalAmount()))
-                    .setFontSize(32).setBold().setFontColor(navy).setTextAlignment(TextAlignment.CENTER));
+            com.itextpdf.layout.element.Cell totalLabelCell = new com.itextpdf.layout.element.Cell().add(new Paragraph("최종 정산 금액").setBold().setFontSize(11))
+                    .setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(5).setBorder(new SolidBorder(0.5f));
+            com.itextpdf.layout.element.Cell totalValueCell = new com.itextpdf.layout.element.Cell().add(new Paragraph(formatCurrency(receipt.getFinalAmount())).setBold().setFontSize(11))
+                    .setTextAlignment(TextAlignment.RIGHT).setPadding(5).setBorder(new SolidBorder(0.5f));
+            summaryTable.addCell(totalLabelCell);
+            summaryTable.addCell(totalValueCell);
+            document.add(summaryTable.setMarginBottom(25));
+
+            // 4. 매출 상세 내역 (VoucherType.SALES)
+            document.add(new Paragraph("[ 매출 현황 상세 ]").setBold().setMarginBottom(5));
+            float[] detailWidths = {20, 40, 10, 15, 15};
+            Table salesTable = new Table(UnitValue.createPercentArray(detailWidths)).useAllAvailableWidth();
+            addDetailHeader(salesTable);
             
-            summaryBox.addCell(summaryCell);
-            document.add(summaryBox);
-
-            // 3. 상세 항목 리스트
-            document.add(new Paragraph("정산 상세 내역").setBold().setFontSize(14).setFontColor(navy).setMarginBottom(10));
-            Table itemTable = new Table(UnitValue.createPercentArray(new float[]{60, 40})).useAllAvailableWidth();
-            itemTable.setMarginBottom(20);
-
-            addReportRow(itemTable, "총 매출액", receipt.getTotalSaleAmount(), false, navy, blueGray);
-            addReportRow(itemTable, "반품 환급액", receipt.getRefundAmount(), false, navy, blueGray);
-            addReportRow(itemTable, "발주 대금", receipt.getOrderAmount(), true, navy, blueGray);
-            addReportRow(itemTable, "정산 수수료", receipt.getCommissionFee(), true, navy, blueGray);
-            addReportRow(itemTable, "배송비", receipt.getDeliveryFee(), true, navy, blueGray);
-            addReportRow(itemTable, "본사 손실액", receipt.getLossAmount(), true, navy, blueGray);
-            addReportRow(itemTable, "기타 조정", receipt.getAdjustmentAmount(), false, navy, blueGray);
-
-            document.add(itemTable);
-
-            // 4. 상품별 판매 내역
-            if (lines != null && !lines.isEmpty()) {
-                document.add(new Paragraph("상품별 상세 내역").setBold().setFontSize(14).setFontColor(navy).setMarginTop(20).setMarginBottom(10));
-                Table table = new Table(UnitValue.createPercentArray(new float[]{60, 40})).useAllAvailableWidth();
-                for (DailyReceiptLine line : lines) {
-                    table.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(line.getDescription()).setFontSize(9).setFontColor(blueGray)).setBorder(Border.NO_BORDER).setBorderBottom(new SolidBorder(ColorConstants.LIGHT_GRAY, 0.5f)));
-                    table.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(formatCurrency(line.getAmount())).setFontSize(9).setFontColor(blueGray)).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER).setBorderBottom(new SolidBorder(ColorConstants.LIGHT_GRAY, 0.5f)));
+            List<DailyReceiptLine> salesLines = lines.stream().filter(l -> l.getLineType() == com.chaing.domain.settlements.enums.VoucherType.SALES).toList();
+            if (salesLines.isEmpty()) {
+                salesTable.addCell(new com.itextpdf.layout.element.Cell(1, 5).add(new Paragraph("매출 내역이 없습니다.").setTextAlignment(TextAlignment.CENTER)).setPadding(5).setBorder(new SolidBorder(0.5f)));
+            } else {
+                for (DailyReceiptLine line : salesLines) {
+                    addDetailRow(salesTable, line);
                 }
-                document.add(table);
             }
+            document.add(salesTable.setMarginBottom(20));
 
-            document.add(new Paragraph("\n\n본 명세서는 시스템에 의해 자동 생성된 월간 정산 공식 문서입니다.")
+            // 5. 발주 내역 상세 (VoucherType.ORDER)
+            document.add(new Paragraph("[ 발주 내역 상세 ]").setBold().setMarginBottom(5));
+            Table purchaseTable = new Table(UnitValue.createPercentArray(detailWidths)).useAllAvailableWidth();
+            addDetailHeader(purchaseTable);
+            
+            List<DailyReceiptLine> purchaseLines = lines.stream().filter(l -> l.getLineType() == com.chaing.domain.settlements.enums.VoucherType.ORDER).toList();
+            if (purchaseLines.isEmpty()) {
+                purchaseTable.addCell(new com.itextpdf.layout.element.Cell(1, 5).add(new Paragraph("발주 내역이 없습니다.").setTextAlignment(TextAlignment.CENTER)).setPadding(5).setBorder(new SolidBorder(0.5f)));
+            } else {
+                for (DailyReceiptLine line : purchaseLines) {
+                    addDetailRow(purchaseTable, line);
+                }
+            }
+            document.add(purchaseTable.setMarginBottom(20));
+
+            // 6. 하단 푸터
+            document.add(new Paragraph("\n본 문서는 시스템에 의해 자동 발행된 정식 명세서이며, 정산 증빙용으로 사용 가능합니다.")
                     .setFontSize(8).setFontColor(ColorConstants.GRAY).setTextAlignment(TextAlignment.CENTER).setMarginTop(30));
+            document.add(new Paragraph("(주)채잉 귀하").setBold().setTextAlignment(TextAlignment.RIGHT).setMarginTop(20));
 
             document.close();
             return baos.toByteArray();
@@ -198,57 +212,62 @@ public class SettlementFileServiceImpl implements SettlementFileService {
             PdfWriter writer = new PdfWriter(baos);
             PdfDocument pdf = new PdfDocument(writer);
             Document document = new Document(pdf, PageSize.A4);
-            document.setMargins(40, 40, 40, 40);
+            document.setMargins(30, 30, 30, 30);
 
             PdfFont font = loadKoreanFont();
             document.setFont(font);
+            document.setFontSize(9);
 
-            // 색상 정의
-            DeviceRgb navy = new DeviceRgb(0, 21, 41);
-            DeviceRgb blueGray = new DeviceRgb(69, 90, 100);
-            DeviceRgb lightGray = new DeviceRgb(240, 242, 245);
-
-            // 1. 헤더 영역
-            Table headerTable = new Table(UnitValue.createPercentArray(new float[]{70, 30})).useAllAvailableWidth();
-            headerTable.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph("MONTHLY SETTLEMENT REPORT")
-                    .setBold().setFontSize(24).setFontColor(navy)).setBorder(Border.NO_BORDER).setVerticalAlignment(com.itextpdf.layout.properties.VerticalAlignment.MIDDLE));
-            headerTable.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(franchiseName + "\n" + "ID: " + settlement.getFranchiseId())
-                    .setFontSize(10).setFontColor(blueGray).setTextAlignment(TextAlignment.RIGHT)).setBorder(Border.NO_BORDER));
-            document.add(headerTable);
+            // 1. 헤더
+            document.add(new Paragraph("월간 정산 영수증 (공급증)")
+                    .setBold().setFontSize(18).setTextAlignment(TextAlignment.CENTER).setMarginBottom(10));
             
-            document.add(new Paragraph("정산 월: " + settlement.getSettlementMonth().toString())
-                    .setFontSize(10).setFontColor(blueGray).setTextAlignment(TextAlignment.RIGHT).setMarginBottom(20));
+            Table metaTable = new Table(UnitValue.createPercentArray(new float[]{50, 50})).useAllAvailableWidth();
+            metaTable.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph("가맹점: " + franchiseName + " (ID: " + settlement.getFranchiseId() + ")")).setBorder(Border.NO_BORDER));
+            metaTable.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph("No. M-" + settlement.getMonthlySettlementId() + "\n정산월: " + settlement.getSettlementMonth())).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER));
+            document.add(metaTable.setMarginBottom(15));
 
-            // 2. 요약 정산 섹션 (강조 박스)
-            Table summaryBox = new Table(1).useAllAvailableWidth();
-            summaryBox.setMarginBottom(30);
-            com.itextpdf.layout.element.Cell summaryCell = new com.itextpdf.layout.element.Cell()
-                    .setBackgroundColor(lightGray).setPadding(20).setBorder(new SolidBorder(navy, 1f));
+            // 2. 공급자 정보
+            Table providerTable = new Table(UnitValue.createPercentArray(new float[]{15, 35, 15, 35})).useAllAvailableWidth();
+            addInfoCell(providerTable, "사업자번호", "123-45-67890", true);
+            addInfoCell(providerTable, "상호", "(주)채잉 본사", false);
+            addInfoCell(providerTable, "대표자", "김채잉", true);
+            addInfoCell(providerTable, "주소", "서울 서초구 반포동 123", false);
+            document.add(providerTable.setMarginBottom(20));
+
+            // 3. 정산 요약
+            document.add(new Paragraph("[ 정산 요약 ]").setBold().setMarginBottom(5));
+            Table summaryTable = new Table(UnitValue.createPercentArray(new float[]{40, 60})).useAllAvailableWidth();
+            addSummaryRow(summaryTable, "총 매출액", settlement.getTotalSaleAmount());
+            addSummaryRow(summaryTable, "반품 환급액 (+)", settlement.getRefundAmount());
+            addSummaryRow(summaryTable, "발주 대금 (-)", settlement.getOrderAmount().negate());
+            addSummaryRow(summaryTable, "정산 수수료 (-)", settlement.getCommissionFee().negate());
+            addSummaryRow(summaryTable, "배송비 (-)", settlement.getDeliveryFee().negate());
+            addSummaryRow(summaryTable, "본사 손실액 (-)", settlement.getLossAmount().negate());
+            addSummaryRow(summaryTable, "기타 조정", settlement.getAdjustmentAmount());
             
-            summaryCell.add(new Paragraph("당월 최종 정산 금액").setFontSize(12).setFontColor(navy).setBold().setTextAlignment(TextAlignment.CENTER));
-            summaryCell.add(new Paragraph(formatCurrency(settlement.getFinalSettlementAmount()))
-                    .setFontSize(32).setBold().setFontColor(navy).setTextAlignment(TextAlignment.CENTER));
+            summaryTable.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph("최종 정산 금액").setBold()).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(5).setBorder(new SolidBorder(0.5f)));
+            summaryTable.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(formatCurrency(settlement.getFinalSettlementAmount())).setBold()).setTextAlignment(TextAlignment.RIGHT).setPadding(5).setBorder(new SolidBorder(0.5f)));
+            document.add(summaryTable.setMarginBottom(25));
+
+            // 4. 상세 내역 (Vouchers)
+            document.add(new Paragraph("[ 정산 항목 상세 ]").setBold().setMarginBottom(5));
+            float[] detailWidths = {20, 40, 10, 15, 15};
+            Table details = new Table(UnitValue.createPercentArray(detailWidths)).useAllAvailableWidth();
+            addDetailHeader(details);
             
-            summaryBox.addCell(summaryCell);
-            document.add(summaryBox);
-
-            // 3. 상세 항목 리스트
-            document.add(new Paragraph("정산 상세 내역").setBold().setFontSize(14).setFontColor(navy).setMarginBottom(10));
-            Table itemTable = new Table(UnitValue.createPercentArray(new float[]{60, 40})).useAllAvailableWidth();
-            itemTable.setMarginBottom(20);
-
-            addReportRow(itemTable, "총 매출액", settlement.getTotalSaleAmount(), false, navy, blueGray);
-            addReportRow(itemTable, "반품 환급액", settlement.getRefundAmount(), false, navy, blueGray);
-            addReportRow(itemTable, "발주 대금", settlement.getOrderAmount(), true, navy, blueGray);
-            addReportRow(itemTable, "정산 수수료", settlement.getCommissionFee(), true, navy, blueGray);
-            addReportRow(itemTable, "배송비", settlement.getDeliveryFee(), true, navy, blueGray);
-            addReportRow(itemTable, "본사 손실액", settlement.getLossAmount(), true, navy, blueGray);
-            addReportRow(itemTable, "기타 조정", settlement.getAdjustmentAmount(), false, navy, blueGray);
-
-            document.add(itemTable);
-
-            document.add(new Paragraph("\n\n본 명세서는 시스템에 의해 자동 생성된 월간 정산 공식 문서입니다.")
-                    .setFontSize(8).setFontColor(ColorConstants.GRAY).setTextAlignment(TextAlignment.CENTER).setMarginTop(30));
+            if (vouchers == null || vouchers.isEmpty()) {
+                details.addCell(new com.itextpdf.layout.element.Cell(1, 5).add(new Paragraph("상세 내역이 없습니다.").setTextAlignment(TextAlignment.CENTER)).setPadding(5).setBorder(new SolidBorder(0.5f)));
+            } else {
+                for (SettlementVoucher v : vouchers) {
+                    details.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(v.getOccurredAt().toString().substring(5, 10))).setFontSize(7).setPadding(3).setBorder(new SolidBorder(0.5f)));
+                    details.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(v.getDescription())).setFontSize(7).setPadding(3).setBorder(new SolidBorder(0.5f)));
+                    details.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(v.getQuantity() != null ? v.getQuantity().toString() : "1")).setFontSize(7).setTextAlignment(TextAlignment.RIGHT).setPadding(3).setBorder(new SolidBorder(0.5f)));
+                    details.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(formatCurrency(v.getUnitPrice() != null ? v.getUnitPrice() : v.getAmount()))).setFontSize(7).setTextAlignment(TextAlignment.RIGHT).setPadding(3).setBorder(new SolidBorder(0.5f)));
+                    details.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(formatCurrency(v.getAmount()))).setFontSize(7).setTextAlignment(TextAlignment.RIGHT).setPadding(3).setBorder(new SolidBorder(0.5f)));
+                }
+            }
+            document.add(details);
 
             document.close();
             return baos.toByteArray();
@@ -256,6 +275,34 @@ public class SettlementFileServiceImpl implements SettlementFileService {
             log.error("Failed to generate Monthly PDF", e);
             throw new RuntimeException("Monthly PDF generation failed", e);
         }
+    }
+
+    private void addInfoCell(Table table, String label, String value, boolean isLabel) {
+        table.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(label).setBold())
+                .setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3).setBorder(new SolidBorder(0.5f)));
+        table.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(value))
+                .setPadding(3).setBorder(new SolidBorder(0.5f)));
+    }
+
+    private void addSummaryRow(Table table, String label, BigDecimal amount) {
+        table.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(label)).setPadding(3).setBorder(new SolidBorder(0.5f)));
+        table.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(formatCurrency(amount))).setTextAlignment(TextAlignment.RIGHT).setPadding(3).setBorder(new SolidBorder(0.5f)));
+    }
+
+    private void addDetailHeader(Table table) {
+        String[] headers = {"시간", "상품(항목)명", "수량", "단가", "금액"};
+        for (String h : headers) {
+            table.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(h).setBold())
+                    .setBackgroundColor(ColorConstants.LIGHT_GRAY).setTextAlignment(TextAlignment.CENTER).setPadding(3).setBorder(new SolidBorder(0.5f)));
+        }
+    }
+
+    private void addDetailRow(Table table, DailyReceiptLine line) {
+        table.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(line.getOccurredAt().toString().substring(11, 16))).setFontSize(7).setPadding(3).setBorder(new SolidBorder(0.5f)));
+        table.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(line.getDescription())).setFontSize(7).setPadding(3).setBorder(new SolidBorder(0.5f)));
+        table.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(line.getQuantity() != null ? line.getQuantity().toString() : "1")).setFontSize(7).setTextAlignment(TextAlignment.RIGHT).setPadding(3).setBorder(new SolidBorder(0.5f)));
+        table.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(formatCurrency(line.getUnitPrice() != null ? line.getUnitPrice() : line.getAmount()))).setFontSize(7).setTextAlignment(TextAlignment.RIGHT).setPadding(3).setBorder(new SolidBorder(0.5f)));
+        table.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(formatCurrency(line.getAmount()))).setFontSize(7).setTextAlignment(TextAlignment.RIGHT).setPadding(3).setBorder(new SolidBorder(0.5f)));
     }
 
 
@@ -453,27 +500,6 @@ public class SettlementFileServiceImpl implements SettlementFileService {
                 throw new IllegalStateException("Critical failure: even StandardFonts cannot be loaded", io);
             }
         }
-    }
-
-    private void addReportRow(Table table, String label, BigDecimal amount, boolean isDeduction, DeviceRgb navy, DeviceRgb blueGray) {
-        if (amount == null) amount = BigDecimal.ZERO;
-        
-        // 0원인 경우 흐리게 처리
-        com.itextpdf.kernel.colors.Color fontColor = (amount.compareTo(BigDecimal.ZERO) == 0) ? ColorConstants.LIGHT_GRAY : blueGray;
-        
-        table.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(label).setFontSize(10).setFontColor(fontColor)).setBorder(Border.NO_BORDER).setPadding(5));
-        
-        String sign = "";
-        if (amount.compareTo(BigDecimal.ZERO) != 0) {
-            if (isDeduction) sign = "-";
-            else if (amount.compareTo(BigDecimal.ZERO) > 0) sign = "+";
-        }
-        
-        String value = sign + formatCurrency(amount.abs());
-        table.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(value).setFontSize(10).setBold().setFontColor(fontColor))
-                .setTextAlignment(TextAlignment.RIGHT)
-                .setBorder(Border.NO_BORDER)
-                .setPadding(5));
     }
 
     private String formatCurrency(BigDecimal amount) {

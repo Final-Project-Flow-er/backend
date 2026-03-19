@@ -8,6 +8,7 @@ import com.chaing.domain.businessunits.dto.command.BusinessUnitUpdateCommand;
 import com.chaing.domain.businessunits.dto.condition.BusinessUnitSearchCondition;
 import com.chaing.domain.businessunits.dto.internal.BusinessUnitInternal;
 import com.chaing.domain.businessunits.entity.Factory;
+import com.chaing.domain.businessunits.exception.BusinessUnitErrorCode;
 import com.chaing.domain.businessunits.exception.BusinessUnitException;
 import com.chaing.domain.businessunits.repository.FactoryRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -28,7 +29,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -54,9 +57,10 @@ class FactoryServiceImplTests {
         // given
         String generatedCode = "FA01";
         BusinessUnitCreateCommand command = new BusinessUnitCreateCommand(
-                "공장", "주소", "010-0000-0000", "대표", "0123456",
+                "새공장", "주소", "010-0000-0000", "대표", "0123456",
                 Region.SEOUL, null, new BusinessUnitCreateCommand.FactoryCreate(5)
         );
+        when(factoryRepository.existsByNameExcludeDeleted("새공장")).thenReturn(false);
         when(codeGenerator.generateFactoryCode()).thenReturn(generatedCode);
 
         // when
@@ -64,8 +68,28 @@ class FactoryServiceImplTests {
 
         // then
         assertNotNull(result);
-        verify(factoryRepository, times(1)).save(any(Factory.class));
+        verify(factoryRepository, times(1)).saveAndFlush(any(Factory.class));
         verify(codeGenerator, times(1)).generateFactoryCode();
+    }
+
+    @Test
+    @DisplayName("공장 등록 시 DB 유니크 제약 조건 위반 발생")
+    void create_fail_DataIntegrityViolation() {
+
+        // given
+        BusinessUnitCreateCommand command = new BusinessUnitCreateCommand(
+                "중복공장", "주소", "010-0000-0000", "대표", "0123456",
+                Region.SEOUL, null, new BusinessUnitCreateCommand.FactoryCreate(5)
+        );
+        when(factoryRepository.existsByNameExcludeDeleted(anyString())).thenReturn(false);
+        when(codeGenerator.generateFactoryCode()).thenReturn("FA01");
+        doThrow(new org.springframework.dao.DataIntegrityViolationException("중복"))
+                .when(factoryRepository).saveAndFlush(any(Factory.class));
+
+        // when & then
+        BusinessUnitException exception = assertThrows(BusinessUnitException.class, () ->
+                factoryService.create(command));
+        assertEquals(BusinessUnitErrorCode.DUPLICATE_BUSINESS_UNIT_NAME, exception.getErrorCode());
     }
 
     @Test
@@ -93,6 +117,27 @@ class FactoryServiceImplTests {
         assertEquals(2, result.getContent().size());
         assertEquals("공장1", result.getContent().get(0).name());
         verify(factoryRepository, times(1)).search(condition, pageable);
+    }
+
+    @Test
+    @DisplayName("검색 조건에 따른 모든 공장 ID 리스트 조회")
+    void getAllIdsByCondition() {
+
+        // given
+        BusinessUnitSearchCondition condition = new BusinessUnitSearchCondition(
+                null, "검색어", null, null, null, null, null, null
+        );
+        List<Long> expectedIds = List.of(1L, 2L, 3L);
+        when(factoryRepository.findAllIdsByName("검색어")).thenReturn(expectedIds);
+
+        // when
+        List<Long> result = factoryService.getAllIdsByCondition(condition);
+
+        // then
+        assertEquals(3, result.size());
+        assertEquals(1L, result.get(0));
+        assertEquals(expectedIds, result);
+        verify(factoryRepository, times(1)).findAllIdsByName("검색어");
     }
 
     @Test
@@ -150,6 +195,24 @@ class FactoryServiceImplTests {
         // then
         assertEquals("새 이름", result.name());
         verify(factoryRepository).existsByNameExcludeDeleted("새 이름");
+    }
+
+    @Test
+    @DisplayName("공장 정보 수정 시 중복 이름 예외 발생")
+    void updateInfo_fail_duplicateName() {
+
+        // given
+        Long id = 1L;
+        Factory factory = Factory.builder().factoryId(id).name("기존공장").build();
+        BusinessUnitUpdateCommand command = new BusinessUnitUpdateCommand(
+                "중복된이름", null, null, null, null, null, null, null
+        );
+        when(factoryRepository.findById(id)).thenReturn(Optional.of(factory));
+        when(factoryRepository.existsByNameExcludeDeleted("중복된이름")).thenReturn(true);
+
+        // when & then
+        BusinessUnitException exception = assertThrows(BusinessUnitException.class, () -> factoryService.updateInfo(id, command));
+        assertEquals(BusinessUnitErrorCode.DUPLICATE_BUSINESS_UNIT_NAME, exception.getErrorCode());
     }
 
     @Test

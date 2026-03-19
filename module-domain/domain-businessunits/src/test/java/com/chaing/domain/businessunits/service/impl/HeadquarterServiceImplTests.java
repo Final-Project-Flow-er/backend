@@ -75,17 +75,40 @@ class HeadquarterServiceImplTests {
 
         // given
         Pageable pageable = PageRequest.of(0, 10);
-        Headquarter hq = Headquarter.builder().hqId(1L).name("본사").build();
+        BusinessUnitSearchCondition condition = new BusinessUnitSearchCondition(null, "삼성", null, null, null, null, null, null);
+
+        Headquarter hq = Headquarter.builder().hqId(1L).name("삼성본사").build();
         Page<Headquarter> hqPage = new PageImpl<>(Collections.singletonList(hq));
-        BusinessUnitSearchCondition condition = new BusinessUnitSearchCondition(null, null, null, null, null, null, null, null);
-        when(headquarterRepository.findAll(pageable)).thenReturn(hqPage);
+
+        when(headquarterRepository.findByNameContainingIgnoreCase("삼성", pageable)).thenReturn(hqPage);
 
         // when
         Page<BusinessUnitInternal> result = headquarterService.getBusinessUnitList(condition, pageable);
 
         // then
         assertEquals(1, result.getContent().size());
-        assertEquals("본사", result.getContent().get(0).name());
+        assertEquals("삼성본사", result.getContent().get(0).name());
+        verify(headquarterRepository).findByNameContainingIgnoreCase("삼성", pageable);
+    }
+
+    @Test
+    @DisplayName("검색 조건에 따른 모든 본사 ID 리스트 조회")
+    void getAllIdsByCondition() {
+
+        // given
+        BusinessUnitSearchCondition condition = new BusinessUnitSearchCondition(
+                null, "본사", null, null, null, null, null, null);
+        List<Long> expectedIds = List.of(1L, 2L);
+        when(headquarterRepository.findAllIdsByName("본사")).thenReturn(expectedIds);
+
+        // when
+        List<Long> result = headquarterService.getAllIdsByCondition(condition);
+
+        // then
+        assertNotNull(result);
+        assertEquals(2, result.size());
+        assertTrue(result.contains(1L));
+        verify(headquarterRepository, times(1)).findAllIdsByName("본사");
     }
 
     @Test

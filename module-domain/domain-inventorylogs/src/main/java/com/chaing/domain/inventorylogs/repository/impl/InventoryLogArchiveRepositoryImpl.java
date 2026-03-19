@@ -245,20 +245,26 @@ public class InventoryLogArchiveRepositoryImpl implements InventoryLogArchiveRep
         }
 
         @Override
-        public List<BoxCodeResponse> findBoxCodesByTransactionCode(String transactionCode) {
+        public List<BoxCodeResponse> findBoxCodesByTransactionCode(String transactionCode, String productName,
+                        LogType logType) {
                 return queryFactory
                                 .select(Projections.constructor(
                                                 BoxCodeResponse.class,
                                                 log.boxCode))
                                 .from(log)
                                 .where(log.transactionCode.eq(transactionCode)
-                                                .or(log.boxCode.eq(transactionCode)))
+                                                .or(log.boxCode.eq(transactionCode)),
+                                                containsExactProductName(productName),
+                                                equalsLogType(logType),
+                                                log.boxCode.isNotNull(),
+                                                log.boxCode.ne(""))
                                 .distinct()
                                 .fetch();
         }
 
         @Override
-        public List<BoxCodeResponse> findBoxCodesByTransactionCodeAndDate(String transactionCode, LocalDate date) {
+        public List<BoxCodeResponse> findBoxCodesByTransactionCodeAndDate(String transactionCode, LocalDate date,
+                        String productName, LogType logType) {
                 return queryFactory
                                 .select(Projections.constructor(
                                                 BoxCodeResponse.class,
@@ -267,7 +273,11 @@ public class InventoryLogArchiveRepositoryImpl implements InventoryLogArchiveRep
                                 .where(
                                                 log.transactionCode.eq(transactionCode)
                                                                 .or(log.boxCode.eq(transactionCode)),
-                                                betweenDate(date, date))
+                                                betweenDate(date, date),
+                                                containsExactProductName(productName),
+                                                equalsLogType(logType),
+                                                log.boxCode.isNotNull(),
+                                                log.boxCode.ne(""))
                                 .distinct()
                                 .fetch();
         }
@@ -422,6 +432,14 @@ public class InventoryLogArchiveRepositoryImpl implements InventoryLogArchiveRep
                 return productName != null ? QInventoryLogArchive.inventoryLogArchive.productName.contains(productName) : null;
         }
 
+        // 상품 이름 정확 매칭 조건문
+        private BooleanExpression containsExactProductName(String productName) {
+                if (productName == null || productName.isBlank()) {
+                        return null;
+                }
+                return QInventoryLogArchive.inventoryLogArchive.productName.eq(productName);
+        }
+
         // 해당 위치 로그 조회 조건문
         private BooleanExpression locationContains(String locationTypeStr, Long locationId) {
                 com.chaing.domain.inventorylogs.enums.LocationType type;
@@ -472,6 +490,10 @@ public class InventoryLogArchiveRepositoryImpl implements InventoryLogArchiveRep
                 } catch (IllegalArgumentException e) {
                         throw new InventoryLogException(InventoryLogtErrorCode.INVALID_LOG_TYPE);
                 }
+        }
+
+        private BooleanExpression equalsLogType(LogType logType) {
+                return logType == null ? null : QInventoryLogArchive.inventoryLogArchive.logType.eq(logType);
         }
 
         private long countDistinctGroups(Expression<?> groupKey1, Expression<?> groupKey2, Expression<?> groupKey3,

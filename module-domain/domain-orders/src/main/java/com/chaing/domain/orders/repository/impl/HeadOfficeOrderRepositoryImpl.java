@@ -26,30 +26,25 @@ public class HeadOfficeOrderRepositoryImpl implements HeadOfficeOrderRepositoryC
     @Override
     public Page<HQOrderItemProjection> findOrderItemPage(Pageable pageable) {
         QHeadOfficeOrder order = QHeadOfficeOrder.headOfficeOrder;
-        QHeadOfficeOrderItem item = QHeadOfficeOrderItem.headOfficeOrderItem;
 
         List<HQOrderItemProjection> content = queryFactory
                 .select(Projections.constructor(HQOrderItemProjection.class,
                         order.orderCode,
                         order.orderStatus,
                         order.userId,
-                        item.productId,
-                        item.quantity,
-                        order.createdAt,
-                        order.manufactureDate,
-                        order.storedDate))
-                .from(item)
-                .join(item.headOfficeOrder, order)
+                        order.totalQuantity,
+                        order.totalAmount,
+                        order.createdAt))
+                .from(order)
                 .where(order.deletedAt.isNull())
-                .orderBy(order.createdAt.desc(), item.headOfficeOrderItemId.asc())
+                .orderBy(order.createdAt.desc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();
 
         Long total = queryFactory
-                .select(item.count())
-                .from(item)
-                .join(item.headOfficeOrder, order)
+                .select(order.count())
+                .from(order)
                 .where(order.deletedAt.isNull())
                 .fetchOne();
 

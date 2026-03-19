@@ -61,7 +61,9 @@ public interface FactoryInventoryRepository extends JpaRepository<FactoryInvento
     );
     List<FactoryInventory> findAllByInventoryIdIn(List<Long> selectedList);
 
-    void deleteByInventoryIdIn(List<Long> longs);
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("delete from FactoryInventory f where f.inventoryId in :ids")
+    void deleteByInventoryIdIn(@Param("ids") List<Long> ids);
 
     @Query("SELECT i FROM FactoryInventory i WHERE i.boxCode = :boxCode")
     List<FactoryInventory> findAllByBoxCode(String boxCode);

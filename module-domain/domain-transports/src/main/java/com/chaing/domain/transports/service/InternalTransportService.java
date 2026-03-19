@@ -3,6 +3,7 @@ package com.chaing.domain.transports.service;
 import com.chaing.domain.transports.dto.DeliveryFeeInfo;
 import com.chaing.domain.transports.dto.OrderInfo;
 import com.chaing.domain.transports.dto.info.TransportLogInfo;
+import com.chaing.domain.transports.dto.info.UpdateDeliverStatusInfo;
 import com.chaing.domain.transports.dto.response.AvailableVehicleInfo;
 import com.chaing.domain.transports.entity.Transit;
 import com.chaing.domain.transports.entity.TransportLog;
@@ -196,5 +197,33 @@ public class InternalTransportService {
                     return TransportLogInfo.create(log, vehicle);
                 })
                 .toList();
+    }
+
+    public List<UpdateDeliverStatusInfo> getDeliveryStatus(@NotEmpty List<String> orderCodes) {
+
+        if(orderCodes == null || orderCodes.isEmpty()) {
+            throw new TransportException(TransportErrorCode.TRANSPORT_NOT_FOUND);
+        }
+
+        List<Transit> transitInfos = reader.getTransitInfo(orderCodes);
+
+        if(transitInfos.isEmpty()) {
+            throw new TransportException(TransportErrorCode.TRANSPORT_NOT_FOUND);
+        }
+
+        List<UpdateDeliverStatusInfo> currentStatus = transitInfos.stream()
+                .map(transitInfo -> {
+                    if(transitInfo.getReturnCode() == null || transitInfo.getReturnCode().isEmpty()) {
+                        return UpdateDeliverStatusInfo.create(transitInfo.getOrderCode(), null, transitInfo.getStatus());
+                    }
+                    return UpdateDeliverStatusInfo.create(transitInfo.getOrderCode(), transitInfo.getReturnCode(), transitInfo.getStatus());
+                })
+                .toList();
+
+        if(currentStatus.isEmpty()) {
+            throw new TransportException(TransportErrorCode.TRANSPORT_NOT_FOUND);
+        }
+
+        return currentStatus;
     }
 }

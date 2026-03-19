@@ -73,6 +73,15 @@ public class FranchiseReturnService {
         return franchiseReturnRepository.findHQReturnPage(isAll, pageable);
     }
 
+    // returnItem의 boxCode 목록 반환
+    public List<String> getReturnItemBoxCodes(String returnCode) {
+        List<ReturnItem> items = franchiseReturnItemRepository.findAllByReturns_ReturnCodeAndDeletedAtIsNull(returnCode);
+        if (items == null || items.isEmpty()) {
+            throw new FranchiseReturnException(FranchiseReturnErrorCode.RETURN_ITEM_NOT_FOUND);
+        }
+        return items.stream().map(ReturnItem::getBoxCode).toList();
+    }
+
     // 반품 세부정보 조회
     public ReturnCommand getReturn(Long userId, Long franchiseId, String returnCode) {
         Returns returns = franchiseReturnRepository.findByUserIdAndFranchiseIdAndReturnCodeAndDeletedAtIsNull(userId, franchiseId, returnCode)
@@ -493,5 +502,10 @@ public class FranchiseReturnService {
                         selectedReturn.getReturnCode(),
                         selectedReturn.getFranchiseId()
                 )).toList();
+    }
+
+    @Transactional
+    public void updateDeliveryStatus(List<String> returnCodes, ReturnStatus deliverStatus) {
+        franchiseReturnRepository.updateReturnStatusByReturnCodeIn(returnCodes, deliverStatus);
     }
 }

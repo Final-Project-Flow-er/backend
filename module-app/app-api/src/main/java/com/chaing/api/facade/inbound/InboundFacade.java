@@ -18,7 +18,6 @@ import com.chaing.domain.inventories.exception.InventoriesErrorCode;
 import com.chaing.domain.inventories.exception.InventoriesException;
 import com.chaing.domain.inventories.service.InventoryService;
 import com.chaing.domain.inventories.service.inbound.InboundService;
-import com.chaing.domain.inventorylogs.service.InventoryLogService;
 import com.chaing.domain.orders.dto.response.FranchiseOrderForTransitResponse;
 import com.chaing.domain.orders.service.FranchiseOrderService;
 import com.chaing.domain.products.service.ProductService;

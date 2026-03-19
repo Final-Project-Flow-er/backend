@@ -409,8 +409,12 @@ public class InventoryLogArchiveRepositoryImpl implements InventoryLogArchiveRep
         }
 
         // 제품식별코드 조건문
-        private BooleanExpression containsTransactionCode(String serialCode) {
-                return serialCode != null ? QInventoryLogArchive.inventoryLogArchive.transactionCode.contains(serialCode) : null;
+        private BooleanExpression containsTransactionCode(String keyword) {
+                if (keyword == null || keyword.isBlank()) {
+                        return null;
+                }
+                return QInventoryLogArchive.inventoryLogArchive.transactionCode.contains(keyword)
+                                .or(QInventoryLogArchive.inventoryLogArchive.boxCode.contains(keyword));
         }
 
         // 상품 이름 조건문
@@ -459,7 +463,8 @@ public class InventoryLogArchiveRepositoryImpl implements InventoryLogArchiveRep
         // 해당 로그만 조회
         private BooleanExpression containsLogType(String logType) {
                 if (logType == null || logType.isBlank()) {
-                        return null;
+                        // 공장 "입출고 로그" 기본 조회에서는 폐기 로그를 제외한다.
+                        return log.logType.ne(LogType.DISPOSAL);
                 }
                 try {
                         LogType type = LogType.valueOf(logType.trim().toUpperCase());

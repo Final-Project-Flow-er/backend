@@ -38,6 +38,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.HashSet;
@@ -161,9 +162,10 @@ public class InventoryService {
     }
 
     // 배송 중 상태 변경
-    public void updateShippingStatus(List<String> serialCodes) {
+    @Transactional
+    public void updateShippingStatus(List<String> serialCodes, LogType targetStatus) {
         // 해당 seralCode 배송 중으로 변경
-        factoryInventoryRepository.updateStatus(serialCodes, LogType.SHIPPING);
+        factoryInventoryRepository.updateStatus(serialCodes, targetStatus);
     }
 
     public void updateFranchiseShippingStatus(Long franchiseId, List<String> serialCodes) {
@@ -390,6 +392,18 @@ public class InventoryService {
         }
     }
 
+
+    // boxCode 목록으로 HQInventory 조회
+    public List<HQInventory> getHQInventoriesByBoxCodes(List<String> boxCodes) {
+        List<HQInventory> inventories = hqInventoryRepository.findAllByBoxCodeInAndDeletedAtIsNull(boxCodes);
+        return inventories != null ? inventories : List.of();
+    }
+
+    // boxCode 목록으로 FranchiseInventory 조회
+    public List<FranchiseInventory> getFranchiseInventoriesByBoxCodes(List<String> boxCodes) {
+        List<FranchiseInventory> inventories = franchiseInventoryRepository.findAllByBoxCodeInAndDeletedAtIsNull(boxCodes);
+        return inventories != null ? inventories : List.of();
+    }
 
     // return: 데이터 누락 있는지 없는지
     public void verifyOmission(List<String> requestedBoxCodes) {
@@ -736,5 +750,19 @@ public class InventoryService {
         }
 
         return itemInfos;
+    }
+
+    // return: Map<productId, quantity>
+    public Map<Long, Long> getFactoryInventoryByProductId(List<Long> productIds) {
+        // Set<productId>
+        Set<Long> productIdSet = new HashSet<>(productIds);
+
+        List<FactoryInventory> inventories = factoryInventoryRepository.findAllByProductIdInAndStatusAndDeletedAtIsNull(productIdSet, LogType.AVAILABLE);
+
+        return inventories.stream()
+                .collect(Collectors.groupingBy(
+                        FactoryInventory::getProductId,
+                        Collectors.counting()
+                ));
     }
 }

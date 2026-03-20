@@ -47,4 +47,11 @@ public class SettlementDocumentServiceImpl implements SettlementDocumentService 
                 document.getDocumentType(), document.getDocumentOwner());
         documentRepository.save(document);
     }
+
+    @Override
+    @Transactional
+    public void deleteById(Long settlementDocumentId) {
+        log.info("[DEBUG] Deleting stale SettlementDocument id={}", settlementDocumentId);
+        documentRepository.deleteById(settlementDocumentId);
+    }
 }

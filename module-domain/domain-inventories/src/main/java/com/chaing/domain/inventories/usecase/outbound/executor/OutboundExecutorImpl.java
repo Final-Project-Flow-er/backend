@@ -19,8 +19,8 @@ public class OutboundExecutorImpl implements  OutboundExecutor {
     }
 
     @Override
-    public void assignBoxCode(String boxCode, List<String> confirmedIds) {
-        repository.setBoxCode(boxCode, confirmedIds);
+    public void assignBoxCode(String boxCode, Long orderId, Long orderItemId, List<String> confirmedIds) {
+        repository.setBoxCode(boxCode, orderId, orderItemId, confirmedIds);
     }
 
     @Override

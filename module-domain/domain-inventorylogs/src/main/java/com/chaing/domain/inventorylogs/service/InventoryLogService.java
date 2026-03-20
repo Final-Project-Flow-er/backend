@@ -193,13 +193,21 @@ public class InventoryLogService {
 
     public void recordInventoryLog(List<InventoryLogCreateRequest> logs) {
         List<InventoryLog> entities = logs.stream()
-                .filter(request -> !inventoryLogRepository
-                        .existsByTransactionCodeAndBoxCodeAndLogTypeAndActorTypeAndActorIdAndDeletedAtIsNull(
-                                request.transactionCode(),
-                                request.boxCode(),
-                                request.logType(),
-                                request.actorType(),
-                                request.actorId()))
+                .filter(request -> {
+                    // 폐기 로그는 transactionCode가 null이어서 기존 중복 검증이
+                    // 과도하게 동작할 수 있으므로 항상 기록한다.
+                    if (request.logType() == LogType.DISPOSAL) {
+                        return true;
+                    }
+
+                    return !inventoryLogRepository
+                            .existsByTransactionCodeAndBoxCodeAndLogTypeAndActorTypeAndActorIdAndDeletedAtIsNull(
+                                    request.transactionCode(),
+                                    request.boxCode(),
+                                    request.logType(),
+                                    request.actorType(),
+                                    request.actorId());
+                })
                 .map(this::toEntity)
                 .toList();
 
@@ -226,16 +234,25 @@ public class InventoryLogService {
     }
 
     public List<BoxCodeResponse> findBoxCodesByTransactionCode(String transactionCode) {
-        return findBoxCodesByTransactionCode(transactionCode, null);
+        return findBoxCodesByTransactionCode(transactionCode, null, null, null);
     }
 
-    public List<BoxCodeResponse> findBoxCodesByTransactionCode(String transactionCode, LocalDate date) {
-        List<BoxCodeResponse> active = date == null
-                ? inventoryLogRepository.findBoxCodesByTransactionCode(transactionCode)
-                : inventoryLogRepository.findBoxCodesByTransactionCodeAndDate(transactionCode, date);
-        List<BoxCodeResponse> archive = date == null
-                ? inventoryLogArchiveRepository.findBoxCodesByTransactionCode(transactionCode)
-                : inventoryLogArchiveRepository.findBoxCodesByTransactionCodeAndDate(transactionCode, date);
+    public List<BoxCodeResponse> findBoxCodesByTransactionCode(String transactionCode, LocalDate date,
+            String productName, LogType logType) {
+        // product/logType으로 충분히 범위를 좁힌 경우에는 날짜 필터를 강제하지 않는다.
+        // (동일 transactionCode 그룹이 여러 날짜에 걸치는 집계 행에서 박스코드 누락 방지)
+        boolean useDateFilter = date != null
+                && (productName == null || productName.isBlank())
+                && logType == null;
+
+        List<BoxCodeResponse> active = useDateFilter
+                ? inventoryLogRepository.findBoxCodesByTransactionCodeAndDate(transactionCode, date, productName,
+                        logType)
+                : inventoryLogRepository.findBoxCodesByTransactionCode(transactionCode, productName, logType);
+        List<BoxCodeResponse> archive = useDateFilter
+                ? inventoryLogArchiveRepository.findBoxCodesByTransactionCodeAndDate(transactionCode, date,
+                        productName, logType)
+                : inventoryLogArchiveRepository.findBoxCodesByTransactionCode(transactionCode, productName, logType);
 
         return Stream.concat(active.stream(), archive.stream())
                 .distinct()

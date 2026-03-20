@@ -48,20 +48,22 @@ public class FranchiseSettlementController {
         @GetMapping("/daily/sales-items")
         public ResponseEntity<ApiResponse<?>> getDailySalesItems(
                         @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+                        @RequestParam(value = "limit", required = false) Integer limit,
                         @AuthenticationPrincipal UserPrincipal principal) {
                 Long franchiseId = principal.getBusinessUnitId();
                 return ResponseEntity.ok(ApiResponse.success(
-                                facade.getDailySalesItems(franchiseId, date, 5))); // top5
+                                facade.getDailySalesItems(franchiseId, date, limit)));
         }
 
         @Operation(summary = "일별 발주 내역 조회", description = "발주 내역 리스트(상품명/수량/단가/총금액)")
         @GetMapping("/daily/order-items")
         public ResponseEntity<ApiResponse<?>> getDailyOrdersItems(
                         @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+                        @RequestParam(value = "limit", required = false) Integer limit,
                         @AuthenticationPrincipal UserPrincipal principal) {
                 Long franchiseId = principal.getBusinessUnitId();
                 return ResponseEntity.ok(ApiResponse.success(
-                                facade.getDailyOrderItems(franchiseId, date, 5)));
+                                facade.getDailyOrderItems(franchiseId, date, limit)));
         }
 
         // 월별
@@ -90,25 +92,6 @@ public class FranchiseSettlementController {
                                 facade.getMonthlySalesItems(franchiseId, month, limit)));
         }
 
-        @Operation(summary = "월별 일자 매출 추이 조회 그래프", description = "기간 선택 후 매출 추이 그래프 조회")
-        @GetMapping("/monthly/daily-sales-graph")
-        public ResponseEntity<ApiResponse<?>> getMonthlyDailySalesGraph(
-                        @RequestParam("month") @DateTimeFormat(pattern = "yyyy-MM") YearMonth month,
-                        @RequestParam("start") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start,
-                        @RequestParam("end") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end,
-                        @AuthenticationPrincipal UserPrincipal principal) {
-                if (start.isAfter(end)) {
-                        throw new SettlementException(SettlementErrorCode.INVALID_DATE_RANGE);
-                }
-                if (!YearMonth.from(start).equals(month) || !YearMonth.from(end).equals(month)) {
-                        throw new SettlementException(SettlementErrorCode.INVALID_PARAMETER);
-                }
-                Long franchiseId = principal.getBusinessUnitId();
-                // TODO: Swagger 테스트용 임시 응답. 추후 서비스 로직 연동 예정
-                return ResponseEntity.ok(ApiResponse.success(
-                                facade.getMonthlyDailyGraph(franchiseId, start, end)));
-        }
-
         @Operation(summary = "월별 발주 내역 상위 조회", description = "월별 발주 상품별 전체조회, limit있으면 수량기준 상위 5개 조회")
         @GetMapping("/monthly/order-items")
         public ResponseEntity<ApiResponse<?>> getMonthlyOrders(
@@ -121,6 +104,16 @@ public class FranchiseSettlementController {
                 Long franchiseId = principal.getBusinessUnitId();
                 return ResponseEntity.ok(ApiResponse.success(
                                 facade.getMonthlyOrderItems(franchiseId, month, limit)));
+        }
+
+        @Operation(summary = "월별 매출 추이 조회(그래프)", description = "월별 일자별 매출 합계 리스트 조회")
+        @GetMapping("/monthly/sales-graph")
+        public ResponseEntity<ApiResponse<?>> getMonthlySalesTrend(
+                        @RequestParam("month") @DateTimeFormat(pattern = "yyyy-MM") YearMonth month,
+                        @AuthenticationPrincipal UserPrincipal principal) {
+                Long franchiseId = principal.getBusinessUnitId();
+                return ResponseEntity.ok(ApiResponse.success(
+                                facade.getMonthlySalesTrend(franchiseId, month)));
         }
 
         // 전표 상세 목록 조회, 일/월 공통

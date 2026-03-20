@@ -6,6 +6,7 @@ import com.chaing.core.enums.LogType;
 import com.chaing.domain.orders.dto.command.FranchiseOrderCommand;
 import com.chaing.domain.orders.dto.command.FranchiseOrderDetailCommand;
 import com.chaing.domain.orders.dto.command.FranchiseOrderItemCommand;
+import com.chaing.domain.orders.dto.info.OrderInfoForLog;
 import com.chaing.domain.orders.dto.request.FranchiseOrderCreateRequest;
 import com.chaing.core.dto.request.FranchiseOrderCreateRequestItem;
 import com.chaing.core.dto.request.FranchiseOrderUpdateRequest;
@@ -31,6 +32,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.Collections;
@@ -123,12 +125,34 @@ public class FranchiseOrderService {
             }
         }).toList();
 
+        // 발주 총 금액, 총 수량 업데이트
+        // Map<FranchiseOrder, List<FranchiseOrderItem>>
+        Map<FranchiseOrder, List<FranchiseOrderItem>> itemsByReturnId = upsertItems.stream()
+                .collect(Collectors.groupingBy(
+                        FranchiseOrderItem::getFranchiseOrder
+                ));
+        List<FranchiseOrder> updatedOrders = itemsByReturnId.entrySet().stream()
+                .map(entry -> {
+                    FranchiseOrder targetOrder = entry.getKey();
+                    List<FranchiseOrderItem> targetItems = entry.getValue();
+
+                    if (targetOrder == null || targetItems == null || targetItems.isEmpty()) {
+                        throw new OrderException(OrderErrorCode.ORDER_ITEM_NOT_FOUND);
+                    }
+
+                    targetOrder.updateQuantityAndPrice(targetItems);
+
+                    return targetOrder;
+                })
+                .toList();
+
         // 변경사항 저장
         franchiseOrderItemRepository.deleteAll(deletedItems);
         franchiseOrderItemRepository.saveAll(upsertItems);
+        franchiseOrderRepository.saveAll(updatedOrders);
 
         // 반환
-        List<FranchiseOrderItemDetailResponse> responses = upsertItems.stream()
+        return upsertItems.stream()
                 .map(item -> {
                     ProductInfo productInfo = productInfoByProductId.get(item.getProductId());
                     String productCode = productInfo.productCode();
@@ -142,8 +166,6 @@ public class FranchiseOrderService {
                             .totalPrice(item.getTotalPrice())
                             .build();
                 }).toList();
-
-        return responses;
     }
 
     // 가맹점 발주 취소
@@ -182,7 +204,6 @@ public class FranchiseOrderService {
                 .totalQuantity(totalQuantity)
                 .totalAmount(totalPrice)
                 .deliveryDate(request.deliveryDate())
-                .deliveryTime(request.deliveryTime())
                 .build();
 
         // 발주 저장
@@ -703,6 +724,7 @@ public class FranchiseOrderService {
                 ));
     }
 
+    @Transactional
     public void updateDeliveryStatus(List<String> orderCodes, FranchiseOrderStatus orderStatus) {
         List<FranchiseOrder> orders = franchiseOrderRepository.findAllByOrderCodeInAndDeletedAtIsNull(orderCodes);
 
@@ -718,5 +740,39 @@ public class FranchiseOrderService {
         }
 
         orders.forEach(order -> order.updateStatus(orderStatus));
+    }
+
+    public Map<Long, OrderInfoForLog> getOrderInfoForLog(List<Long> orderIds) {
+
+        List<FranchiseOrder> orderInfos = franchiseOrderRepository.findByFranchiseOrderIdIn(orderIds);
+
+        if (orderInfos == null || orderInfos.isEmpty()) {
+            throw new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_NOT_FOUND);
+        }
+
+        Set<Long> foundOrderIds = orderInfos.stream()
+                .map(FranchiseOrder::getFranchiseOrderId)
+                .collect(Collectors.toSet());
+
+        if (!foundOrderIds.containsAll(new HashSet<>(orderIds))) {
+            throw new FranchiseOrderException(FranchiseOrderErrorCode.DATA_OMISSION);
+        }
+
+        return orderInfos.stream()
+                .collect(Collectors.toMap(
+                        FranchiseOrder::getFranchiseOrderId,
+                        order -> OrderInfoForLog.create(
+                                order.getOrderCode(),
+                                order.getFranchiseId()
+                        )
+                ));
+    }
+
+    public Long getOrderIdByOrderItemId(Long orderItemId) {
+        Long orderId = franchiseOrderItemRepository.getOrderIdByOrderItemId(orderItemId);
+        if(orderId == null) {
+            throw new FranchiseOrderException(FranchiseOrderErrorCode.ORDER_NOT_FOUND);
+        }
+        return orderId;
     }
 }

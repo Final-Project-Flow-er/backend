@@ -33,10 +33,8 @@ public class FactoryRepositoryImpl implements FactoryRepositoryCustom {
         List<Factory> content = queryFactory
                 .selectFrom(factory)
                 .where(
-                        codeContains(condition.code()),
-                        nameContains(condition.name()),
-                        representativeContains(condition.representativeName()),
-                        businessNumberContains(condition.businessNumber()),
+                        nameOrCodeContains(condition.code(), condition.name()),
+                        representativeOrBusinessNumberContains(condition.representativeName(), condition.businessNumber()),
                         regionEq(condition.region()),
                         statusEq(condition.status())
                 )
@@ -49,10 +47,8 @@ public class FactoryRepositoryImpl implements FactoryRepositoryCustom {
                 .select(factory.count())
                 .from(factory)
                 .where(
-                        codeContains(condition.code()),
-                        nameContains(condition.name()),
-                        representativeContains(condition.representativeName()),
-                        businessNumberContains(condition.businessNumber()),
+                        nameOrCodeContains(condition.code(), condition.name()),
+                        representativeOrBusinessNumberContains(condition.representativeName(), condition.businessNumber()),
                         regionEq(condition.region()),
                         statusEq(condition.status())
                 );
@@ -60,20 +56,20 @@ public class FactoryRepositoryImpl implements FactoryRepositoryCustom {
         return PageableExecutionUtils.getPage(content, pageable, countQuery::fetchOne);
     }
 
-    private BooleanExpression codeContains(String code) {
-        return hasText(code) ? QFactory.factory.factoryCode.contains(code) : null;
+    private BooleanExpression nameOrCodeContains(String code, String name) {
+        BooleanExpression codeExpr = hasText(code) ? QFactory.factory.factoryCode.containsIgnoreCase(code) : null;
+        BooleanExpression nameExpr = hasText(name) ? QFactory.factory.name.containsIgnoreCase(name) : null;
+        if (codeExpr != null && nameExpr != null) return codeExpr.or(nameExpr);
+        if (codeExpr != null) return codeExpr;
+        return nameExpr;
     }
 
-    private BooleanExpression nameContains(String name) {
-        return hasText(name) ? QFactory.factory.name.contains(name) : null;
-    }
-
-    private BooleanExpression representativeContains(String representativeName) {
-        return hasText(representativeName) ? QFactory.factory.representativeName.contains(representativeName) : null;
-    }
-
-    private BooleanExpression businessNumberContains(String businessNumber) {
-        return hasText(businessNumber) ? QFactory.factory.businessNumber.contains(businessNumber) : null;
+    private BooleanExpression representativeOrBusinessNumberContains(String representativeName, String businessNumber) {
+        BooleanExpression repExpr = hasText(representativeName) ? QFactory.factory.representativeName.containsIgnoreCase(representativeName) : null;
+        BooleanExpression bizExpr = hasText(businessNumber) ? QFactory.factory.businessNumber.containsIgnoreCase(businessNumber) : null;
+        if (repExpr != null && bizExpr != null) return repExpr.or(bizExpr);
+        if (repExpr != null) return repExpr;
+        return bizExpr;
     }
 
     private BooleanExpression regionEq(Region region) {

@@ -1,6 +1,7 @@
 package com.chaing.domain.inventories.repository;
 
 import com.chaing.core.enums.LogType;
+import com.chaing.domain.inventories.dto.info.InboundProductIdInfo;
 import com.chaing.domain.inventories.entity.FactoryInventory;
 import com.chaing.domain.inventories.repository.interfaces.FactoryInventoryRepositoryCustom;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -32,9 +33,15 @@ public interface FactoryInventoryRepository extends JpaRepository<FactoryInvento
             @Param("targetStatus") LogType targetStatus);
 
     @Modifying
-    @Query("update FactoryInventory f set f.boxCode = :boxCode where f.serialCode in :ids")
+    @Query("update FactoryInventory f " +
+            "set f.boxCode = :boxCode" +
+            ", f.orderId = :orderId" +
+            ", f.orderItemId = :orderItemId " +
+            "where f.serialCode in :ids")
     void setBoxCode(
             @Param("boxCode") String boxCode,
+            @Param("orderId") Long orderId,
+            @Param("orderItemId") Long orderItemId,
             @Param("ids") List<String> selectedList);
 
     @Modifying(clearAutomatically = true)
@@ -54,7 +61,9 @@ public interface FactoryInventoryRepository extends JpaRepository<FactoryInvento
     );
     List<FactoryInventory> findAllByInventoryIdIn(List<Long> selectedList);
 
-    void deleteByInventoryIdIn(List<Long> longs);
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("delete from FactoryInventory f where f.inventoryId in :ids")
+    void deleteByInventoryIdIn(@Param("ids") List<Long> ids);
 
     @Query("SELECT i FROM FactoryInventory i WHERE i.boxCode = :boxCode")
     List<FactoryInventory> findAllByBoxCode(String boxCode);
@@ -66,4 +75,18 @@ public interface FactoryInventoryRepository extends JpaRepository<FactoryInvento
 
     @Query("select i.orderId from FactoryInventory i where i.serialCode in(:selectedList)")
     List<Long> getOrderIdBySerialCodeIn(@Param("selectedList") List<String> selectedList);
+
+    @Query("""
+            select new com.chaing.domain.inventories.dto.info.InboundProductIdInfo(
+                i.productId,
+                count(i)
+            )
+            from FactoryInventory i
+            where i.serialCode in (:serialCodes)
+            group by i.productId
+            """)
+    List<InboundProductIdInfo> getInboundProductIdInfosBySerialCodes(@Param("serialCodes") List<String> serialCodes);
+
+    @Query("select f from FactoryInventory f where f.serialCode = :serialCode")
+    FactoryInventory isAlreadyExist(@Param("serialCode") String serialCode);
 }

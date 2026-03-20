@@ -7,7 +7,6 @@ import lombok.Getter;
 @AllArgsConstructor
 public enum UserRole {
 
-    ADMIN("총 관리자"),
     HQ("본사"),
     FRANCHISE("가맹점"),
     FACTORY("공장");

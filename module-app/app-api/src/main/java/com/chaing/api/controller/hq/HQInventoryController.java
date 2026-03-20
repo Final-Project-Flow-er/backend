@@ -180,12 +180,4 @@ public class HQInventoryController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "안전재고 설정 비밀번호 확인", description = "관리자 비밀번호가 실제 사용자 비밀번호와 일치하는지 확인합니다.")
-    @PostMapping("/verify-password")
-    public ResponseEntity<ApiResponse<Boolean>> verifyPassword(
-            @AuthenticationPrincipal UserPrincipal principal,
-            @RequestBody Map<String, String> request) {
-        return ResponseEntity.ok(ApiResponse.success(
-                hqInventoryFacade.verifyAdminPassword(principal.getId(), request.get("password"))));
-    }
 }

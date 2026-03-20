@@ -13,8 +13,8 @@ public enum ReturnStatus {
     SHIPPING("SHIPPING", "배송중"),
     COMPLETED("COMPLETED", "배송완료"),
     INSPECTING("INSPECTING", "검수중"),
-    DEDUCTION_COMPLETED("COMPLETED", "대금 차감 완료"),
-    DEDUCTION_REJECTED("REJECTED", "대금 차감 거절"),
+    DEDUCTION_COMPLETED("DEDUCTION_COMPLETED", "대금 차감 완료"),
+    DEDUCTION_REJECTED("DEDUCTION_REJECTED", "대금 차감 거절"),
     CANCELED("CANCELED", "취소");
 
     private final String key;

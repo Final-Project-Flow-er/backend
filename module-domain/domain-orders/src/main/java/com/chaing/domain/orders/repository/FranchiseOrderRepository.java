@@ -29,6 +29,13 @@ public interface FranchiseOrderRepository extends JpaRepository<FranchiseOrder, 
 
     List<FranchiseOrder> findAllByOrderCodeInAndDeletedAtIsNull(List<String> orderCodes);
 
+    List<FranchiseOrder> findAllByFranchiseId(Long franchiseId);
+
+    // 특정 가맹점 날짜 범위 발주 (상태 목록 필터링)
+    List<FranchiseOrder> findAllByFranchiseIdAndOrderStatusInAndCreatedAtBetween(
+            Long franchiseId, List<FranchiseOrderStatus> statuses,
+            LocalDateTime start, LocalDateTime end);
+
     // 특정 가맹점 날짜 범위 발주 (ACCEPTED 일 때)
     List<FranchiseOrder> findAllByFranchiseIdAndOrderStatusAndCreatedAtBetween(
             Long franchiseId, FranchiseOrderStatus orderStatus,
@@ -53,4 +60,7 @@ public interface FranchiseOrderRepository extends JpaRepository<FranchiseOrder, 
     List<FranchiseOrder> getFranchiseOrderByFranchiseOrderStatus(@Param("statuses") List<FranchiseOrderStatus> statuses);
 
     Optional<FranchiseOrder> findByOrderCodeAndDeletedAtIsNull(String orderCode);
+
+    @Query("select f from FranchiseOrder f where f.franchiseOrderId in :orderIds and f.deletedAt is null")
+    List<FranchiseOrder> findByFranchiseOrderIdIn(@Param("orderIds") List<Long> orderIds);
 }

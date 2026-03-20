@@ -23,6 +23,24 @@ public class GlobalExceptionHandler {
                 .body(ErrorResponse.from(e.getErrorCode()));
     }
 
+    @ExceptionHandler(org.springframework.web.bind.MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponse> handleValidationException(org.springframework.web.bind.MethodArgumentNotValidException e) {
+        String message = e.getBindingResult().getFieldErrors().stream()
+                .map(fieldError -> String.format("[%s]: %s", fieldError.getField(), fieldError.getDefaultMessage()))
+                .collect(java.util.stream.Collectors.joining(", "));
+
+        log.warn("Validation failed: {}", message);
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ErrorResponse.builder()
+                        .timestamp(LocalDateTime.now())
+                        .status(400)
+                        .code("INVALID_INPUT")
+                        .message(message)
+                        .build());
+    }
+
     @ExceptionHandler({OptimisticLockException.class, ObjectOptimisticLockingFailureException.class})
     public ResponseEntity<ErrorResponse> handleOptimisticLock(Exception e) {
         log.warn("Optimistic Lock Conflict occurred: {}", e.getMessage(), e);

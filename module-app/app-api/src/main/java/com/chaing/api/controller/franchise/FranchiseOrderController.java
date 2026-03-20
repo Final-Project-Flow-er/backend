@@ -7,6 +7,7 @@ import com.chaing.api.facade.franchise.FranchiseOrderFacade;
 import com.chaing.api.security.principal.UserPrincipal;
 import com.chaing.core.dto.ApiResponse;
 import com.chaing.domain.orders.dto.response.FranchiseOrderCancelResponse;
+import com.chaing.domain.orders.dto.response.FranchiseOrderCreateInfoResponse;
 import com.chaing.domain.orders.dto.response.FranchiseOrderCreateResponse;
 import com.chaing.domain.orders.dto.response.FranchiseOrderDetailResponse;
 import com.chaing.domain.orders.dto.response.FranchiseOrderUpdateResponse;
@@ -97,5 +98,15 @@ public class FranchiseOrderController {
         Long userId = userPrincipal.getId();
 
         return ResponseEntity.ok(ApiResponse.success(franchiseOrderFacade.createOrder(userId, request)));
+    }
+
+    @Operation(summary = "발주 생성 창 정보 반환", description = "수령인 이름, 전화번호, 수령 주소 반환")
+    @GetMapping("/creation/info")
+    public ResponseEntity<ApiResponse<FranchiseOrderCreateInfoResponse>> getUserInfo(
+            @AuthenticationPrincipal UserPrincipal userPrincipal
+    ) {
+        Long userId = userPrincipal.getId();
+
+        return ResponseEntity.ok(ApiResponse.success(franchiseOrderFacade.getUserInfo(userId)));
     }
 }

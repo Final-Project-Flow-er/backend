@@ -30,6 +30,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -86,6 +87,30 @@ public class FactoryInventoryRepositoryImpl implements FactoryInventoryRepositor
                                 .collect(Collectors.toMap(
                                                 InventoryProductInfoResponse::productId,
                                                 r -> r));
+        }
+
+        @Override
+        public Map<String, Long> countByBoxCodes(List<String> boxCodes) {
+                if (boxCodes == null || boxCodes.isEmpty()) {
+                        return Map.of();
+                }
+
+                List<Tuple> rows = queryFactory
+                                .select(factoryInventory.boxCode, factoryInventory.count())
+                                .from(factoryInventory)
+                                .where(
+                                                factoryInventory.boxCode.in(boxCodes),
+                                                factoryInventory.deletedAt.isNull())
+                                .groupBy(factoryInventory.boxCode)
+                                .fetch();
+
+                Map<String, Long> result = new LinkedHashMap<>();
+                for (Tuple row : rows) {
+                        result.put(
+                                        row.get(factoryInventory.boxCode),
+                                        row.get(factoryInventory.count()));
+                }
+                return result;
         }
 
         // 중분류

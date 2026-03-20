@@ -5,6 +5,8 @@ import com.chaing.domain.users.enums.UserPosition;
 import com.chaing.domain.users.enums.UserRole;
 import com.chaing.domain.users.enums.UserStatus;
 
+import java.util.List;
+
 public record UserSearchRequest(
 
         String loginId,
@@ -13,9 +15,10 @@ public record UserSearchRequest(
         UserRole role,
         UserPosition position,
         UserStatus status,
-        Long businessUnitId
+        Long businessUnitId,
+        String orgName
 ) {
-    public UserSearchCondition toCondition() {
+    public UserSearchCondition toCondition(java.util.List<Long> hqIds, java.util.List<Long> franchiseIds, List<Long> factoryIds) {
         return new UserSearchCondition(
                 loginId,
                 username,
@@ -23,7 +26,10 @@ public record UserSearchRequest(
                 role,
                 position,
                 status,
-                businessUnitId
+                businessUnitId,
+                hqIds,
+                franchiseIds,
+                factoryIds
         );
     }
 }

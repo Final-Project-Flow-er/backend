@@ -12,6 +12,7 @@ import com.chaing.domain.businessunits.exception.BusinessUnitException;
 import com.chaing.domain.businessunits.repository.FactoryRepository;
 import com.chaing.domain.businessunits.service.BusinessUnitManagementService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -41,23 +42,50 @@ public class FactoryServiceImpl implements BusinessUnitManagementService {
     public BusinessUnitInternal updateInfo(Long id, BusinessUnitUpdateCommand command) {
         Factory factory = factoryRepository.findById(id)
                 .orElseThrow(() -> new BusinessUnitException(BusinessUnitErrorCode.BUSINESS_UNIT_NOT_FOUND));
-        factory.updateFactoryInfo(command);
-        return BusinessUnitInternal.from(factory);
+
+        if (command.name() != null && !factory.getName().equals(command.name().trim())) {
+            if (factoryRepository.existsByNameExcludeDeleted(command.name().trim())) {
+                throw new BusinessUnitException(BusinessUnitErrorCode.DUPLICATE_BUSINESS_UNIT_NAME);
+            }
+        }
+
+        try {
+            factory.updateFactoryInfo(command);
+            factoryRepository.saveAndFlush(factory);
+            return BusinessUnitInternal.from(factory);
+        } catch (DataIntegrityViolationException e) {
+            throw new BusinessUnitException(BusinessUnitErrorCode.DUPLICATE_BUSINESS_UNIT_NAME);
+        }
     }
 
     // 공장 등록
     @Override
     public BusinessUnitInternal create(BusinessUnitCreateCommand command) {
-        String generatedCode = codeGenerator.generateFactoryCode();
-        Factory factory = Factory.from(command, generatedCode);
-        factoryRepository.save(factory);
-        return BusinessUnitInternal.from(factory);
+        if (command.name() != null && factoryRepository.existsByNameExcludeDeleted(command.name().trim())) {
+            throw new BusinessUnitException(BusinessUnitErrorCode.DUPLICATE_BUSINESS_UNIT_NAME);
+        }
+
+        try {
+            String generatedCode = codeGenerator.generateFactoryCode();
+            Factory factory = Factory.from(command, generatedCode);
+            factoryRepository.saveAndFlush(factory);
+            return BusinessUnitInternal.from(factory);
+
+        } catch (DataIntegrityViolationException e) {
+            throw new BusinessUnitException(BusinessUnitErrorCode.DUPLICATE_BUSINESS_UNIT_NAME);
+        }
     }
 
     // 공장 목록 조회
     @Override
     public Page<BusinessUnitInternal> getBusinessUnitList(BusinessUnitSearchCondition condition, Pageable pageable) {
         return factoryRepository.search(condition, pageable).map(BusinessUnitInternal::from);
+    }
+
+    // 검색 조건에 따른 ID 리스트 반환
+    @Override
+    public List<Long> getAllIdsByCondition(BusinessUnitSearchCondition condition) {
+        return factoryRepository.findAllIdsByName(condition.name());
     }
 
     // 아이디로 이름 조회

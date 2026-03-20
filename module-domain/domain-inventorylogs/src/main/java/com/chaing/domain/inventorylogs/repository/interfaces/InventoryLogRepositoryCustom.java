@@ -37,8 +37,9 @@ public interface InventoryLogRepositoryCustom {
     List<ActorProductSalesResponse> getProductSales(List<Long> actorId, List<Long> productIds, ActorType actorType,
             LogType logType);
 
-    List<BoxCodeResponse> findBoxCodesByTransactionCode(String transactionCode);
-    List<BoxCodeResponse> findBoxCodesByTransactionCodeAndDate(String transactionCode, LocalDate date);
+    List<BoxCodeResponse> findBoxCodesByTransactionCode(String transactionCode, String productName, LogType logType);
+    List<BoxCodeResponse> findBoxCodesByTransactionCodeAndDate(String transactionCode, LocalDate date, String productName,
+            LogType logType);
 
     List<InventoryLog> findArchivableLogs(LocalDateTime cutoff, int limit);
 }

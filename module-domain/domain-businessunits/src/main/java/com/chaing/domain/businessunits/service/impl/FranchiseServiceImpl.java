@@ -12,6 +12,7 @@ import com.chaing.domain.businessunits.exception.BusinessUnitException;
 import com.chaing.domain.businessunits.repository.FranchiseRepository;
 import com.chaing.domain.businessunits.service.BusinessUnitManagementService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -42,18 +43,39 @@ public class FranchiseServiceImpl implements BusinessUnitManagementService {
     public BusinessUnitInternal updateInfo(Long id, BusinessUnitUpdateCommand command) {
         Franchise franchise = franchiseRepository.findById(id)
                 .orElseThrow(() -> new BusinessUnitException(BusinessUnitErrorCode.BUSINESS_UNIT_NOT_FOUND));
-        franchise.updateFranchiseInfo(command);
-        return BusinessUnitInternal.from(franchise);
+
+        if (command.name() != null && !franchise.getName().equals(command.name().trim())) {
+            if (franchiseRepository.existsByNameExcludeDeleted(command.name().trim())) {
+                throw new BusinessUnitException(BusinessUnitErrorCode.DUPLICATE_BUSINESS_UNIT_NAME);
+            }
+        }
+
+        try {
+            franchise.updateFranchiseInfo(command);
+            franchiseRepository.saveAndFlush(franchise);
+            return BusinessUnitInternal.from(franchise);
+        } catch (DataIntegrityViolationException e) {
+            throw new BusinessUnitException(BusinessUnitErrorCode.DUPLICATE_BUSINESS_UNIT_NAME);
+        }
     }
 
     // 가맹점 등록
     @Override
     public BusinessUnitInternal create(BusinessUnitCreateCommand command) {
-        String generatedCode = codeGenerator.generateFranchiseCode(command.region());
-        Double distance = calculate();
-        Franchise franchise = Franchise.from(command, generatedCode, distance);
-        franchiseRepository.save(franchise);
-        return BusinessUnitInternal.from(franchise);
+        if (command.name() != null && franchiseRepository.existsByNameExcludeDeleted(command.name().trim())) {
+            throw new BusinessUnitException(BusinessUnitErrorCode.DUPLICATE_BUSINESS_UNIT_NAME);
+        }
+
+        try {
+            String generatedCode = codeGenerator.generateFranchiseCode(command.region());
+            Double distance = calculate();
+            Franchise franchise = Franchise.from(command, generatedCode, distance);
+            franchiseRepository.saveAndFlush(franchise);
+            return BusinessUnitInternal.from(franchise);
+
+        } catch (DataIntegrityViolationException e) {
+            throw new BusinessUnitException(BusinessUnitErrorCode.DUPLICATE_BUSINESS_UNIT_NAME);
+        }
     }
 
     // 공장과 가맹점 사이 거리 랜덤 생성
@@ -68,16 +90,22 @@ public class FranchiseServiceImpl implements BusinessUnitManagementService {
         return franchiseRepository.search(condition, pageable).map(BusinessUnitInternal::from);
     }
 
+    // 검색 조건에 따른 ID 리스트 반환
+    @Override
+    public List<Long> getAllIdsByCondition(BusinessUnitSearchCondition condition) {
+        return franchiseRepository.findAllIdsByName(condition.name());
+    }
+
     // 아이디로 이름 조회
     @Override
     public Map<Long, String> getNamesByIds(List<Long> ids) {
-        if (ids == null || ids.isEmpty()) return Collections.emptyMap();
+        if (ids == null || ids.isEmpty())
+            return Collections.emptyMap();
 
         List<Object[]> results = franchiseRepository.findNamesByIds(ids);
         return results.stream().collect(Collectors.toMap(
                 row -> (Long) row[0],
-                row -> (String) row[1]
-        ));
+                row -> (String) row[1]));
     }
 
     // 가맹점 상태 변경

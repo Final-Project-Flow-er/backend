@@ -249,20 +249,26 @@ public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom 
         }
 
         @Override
-        public List<BoxCodeResponse> findBoxCodesByTransactionCode(String transactionCode) {
+        public List<BoxCodeResponse> findBoxCodesByTransactionCode(String transactionCode, String productName,
+                        LogType logType) {
                 return queryFactory
                                 .select(Projections.constructor(
                                                 BoxCodeResponse.class,
                                                 log.boxCode))
                                 .from(log)
                                 .where(log.transactionCode.eq(transactionCode)
-                                                .or(log.boxCode.eq(transactionCode)))
+                                                .or(log.boxCode.eq(transactionCode)),
+                                                containsExactProductName(productName),
+                                                equalsLogType(logType),
+                                                log.boxCode.isNotNull(),
+                                                log.boxCode.ne(""))
                                 .distinct()
                                 .fetch();
         }
 
         @Override
-        public List<BoxCodeResponse> findBoxCodesByTransactionCodeAndDate(String transactionCode, LocalDate date) {
+        public List<BoxCodeResponse> findBoxCodesByTransactionCodeAndDate(String transactionCode, LocalDate date,
+                        String productName, LogType logType) {
                 return queryFactory
                                 .select(Projections.constructor(
                                                 BoxCodeResponse.class,
@@ -271,7 +277,11 @@ public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom 
                                 .where(
                                                 log.transactionCode.eq(transactionCode)
                                                                 .or(log.boxCode.eq(transactionCode)),
-                                                betweenDate(date, date))
+                                                betweenDate(date, date),
+                                                containsExactProductName(productName),
+                                                equalsLogType(logType),
+                                                log.boxCode.isNotNull(),
+                                                log.boxCode.ne(""))
                                 .distinct()
                                 .fetch();
         }
@@ -413,13 +423,25 @@ public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom 
         }
 
         // 제품식별코드 조건문
-        private BooleanExpression containsTransactionCode(String serialCode) {
-                return serialCode != null ? QInventoryLog.inventoryLog.transactionCode.contains(serialCode) : null;
+        private BooleanExpression containsTransactionCode(String keyword) {
+                if (keyword == null || keyword.isBlank()) {
+                        return null;
+                }
+                return QInventoryLog.inventoryLog.transactionCode.contains(keyword)
+                                .or(QInventoryLog.inventoryLog.boxCode.contains(keyword));
         }
 
         // 상품 이름 조건문
         private BooleanExpression containsProductName(String productName) {
                 return productName != null ? QInventoryLog.inventoryLog.productName.contains(productName) : null;
+        }
+
+        // 상품 이름 정확 매칭 조건문
+        private BooleanExpression containsExactProductName(String productName) {
+                if (productName == null || productName.isBlank()) {
+                        return null;
+                }
+                return QInventoryLog.inventoryLog.productName.eq(productName);
         }
 
         // 해당 위치 로그 조회 조건문
@@ -463,7 +485,8 @@ public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom 
         // 해당 로그만 조회
         private BooleanExpression containsLogType(String logType) {
                 if (logType == null || logType.isBlank()) {
-                        return null;
+                        // 공장 "입출고 로그" 기본 조회에서는 폐기 로그를 제외한다.
+                        return log.logType.ne(LogType.DISPOSAL);
                 }
                 try {
                         LogType type = LogType.valueOf(logType.trim().toUpperCase());
@@ -471,6 +494,10 @@ public class InventoryLogRepositoryImpl implements InventoryLogRepositoryCustom 
                 } catch (IllegalArgumentException e) {
                         throw new InventoryLogException(InventoryLogtErrorCode.INVALID_LOG_TYPE);
                 }
+        }
+
+        private BooleanExpression equalsLogType(LogType logType) {
+                return logType == null ? null : QInventoryLog.inventoryLog.logType.eq(logType);
         }
 
         private long countDistinctGroups(Expression<?> groupKey1, Expression<?> groupKey2, Expression<?> groupKey3,

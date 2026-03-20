@@ -6,6 +6,8 @@ import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.core.dto.info.ReturnItemInspection;
 import com.chaing.core.enums.LogType;
 import com.chaing.core.enums.ReturnItemStatus;
+import com.chaing.domain.inventories.dto.info.InboundProductIdInfo;
+import com.chaing.domain.inventories.dto.info.StockInfoForLog;
 import com.chaing.domain.inventories.dto.request.DisposalRequest;
 import com.chaing.domain.inventories.dto.request.FranchiseInventoryItemsRequest;
 import com.chaing.domain.inventories.dto.request.HQInventoryItemsRequest;
@@ -36,6 +38,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.HashSet;
@@ -159,9 +162,10 @@ public class InventoryService {
     }
 
     // 배송 중 상태 변경
-    public void updateShippingStatus(List<String> serialCodes) {
+    @Transactional
+    public void updateShippingStatus(List<String> serialCodes, LogType targetStatus) {
         // 해당 seralCode 배송 중으로 변경
-        factoryInventoryRepository.updateStatus(serialCodes, LogType.SHIPPING);
+        factoryInventoryRepository.updateStatus(serialCodes, targetStatus);
     }
 
     public void updateFranchiseShippingStatus(Long franchiseId, List<String> serialCodes) {
@@ -389,15 +393,29 @@ public class InventoryService {
     }
 
 
+    // boxCode 목록으로 HQInventory 조회
+    public List<HQInventory> getHQInventoriesByBoxCodes(List<String> boxCodes) {
+        List<HQInventory> inventories = hqInventoryRepository.findAllByBoxCodeInAndDeletedAtIsNull(boxCodes);
+        return inventories != null ? inventories : List.of();
+    }
+
+    // boxCode 목록으로 FranchiseInventory 조회
+    public List<FranchiseInventory> getFranchiseInventoriesByBoxCodes(List<String> boxCodes) {
+        List<FranchiseInventory> inventories = franchiseInventoryRepository.findAllByBoxCodeInAndDeletedAtIsNull(boxCodes);
+        return inventories != null ? inventories : List.of();
+    }
+
     // return: 데이터 누락 있는지 없는지
     public void verifyOmission(List<String> requestedBoxCodes) {
         List<HQInventory> inventories = hqInventoryRepository.findAllByBoxCodeInAndDeletedAtIsNull(requestedBoxCodes);
+
+        Set<String> requestedBoxCodesSet = new HashSet<>(requestedBoxCodes);
 
         Set<String> boxCodes = inventories.stream()
                 .map(HQInventory::getBoxCode)
                 .collect(Collectors.toSet());
 
-        if (boxCodes.isEmpty() || boxCodes.size() != requestedBoxCodes.size()) {
+        if (boxCodes.isEmpty() || boxCodes.size() != requestedBoxCodesSet.size()) {
             throw new InventoriesException(InventoriesErrorCode.DATA_OMISSION);
         }
     }
@@ -678,6 +696,73 @@ public class InventoryService {
                                 .status(ReturnItemStatus.BEFORE_INSPECTION)
                                 .boxCode(inventory.getBoxCode())
                                 .build()
+                ));
+    }
+
+    public List<StockInfoForLog> getStockBySerialCodeFromFranchise(List<String> serialCodes, Long franchiseId) {
+
+        if(serialCodes == null || serialCodes.isEmpty()){
+            throw new InventoriesException(InventoriesErrorCode.INVENTORIES_SERIAL_CODE_IS_NULL);
+        }
+        List<FranchiseInventory> itemInfosForLog = franchiseInventoryRepository.getAllByFranchiseIdAndSerialCodeIn(franchiseId, serialCodes);
+        
+        if(itemInfosForLog == null ||  itemInfosForLog.isEmpty()){
+            throw new InventoriesException(InventoriesErrorCode.INVENTORIES_IS_INVALID);
+        }
+
+        return itemInfosForLog.stream()
+                .map(item -> StockInfoForLog.create(item.getOrderId(), item.getBoxCode(), item.getProductId()))
+                .distinct()
+                .toList();
+    }
+
+    public List<StockInfoForLog> getStockBySerialCodeFromFactory(List<String> serialCodes) {
+        if(serialCodes == null || serialCodes.isEmpty()){
+            throw new InventoriesException(InventoriesErrorCode.INVENTORIES_SERIAL_CODE_IS_NULL);
+        }
+        List<FactoryInventory> itemInfosForLog = factoryInventoryRepository.findAllBySerialCodeIn(serialCodes);
+
+        if(itemInfosForLog == null ||  itemInfosForLog.isEmpty()){
+            throw new InventoriesException(InventoriesErrorCode.INVENTORIES_IS_INVALID);
+        }
+
+        return itemInfosForLog.stream()
+                .map(item -> StockInfoForLog.create(item.getOrderId(), item.getBoxCode(), item.getProductId()))
+                .distinct()
+                .toList();
+    }
+
+    public Map<String, Long> getFactoryQuantityByBoxCodes(List<String> boxCodes) {
+        return factoryInventoryRepository.countByBoxCodes(boxCodes);
+    }
+
+    public Map<String, Long> getFranchiseQuantityByBoxCodes(Long franchiseId, List<String> boxCodes) {
+        return franchiseInventoryRepository.countByBoxCodes(franchiseId, boxCodes);
+    }
+
+    public List<InboundProductIdInfo> getProductIdFromFactory(List<String> serialCodes) {
+        if(serialCodes == null || serialCodes.isEmpty()){
+            throw new InventoriesException(InventoriesErrorCode.INVENTORIES_SERIAL_CODE_IS_NULL);
+        }
+        List<InboundProductIdInfo> itemInfos = factoryInventoryRepository.getInboundProductIdInfosBySerialCodes(serialCodes);
+        if(itemInfos == null ||  itemInfos.isEmpty()){
+            throw new InventoriesException(InventoriesErrorCode.INVENTORIES_IS_INVALID);
+        }
+
+        return itemInfos;
+    }
+
+    // return: Map<productId, quantity>
+    public Map<Long, Long> getFactoryInventoryByProductId(List<Long> productIds) {
+        // Set<productId>
+        Set<Long> productIdSet = new HashSet<>(productIds);
+
+        List<FactoryInventory> inventories = factoryInventoryRepository.findAllByProductIdInAndStatusAndDeletedAtIsNull(productIdSet, LogType.AVAILABLE);
+
+        return inventories.stream()
+                .collect(Collectors.groupingBy(
+                        FactoryInventory::getProductId,
+                        Collectors.counting()
                 ));
     }
 }

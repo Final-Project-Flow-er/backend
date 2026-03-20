@@ -22,16 +22,20 @@ public interface FranchiseInventoryRepository extends JpaRepository<FranchiseInv
 
     List<FranchiseInventory> findAllByBoxCodeIn(List<String> boxCodes);
 
+    List<FranchiseInventory> findAllByBoxCodeInAndDeletedAtIsNull(List<String> boxCodes);
+
     List<FranchiseInventory> findAllByStatus(LogType status);
 
     @Modifying
-    @Query("UPDATE FranchiseInventory i SET i.status = 'com.chaing.core.enums.LogType.AVAILABLE' WHERE i.serialCode IN :serials")
+    @Query("UPDATE FranchiseInventory i SET i.status = 'AVAILABLE' WHERE i.serialCode IN :serials")
     void updateAllStatusInboundBySerialCode(@Param("serials") List<String> serials);
 
     @Query("SELECT DISTINCT fi.franchiseId FROM FranchiseInventory fi")
     List<Long> getAllFranchiseIds();
 
-    void deleteByFranchiseIdAndInventoryIdIn(Long aLong, List<Long> longs);
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("delete from FranchiseInventory f where f.franchiseId = :franchiseId and f.inventoryId in :ids")
+    void deleteByFranchiseIdAndInventoryIdIn(@Param("franchiseId") Long franchiseId, @Param("ids") List<Long> ids);
 
     List<FranchiseInventory> findAllByBoxCode(String boxCode);
     List<FranchiseInventory> findByInventoryIdIn(List<Long> ids);
@@ -43,4 +47,8 @@ public interface FranchiseInventoryRepository extends JpaRepository<FranchiseInv
             @Param("serialCodes") @NotEmpty(message = "선택된 제품이 존재하지 않습니다.") List<String> serialCodes,
             @Param("franchiseId") Long franchiseId,
             @Param("status") LogType status);
+
+    List<FranchiseInventory> getAllByFranchiseIdAndSerialCodeIn(
+            @Param("franchiseId") Long franchiseId,
+            @Param("serialCodes") List<String> serialCodes);
 }

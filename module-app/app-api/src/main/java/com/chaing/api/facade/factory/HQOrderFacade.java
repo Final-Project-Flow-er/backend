@@ -8,6 +8,7 @@ import com.chaing.domain.inventories.service.InventoryService;
 import com.chaing.domain.orders.dto.command.FranchiseOrderCommand;
 import com.chaing.domain.orders.dto.command.HQOrderCancelCommand;
 import com.chaing.domain.orders.dto.response.HQOrderItemProjection;
+import com.chaing.domain.orders.dto.response.HQOrderPossibleResponse;
 import com.chaing.domain.orders.dto.response.HQRequestedOrderItemProjection;
 import com.chaing.domain.orders.dto.command.FranchiseOrderDetailCommand;
 import com.chaing.domain.orders.dto.command.FranchiseOrderItemCommand;
@@ -17,7 +18,6 @@ import com.chaing.domain.orders.dto.request.HQOrderCreateRequest;
 import com.chaing.core.dto.info.ProductInfo;
 import com.chaing.domain.orders.dto.info.HQOrderCommand;
 import com.chaing.domain.orders.dto.info.HQOrderItemCommand;
-import com.chaing.domain.orders.dto.request.HQOrderItemCreateCommand;
 import com.chaing.domain.orders.dto.request.HQOrderUpdateRequest;
 import com.chaing.domain.orders.dto.request.HQOrderUpdateStatusRequest;
 import com.chaing.domain.orders.dto.response.FranchiseOrderStatusShippingPendingResponse;
@@ -55,12 +55,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -186,9 +187,6 @@ public class HQOrderFacade {
                                         .username(username)
                                         .phoneNumber(phoneNumber)
                                         .requestedDate(order.requestedDate())
-                                        .manufacturedDate(order.manufacturedDate())
-                                        .storedDate(order.storedDate())
-                                        .productCode(productInfo.productCode())
                                         .build();
                             });
                 })
@@ -197,7 +195,7 @@ public class HQOrderFacade {
         return result;
     }
 
-    // 발주 페이지네이션 조회 (아이템 행 단위)
+    // 발주 페이지네이션 조회 (주문 단위)
     public Page<HQOrderResponse> getAllOrdersPaged(Pageable pageable) {
         String cacheKey = "ord:hq:page:%s".formatted(pageableKey(pageable));
         Page<HQOrderResponse> cached = readPageCache(cacheKey, HQOrderResponse.class, pageable);
@@ -221,23 +219,15 @@ public class HQOrderFacade {
                 .collect(Collectors.toMap(Function.identity(),
                         userManagementService::getPhoneNumberByUserId));
 
-        // productId → productCode 매핑
-        List<Long> productIds = page.getContent().stream()
-                .map(HQOrderItemProjection::productId).distinct().toList();
-        Map<Long, ProductInfo> productInfoMap = productService.getProductInfos(productIds);
-
         List<HQOrderResponse> content = page.getContent().stream()
                 .map(p -> HQOrderResponse.builder()
                         .orderCode(p.orderCode())
                         .status(p.status())
-                        .quantity(p.quantity())
+                        .quantity(p.totalQuantity())
                         .username(usernameByUserId.get(p.userId()))
                         .phoneNumber(phoneNumberByUserId.get(p.userId()))
                         .requestedDate(p.requestedDate())
-                        .manufacturedDate(p.manufacturedDate())
-                        .storedDate(p.storedDate())
-                        .productCode(productInfoMap.containsKey(p.productId())
-                                ? productInfoMap.get(p.productId()).productCode() : null)
+                        .totalPrice(p.totalAmount())
                         .build())
                 .toList();
 
@@ -760,5 +750,76 @@ public class HQOrderFacade {
             redisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(payload), CACHE_TTL);
         } catch (Exception ignored) {
         }
+    }
+
+    // 가맹점 발주 접수 가불 판단
+    public List<HQOrderPossibleResponse> isPossible(List<String> orderCodes) {
+        // 캐싱 적용
+
+        // Map<orderId, FranchiseOrderDetailCommand>
+        Map<Long, FranchiseOrderDetailCommand> orderByOrderId = franchiseOrderService.getOrdersByOrderCode(orderCodes);
+        log.info("orderByOrderId={}", orderByOrderId);
+
+        // List<orderId>
+        List<Long> orderIds = orderByOrderId.keySet().stream().toList();
+
+        // Map<orderId, List<FranchiseOrderItemCommand>>
+        Map<Long, List<FranchiseOrderItemCommand>> orderItemsByOrderId = franchiseOrderService.getOrderItemsByOrderIds(orderIds);
+        log.info("orderItemsByOrderId={}", orderItemsByOrderId);
+
+        // List<productId>
+        List<Long> productIds = orderItemsByOrderId.values().stream()
+                .flatMap(List::stream)
+                .map(FranchiseOrderItemCommand::productId)
+                .toList();
+
+        // Map<productId, FactoryInventoryQuantity>
+        Map<Long, Long> facInventoryQuantityByProductId = inventoryService.getFactoryInventoryByProductId(productIds);
+
+        // 반환
+        return orderItemsByOrderId.entrySet().stream()
+                .map(entry -> {
+                    Long orderId = entry.getKey();
+                    FranchiseOrderDetailCommand orderDetailCommand = orderByOrderId.get(orderId);
+                    List<FranchiseOrderItemCommand> items = entry.getValue();
+                    log.info("orderDetailCommand={}", orderDetailCommand);
+                    log.info("items={}", items);
+
+                    if (orderDetailCommand == null) {
+                        throw new OrderException(OrderErrorCode.ORDER_NOT_FOUND);
+                    }
+
+                    if (items == null || items.isEmpty()) {
+                        throw new OrderException(OrderErrorCode.ORDER_ITEM_NOT_FOUND);
+                    }
+
+                    // Map<productId, OrderQuantity>
+                    Map<Long, Integer> orderQuantityByProductId = items.stream()
+                            .collect(Collectors.toMap(
+                                    FranchiseOrderItemCommand::productId,
+                                    FranchiseOrderItemCommand::quantity
+                            ));
+
+                    AtomicReference<Boolean> isPossible = new AtomicReference<>(true);
+
+                    orderQuantityByProductId.forEach((productId, orderQuantity) -> {
+                        Long inventoryQuantity = facInventoryQuantityByProductId.get(productId);
+
+                        if (orderQuantity == null || inventoryQuantity == null) {
+                            throw new OrderException(OrderErrorCode.ORDER_NOT_FOUND);
+                        }
+                        log.info("orderQuantity={}, inventoryQuantity={}", orderQuantity, inventoryQuantity);
+
+                        if (orderQuantity > inventoryQuantity) {
+                            isPossible.set(false);
+                        }
+                    });
+
+                    return HQOrderPossibleResponse.builder()
+                            .orderCode(orderDetailCommand.orderCode())
+                            .isPossible(isPossible.get())
+                            .build();
+                })
+                .toList();
     }
 }

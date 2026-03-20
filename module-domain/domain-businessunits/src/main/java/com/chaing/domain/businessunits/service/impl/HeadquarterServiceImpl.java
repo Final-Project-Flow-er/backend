@@ -47,7 +47,16 @@ public class HeadquarterServiceImpl implements BusinessUnitService {
     // 본사 목록 조회
     @Override
     public Page<BusinessUnitInternal> getBusinessUnitList(BusinessUnitSearchCondition condition, Pageable pageable) {
+        if (org.springframework.util.StringUtils.hasText(condition.name())) {
+            return headquarterRepository.findByNameContainingIgnoreCase(condition.name(), pageable).map(BusinessUnitInternal::from);
+        }
         return headquarterRepository.findAll(pageable).map(BusinessUnitInternal::from);
+    }
+
+    // 검색 조건에 따른 ID 리스트 반환
+    @Override
+    public List<Long> getAllIdsByCondition(BusinessUnitSearchCondition condition) {
+        return headquarterRepository.findAllIdsByName(condition.name());
     }
 
     // 본사 정보 수정

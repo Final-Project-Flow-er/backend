@@ -42,8 +42,6 @@ public class InventoryLog extends BaseEntity {
     private String productName;
 
     // 박스 코드
-    @NotNull
-    @Column(nullable = false)
     private String boxCode;
 
     // 코드 -> 발주 코드, 판매코드, 반품 코드,,

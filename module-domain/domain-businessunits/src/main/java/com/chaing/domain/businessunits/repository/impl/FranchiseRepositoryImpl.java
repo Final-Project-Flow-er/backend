@@ -34,10 +34,8 @@ public class FranchiseRepositoryImpl implements FranchiseRepositoryCustom {
         List<Franchise> content = queryFactory
                 .selectFrom(franchise)
                 .where(
-                        codeContains(condition.code()),
-                        nameContains(condition.name()),
-                        representativeContains(condition.representativeName()),
-                        businessNumberContains(condition.businessNumber()),
+                        nameOrCodeContains(condition.code(), condition.name()),
+                        representativeOrBusinessNumberContains(condition.representativeName(), condition.businessNumber()),
                         regionEq(condition.region()),
                         statusEq(condition.status()),
                         operatingDaysContains(condition.operatingDays()),
@@ -52,10 +50,8 @@ public class FranchiseRepositoryImpl implements FranchiseRepositoryCustom {
                 .select(franchise.count())
                 .from(franchise)
                 .where(
-                        codeContains(condition.code()),
-                        nameContains(condition.name()),
-                        representativeContains(condition.representativeName()),
-                        businessNumberContains(condition.businessNumber()),
+                        nameOrCodeContains(condition.code(), condition.name()),
+                        representativeOrBusinessNumberContains(condition.representativeName(), condition.businessNumber()),
                         regionEq(condition.region()),
                         statusEq(condition.status()),
                         operatingDaysContains(condition.operatingDays()),
@@ -65,20 +61,20 @@ public class FranchiseRepositoryImpl implements FranchiseRepositoryCustom {
         return PageableExecutionUtils.getPage(content, pageable, countQuery::fetchOne);
     }
 
-    private BooleanExpression codeContains(String code) {
-        return hasText(code) ? QFranchise.franchise.franchiseCode.contains(code) : null;
+    private BooleanExpression nameOrCodeContains(String code, String name) {
+        BooleanExpression codeExpr = hasText(code) ? QFranchise.franchise.franchiseCode.containsIgnoreCase(code) : null;
+        BooleanExpression nameExpr = hasText(name) ? QFranchise.franchise.name.containsIgnoreCase(name) : null;
+        if (codeExpr != null && nameExpr != null) return codeExpr.or(nameExpr);
+        if (codeExpr != null) return codeExpr;
+        return nameExpr;
     }
 
-    private BooleanExpression nameContains(String name) {
-        return hasText(name) ? QFranchise.franchise.name.contains(name) : null;
-    }
-
-    private BooleanExpression representativeContains(String representativeName) {
-        return hasText(representativeName) ? QFranchise.franchise.representativeName.contains(representativeName) : null;
-    }
-
-    private BooleanExpression businessNumberContains(String businessNumber) {
-        return hasText(businessNumber) ? QFranchise.franchise.businessNumber.contains(businessNumber) : null;
+    private BooleanExpression representativeOrBusinessNumberContains(String representativeName, String businessNumber) {
+        BooleanExpression repExpr = hasText(representativeName) ? QFranchise.franchise.representativeName.containsIgnoreCase(representativeName) : null;
+        BooleanExpression bizExpr = hasText(businessNumber) ? QFranchise.franchise.businessNumber.containsIgnoreCase(businessNumber) : null;
+        if (repExpr != null && bizExpr != null) return repExpr.or(bizExpr);
+        if (repExpr != null) return repExpr;
+        return bizExpr;
     }
 
     private BooleanExpression regionEq(Region region) {

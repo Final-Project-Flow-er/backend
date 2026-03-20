@@ -424,7 +424,7 @@ public class HQInventoryFacade {
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public Void decreaseInventory(@Valid InventoryBatchRequest inventoryBatchRequest) {
         List<String> serialCodes = convertsSerialCode(inventoryBatchRequest.boxes());
-        inventoryService.updateShippingStatus(serialCodes);
+        inventoryService.updateShippingStatus(serialCodes, LogType.SHIPPING);
 
         List<InventoryLogCreateRequest> logs = convert(inventoryBatchRequest);
         inventoryLogService.recordInventoryLog(logs);
@@ -511,6 +511,7 @@ public class HQInventoryFacade {
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public Void disposalInventory(DisposalRequest request, Long locationId) {
         String actorTypeRaw = request.actorType().toUpperCase();
+        String disposalTransactionCode = "DISP-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
 
         // 1) 사용자가 선택한 재고를 boxCode 기준으로 전체 확장
         List<Long> expandedIds = inventoryService.expandInventoryIdsByBoxCode(
@@ -538,7 +539,7 @@ public class HQInventoryFacade {
                         inv.getProductId(),
                         pInfo != null ? pInfo.productName() : "Unknown",
                         inv.getBoxCode(),
-                        null,
+                        disposalTransactionCode,
                         LogType.DISPOSAL,
                         1,
                         LocationType.HQ,
@@ -561,7 +562,7 @@ public class HQInventoryFacade {
                         inv.getProductId(),
                         pInfo != null ? pInfo.productName() : "Unknown",
                         inv.getBoxCode(),
-                        null,
+                        disposalTransactionCode,
                         LogType.DISPOSAL,
                         1,
                         LocationType.FACTORY,
@@ -584,7 +585,7 @@ public class HQInventoryFacade {
                         inv.getProductId(),
                         pInfo != null ? pInfo.productName() : "Unknown",
                         inv.getBoxCode(),
-                        null,
+                        disposalTransactionCode,
                         LogType.DISPOSAL,
                         1,
                         LocationType.FRANCHISE,
@@ -628,10 +629,6 @@ public class HQInventoryFacade {
         publishStockAlert("FACTORY", locationId);
     }
 
-    public boolean verifyAdminPassword(Long userId, String password) {
-        return userManagementService.verifyPassword(userId, password);
-    }
-
     private String nullToDash(String value) {
         return value == null ? "-" : value;
     }
@@ -651,7 +648,7 @@ public class HQInventoryFacade {
         int expirationCount = expirationAlerts.size();
         String subject = "FACTORY".equals(locationType)
                 ? "본사(공장)"
-                : "가맹점(" + locationId + ")";
+                : "가맹점(" + resolveFranchiseName(locationId) + ")";
         String message = "[재고 알림] %s - 안전재고 부족 %d건, 유통기한 임박 %d건"
                 .formatted(subject, lowStockCount, expirationCount);
 
@@ -673,8 +670,11 @@ public class HQInventoryFacade {
     }
 
     private List<Long> resolveRecipientUserIds(String locationType, Long locationId) {
-        UserRole locationRole = "FACTORY".equals(locationType) ? UserRole.FACTORY : UserRole.FRANCHISE;
-        List<Long> locationUsers = userManagementService.getActiveUserIdsByRoleAndBusinessUnitId(locationRole, locationId);
+        if ("FRANCHISE".equals(locationType)) {
+            return userManagementService.getActiveUserIdsByRoleAndBusinessUnitId(UserRole.FRANCHISE, locationId);
+        }
+
+        List<Long> locationUsers = userManagementService.getActiveUserIdsByRoleAndBusinessUnitId(UserRole.FACTORY, locationId);
         List<Long> hqUsers = userManagementService.getActiveUserIdsByRole(UserRole.HQ);
         return java.util.stream.Stream.concat(locationUsers.stream(), hqUsers.stream())
                 .distinct()
@@ -686,6 +686,16 @@ public class HQInventoryFacade {
             return FRANCHISE_STOCK_ALERT_TARGET_BASE + (locationId * TARGET_LOCATION_MULTIPLIER) + userId;
         }
         return FACTORY_STOCK_ALERT_TARGET_BASE + (locationId * TARGET_LOCATION_MULTIPLIER) + userId;
+    }
+
+    private String resolveFranchiseName(Long franchiseId) {
+        if (franchiseId == null) {
+            return "-";
+        }
+
+        return franchiseRepository.findByFranchiseIdAndDeletedAtIsNull(franchiseId)
+                .map(Franchise::getName)
+                .orElse("ID:" + franchiseId);
     }
 
     private <T> List<T> readListCache(String key, TypeReference<List<T>> typeRef) {

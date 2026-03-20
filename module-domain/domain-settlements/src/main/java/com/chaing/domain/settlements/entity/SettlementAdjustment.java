@@ -27,7 +27,8 @@ import java.time.LocalDateTime;
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "settlement_adjustment", indexes = {
                 @Index(name = "idx_adjustment_voucher", columnList = "settlement_voucher_id"),
-                @Index(name = "idx_adjustment_created_by", columnList = "created_by")
+                @Index(name = "idx_adjustment_created_by", columnList = "created_by"),
+                @Index(name = "idx_adjustment_month", columnList = "settlement_month")
 })
 public class SettlementAdjustment extends BaseEntity {
 
@@ -35,7 +36,7 @@ public class SettlementAdjustment extends BaseEntity {
         @GeneratedValue(strategy = GenerationType.IDENTITY)
         private Long settlementAdjustmentId;
 
-        @Column(name = "settlement_voucher_id", nullable = false)
+        @Column(name = "settlement_voucher_id", nullable = true) // ⭐️ Null 허용 명시
         private Long settlementVoucherId; // 어떤 전표 라인에 대한 조정인지
 
         @Column(name = "adjustment_code", nullable = false, unique = true, length = 50)
@@ -45,11 +46,18 @@ public class SettlementAdjustment extends BaseEntity {
         private Long franchiseId; // 가맹점 드롭다운
 
         @Enumerated(EnumType.STRING)
-        @Column(name = "voucher_type", nullable = false, length = 30)
+        @Column(name = "voucher_type", nullable = false, length = 50, columnDefinition = "VARCHAR(50)")
         private VoucherType voucherType; // 전표 유형 (기타 조정)
 
         @Column(name = "occurred_at", nullable = false)
         private LocalDateTime occurredAt; // 발생일
+
+        @Column(name = "settlement_month", nullable = false, length = 7)
+        private String settlementMonth; // 정산 반영월 (예: "2026-04")
+
+        @Enumerated(EnumType.STRING)
+        @Column(name = "return_type", length = 50, columnDefinition = "VARCHAR(50)")
+        private com.chaing.domain.returns.enums.ReturnType returnType; // 반품 사유 (오발주, 상품하자 등)
 
         @Builder.Default
         @Column(name = "is_minus", nullable = false)

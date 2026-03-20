@@ -8,16 +8,21 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.util.Collection;
 import java.util.List;
 
 @Repository
-public interface TransitRepository extends JpaRepository<Transit,Long> {
+public interface TransitRepository extends JpaRepository<Transit, Long> {
 
     List<Transit> findByVehicleId(Long vehicleId);
 
+    List<Transit> findByFranchiseId(Long franchiseId);
+
     @Query("select t from Transit t where t.orderCode in(:orderCodes)")
     List<Transit> findByOrderCodeIn(@Param("orderCodes") List<String> orderCodes);
+
+    List<Transit> findAllByFranchiseIdAndStatusInAndCreatedAtBetween(
+            Long franchiseId, java.util.Collection<DeliverStatus> statuses,
+            java.time.LocalDateTime start, java.time.LocalDateTime end);
 
     @Modifying(clearAutomatically = true)
     @Query("update Transit t set t.status = :targetStatus where t.orderCode = :orderCode")

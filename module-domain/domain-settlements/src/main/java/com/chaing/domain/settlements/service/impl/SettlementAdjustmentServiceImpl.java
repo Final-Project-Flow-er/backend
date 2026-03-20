@@ -31,8 +31,8 @@ public class SettlementAdjustmentServiceImpl implements SettlementAdjustmentServ
     } // 새로운 조정 내역을 DB에 저장
 
     @Override
-    public Page<SettlementAdjustment> getAll(Long franchiseId, VoucherType voucherType, Pageable pageable) {
-        return repository.findByConditions(franchiseId, voucherType, pageable);
+    public Page<SettlementAdjustment> getAll(Long franchiseId, VoucherType voucherType, String settlementMonth, Pageable pageable) {
+        return repository.findByConditions(franchiseId, voucherType, settlementMonth, pageable);
     } // 조건별 조정 내역 DB에서 가져오기
 
     @Override

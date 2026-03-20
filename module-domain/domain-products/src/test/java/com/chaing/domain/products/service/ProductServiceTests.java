@@ -9,6 +9,8 @@ import com.chaing.domain.products.entity.Product;
 import com.chaing.domain.products.entity.ProductComponent;
 import com.chaing.domain.products.entity.ProductType;
 import com.chaing.domain.products.enums.ProductStatus;
+import com.chaing.domain.products.exception.ProductErrorCode;
+import com.chaing.domain.products.exception.ProductException;
 import com.chaing.domain.products.repository.ComponentRepository;
 import com.chaing.domain.products.repository.ProductComponentRepository;
 import com.chaing.domain.products.repository.ProductRepository;
@@ -28,6 +30,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.Mockito.*;
 
@@ -206,6 +209,36 @@ class ProductServiceTests {
                 assertThat(saved.getName()).isEqualTo(productName);
                 assertThat(saved.getId()).isEqualTo(1L);
 
+        }
+
+        @DisplayName("상품 타입 추가 실패 - 두 자리 영문 코드만 허용")
+        @Test
+        void createProductTypeFail_InvalidTypeCode() {
+                // given
+                String invalidType = "ㅢㅏ";
+                String productName = "테스트";
+
+                // when & then
+                assertThatThrownBy(() -> productService.createProductTypes(invalidType, productName))
+                                .isInstanceOf(ProductException.class);
+
+                verify(productTypeRepository, never()).save(any());
+        }
+
+        @DisplayName("상품 타입 추가 실패 - 상품 타입 이름이 자모만으로 구성됨")
+        @Test
+        void createProductTypeFail_InvalidProductTypeName() {
+                // given
+                String type = "AS";
+                String invalidProductName = "ㅁㄴㅇ";
+
+                // when & then
+                assertThatThrownBy(() -> productService.createProductTypes(type, invalidProductName))
+                                .isInstanceOf(ProductException.class)
+                                .extracting(ex -> ((ProductException) ex).getErrorCode())
+                                .isEqualTo(ProductErrorCode.INVALID_PRODUCT_TYPE_NAME);
+
+                verify(productTypeRepository, never()).save(any());
         }
 
         @DisplayName("상품 타입 존재여부")

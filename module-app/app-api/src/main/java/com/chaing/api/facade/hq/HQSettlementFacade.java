@@ -146,7 +146,7 @@ public class HQSettlementFacade {
                         // 개별 가맹점 조정 금액 (해당 월)
                         String monthStr = request.date().toString().substring(0, 7);
                         BigDecimal adjAmount = adjustmentRepository.sumAdjustmentAmountByMonth(monthStr, f.getFranchiseId());
-                        BigDecimal finalAmount = r.getFinalAmount().subtract(adjAmount);
+                        BigDecimal finalAmount = r.getFinalAmount().add(adjAmount);
 
                         dtos.add(HQFranchiseSettlementResponse.of(
                                         f.getFranchiseId(),
@@ -637,12 +637,14 @@ public class HQSettlementFacade {
                         com.chaing.domain.settlements.entity.DailySettlementReceipt currentReceipt = result.receipt();
                         List<com.chaing.domain.settlements.entity.DailyReceiptLine> currentLines = result.lines();
 
-                        // 데이터가 전혀 없는 경우
+                        // [수정] 매출/발주가 0원이더라도 조정 전표 확인 등을 위해 PDF 생성을 허용함
+                        /*
                         if (currentReceipt.getTotalSaleAmount().compareTo(BigDecimal.ZERO) == 0 &&
                                         currentReceipt.getOrderAmount().compareTo(BigDecimal.ZERO) == 0) {
                                 throw new com.chaing.domain.settlements.exception.SettlementException(
                                                 com.chaing.domain.settlements.exception.SettlementErrorCode.SETTLEMENT_DATA_EMPTY);
                         }
+                        */
 
                         // 가맹점명 조회
                         String franchiseName = franchiseRepository.findById(franchiseId)

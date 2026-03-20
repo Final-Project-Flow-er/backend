@@ -928,9 +928,12 @@ public class FranchiseSettlementFacade {
                                 }
                         }
 
+                        // [수정] 매출/발주가 없는 날도 가맹점 확인을 위해 PDF 생성을 허용함
+                        /*
                         if (receipts.isEmpty()) {
                                 throw new SettlementException(SettlementErrorCode.SETTLEMENT_DATA_EMPTY);
                         }
+                        */
 
                         // 2. 가집계 MonthlySettlement 객체 생성 및 [Upsert] (ID 확보 및 중복 방지)
                         MonthlySettlement provisionalSettlement = aggregateMonthlySettlement(franchiseId, month, receipts);
@@ -1031,9 +1034,12 @@ public class FranchiseSettlementFacade {
                                 }
                         }
 
+                        // [수정] 매출/발주가 없는 날도 가맹점 확인을 위해 Excel 생성을 허용함
+                        /*
                         if (vouchers.isEmpty()) {
                                 throw new SettlementException(SettlementErrorCode.SETTLEMENT_DATA_EMPTY);
                         }
+                        */
 
                         // [중요] ID missing 및 중복 키 에러 해결을 위해 MonthlySettlement 가집계 데이터 Upsert
                         MonthlySettlement provisionalSettlement = aggregateMonthlySettlement(franchiseId, month, receipts);

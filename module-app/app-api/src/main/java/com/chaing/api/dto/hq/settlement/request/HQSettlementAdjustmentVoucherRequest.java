@@ -21,6 +21,7 @@ public record HQSettlementAdjustmentVoucherRequest(
 
         @Schema(description = "발생일", example = "2026-02-26", requiredMode = Schema.RequiredMode.REQUIRED)
         @NotNull
+        @com.fasterxml.jackson.annotation.JsonFormat(pattern = "yyyy-MM-dd")
         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
         LocalDate occurredAt,
 

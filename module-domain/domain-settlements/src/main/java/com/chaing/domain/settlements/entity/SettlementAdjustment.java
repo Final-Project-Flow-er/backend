@@ -36,7 +36,7 @@ public class SettlementAdjustment extends BaseEntity {
         @GeneratedValue(strategy = GenerationType.IDENTITY)
         private Long settlementAdjustmentId;
 
-        @Column(name = "settlement_voucher_id")
+        @Column(name = "settlement_voucher_id", nullable = true) // ⭐️ Null 허용 명시
         private Long settlementVoucherId; // 어떤 전표 라인에 대한 조정인지
 
         @Column(name = "adjustment_code", nullable = false, unique = true, length = 50)

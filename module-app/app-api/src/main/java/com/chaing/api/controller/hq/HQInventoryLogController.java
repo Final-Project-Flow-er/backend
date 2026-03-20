@@ -4,6 +4,7 @@ import com.chaing.api.dto.hq.inventorylogs.request.InventoryReturnLogTestRequest
 import com.chaing.api.facade.hq.HQInventoryLogFacade;
 import com.chaing.api.facade.inventorylogs.InventoryLogFacade;
 import com.chaing.api.security.principal.UserPrincipal;
+import com.chaing.core.enums.LogType;
 import com.chaing.core.dto.ApiResponse;
 import com.chaing.domain.inventorylogs.dto.request.FactoryLogRequest;
 import com.chaing.domain.inventorylogs.dto.request.FranchiseLogRequest;
@@ -121,8 +122,11 @@ public class HQInventoryLogController {
         @GetMapping("/boxes")
         public ResponseEntity<ApiResponse<List<BoxCodeResponse>>> getBoxes(
                         @RequestParam String transactionCode,
-                        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-                return ResponseEntity.ok(ApiResponse.success(inventoryLogFacade.getBoxCodes(transactionCode, date)));
+                        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+                        @RequestParam(required = false) String productName,
+                        @RequestParam(required = false) LogType logType) {
+                return ResponseEntity.ok(ApiResponse.success(
+                                inventoryLogFacade.getBoxCodes(transactionCode, date, productName, logType)));
         }
 
         @Operation(summary = "가맹점 판매 환불 이력 조회", description = "본사에서 가맹점 판매 환불 이력을 확인합니다.")

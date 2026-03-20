@@ -1,5 +1,6 @@
 package com.chaing.domain.inventorylogs.repository.interfaces;
 
+import com.chaing.core.enums.LogType;
 import com.chaing.domain.inventorylogs.dto.request.FactoryLogRequest;
 import com.chaing.domain.inventorylogs.dto.request.FranchiseLogRequest;
 import com.chaing.domain.inventorylogs.dto.request.LogRequest;
@@ -28,6 +29,7 @@ public interface InventoryLogArchiveRepositoryCustom {
     FactoryInventoryLogListResponse findFactoryInventoryLogs(Long factoryId, FactoryLogRequest request,
             Pageable pageable);
 
-    List<BoxCodeResponse> findBoxCodesByTransactionCode(String transactionCode);
-    List<BoxCodeResponse> findBoxCodesByTransactionCodeAndDate(String transactionCode, LocalDate date);
+    List<BoxCodeResponse> findBoxCodesByTransactionCode(String transactionCode, String productName, LogType logType);
+    List<BoxCodeResponse> findBoxCodesByTransactionCodeAndDate(String transactionCode, LocalDate date, String productName,
+            LogType logType);
 }

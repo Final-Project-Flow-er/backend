@@ -112,8 +112,8 @@ public class HQSettlementFacade {
                         totalLoss = totalLoss.add(r.getLossAmount());
                 }
 
-                hqTotalFinal = totalOrder.add(totalCommission).add(totalDelivery)
-                                .subtract(totalRefund).subtract(totalLoss);
+                hqTotalFinal = totalOrder.add(totalCommission)
+                                .subtract(totalDelivery).subtract(totalRefund).subtract(totalLoss);
                 
                 // 조정 금액 합산 (해당 월의 전체 조정)
                 String monthStr = request.date().toString().substring(0, 7);
@@ -225,8 +225,8 @@ public class HQSettlementFacade {
 
                 // 본사 관점 최종 정산 금액
                 BigDecimal totalAdjustment = adjustmentRepository.sumAdjustmentAmountByMonth(request.month().toString(), null);
-                BigDecimal hqTotalFinal = totalOrder.add(totalCommission).add(totalDelivery)
-                                .subtract(totalRefund).subtract(totalLoss).add(totalAdjustment);
+                BigDecimal hqTotalFinal = totalOrder.add(totalCommission)
+                                .subtract(totalDelivery).subtract(totalRefund).subtract(totalLoss).add(totalAdjustment);
 
                 return HQSettlementSummaryResponse.of(hqTotalFinal, totalOrder, totalSale, totalCommission,
                                 totalDelivery, totalRefund, totalLoss, totalAdjustment);
@@ -637,12 +637,14 @@ public class HQSettlementFacade {
                         com.chaing.domain.settlements.entity.DailySettlementReceipt currentReceipt = result.receipt();
                         List<com.chaing.domain.settlements.entity.DailyReceiptLine> currentLines = result.lines();
 
-                        // 데이터가 전혀 없는 경우
+                        // [수정] 매출/발주가 0원이더라도 조정 전표 확인 등을 위해 PDF 생성을 허용함
+                        /*
                         if (currentReceipt.getTotalSaleAmount().compareTo(BigDecimal.ZERO) == 0 &&
                                         currentReceipt.getOrderAmount().compareTo(BigDecimal.ZERO) == 0) {
                                 throw new com.chaing.domain.settlements.exception.SettlementException(
                                                 com.chaing.domain.settlements.exception.SettlementErrorCode.SETTLEMENT_DATA_EMPTY);
                         }
+                        */
 
                         // 가맹점명 조회
                         String franchiseName = franchiseRepository.findById(franchiseId)

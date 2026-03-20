@@ -142,7 +142,7 @@ public class SettlementFileServiceImpl implements SettlementFileService {
             header.createCell(2).setCellValue("총 매출액");
             header.createCell(3).setCellValue("발주 대금(-)");
             header.createCell(4).setCellValue("수수료 수익(-)");
-            header.createCell(5).setCellValue("배송 수익(-)");
+            header.createCell(5).setCellValue("배송비(-)");
             header.createCell(6).setCellValue("반품 차감액(+)");
             header.createCell(7).setCellValue("본사 손실액(-)");
             header.createCell(8).setCellValue("최종 정산 금액");
@@ -346,13 +346,13 @@ public class SettlementFileServiceImpl implements SettlementFileService {
                     .map(r -> r.getLossAmount() != null ? r.getLossAmount() : BigDecimal.ZERO)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-            BigDecimal hqTotalFinal = totalOrder.add(totalFee).add(totalDelivery)
+            BigDecimal hqTotalFinal = totalOrder.add(totalFee).subtract(totalDelivery)
                     .subtract(totalRefund).subtract(totalLoss);
 
             document.add(new Paragraph("1. 전체 매출 합계(참고): " + totalSale + "원"));
             document.add(new Paragraph("2. 전체 발주 매출: " + totalOrder + "원"));
             document.add(new Paragraph("3. 전체 수수료 수익: " + totalFee + "원"));
-            document.add(new Paragraph("4. 전체 배송 수익: " + totalDelivery + "원"));
+            document.add(new Paragraph("4. 전체 배송비: -" + totalDelivery + "원"));
             document.add(new Paragraph("5. 전체 반품 차감액: -" + totalRefund + "원"));
             document.add(new Paragraph("6. 전체 본사 손실액: -" + totalLoss + "원"));
             document.add(new Paragraph("--------------------------------------------"));
@@ -373,7 +373,7 @@ public class SettlementFileServiceImpl implements SettlementFileService {
                 BigDecimal loss = r.getLossAmount() != null ? r.getLossAmount() : BigDecimal.ZERO;
                 BigDecimal totalSaleRow = r.getTotalSaleAmount() != null ? r.getTotalSaleAmount() : BigDecimal.ZERO;
 
-                BigDecimal hqAmount = order.add(fee).add(delivery).subtract(refund).subtract(loss);
+                BigDecimal hqAmount = order.add(fee).subtract(delivery).subtract(refund).subtract(loss);
 
                 table.addCell(r.getFranchiseId().toString());
                 table.addCell(totalSaleRow.toString() + "원");
@@ -425,13 +425,13 @@ public class SettlementFileServiceImpl implements SettlementFileService {
                     .map(s -> s.getLossAmount() != null ? s.getLossAmount() : BigDecimal.ZERO)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-            BigDecimal hqTotalFinal = totalOrder.add(totalFee).add(totalDelivery)
+            BigDecimal hqTotalFinal = totalOrder.add(totalFee).subtract(totalDelivery)
                     .subtract(totalRefund).subtract(totalLoss);
 
             document.add(new Paragraph("1. 전체 매출 합계(참고): " + totalSale + "원"));
             document.add(new Paragraph("2. 전체 발주 매출: " + totalOrder + "원"));
             document.add(new Paragraph("3. 전체 수수료 수익: " + totalFee + "원"));
-            document.add(new Paragraph("4. 전체 배송 수익: " + totalDelivery + "원"));
+            document.add(new Paragraph("4. 전체 배송비: -" + totalDelivery + "원"));
             document.add(new Paragraph("5. 전체 반품 차감액: -" + totalRefund + "원"));
             document.add(new Paragraph("6. 전체 본사 손실액: -" + totalLoss + "원"));
             document.add(new Paragraph("--------------------------------------------"));
@@ -442,7 +442,7 @@ public class SettlementFileServiceImpl implements SettlementFileService {
             table.addCell("가맹점 ID");
             table.addCell("총 매출");
             table.addCell("수수료");
-            table.addCell("기타(배송/반품/손실)");
+            table.addCell("배송비(차감)");
             table.addCell("정산금액");
 
             for (MonthlySettlement s : settlements) {
@@ -453,13 +453,12 @@ public class SettlementFileServiceImpl implements SettlementFileService {
                 BigDecimal loss = s.getLossAmount() != null ? s.getLossAmount() : BigDecimal.ZERO;
                 BigDecimal totalSaleRow = s.getTotalSaleAmount() != null ? s.getTotalSaleAmount() : BigDecimal.ZERO;
 
-                BigDecimal otherAmount = delivery.subtract(refund).subtract(loss);
-                BigDecimal hqAmount = order.add(fee).add(otherAmount);
+                BigDecimal hqAmount = order.add(fee).subtract(delivery).subtract(refund).subtract(loss);
 
                 table.addCell(s.getFranchiseId().toString());
                 table.addCell(totalSaleRow.toString() + "원");
                 table.addCell(fee.toString() + "원");
-                table.addCell(otherAmount.toString() + "원");
+                table.addCell(delivery.toString() + "원");
                 table.addCell(hqAmount.toString() + "원");
             }
 
@@ -509,7 +508,8 @@ public class SettlementFileServiceImpl implements SettlementFileService {
 
     private String formatCurrency(BigDecimal amount) {
         if (amount == null) return "0원";
+        // [수정] 소수점 절삭 방지를 위해 반올림(HALF_UP) 후 천 단위 콤마 포맷팅 적용
         java.text.DecimalFormat df = new java.text.DecimalFormat("#,###");
-        return df.format(amount) + "원";
+        return df.format(amount.setScale(0, java.math.RoundingMode.HALF_UP)) + "원";
     }
 }

@@ -33,6 +33,7 @@ import com.chaing.domain.businessunits.entity.Franchise;
 import com.chaing.domain.settlements.service.SettlementDocumentService;
 import com.chaing.domain.settlements.exception.SettlementErrorCode;
 import com.chaing.domain.settlements.exception.SettlementException;
+import com.chaing.domain.settlements.repository.interfaces.SettlementAdjustmentRepository;
 import com.chaing.domain.settlements.repository.interfaces.SettlementVoucherRepository;
 import com.chaing.domain.settlements.entity.SettlementVoucher;
 import com.chaing.domain.products.entity.Product;
@@ -89,6 +90,7 @@ public class FranchiseSettlementFacade {
         private final TransitRepository transitRepository;
         private final InternalTransportService transportService;
         private final FranchiseRepository franchiseRepository;
+        private final SettlementAdjustmentRepository settlementAdjustmentRepository;
 
         // 일별 정산 요약
         @Transactional(readOnly = true)
@@ -722,11 +724,12 @@ public class FranchiseSettlementFacade {
                         DailySettlementReceipt currentReceipt = result.receipt();
                         List<DailyReceiptLine> currentLines = result.lines();
 
-                        // 데이터가 전혀 없는 경우 예외 처리
+                        /* 데이터가 전혀 없는 경우에도 PDF 생성을 허용하도록 예외 처리 주석 처리
                         if (currentReceipt.getTotalSaleAmount().compareTo(BigDecimal.ZERO) == 0 &&
                                         currentReceipt.getOrderAmount().compareTo(BigDecimal.ZERO) == 0) {
                                 throw new SettlementException(SettlementErrorCode.SETTLEMENT_DATA_EMPTY);
                         }
+                        */
 
                         // [중요] ID missing 및 중복 키 에러 해결: 기존 데이터 조회 후 Upsert
                         java.util.Optional<DailySettlementReceipt> existingReceipt = 
@@ -913,9 +916,13 @@ public class FranchiseSettlementFacade {
                                 AggregationResult result = getInternalDailyAggregation(franchiseId, date);
                                 DailySettlementReceipt receipt = result.receipt();
 
-                                if (receipt.getTotalSaleAmount().compareTo(BigDecimal.ZERO) > 0 ||
-                                                receipt.getOrderAmount().compareTo(BigDecimal.ZERO) > 0 ||
-                                                receipt.getDeliveryFee().compareTo(BigDecimal.ZERO) > 0) {
+                                // [수정] 매출, 발주, 배송비 외에 환급액, 손실액, 조정액 중 하나라도 존재하면 리스트에 포함 (Coderabbit 지적 해결)
+                                if (receipt.getTotalSaleAmount().compareTo(BigDecimal.ZERO) != 0 ||
+                                                receipt.getOrderAmount().compareTo(BigDecimal.ZERO) != 0 ||
+                                                receipt.getDeliveryFee().compareTo(BigDecimal.ZERO) != 0 ||
+                                                receipt.getRefundAmount().compareTo(BigDecimal.ZERO) != 0 ||
+                                                receipt.getLossAmount().compareTo(BigDecimal.ZERO) != 0 ||
+                                                receipt.getAdjustmentAmount().compareTo(BigDecimal.ZERO) != 0) {
 
                                         receipts.add(receipt);
                                         vouchers.add(SettlementVoucher.builder()
@@ -927,9 +934,12 @@ public class FranchiseSettlementFacade {
                                 }
                         }
 
+                        // [수정] 매출/발주가 없는 날도 가맹점 확인을 위해 PDF 생성을 허용함
+                        /*
                         if (receipts.isEmpty()) {
                                 throw new SettlementException(SettlementErrorCode.SETTLEMENT_DATA_EMPTY);
                         }
+                        */
 
                         // 2. 가집계 MonthlySettlement 객체 생성 및 [Upsert] (ID 확보 및 중복 방지)
                         MonthlySettlement provisionalSettlement = aggregateMonthlySettlement(franchiseId, month, receipts);
@@ -1016,8 +1026,14 @@ public class FranchiseSettlementFacade {
 
                         for (LocalDate date = start; !date.isAfter(end); date = date.plusDays(1)) {
                                 AggregationResult result = getInternalDailyAggregation(franchiseId, date);
-                                if (!result.lines().isEmpty()) {
-                                        receipts.add(result.receipt());
+                                DailySettlementReceipt receipt = result.receipt();
+
+                                // [수정] 라인이 있거나, 혹은 정산 금액 요소(매출, 발주, 환급, 손실, 조정 등)가 하나라도 있으면 엑셀에 포함
+                                if (!result.lines().isEmpty() || 
+                                    receipt.getTotalSaleAmount().compareTo(BigDecimal.ZERO) != 0 ||
+                                    receipt.getAdjustmentAmount().compareTo(BigDecimal.ZERO) != 0) {
+                                        
+                                        receipts.add(receipt);
                                         for (DailyReceiptLine line : result.lines()) {
                                                 vouchers.add(SettlementVoucher.builder()
                                                                 .voucherType(line.getLineType())
@@ -1030,9 +1046,12 @@ public class FranchiseSettlementFacade {
                                 }
                         }
 
+                        // [수정] 매출/발주가 없는 날도 가맹점 확인을 위해 Excel 생성을 허용함
+                        /*
                         if (vouchers.isEmpty()) {
                                 throw new SettlementException(SettlementErrorCode.SETTLEMENT_DATA_EMPTY);
                         }
+                        */
 
                         // [중요] ID missing 및 중복 키 에러 해결을 위해 MonthlySettlement 가집계 데이터 Upsert
                         MonthlySettlement provisionalSettlement = aggregateMonthlySettlement(franchiseId, month, receipts);

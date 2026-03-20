@@ -256,8 +256,9 @@ public class InventoryLogFacade {
         }
     }
 
-    public List<BoxCodeResponse> getBoxCodes(String transactionCode, LocalDate date) {
-        return inventoryLogService.findBoxCodesByTransactionCode(transactionCode, date);
+    public List<BoxCodeResponse> getBoxCodes(String transactionCode, LocalDate date, String productName,
+            LogType logType) {
+        return inventoryLogService.findBoxCodesByTransactionCode(transactionCode, date, productName, logType);
     }
 
     private ActorType parseActorType(String actorType) {

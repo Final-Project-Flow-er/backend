@@ -508,6 +508,8 @@ public class SettlementFileServiceImpl implements SettlementFileService {
 
     private String formatCurrency(BigDecimal amount) {
         if (amount == null) return "0원";
-        return String.format("%,d원", amount.longValue());
+        // [수정] 소수점 절삭 방지를 위해 반올림(HALF_UP) 후 천 단위 콤마 포맷팅 적용
+        java.text.DecimalFormat df = new java.text.DecimalFormat("#,###");
+        return df.format(amount.setScale(0, java.math.RoundingMode.HALF_UP)) + "원";
     }
 }

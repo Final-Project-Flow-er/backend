@@ -22,7 +22,7 @@ public interface SettlementAdjustmentRepository extends JpaRepository<Settlement
             @Param("settlementMonth") String settlementMonth,
             Pageable pageable);
 
-    @Query("SELECT COALESCE(SUM(CASE WHEN s.isMinus = true THEN -s.adjustmentAmount ELSE s.adjustmentAmount END), 0) " +
+    @Query("SELECT COALESCE(SUM(s.adjustmentAmount), 0) " +
             "FROM SettlementAdjustment s " +
             "WHERE s.settlementMonth = :settlementMonth " +
             "AND (:franchiseId IS NULL OR s.franchiseId = :franchiseId)")

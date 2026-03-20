@@ -112,8 +112,8 @@ public class HQSettlementFacade {
                         totalLoss = totalLoss.add(r.getLossAmount());
                 }
 
-                hqTotalFinal = totalOrder.add(totalCommission).add(totalDelivery)
-                                .subtract(totalRefund).subtract(totalLoss);
+                hqTotalFinal = totalOrder.add(totalCommission)
+                                .subtract(totalDelivery).subtract(totalRefund).subtract(totalLoss);
                 
                 // 조정 금액 합산 (해당 월의 전체 조정)
                 String monthStr = request.date().toString().substring(0, 7);
@@ -146,7 +146,7 @@ public class HQSettlementFacade {
                         // 개별 가맹점 조정 금액 (해당 월)
                         String monthStr = request.date().toString().substring(0, 7);
                         BigDecimal adjAmount = adjustmentRepository.sumAdjustmentAmountByMonth(monthStr, f.getFranchiseId());
-                        BigDecimal finalAmount = r.getFinalAmount().add(adjAmount);
+                        BigDecimal finalAmount = r.getFinalAmount().subtract(adjAmount);
 
                         dtos.add(HQFranchiseSettlementResponse.of(
                                         f.getFranchiseId(),
@@ -225,8 +225,8 @@ public class HQSettlementFacade {
 
                 // 본사 관점 최종 정산 금액
                 BigDecimal totalAdjustment = adjustmentRepository.sumAdjustmentAmountByMonth(request.month().toString(), null);
-                BigDecimal hqTotalFinal = totalOrder.add(totalCommission).add(totalDelivery)
-                                .subtract(totalRefund).subtract(totalLoss).add(totalAdjustment);
+                BigDecimal hqTotalFinal = totalOrder.add(totalCommission)
+                                .subtract(totalDelivery).subtract(totalRefund).subtract(totalLoss).add(totalAdjustment);
 
                 return HQSettlementSummaryResponse.of(hqTotalFinal, totalOrder, totalSale, totalCommission,
                                 totalDelivery, totalRefund, totalLoss, totalAdjustment);

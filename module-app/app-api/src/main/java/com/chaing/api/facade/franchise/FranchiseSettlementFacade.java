@@ -722,11 +722,12 @@ public class FranchiseSettlementFacade {
                         DailySettlementReceipt currentReceipt = result.receipt();
                         List<DailyReceiptLine> currentLines = result.lines();
 
-                        // 데이터가 전혀 없는 경우 예외 처리
+                        /* 데이터가 전혀 없는 경우에도 PDF 생성을 허용하도록 예외 처리 주석 처리
                         if (currentReceipt.getTotalSaleAmount().compareTo(BigDecimal.ZERO) == 0 &&
                                         currentReceipt.getOrderAmount().compareTo(BigDecimal.ZERO) == 0) {
                                 throw new SettlementException(SettlementErrorCode.SETTLEMENT_DATA_EMPTY);
                         }
+                        */
 
                         // [중요] ID missing 및 중복 키 에러 해결: 기존 데이터 조회 후 Upsert
                         java.util.Optional<DailySettlementReceipt> existingReceipt = 
